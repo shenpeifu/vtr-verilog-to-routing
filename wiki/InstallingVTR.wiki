@@ -3,7 +3,8 @@
 = Installing VTR =
 
   # Download the VTR package [http://www.eecg.utoronto.ca/vtr/ here].
-
+  # Unpack to a directory of your choice (.
+  # Navigate to <vtr_installation_directory>
 
 = Details =
 
