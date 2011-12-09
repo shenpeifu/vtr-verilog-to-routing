@@ -55,4 +55,4 @@ parse_file=parse/standard.txt
 ===Optional Fields===
 *script_path*: Script to run for each architecture/circuit combination.  The default is to use run_vtr_flow.pl, which runs the entire (or partial) VTR flow.  However, a user can use this option to provide their own script.  The user script will be used in place of run_vtr_flow.pl.  The circuit path will be provided as the first argument, and architecture path as the second argument to the user script. (Absolute path or relative to {{{<vtr>/vtr_flow/scripts/}}})
 
-*script_params*: Parameters to be passed to the script.  For information on parameters to the default script see [Run_VTR_Flow run_vtr_flow.pl].
+*script_params*: Parameters to be passed to the script.  This can be used to run partial VTR flows, or to preserve intermediate files. For information on parameters to the default script see [Run_VTR_Flow run_vtr_flow.pl].
