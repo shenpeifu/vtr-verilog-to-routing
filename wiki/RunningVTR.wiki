@@ -1,6 +1,6 @@
 #summary Instructions on running VTR.
 
-= Using VTR =
+= Running the VTR Flow =
 
 == Introduction ==
 VTR is a collection of tools that perform the full FPGA CAD flow from Verilog to routing.  There is no single executable for the entire flow.  Instead, scripts are provided to allow the user to easily run the entire tool flow.  The following provides instructions on using these scripts to run VTR.
