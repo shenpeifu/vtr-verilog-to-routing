@@ -35,5 +35,16 @@ k4_N8_memSize16384_memData64_stratix4_based_timing_sparse/mcml...OK
 k6_N10_memSize16384_memData64_stratix4_based_timing_sparse/ch_intrinsics...OK
 k6_N10_memSize16384_memData64_stratix4_based_timing_sparse/diffeq1...OK
 k6_N10_memSize16384_memData64_stratix4_based_timing_sparse/mcml...OK
-
 </code>
+
+==Task History==
+
+==Extracting Statistics==
+
+==Running a Single Benchmark==
+Even when running the VTR flow for a single architecture/benchmark, it is strongly suggested to use the task framework for the added benefits of execution history and statistics extraction.  However, if the user  prefers to not use the task framework, a script can be used which executes the VTR flow for a single benchmark and architecture:
+
+<code>
+{{{<vtr>}}}/vtr_flow/scripts/run_vtr_flow.pl {{{<circuit_file> <architecture_file>}}}
+</code>
+_For command-line options see [Run_VTR_Flow run_vtr_flow.pl].
