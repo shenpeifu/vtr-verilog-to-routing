@@ -3,7 +3,37 @@
 = Using VTR =
 
 == Introduction ==
-VTR is a collection of tools that perform the full FPGA CAD flow from Verilog to routing.  There is no single executable for the entire flow.  Instead, scripts are provided to allow the user to easily run the entire tool flow.  These scripts can be used with the included benchmarks and architectures, or with user provided files.
+VTR is a collection of tools that perform the full FPGA CAD flow from Verilog to routing.  There is no single executable for the entire flow.  Instead, scripts are provided to allow the user to easily run the entire tool flow.  The following provides instructions on using these scripts to run VTR.
 
 == Tasks ==
-The easiest way to run VTR is to execute a *task*.  A task is a configuration of VTR, and specifies the benchmark(s) and architecture(s) to be used.  There are multiple tasks
+The easiest way to run VTR is to execute a *task*.  A task is a configuration of VTR, and specifies the benchmark(s) and architecture(s) to be used.  There are multiple tasks already provided in the VTR release, and are located here:
+
+<code>
+{{{<vtr>}}}/vtr_flow/tasks
+</code>
+
+Of course, users may create their own tasks.  See [CreatingTasks Creating and Modifying Tasks].
+
+== Executing Tasks ==
+Tasks can be executed by performing the following:
+
+<code>
+{{{<vtr>}}}/vtr_flow/scripts/run_vtr_task.pl {{{<task_name>}}}
+</code>
+
+_For command-line options see [Run_VTR_Task run_vtr_task.pl]._
+
+The script will perform the VTR flow for each architecture/benchmark combination specified in the task.  The output of the script will include one line for each architecture/benchmark in the format
+<code>
+{{{<architecture>}}}/{{{<benchmark>}}}...{{{<status>}}}
+</code>
+If the VTR flow succeeded, the status will be listed as 'OK'.  The following is an example output:
+<code>
+k4_N8_memSize16384_memData64_stratix4_based_timing_sparse/ch_intrinsics...OK
+k4_N8_memSize16384_memData64_stratix4_based_timing_sparse/diffeq1...OK
+k4_N8_memSize16384_memData64_stratix4_based_timing_sparse/mcml...OK
+k6_N10_memSize16384_memData64_stratix4_based_timing_sparse/ch_intrinsics...OK
+k6_N10_memSize16384_memData64_stratix4_based_timing_sparse/diffeq1...OK
+k6_N10_memSize16384_memData64_stratix4_based_timing_sparse/mcml...OK
+
+</code>
