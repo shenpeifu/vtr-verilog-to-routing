@@ -2,7 +2,7 @@
 
 = Installing VTR =
 
-#[InstallingVTR#Details here]
+  #Download the VTR package from [http://www.eecg.utoronto.ca/vtr/ UofT]
 
 
 = Details =
