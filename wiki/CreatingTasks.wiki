@@ -1,13 +1,43 @@
 #summary Instructions on creating and modifying tasks
 
-= Introduction =
+= Creating and Modifying Tasks =
 
-Add your content here.
+== Introduction ==
+Tasks provide a configuration framework for running the VTR flow.  A task specifies such things as which architectures and benchmarks to use.
 
+== File Structure ==
+All tasks are located here:
+<code>
+{{{<vtr>}}}/vtr_flow/tasks
+</code>
+If the user wishes to create his/her own task, it must be created in this location.
 
-= Details =
+All tasks must contain a configuration file, located here:
+<code>
+{{{<vtr>/vtr_flow/tasks/<task_name>/config/config.txt}}}
+</code>
 
-Add your content here.  Format your content with:
-  * Text in *bold* or _italic_
-  * Headings, paragraphs, and lists
-  * Automatic links to other wiki pages
+==Creating a New Task==
+  # Create the folder {{{<vtr>/vtr_flow/tasks/<task_name>}}}
+  # Create the folder {{{<vtr>/vtr_flow/tasks/<task_name>/config}}}
+  # Create and configure the file {{{<vtr>/vtr_flow/tasks/<task_name>/config/config.txt}}}
+
+==Task Configuration File==
+The task configuration file contains key/value pairs separated by the '=' character.  Comment line are indicted using the '#' symbol. Example configuration file:
+<code>
+# Path to directory of circuits to use
+circuits_dir=benchmarks/verilog
+
+# Path to directory of architectures to use
+archs_dir=arch/timing
+
+# Add circuits to list to sweep
+circuit_list_add=ch_intrinsics.v
+
+# Add architectures to list to sweep
+arch_list_add=k6_N10_memSize16384_memData64_stratix4_based_timing_sparse.xml
+
+# Parse info and how to parse
+parse_file=PARSE_INFO/standard_qor_parse_generic.txt
+</code>
+===Required Fields===
