@@ -2,7 +2,7 @@
 
 = Installing VTR =
 
-Add your content here.
+[TestPage help]
 
 
 = Details =
