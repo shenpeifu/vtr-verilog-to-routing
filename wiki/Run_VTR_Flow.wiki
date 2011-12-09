@@ -6,7 +6,7 @@
 This script runs the VTR flow for a single benchmark circuit and architecture file.
 
 The VTR flow consists of the following stages:
-ODIN II -> 
+[http://vtr-verilog-to-routing.googlecode.com/svn/wiki/images/flow_diagram.png]
 
 The usage is:
 <code>
