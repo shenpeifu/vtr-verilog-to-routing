@@ -3,10 +3,11 @@
 = run_vtr_flow.pl =
 
 == Introduction ==
-This script runs the VTR flow for a single benchmark circuit and architecture file.
-
 The VTR flow consists of the following stages:
 [http://vtr-verilog-to-routing.googlecode.com/svn/wiki/images/flow_diagram.png]
+
+This script runs the VTR flow for a single benchmark circuit and architecture file.
+
 
 The usage is:
 <code>
