@@ -2,7 +2,7 @@
 
 = Installing VTR =
 
-  #Download the VTR package from [http://www.eecg.utoronto.ca/vtr/ UofT]
+  # Download the VTR package [http://www.eecg.utoronto.ca/vtr/ here].
 
 
 = Details =
