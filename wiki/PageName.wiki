@@ -1,7 +1,5 @@
-#VTR Discussion Page
+#summary VTR Discussion Page
 
-= Introduction =
+= VTR Discussion Page =
 
-Please introduce any new topic on the subject of the Verilog-To-Routing PRoject HEre
-
-= Details =
+Please introduce any new topic on the subject of the Verilog-To-Routing Project Here
