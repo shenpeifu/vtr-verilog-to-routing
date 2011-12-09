@@ -1,7 +1,7 @@
 #summary Instruction on installing VTR.
 
 = Requirements =
-VTR can be installed in 32-bit or 64-bit Linux, or Cygwin.  However, large benchmarks may require more than 4GB of virtual memory.  These benchmarks will encounter problems if run in 32-bit Linux or Cygwin. 
+VTR can be installed in 32-bit or 64-bit Linux, or Cygwin.  However, large benchmarks may require more than 4GB of virtual memory, and will fail to run in 32-bit Linux or Cygwin. 
 
 = Downloading and Installing VTR =
 
