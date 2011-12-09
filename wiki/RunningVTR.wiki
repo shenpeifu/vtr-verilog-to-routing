@@ -38,8 +38,10 @@ k6_N10_memSize16384_memData64_stratix4_based_timing_sparse/mcml...OK
 </code>
 
 ==Task History==
+TBD
 
 ==Extracting Statistics==
+TBD
 
 ==Running a Single Benchmark==
 Even when running the VTR flow for a single architecture/benchmark, it is strongly suggested to use the task framework for the added benefits of execution history and statistics extraction.  However, if the user  prefers to not use the task framework, a script can be used which executes the VTR flow for a single benchmark and architecture:
