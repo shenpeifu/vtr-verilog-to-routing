@@ -1,13 +1,17 @@
 #summary Manual page for run_vtr_flow.pl
 
-= Introduction =
+= run_vtr_flow.pl =
 
-Add your content here.
+== Introduction ==
+This script runs the VTR flow for a single benchmark circuit and architecture file.
 
+The VTR flow consists of the following stages:
+ODIN II -> 
 
-= Details =
+The usage is:
+<code>
+run_vtr_flow.pl <circuit> <benchmark> [OPTIONS]
+</code>
 
-Add your content here.  Format your content with:
-  * Text in *bold* or _italic_
-  * Headings, paragraphs, and lists
-  * Automatic links to other wiki pages
+==Options==
+*{{{-start_after <stage>}}}*: Start the VTR flow 
