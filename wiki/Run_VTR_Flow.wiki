@@ -2,17 +2,26 @@
 
 = run_vtr_flow.pl =
 
-== Introduction ==
-The VTR flow consists of the following stages:
+== Overview ==
+This script runs the VTR flow for a single benchmark circuit and architecture file.  The following figure illustrates the stages of the VTR flow and associated input and output files.
+
 [http://vtr-verilog-to-routing.googlecode.com/svn/wiki/images/flow_diagram.png]
 
-This script runs the VTR flow for a single benchmark circuit and architecture file.
 
 
+==Usage==
 The usage is:
 <code>
 run_vtr_flow.pl <circuit> <benchmark> [OPTIONS]
 </code>
 
+The script will produce an output file (`*`.out) for each stage, which contains the standout output of the executable.
+
+*Important Note:* The script will copy the circuit file and architecture file to the current working directory.  Many intermediate files will be generated and deleted upon completion.  The script should be run in an empty directory as any user files in the working directory may be overwritten or deleted.
+
 ==Options==
-*{{{-start_after <stage>}}}*: Start the VTR flow 
+*{{{-starting_stage <stage>}}}*: Start the VTR flow at the specified stage.  Acceptable values: _odin_, _abc_, _script_, _vpr_. Default value is _odin_.
+
+*{{{-ending_stage <stage>}}}*: End the VTR flow at the specified stage.  Acceptable values: _odin_, _abc_, _script_, _vpr_. Default value is _vpr_.
+
+*{{{-keep_intermediate_files}}}*: Do not delete the intermediate files.
