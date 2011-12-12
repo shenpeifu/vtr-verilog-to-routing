@@ -1,4 +1,4 @@
-67yu#summary Instructions on running VTR.
+#summary Instructions on running VTR.
 
 = Running the VTR Flow =
 
@@ -22,18 +22,18 @@ The [Run_VTR_Flow run_vtr_flow.pl] script is provided to execute the VTR flow fo
 The script can also be used to run a partial VTR flow. For command-line options see [Run_VTR_Flow run_vtr_flow.pl].
 
 == Tasks ==
-A framework is provided that manages execution of the VTR flow for multiple benchmarks.  This is called a *task*.  A task specifies which benchmark circuits and which architectures will be used.  By default, tasks execute the [Run_VTR_Flow run_vtr_flow.pl] script for every circuit/architecture combination.  Users may specify  There are multiple tasks already provided in the VTR release, and are located here:
+A framework is provided that manages execution of the VTR flow for multiple benchmarks.  This is called a *task*.  A task specifies which benchmark circuits and which architectures will be used.  By default, tasks execute the [Run_VTR_Flow run_vtr_flow.pl] script for every circuit/architecture combination.  There are multiple tasks already provided in the VTR release, and are located here:
 
 <code>
 {{{<vtr>}}}/vtr_flow/tasks
 </code>
 
-Of course, users may create their own tasks.  See [CreatingTasks Creating and Modifying Tasks].
+Of course, users may create their own tasks.  See [CreatingTasks Creating and Modifying Tasks]. 
 
-Even when running the VTR flow for a single architecture/benchmark, it is strongly suggested to use the task framework for the added benefits of execution history and statistics extraction.  However, if the user  prefers to not use the task framework,
+The task framework provides the additional benefits of file organization and statistics extraction. For this reason, it is suggested to use the task framework even when running a single benchmark circuit. 
 
-== Executing Tasks ==
-Tasks can be executed by performing the following:
+=== Executing Tasks ===
+Tasks can be executed using the [Run_VTR_Task run_vtr_task.pl] script:
 
 <code>
 {{{<vtr>}}}/vtr_flow/scripts/run_vtr_task.pl {{{<task_name>}}}
@@ -41,22 +41,28 @@ Tasks can be executed by performing the following:
 
 _For command-line options see [Run_VTR_Task run_vtr_task.pl]._
 
-The script will perform the VTR flow for each architecture/benchmark combination specified in the task.  The output of the script will include one line for each architecture/benchmark in the format
+
+=== Task Output ===
+The output of the script will include one line for each architecture/benchmark in the format:
 <code>
 {{{<architecture>}}}/{{{<benchmark>}}}...{{{<status>}}}
 </code>
-If the VTR flow succeeded, the status will be listed as 'OK'.  The following is an example output:
+If the VTR flow succeeded, the status will be listed as 'OK'.  The following is an example output for a task configured with two circuits and two architectures:
 <code>
 k4_N8_memSize16384_memData64_stratix4_based_timing_sparse/ch_intrinsics...OK
 k4_N8_memSize16384_memData64_stratix4_based_timing_sparse/diffeq1...OK
-k4_N8_memSize16384_memData64_stratix4_based_timing_sparse/mcml...OK
 k6_N10_memSize16384_memData64_stratix4_based_timing_sparse/ch_intrinsics...OK
 k6_N10_memSize16384_memData64_stratix4_based_timing_sparse/diffeq1...OK
-k6_N10_memSize16384_memData64_stratix4_based_timing_sparse/mcml...OK
 </code>
 
-==Task History==
-TBD
+The output is simply a collection of the outputs from the underlying script used for the execution of each benchmark/architecture.  If the user configures the task to use a different script than the default [Run_VTR_Flow run_vtr_flow.pl], the output will be different.
 
-==Extracting Statistics==
+
+
+===Task File Organization===
+The below diagram illustrates the file organization for each tasks.  All of the blue items are automatically created on execution of the task. Each execution of the task will create a new folder named run`<#>`, where `#` begins at 0 and increments with each execution.  This maintains a history of all executions of the task.  Within the 'run#' folder, folders will be created for each architecture type.  Inside each architecture folder, folders will be created for each circuit.  Within each circuit folder, the [Run_VTR_Flow run_vtr_flow.pl] script will be executed, which will produce output files for each stage of the VTR flow.
+
+[http://vtr-verilog-to-routing.googlecode.com/svn/wiki/images/task_file_organization.png]
+
+===Extracting Statistics===
 TBD
