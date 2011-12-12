@@ -1,18 +1,36 @@
-#summary Instructions on running VTR.
+67yu#summary Instructions on running VTR.
 
 = Running the VTR Flow =
 
 == Introduction ==
-VTR is a collection of tools that perform the full FPGA CAD flow from Verilog to routing.  There is no single executable for the entire flow.  Instead, scripts are provided to allow the user to easily run the entire tool flow.  The following provides instructions on using these scripts to run VTR.
+VTR is a collection of tools that perform the full FPGA CAD flow from Verilog to routing.  The stages of the flow are shown in the following diagram:
+
+[http://vtr-verilog-to-routing.googlecode.com/svn/wiki/images/flow_diagram.png]
+
+The flow consists of ODIN II (synthesis), ABC (optimization and tech mapping), scripts (adds clock names and fixes line lengths) and VPR (pack, place and route).
+
+There is no single executable for the entire flow.  Instead, scripts are provided to allow the user to easily run the entire tool flow.  The following provides instructions on using these scripts to run VTR.
+
+
+==Running a Single Benchmark==
+The [Run_VTR_Flow run_vtr_flow.pl] script is provided to execute the VTR flow for a single benchmark and architecture:
+
+<code>
+{{{<vtr>}}}/vtr_flow/scripts/run_vtr_flow.pl {{{<circuit_file> <architecture_file>}}}
+</code>
+
+The script can also be used to run a partial VTR flow. For command-line options see [Run_VTR_Flow run_vtr_flow.pl].
 
 == Tasks ==
-The easiest way to run VTR is to execute a *task*.  A task is a configuration framework for the VTR scripts, and specifies the benchmark(s) and architecture(s) to be used.  There are multiple tasks already provided in the VTR release, and are located here:
+A framework is provided that manages execution of the VTR flow for multiple benchmarks.  This is called a *task*.  A task specifies which benchmark circuits and which architectures will be used.  By default, tasks execute the [Run_VTR_Flow run_vtr_flow.pl] script for every circuit/architecture combination.  Users may specify  There are multiple tasks already provided in the VTR release, and are located here:
 
 <code>
 {{{<vtr>}}}/vtr_flow/tasks
 </code>
 
 Of course, users may create their own tasks.  See [CreatingTasks Creating and Modifying Tasks].
+
+Even when running the VTR flow for a single architecture/benchmark, it is strongly suggested to use the task framework for the added benefits of execution history and statistics extraction.  However, if the user  prefers to not use the task framework,
 
 == Executing Tasks ==
 Tasks can be executed by performing the following:
@@ -42,11 +60,3 @@ TBD
 
 ==Extracting Statistics==
 TBD
-
-==Running a Single Benchmark==
-Even when running the VTR flow for a single architecture/benchmark, it is strongly suggested to use the task framework for the added benefits of execution history and statistics extraction.  However, if the user  prefers to not use the task framework, a script can be used which executes the VTR flow for a single benchmark and architecture:
-
-<code>
-{{{<vtr>}}}/vtr_flow/scripts/run_vtr_flow.pl {{{<circuit_file> <architecture_file>}}}
-</code>
-_For command-line options see [Run_VTR_Flow run_vtr_flow.pl].
