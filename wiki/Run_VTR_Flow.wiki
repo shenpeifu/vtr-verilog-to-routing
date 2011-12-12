@@ -12,12 +12,12 @@ This script runs the VTR flow for a single benchmark circuit and architecture fi
 ==Usage==
 The usage is:
 <code>
-run_vtr_flow.pl <circuit> <benchmark> [OPTIONS]
+run_vtr_flow.pl <circuit_file> <architecture_file> [OPTIONS]
 </code>
 
-The script will produce an output file (`*`.out) for each stage, which contains the standout output of the executable.
+*Important Note*: The script will copy the circuit file and architecture file to the current working directory.  Many intermediate files will be generated and deleted upon completion.  The script should be run in an empty directory as any user files in the working directory may be overwritten or deleted.
 
-*Important Note:* The script will copy the circuit file and architecture file to the current working directory.  Many intermediate files will be generated and deleted upon completion.  The script should be run in an empty directory as any user files in the working directory may be overwritten or deleted.
+
 
 ==Options==
 *{{{-starting_stage <stage>}}}*: Start the VTR flow at the specified stage.  Acceptable values: _odin_, _abc_, _script_, _vpr_. Default value is _odin_.
@@ -25,3 +25,13 @@ The script will produce an output file (`*`.out) for each stage, which contains 
 *{{{-ending_stage <stage>}}}*: End the VTR flow at the specified stage.  Acceptable values: _odin_, _abc_, _script_, _vpr_. Default value is _vpr_.
 
 *{{{-keep_intermediate_files}}}*: Do not delete the intermediate files.
+
+==Output==
+The standard out of the script will produce a single line with the format:
+<code>
+`<architecture>/<circuit_name>...<status>`
+</code>
+
+If execution completed successfully the status will be 'OK'.  Otherwise, the status will indicate which stage of execution failed.
+
+The script will also produce an output file (`*`.out) for each stage, which contains the standout output of the executable.
