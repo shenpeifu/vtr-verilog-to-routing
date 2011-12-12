@@ -7,7 +7,10 @@ This script runs the VTR flow for a single benchmark circuit and architecture fi
 
 [http://vtr-verilog-to-routing.googlecode.com/svn/wiki/images/flow_diagram_text.png]
 
-
+The script is located here:
+<code>
+`<vtr>/vtr_flow/scripts/run_vtr_flow.pl`
+</code>
 
 ==Usage==
 The usage is:
