@@ -7,5 +7,15 @@ This script is used to execute one or more tasks.  For more information about ta
 = Usage = 
 The usage is:
 <code>
-`<vtr>/vtr_flow/scripts/run_vtr_task.pl 
-<code>
+`<vtr>`/vtr_flow/scripts/run_vtr_task.pl <task_name1> <task_name2> ... [OPTIONS] 
+</code>
+
+=Options=
+*`-p <N>`*: Perform parallel execution using N threads.
+
+*`-l <task_list_file>`*: A file containing a list of tasks to execute.  Each task name should be on a separate line.
+
+*Note*: At least one task must be specified, either directly as a parameter or through the `-l` option.
+
+=Output=
+The task will execute the script specified in the configuration file for every benchmark/circuit combination.  The standard output of the underlying script will be forwarded to the output of this script.
