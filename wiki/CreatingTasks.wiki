@@ -50,7 +50,7 @@ parse_file=vpr_standard.txt
 
 *arch_list_add*: Name of an architecture XML file.  Use multiple lines to add multiple architectures.
 
-*parse_file*: File used for parsing and extracting the statistics. (Absolute path or relative to {{{<vtr>/vtr_flow/parse}}})
+*parse_file*: File used for parsing and extracting the statistics.  See [ParseFiles Parse Configuration Files]. (Absolute path or relative to {{{<vtr>/vtr_flow/parse}}})
 
 ===Optional Fields===
 *script_path*: Script to run for each architecture/circuit combination.  The default is to use run_vtr_flow.pl, which runs the entire (or partial) VTR flow.  However, a user can use this option to provide their own script.  The user script will be used in place of run_vtr_flow.pl.  The circuit path will be provided as the first argument, and architecture path as the second argument to the user script. (Absolute path or relative to {{{<vtr>/vtr_flow/scripts/}}})
