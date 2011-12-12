@@ -1,3 +1,27 @@
 #summary Frequently Asked Questions
 
 = Frequently Asked Questions =
+
+== Installing VTR ==
+Nothing here yet.
+
+== Running VTR ==
+
+=== Q: How do I run the VTR flow for a single benchmark? ===
+TBD
+
+=== Q: How do I run the VTR flow for a collection of benchmarks?===
+TBD
+
+=== Q: How do I run the VTR flow for circuits with more than one verilog file?===
+TBD
+
+=== Q: How do I run the VTR flow for my own circuits? ===
+TBD
+
+=== Q: How do I run the VTR flow for my own architecture files? ===
+TBD
+
+=== Q: How do I run only a portion of the VTR flow (i.e. Only ODIN)? ==
+TBD
+
