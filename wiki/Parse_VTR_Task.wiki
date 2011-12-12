@@ -1,13 +1,25 @@
 #summary Manual page for parse_vtr_task.pl
 
-= Introduction =
+= Overview =
 
-Add your content here.
+This script is used to parse the output of one or more tasks.  The values that will be parsed are specified using a [ParseFiles Parse Configuration File], which is specified as part of the overall task configuration (See [CreatingTasks Creating and Modifying Tasks]).
 
+The script will always parse the results of the latest execution of the task.
 
-= Details =
+= Usage = 
+The usage is:
+<code>
+`<vtr>`/vtr_flow/scripts/parse_vtr_task.pl <task_name1> <task_name2> ... [OPTIONS] 
+</code>
 
-Add your content here.  Format your content with:
-  * Text in *bold* or _italic_
-  * Headings, paragraphs, and lists
-  * Automatic links to other wiki pages
+=Options=
+*`-l <task_list_file>`*: A file containing a list of tasks to parse.  Each task name should be on a separate line.
+
+*Note*: At least one task must be specified, either directly as a parameter or through the `-l` option.
+
+=Output=
+This script produces no standard output.  A tab delimited file containing the parse results will be produced for each task.  The file will be located here:
+
+<code>
+`<vtr>/vtr_flow/tasks/<task_name>/run<#>/parse_results.txt`
+</code>
