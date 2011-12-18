@@ -7,7 +7,9 @@
   * [RunningVTR Running VTR]
 
 == Tasks ==
+  * [RunningVTR#Tasks Tasks]
   * [CreatingTasks Creating and Modifying Tasks]
+
 == Parsing Results ==
   * [ParseFiles Parse Configuration Files]
 
