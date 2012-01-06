@@ -30,7 +30,7 @@ A framework is provided that manages execution of the VTR flow for multiple benc
 
 Of course, users may create their own tasks.  See [CreatingTasks Creating and Modifying Tasks]. 
 
-The task framework provides the additional benefits of file organization and statistics extraction. For this reason, it is suggested to use the task framework even when running a single benchmark circuit. 
+The task framework provides the additional benefits of file organization and statistics analysis. For this reason, it is suggested to use the task framework even when running a single benchmark circuit. 
 
 === Executing Tasks ===
 Tasks can be executed using the [Run_VTR_Task run_vtr_task.pl] script:
