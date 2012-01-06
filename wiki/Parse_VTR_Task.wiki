@@ -15,7 +15,15 @@ The usage is:
 =Options=
 *`-l <task_list_file>`*: A file containing a list of tasks to parse.  Each task name should be on a separate line.
 
+
 *Note*: At least one task must be specified, either directly as a parameter or through the `-l` option.
+
+*`-create_golden`*: The results will be stored as golden results.  If previous golden results exist they will be overwritten.  The golden results are located here:
+<code>
+`<vtr>/vtr_flow/tasks/<task_name>/config/golden_results.txt`
+</code>
+*`-verify_golden`*: The results will be compared to the golden results.  
+
 
 =Output=
 This script produces no standard output.  A tab delimited file containing the parse results will be produced for each task.  The file will be located here:
