@@ -65,7 +65,7 @@ The below diagram illustrates the file organization for each tasks.  All of the 
 [http://vtr-verilog-to-routing.googlecode.com/svn/wiki/images/task_file_organization.png]
 
 ===Extracting Statistics===
-Scripts are provided to extract statistics from the results of the VTR flow.  After executing a task, [Parse_VTR_Task parse_vtr_task.pl] can be used to parse and assembles statistics for all of the circuit/architecture combinations.  
+Scripts are provided to extract statistics from the results of the VTR flow.  After executing a task, [Parse_VTR_Task parse_vtr_task.pl] can be used to parse and assembles statistics for all of the circuit/architecture combinations.  The results can also be verified against a golden set of results.
 
 
 If the task framework was not used, [Parse_VTR_Flow parse_vtr_flow.pl] can be used to parse statistics for a single execution of the VTR flow.
