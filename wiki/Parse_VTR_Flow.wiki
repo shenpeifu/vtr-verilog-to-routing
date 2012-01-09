@@ -3,7 +3,7 @@
 = parse_vtr_flow.pl =
 
 == Overview ==
-This script parses statistics following the execution of single VTR flow.  If the user is using the task framework, [Parse_VTR_task parse_vtr_task.pl] should be used instead. 
+This script parses statistics following the execution of single VTR flow.  If the user is using the task framework, [ParseVTRTask parse_vtr_task.pl] should be used instead. 
 
 The script is located here:
 <code>
