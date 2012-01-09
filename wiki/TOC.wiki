@@ -10,8 +10,9 @@
   * [RunningVTR#Tasks Tasks]
   * [CreatingTasks Creating and Modifying Tasks]
 
-== Parsing Results ==
+== Parsing and Verifying Results ==
   * [ParseFiles Parse Configuration Files]
+  * [PassRequirementsFiles Pass Requirements Files]
 
 == Script Manuals ==
   * [Run_VTR_Task run_vtr_task.pl]
