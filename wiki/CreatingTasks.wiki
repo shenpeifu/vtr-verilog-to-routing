@@ -57,4 +57,4 @@ parse_file=vpr_standard.txt
 
 *script_params*: Parameters to be passed to the script.  This can be used to run partial VTR flows, or to preserve intermediate files. For information on parameters to the default script see [Run_VTR_Flow run_vtr_flow.pl].
 
-*pass_requirements_file*: Path to the [PassRequirementsFiles Pass Requirements File].  (Absolute path or relative to `<vtr>/vtr_flow/parse/` or `<vtr>/vtr_flow/tasks/<task_name>/config/`)
+*pass_requirements_file*: Path to the [PassRequirementsFiles Pass Requirements File].  (Absolute path or relative to `<vtr>/vtr_flow/parse/pass_requirements/` or `<vtr>/vtr_flow/tasks/<task_name>/config/`)
