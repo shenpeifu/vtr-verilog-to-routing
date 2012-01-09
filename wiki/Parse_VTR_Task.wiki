@@ -22,12 +22,21 @@ The usage is:
 <code>
 `<vtr>/vtr_flow/tasks/<task_name>/config/golden_results.txt`
 </code>
-*`-verify_golden`*: The results will be compared to the golden results.  
+*`-verify_golden`*: The results will be compared to the golden results using the [PassRequirementsFiles Pass Requirements File] specified in the task configuration.  A 'Pass' or 'Fail' will be output for each task (see below).  In order to compare against the golden results, they must already exist, and have the same architectures, circuits and parse fields, otherwise the script will report 'Error'.  If the golden results are missing, or need to be updated, use the *`-create_golden`* option.
+
 
 
 =Output=
-This script produces no standard output.  A tab delimited file containing the parse results will be produced for each task.  The file will be located here:
+This script produces no standard output, unless *`-verify_golden`* is used.  A tab delimited file containing the parse results will be produced for each task.  The file will be located here:
 
 <code>
 `<vtr>/vtr_flow/tasks/<task_name>/run<#>/parse_results.txt`
 </code>
+
+If *`-verify_golden`* is used, the script will output one line for each task in the format: 
+
+<code>
+<task_name>...<status>
+</code>
+
+The status will be `[Pass]`,`[Fail]`, or `[Error]`.
