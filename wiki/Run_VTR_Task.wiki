@@ -18,4 +18,15 @@ The usage is:
 *Note*: At least one task must be specified, either directly as a parameter or through the `-l` option.
 
 =Output=
-The task will execute the script specified in the configuration file for every benchmark/circuit combination.  The standard output of the underlying script will be forwarded to the output of this script.
+Each task will execute the script specified in the configuration file for every benchmark/circuit combination.  The standard output of the underlying script will be forwarded to the output of this script.  Headers will be added to each task in the following format:
+
+<code>
+
+<task_name1>
+--------------------
+<underlying script output>
+
+<task_name2>
+--------------------
+<underlying script output>
+<code>
