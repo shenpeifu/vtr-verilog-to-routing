@@ -11,13 +11,13 @@ VTR can be installed in 32-bit or 64-bit Linux, or Cygwin.  However, large bench
 
 = Verifying Installation =
 To verify that VTR has been installed correctly, run:
-<code>{{{<vtr>}}}/vtr_flow/scripts/run_vtr_task.pl verify</code>
+<code>{{{<vtr>}}}/vtr_flow/scripts/run_vtr_task.pl basic_flow</code>
 
 The expected output is:
 <code>
-k6_N10_memSize16384_memData64_stratix4_based_timing_sparse/ch_intrinsics...OK
+k6_N10_memSize16384_memData64_40nm_timing/ch_intrinsics...OK
 </code>
 
 If the task does not report 'OK', please check the [FAQ FAQ Page] before raising an issue.
 
-_Explanation:_ The above test will run the task named *verify*.  This task will run a single benchmark through the entire VTR flow from verilog to routing.  The output of the task is formatted as {{{<architecture>}}}/{{{<benchmark>}}}...{{{<status>}}}.  For more information see [RunningVTR Running VTR].
+_Explanation:_ The above test will run the task named *basic_flow*.  This task will run a single benchmark through the entire VTR flow from verilog to routing.  The output of the task is formatted as {{{<architecture>}}}/{{{<benchmark>}}}...{{{<status>}}}.  For more information see [RunningVTR Running VTR].
