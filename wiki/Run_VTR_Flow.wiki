@@ -23,9 +23,9 @@ run_vtr_flow.pl <circuit_file> <architecture_file> [OPTIONS]
 
 
 ==Options==
-*{{{-starting_stage <stage>}}}*: Start the VTR flow at the specified stage.  Acceptable values: _odin_, _abc_, _script_, _vpr_. Default value is _odin_.
+*{{{-starting_stage <stage>}}}*: Start the VTR flow at the specified stage.  Acceptable values: _odin_, _abc_, _scripts_, _vpr_. Default value is _odin_.
 
-*{{{-ending_stage <stage>}}}*: End the VTR flow at the specified stage.  Acceptable values: _odin_, _abc_, _script_, _vpr_. Default value is _vpr_.
+*{{{-ending_stage <stage>}}}*: End the VTR flow at the specified stage.  Acceptable values: _odin_, _abc_, _scripts_, _vpr_. Default value is _vpr_.
 
 *{{{-keep_intermediate_files}}}*: Do not delete the intermediate files.
 
