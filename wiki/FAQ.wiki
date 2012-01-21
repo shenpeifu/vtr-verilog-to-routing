@@ -14,7 +14,7 @@ Nothing here yet.
 Use the task framework (See [RunningVTR#Tasks Tasks]).
 
 === Q: How do I run the VTR flow for my own circuits? ===
-To run the VTR flow for your own circuits, you must create a new task and specify your circuits in the configuration file.  See [CreatingTasks Creating and Modifying Tasks].
+To run the VTR flow for your own circuits, you must create a new task and specify your circuits in the configuration file.  See [CreatingTasks Creating and Modifying Tasks].  You will also need to provide the name of the clock signal for the circuit (See [ClocksFile Circuit Clock Files]).
 
 === Q: How do I run the VTR flow for my own architecture files? ===
 To run the VTR flow for your own architecture files, you must create a new task and specify your architecture files in the configuration file.  See [CreatingTasks Creating and Modifying Tasks].
