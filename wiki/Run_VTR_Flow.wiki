@@ -18,9 +18,7 @@ The usage is:
 run_vtr_flow.pl <circuit_file> <architecture_file> [OPTIONS]
 </code>
 
-*Important Note*: The script will copy the circuit file and architecture file to the current working directory.  Many intermediate files will be generated and deleted upon completion.  The script should be run in an empty directory as any user files in the working directory may be overwritten or deleted.
-
-
+The script will create a '`./temp`' directory, unless otherwise specified with the *`-temp_dir`* option.   The circuit file and architecture file will be copied to the temporary directory.  All stages of the flow will be run within this directory.  Several intermediate files will be generated and deleted upon completion.  *Note: Users should ensure that no important files are kept in this directory as they may be deleted.*
 
 ==Options==
 *{{{-starting_stage <stage>}}}*: Start the VTR flow at the specified stage.  Acceptable values: _odin_, _abc_, _scripts_, _vpr_. Default value is _odin_.
@@ -28,6 +26,8 @@ run_vtr_flow.pl <circuit_file> <architecture_file> [OPTIONS]
 *{{{-ending_stage <stage>}}}*: End the VTR flow at the specified stage.  Acceptable values: _odin_, _abc_, _scripts_, _vpr_. Default value is _vpr_.
 
 *{{{-keep_intermediate_files}}}*: Do not delete the intermediate files.
+
+*`-temp_dir`*: Temporary directory used for execution and intermediate files.  The script will automatically create this directory if necessary.  Default value: `'./temp`'.
 
 ==Output==
 The standard out of the script will produce a single line with the format:
