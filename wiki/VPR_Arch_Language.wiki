@@ -1,4 +1,4 @@
-#Summary VPR Architecture Language
+#summary VPR Architecture Language
 
 =VPR 6.0 Beta Architecture Description Language=
 
