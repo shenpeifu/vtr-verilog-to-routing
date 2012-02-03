@@ -1,18 +1,20 @@
 #summary Manual page for parse_vtr_task.pl
 
-= Overview =
+= parse_vtr_task.pl =
+
+== Overview ==
 
 This script is used to parse the output of one or more tasks.  The values that will be parsed are specified using a [ParseFiles Parse Configuration File], which is specified as part of the overall task configuration (See [CreatingTasks Creating and Modifying Tasks]).
 
 The script will always parse the results of the latest execution of the task.
 
-= Usage = 
+== Usage ==
 The usage is:
 <code>
 `<vtr>`/vtr_flow/scripts/parse_vtr_task.pl <task_name1> <task_name2> ... [OPTIONS] 
 </code>
 
-=Options=
+==Options==
 *`-l <task_list_file>`*: A file containing a list of tasks to parse.  Each task name should be on a separate line.
 
 
@@ -26,7 +28,7 @@ The usage is:
 
 
 
-=Output=
+==Output==
 This script produces no standard output, unless *`-verify_golden`* is used.  A tab delimited file containing the parse results will be produced for each task.  The file will be located here:
 
 <code>
