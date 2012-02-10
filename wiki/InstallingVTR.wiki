@@ -5,7 +5,7 @@ VTR can be installed in 32-bit or 64-bit Linux, or Cygwin.  However, large bench
 
 = Downloading and Installing VTR =
 
-  # Download the VTR package [http://www.eecg.utoronto.ca/vtr/ here]
+  # Download the VTR package [http://www.eecg.utoronto.ca/vtr/terms.html here]
   # Unpack to a directory of your choice (Hereafter referred to as {{{<vtr>}}})
   # Navigate to {{{<vtr>}}} and run <code>make</code>
 
