@@ -4,7 +4,7 @@
 
 == Introduction ==
 
-VPR is an open source academic CAD tool designed for the exploration of new FPGA architectures.  It takes, as input, a description of a hypothetical FPGA architecture along with a technology-mapped user circuit.  VPR then performs packing, placement, and routing to map that circuit to that FPGA.  The output of VPR is the FPGA configuration needed to implement the circuit along with statistics on that final mapping (eg. critical path delay, area, etc).
+VPR is an open source academic CAD tool designed for the exploration of new FPGA architectures.  It takes, as input, a description of a hypothetical FPGA architecture along with a technology-mapped user circuit.  VPR then performs packing, placement, and routing to map that circuit to that FPGA.  The output of VPR includes the FPGA configuration needed to implement the circuit and statistics about the final mapped design (eg. critical path delay, area, etc).
 
 == Motivation ==
 
