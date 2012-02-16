@@ -21,11 +21,12 @@ The purpose of VPR is to make the packing, placement, and routing stages of the 
 == Change Log ==
 === VPR 6.0 ===
   * Timing-driven (the beta was not)
-  * Faster routing of high fanout nets
+  * Faster routing
   * New command-line interface
 === VPR 6.0 Beta===
-  * Ability to explore logic blocks with far more complexity than before
-    * Configurable memories and multipliers, fracturable LUTs, and more
+  * Ability to explore logic blocks with far more complexity than VPR 5.0
+    * Configurable memories, multipliers, fracturable LUTs, and more
+    * Logic blocks can be specified to have arbitrary hierarchy, modes of operation, and interconnect
   * Merged packing into VPR, deprecated T-VPack
 === VPR 5.0 ===
   * Single-driver routing architectures
