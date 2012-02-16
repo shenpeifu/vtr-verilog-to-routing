@@ -1,0 +1,17 @@
+#summary Versatile Packing Placement and Routing.
+
+= VPR 6.0 =
+
+== Introduction ==
+
+VPR is an open source academic CAD tool designed for the exploration of new FPGA architectures.  It takes, as input, a description of a hypothetical FPGA architecture and a technology-mapped user circuit.  VPR then performs packing, placement, and routing to map that circuit to that FPGA.  The output of VPR is the FPGA configuration needed to implement the circuit along with statistics on that final mapping (eg. critical path delay, area, etc).
+
+== Motivation ==
+
+The study of FPGA CAD and architecture can be a challenging process partly because of the difficulty in conducting high quality experiments.  A quality CAD/architecture experiment requires realistic benchmarks, accurate architectural models, and robust CAD tools that can appropriately map the benchmark to the particular architecture in question.  This is a lot of work.  Fortunately, this work can be made easier if open source tools were available as a starting point.
+
+The purpose of VPR is to make the packing, placement, and routing stages of the FPGA CAD flow robust and flexible so that it is easier for researchers to investigate future FPGAs.  It is part of a broader open source project called [http://code.google.com/p/vtr-verilog-to-routing/ VTR] where we provide a complete infrastructure (architectures, realistic benchmarks, and CAD tools starting from Verilog) for performing FPGA CAD/architecture experiments.
+
+= History =
+
+For those interested in information on the legacy versions of VPR, you can access them below:
