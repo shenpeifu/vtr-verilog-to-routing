@@ -14,7 +14,7 @@ The purpose of VPR is to make the packing, placement, and routing stages of the 
 
 == Downloads ==
   * Download VPR 6.0 release with the standard VTR release [http://www.eecg.utoronto.ca/vtr/terms.html here]
-    * If you are only interested in running VPR, you can use the pre-compiled blif files located in vtr_release/vtr_flow/vtr_benchmarks_blif and the architecture file vtr_release/vtr_flow/arch/timing/k6_N10_memDepth16384_memData64_40nm_timing.xml
+    * If you are only interested in running VPR, you can use the pre-compiled blif files located in _vtr_release/vtr_flow/vtr_benchmarks_blif_ and the architecture file _vtr_release/vtr_flow/arch/timing/k6_N10_memDepth16384_memData64_40nm_timing.xml_
   * Download active trunk of VPR [http://code.google.com/p/vtr-verilog-to-routing/source/checkout here] *Note that because this is in active development, it may be unstable*
 
 == Change Log ==
