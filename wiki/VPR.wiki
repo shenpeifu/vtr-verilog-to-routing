@@ -19,7 +19,7 @@ The purpose of VPR is to make the packing, placement, and routing stages of the 
 
 == Change Log ==
 === VPR 6.0 ===
-  * Timing-driven
+  * Timing-driven (the beta was not)
   * Faster routing of high fanout nets
   * New command-line interface
 === VPR 6.0 Beta===
@@ -39,4 +39,4 @@ For those interested in the legacy versions of VPR, you can access them below:
 
 [http://www.eecg.toronto.edu/~vaughn/vpr/vpr.html VPR 4.30]
 
-Warning: We are only providing support for the latest version of VPR.  There is no support for legacy versions.
+*Warning: We are only providing support for the latest version of VPR.  There is no support for legacy versions.*
