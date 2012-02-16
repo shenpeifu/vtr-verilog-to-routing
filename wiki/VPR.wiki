@@ -1,10 +1,14 @@
 #summary Versatile Packing Placement and Routing.
 
-= VPR 6.0 =
+= VPR =
 
 == Introduction ==
 
-VPR is an open source academic CAD tool designed for the exploration of new FPGA architectures.  It takes, as input, a description of a hypothetical FPGA architecture along with a technology-mapped user circuit.  VPR then performs packing, placement, and routing to map that circuit to that FPGA.  The output of VPR includes the FPGA configuration needed to implement the circuit and statistics about the final mapped design (eg. critical path delay, area, etc).
+VPR is an open source academic CAD tool designed for the exploration of new FPGA architectures.  Since its public introduction more than 10 years ago, VPR has been used extensively in many academic projects partly because it is robust, well documented, easy-to-use, and flexible across a range of architectures.
+
+VPR takes, as input, a description of a hypothetical FPGA architecture along with a technology-mapped user circuit.  It then performs packing, placement, and routing to map that circuit to that FPGA.  The output of VPR includes the FPGA configuration needed to implement the circuit and statistics about the final mapped design (eg. critical path delay, area, etc).
+
+Since its inception, VPR has been under constant evolution to offer support for the ever growing space of interesting FPGA architectures.  This latest version of VPR, VPR 6.0, accepts the description of far more complex logic blocks than before including the popular fracturable blocks (eg. memories of different aspect ratios, LUTs that can operate as one big LUT or two smaller LUTs) found in modern FPGAs.  VPR 6.0 is also fully timing-driven in the packing, placement, and routing phases (the beta release was not timing driven).  
 
 == Motivation ==
 
