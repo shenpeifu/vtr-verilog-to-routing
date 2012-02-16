@@ -12,6 +12,34 @@ The study of FPGA CAD and architecture can be a challenging process partly becau
 
 The purpose of VPR is to make the packing, placement, and routing stages of the FPGA CAD flow robust and flexible so that it is easier for researchers to investigate future FPGAs.  It is part of a broader open source project called [http://code.google.com/p/vtr-verilog-to-routing/ VTR] where we provide a complete infrastructure (architectures, realistic benchmarks, and CAD tools starting from Verilog) for performing FPGA CAD/architecture experiments.
 
-= History =
+== Downloads ==
+  * Download VPR 6.0 release with the standard VTR release [http://www.eecg.utoronto.ca/vtr/terms.html here]
+    * If you are only interested in running VPR, you can use the pre-compiled blif files located in vtr_release/vtr_flow/vtr_benchmarks_blif and the architecture file vtr_release/vtr_flow/arch/timing/k6_N10_memDepth16384_memData64_40nm_timing.xml
+  * Download active trunk of VPR [http://code.google.com/p/vtr-verilog-to-routing/source/checkout here] *Note that because this is in active development, it may be unstable*
 
-For those interested in information on the legacy versions of VPR, you can access them below:
+== Change Log ==
+=== VPR 6.0 ===
+  * Timing-driven
+  * Faster routing of high fanout nets
+  * Up-to-date documentation
+  * New command-line interface
+  * Easier to build
+  * Minor bug fixes
+=== VPR 6.0 Beta===
+  * Ability to explore logic blocks with far more complexity than before
+    * Configurable memories and multipliers, fracturable LUTs, and more
+  * Merged packing into VPR, deprecated T-VPack
+=== VPR 5.0 ===
+  * Single-driver routing architectures
+  * Heterogeneous blocks in placement-and-routing
+  * Transistor-optimized architecture files
+
+== History ==
+
+For those interested in the legacy versions of VPR, you can access them below:
+
+[http://www.eecg.utoronto.ca/vpr/ VPR 5.0]
+
+[http://www.eecg.toronto.edu/~vaughn/vpr/vpr.html VPR 4.30]
+
+Warning: We are only providing support for the latest version of VPR.  There is no support for legacy versions.
