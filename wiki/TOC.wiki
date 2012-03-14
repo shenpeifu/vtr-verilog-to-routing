@@ -9,6 +9,7 @@
 == Tasks ==
   * [RunningVTR#Tasks Tasks]
   * [CreatingTasks Creating and Modifying Tasks]
+  * [CreatingTasks#Task_Configuration_File Task Configuration File]
 
 == Parsing and Verifying Results ==
   * [ParseFiles Parse Configuration Files]
