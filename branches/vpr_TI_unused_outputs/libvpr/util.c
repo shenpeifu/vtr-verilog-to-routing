@@ -862,4 +862,3 @@ my_frand(void)
 
     return (fval);
 }
-
