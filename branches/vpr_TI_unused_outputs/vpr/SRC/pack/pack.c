@@ -40,7 +40,7 @@ void try_pack(INP struct s_packer_opts *packer_opts, INP const t_arch * arch, IN
 	read_blif (packer_opts->blif_file_name, 
 				packer_opts->sweep_hanging_nets_and_inputs,
 /* JR-031412 */
-				packer_opts->ignore_unused_outputs,
+				packer_opts->unused_outputs,
 				user_models,
 				library_models);
 /* TODO: Do check blif here 
