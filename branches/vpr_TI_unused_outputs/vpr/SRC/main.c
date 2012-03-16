@@ -230,7 +230,7 @@ main(int argc,
 	    read_netlist(FileNameOpts.NetFile, &Arch, &num_blocks, &block, &num_nets, &clb_net);
 	    /* This is done so that all blocks have subblocks and can be treated the same */
 /* JR-0314012	    check_netlist(); */
-	    check_netlist( Options.ignore_unused_outputs);
+	    check_netlist( Options.unused_outputs);
 	}
 
 	/* Output the current settings to console. */
