@@ -410,6 +410,9 @@ struct s_file_name_opts
  * TODO: document each packing parameter         */
 enum e_packer_algorithm
 { PACK_GREEDY, PACK_BRUTE_FORCE};
+/* JR-031412 */
+enum e_unused_pads
+{ UNUSED_PADS_KEEP, UNUSED_PADS_IGNORE, UNUSED_PADS_DISCARD};
 
 struct s_packer_opts
 {
@@ -420,7 +423,7 @@ struct s_packer_opts
 	boolean hill_climbing_flag;
 	boolean sweep_hanging_nets_and_inputs;
 /* JR-031412 */
-	boolean ignore_unused_outputs;
+	enum e_unused_pads unused_outputs;
 	boolean timing_driven;
 	enum e_cluster_seed cluster_seed_type;
 	float alpha;

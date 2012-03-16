@@ -578,10 +578,10 @@ void SetupPackerOpts(INP t_options Options,
 	}
 
 /* JR-031412 */
-	PackerOpts->ignore_unused_outputs = FALSE;
-	if(Options.Count[OT_IGNORE_UNUSED_OUTPUTS])
+	PackerOpts->unused_outputs = UNUSED_PADS_KEEP; /* DEFAULT */
+	if(Options.Count[OT_UNUSED_OUTPUTS])
 	{
-		PackerOpts->ignore_unused_outputs = Options.ignore_unused_outputs;
+		PackerOpts->unused_outputs = Options.unused_outputs;
 	}
 
 	PackerOpts->skip_clustering = FALSE; /* DEFAULT */

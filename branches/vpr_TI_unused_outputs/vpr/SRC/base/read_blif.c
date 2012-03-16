@@ -48,12 +48,12 @@ static int add_vpack_net(char *ptr,
 		   	boolean is_global,
 		   int doall,
 /* JR-031412 */
-		   boolean ignore_unused_outputs);
+		   enum e_unused_pads unused_outputs);
 static void get_tok(char *buffer,
 		    int pass,
 		    int doall,
 /* JR-031412 */
-		    boolean ignore_unused_outputs,
+		    enum e_unused_pads unused_outputs,
 			boolean *done,
 		    boolean *add_truth_table,
 			INP t_model* inpad_model, 
@@ -64,18 +64,18 @@ static void get_tok(char *buffer,
 static void init_parse(int doall);
 static void check_net(boolean sweep_hanging_nets_and_inputs,
 /* JR-031412 */
-		    boolean ignore_unused_outputs);
+		      enum e_unused_pads unused_outputs);
 static void free_parse(void);
 static void add_lut(int doall,
 /* JR-031412 */
-		    boolean ignore_unused_outputs,
+		    enum e_unused_pads unused_outputs,
 		    t_model *logic_model);
 static void add_latch(int doall, INP t_model *latch_model);
 static void add_subckt(int doall, INP t_model *user_models);
 static void io_line(int in_or_out,
 		    int doall, t_model *io_model,
 /* JR-031412 */
-		    boolean ignore_unused_outputs);
+		    enum e_unused_pads unused_outputs);
 static void dum_parse(char *buf);
 static int hash_value(char *name);
 static void check_and_count_models(int doall, const char* model_name, t_model* user_models);
@@ -89,7 +89,7 @@ void
 read_blif(char *blif_file,
 	  boolean sweep_hanging_nets_and_inputs,
 /* JR-031412 */
-	  boolean ignore_unused_outputs,
+	  enum e_unused_pads unused_outputs,
 	  t_model *user_models,
 	  t_model *library_models)
 {
@@ -124,7 +124,7 @@ read_blif(char *blif_file,
 			while(my_fgets(buffer, BUFSIZE, blif) != NULL)
 			{
 /* JR-031412 				get_tok(buffer, pass, doall, &done, &add_truth_table, inpad_model, outpad_model, logic_model, latch_model, user_models); */
-				get_tok(buffer, pass, doall, ignore_unused_outputs, &done, &add_truth_table, inpad_model, outpad_model, logic_model, latch_model, user_models);
+				get_tok(buffer, pass, doall, unused_outputs, &done, &add_truth_table, inpad_model, outpad_model, logic_model, latch_model, user_models);
 			}
 		    rewind(blif);	/* Start at beginning of file again */
 		}
@@ -132,7 +132,7 @@ read_blif(char *blif_file,
     fclose(blif);
 
 /* JR-031412     check_net(sweep_hanging_nets_and_inputs); */
-    check_net(sweep_hanging_nets_and_inputs, ignore_unused_outputs);
+    check_net(sweep_hanging_nets_and_inputs, unused_outputs);
     free_parse();
 }
 
@@ -225,7 +225,7 @@ get_tok(char *buffer,
 	int pass,
 	int doall,
 /* JR-031412 */
-	boolean ignore_unused_outputs,
+	enum e_unused_pads unused_outputs,
 	boolean *done,
 	boolean *add_truth_table,
 	INP t_model* inpad_model, 
@@ -279,7 +279,7 @@ get_tok(char *buffer,
 	    if(pass == 3)
 		{
 /* JR-031412 		    add_lut(doall, logic_model); */
-		    add_lut(doall, ignore_unused_outputs, logic_model);
+		    add_lut(doall, unused_outputs, logic_model);
 			*add_truth_table = doall;
 		}
 	    else
@@ -340,7 +340,7 @@ get_tok(char *buffer,
 	    if(pass == 1 && model_lines == 1)
 		{
 /* JR-031412 		    io_line(DRIVER, doall, inpad_model); */
-		    io_line(DRIVER, doall, inpad_model, ignore_unused_outputs);
+		    io_line(DRIVER, doall, inpad_model, unused_outputs);
 		    *done = 1;
 		}
 	    else
@@ -359,7 +359,7 @@ get_tok(char *buffer,
 	    if(pass == 2  && model_lines == 1)
 		{
 /* JR-031412 		    io_line(RECEIVER, doall, outpad_model); */
-		    io_line(RECEIVER, doall, outpad_model, ignore_unused_outputs);
+		    io_line(RECEIVER, doall, outpad_model, unused_outputs);
 		    *done = 1;
 		}
 	    else
@@ -409,7 +409,7 @@ dum_parse(char *buf)
 static void
 add_lut(int doall,
 /* JR-031412 */
-	boolean ignore_unused_outputs,
+	enum e_unused_pads unused_outputs,
 	t_model *logic_model)
 {
 
@@ -441,7 +441,7 @@ add_lut(int doall,
 	}
 
 /* JR-031412 */
-	if(ignore_unused_outputs && lut_has_unused_truth_table(buf)) {
+	if(unused_outputs != UNUSED_PADS_KEEP && lut_has_unused_truth_table(buf)) {
 		/* truth table defined as constant ground (ie. 0), ignore this block */
 		free_matrix(saved_names, 0, logic_model->inputs->size, 0, sizeof(char));
 		num_logical_blocks--;
@@ -813,7 +813,7 @@ static void
 io_line(int in_or_out,
 	int doall, t_model *io_model,
 /* JR-031412 */
-	boolean ignore_unused_outputs)
+	enum e_unused_pads unused_outputs)
 {
 
 /* Adds an input or output logical_block to the logical_block data structures.           *
@@ -835,7 +835,7 @@ io_line(int in_or_out,
 	    num_logical_blocks++;
 
 /* JR-031412 	    nindex = add_vpack_net(ptr, in_or_out, num_logical_blocks - 1, 0, 0, FALSE, doall); */
-	    nindex = add_vpack_net(ptr, in_or_out, num_logical_blocks - 1, 0, 0, FALSE, doall, ignore_unused_outputs);
+	    nindex = add_vpack_net(ptr, in_or_out, num_logical_blocks - 1, 0, 0, FALSE, doall, unused_outputs);
 	    /* zero offset indexing */
 	    if(!doall)
 			continue;	/* Just counting things when doall == 0 */
@@ -923,7 +923,7 @@ add_vpack_net(char *ptr,
 	boolean is_global,
 	int doall,
 /* JR-031412 */
-	boolean ignore_unused_outputs)
+	enum e_unused_pads unused_outputs)
 {
 
 /* This routine is given a vpack_net name in *ptr, either DRIVER or RECEIVER *
@@ -985,7 +985,7 @@ add_vpack_net(char *ptr,
 
 /* JR-031412 */
 			   if((vpack_net[nindex].num_sinks - num_driver[nindex]) >= temp_num_pins[nindex]) {
-				if( ignore_unused_outputs ) {
+				if(unused_outputs != UNUSED_PADS_KEEP) {
 					vpack_net[nindex].num_sinks = -1;
 					j = 0;
 				}
@@ -1226,7 +1226,8 @@ load_default_models(INP t_model *library_models, OUTP t_model** inpad_model, OUT
 
 static void
 /* JR-031412 check_net(boolean sweep_hanging_nets_and_inputs) */
-check_net(boolean sweep_hanging_nets_and_inputs, boolean ignore_unused_outputs)
+check_net(boolean sweep_hanging_nets_and_inputs, 
+          enum e_unused_pads unused_outputs)
 {
 
 /* Checks the input netlist for obvious errors. */
@@ -1274,7 +1275,7 @@ check_net(boolean sweep_hanging_nets_and_inputs, boolean ignore_unused_outputs)
 		{
 /* JR-031412 			printf(ERRTAG "vpack_net %s has" " %d signals driving it.\n", vpack_net[i].name, num_driver[i]); */
 /*  			        error++; */
-			if( !ignore_unused_outputs) {
+			if(unused_outputs == UNUSED_PADS_KEEP) {
 				printf(ERRTAG "vpack_net %s has" " %d signals driving it.\n", vpack_net[i].name, num_driver[i]);
 				error++;
 			} else {
@@ -1319,7 +1320,8 @@ check_net(boolean sweep_hanging_nets_and_inputs, boolean ignore_unused_outputs)
 			iport = vpack_net[i].node_block_port[0];
 			ipin = vpack_net[i].node_block_pin[0];
 
-			if(ignore_unused_outputs) {
+			if(unused_outputs != UNUSED_PADS_KEEP) {
+
 				removed_nets++;
 				vpack_net[i].node_block[0] = OPEN;
 				vpack_net[i].node_block_port[0] = OPEN;
@@ -1396,6 +1398,21 @@ check_net(boolean sweep_hanging_nets_and_inputs, boolean ignore_unused_outputs)
 				error++;
 			}
 		}
+/* JR-031412 */
+		/* This block has no input and is an output pad so it has no use, hence we remove it */
+		if((logical_block_input_count[i] == 0) && (logical_block[i].type == VPACK_OUTPAD)) {
+			printf(WARNTAG "logical_block %s #%d has no fanin.\n", logical_block[i].name, i);
+			if(unused_outputs == UNUSED_PADS_DISCARD) {
+				logical_block[i].type = VPACK_EMPTY;
+				printf("  Removing output\n");
+				p_io_removed = my_malloc(sizeof(struct s_linked_vptr));
+				p_io_removed->data_vptr = my_strdup(logical_block[i].name);
+				p_io_removed->next = circuit_p_io_removed;
+				circuit_p_io_removed = p_io_removed;
+				continue;
+			}
+		}
+
 		count_inputs = 0;
 		count_outputs = 0;
 		port = logical_block[i].model->inputs;
@@ -1497,7 +1514,7 @@ check_net(boolean sweep_hanging_nets_and_inputs, boolean ignore_unused_outputs)
 		else if(logical_block[i].type == VPACK_OUTPAD)
 		{
 /* JR-031412			if(logical_block_input_count[i] != 1) { */
-			if(logical_block_input_count[i] != 1 && !ignore_unused_outputs) {
+			if(logical_block_input_count[i] != 1 && unused_outputs == UNUSED_PADS_KEEP) {
 				printf (ERRTAG "io outpad logical_block #%d name %s of type %d" "has %d input pins.\n", 
 					i, logical_block[i].name, logical_block[i].type, logical_block_input_count[i]);
 			    error++;

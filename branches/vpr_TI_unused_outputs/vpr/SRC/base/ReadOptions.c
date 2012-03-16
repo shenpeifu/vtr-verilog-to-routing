@@ -30,11 +30,12 @@ static const char *const *ReadPlaceAlgorithm(INP const char *const *Args,
 static const char *const *ReadPlaceCostType(INP const char *const *Args,
 					    OUTP enum place_c_types *Type);
 static const char *const *ReadRouterAlgorithm(INP const char *const *Args,
-					      OUTP enum e_router_algorithm
-					      *Algo);
+					      OUTP enum e_router_algorithm *Algo);
 static const char *const *ReadPackerAlgorithm(INP const char *const *Args,
-					      OUTP enum e_packer_algorithm
-					      *Algo);
+					      OUTP enum e_packer_algorithm *Algo);
+/* JR-031412 */
+static const char *const *ReadUnusedPads(INP const char *const *Args,
+					 OUTP enum e_unused_pads *Algo);
 static const char *const *ReadBaseCostType(INP const char *const *Args,
 					OUTP enum e_base_cost_type *BaseCostType);
 static const char *const *ReadRouteType(INP const char *const *Args,
@@ -156,8 +157,8 @@ ProcessOption(INP const char *const *Args,
 	case OT_SWEEP_HANGING_NETS_AND_INPUTS:
 		return ReadOnOff(Args, &Options->sweep_hanging_nets_and_inputs);
 /* JR-031412 */
-	case OT_IGNORE_UNUSED_OUTPUTS:
-		return ReadOnOff(Args, &Options->ignore_unused_outputs);
+	case OT_UNUSED_OUTPUTS:
+		return ReadUnusedPads(Args, &Options->unused_outputs);
 	case OT_TIMING_DRIVEN_CLUSTERING:
 		return ReadOnOff(Args, &Options->timing_driven);
 	case OT_CLUSTER_SEED:
@@ -372,30 +373,6 @@ ReadClusterSeed(INP const char *const *Args,
 }
 
 static const char *const *
-ReadPackerAlgorithm(INP const char *const *Args,
-		    OUTP enum e_packer_algorithm *Algo)
-{
-    enum e_OptionArgToken Token;
-    const char *const *PrevArgs;
-
-    PrevArgs = Args;
-    Args = ReadToken(Args, &Token);
-    switch (Token)
-	{
-	case OT_GREEDY:
-	    *Algo = PACK_GREEDY;
-	    break;
-	case OT_BRUTE_FORCE:
-	    *Algo = PACK_BRUTE_FORCE;
-	    break;
-	default:
-	    Error(*PrevArgs);
-	}
-
-    return Args;
-}
-
-static const char *const *
 ReadRouterAlgorithm(INP const char *const *Args,
 		    OUTP enum e_router_algorithm *Algo)
 {
@@ -420,6 +397,63 @@ ReadRouterAlgorithm(INP const char *const *Args,
 	}
 
     return Args;
+}
+
+static const char *const *
+ReadPackerAlgorithm(INP const char *const *Args,
+		    OUTP enum e_packer_algorithm *Algo)
+{
+    enum e_OptionArgToken Token;
+    const char *const *PrevArgs;
+
+    PrevArgs = Args;
+    Args = ReadToken(Args, &Token);
+    switch (Token)
+	{
+	case OT_GREEDY:
+	    *Algo = PACK_GREEDY;
+	    break;
+	case OT_BRUTE_FORCE:
+	    *Algo = PACK_BRUTE_FORCE;
+	    break;
+	default:
+	    Error(*PrevArgs);
+	}
+
+    return Args;
+}
+
+/* JR-031412 */
+/*===========================================================================//
+// Function       : ReadUnusedPads
+// Author         : Jeff Rudolph
+//---------------------------------------------------------------------------//
+// Version history
+// 03/16/12 jeffr : Original
+//===========================================================================*/
+static const char* const* ReadUnusedPads( INP const char* const* Args,
+                                          OUTP enum e_unused_pads* Algo )
+{
+   enum e_OptionArgToken Token;
+   const char* const* PrevArgs;
+
+   PrevArgs = Args;
+   Args = ReadToken( Args, &Token );
+   switch( Token )
+   {
+   case OT_KEEP:
+      *Algo = UNUSED_PADS_KEEP;
+      break;
+   case OT_IGNORE:
+      *Algo = UNUSED_PADS_IGNORE;
+      break;
+   case OT_DISCARD:
+      *Algo = UNUSED_PADS_DISCARD;
+      break;
+   default:
+      Error( *PrevArgs );
+   }
+   return( Args );
 }
 
 static const char *const *

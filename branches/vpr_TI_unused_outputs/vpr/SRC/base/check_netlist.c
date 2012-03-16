@@ -19,9 +19,9 @@ static int check_connections_to_global_clb_pins(int inet);
 static int check_for_duplicated_names(void);
 
 /* JR-031412 static int check_clb_conn(int iblk, */
-static int check_clb_conn(boolean ignore_unused_pins,
-			 int iblk,
-			 int num_conn);
+static int check_clb_conn(enum e_unused_pads unused_pads,
+			  int iblk,
+			  int num_conn);
 
 static int check_clb_internal_nets(int iblk);
 
@@ -40,7 +40,7 @@ static int check_primitives(int iblk, int isub);
 
 void
 /* JR-0314012 check_netlist() */
-check_netlist(boolean ignore_unused_pins)
+check_netlist(enum e_unused_pads unused_pads)
 {
 
 /* This routine checks that the netlist makes sense         */
@@ -77,7 +77,7 @@ check_netlist(boolean ignore_unused_pins)
 	{
 	    num_conn = get_num_conn(i);
 /* JR-031412	    error += check_clb_conn(i, num_conn); */
-	    error += check_clb_conn(ignore_unused_pins, i, num_conn);
+	    error += check_clb_conn(unused_pads, i, num_conn);
 		error += check_clb_internal_nets(i);
 	    error += check_subblocks(i);
 		if(error >= ERROR_THRESHOLD) {
@@ -172,7 +172,7 @@ check_connections_to_global_clb_pins(int inet)
 static int
 /* JR-031412 check_clb_conn(int iblk, */
 /*  		            int num_conn) */
-check_clb_conn(boolean ignore_unused_pins,
+check_clb_conn(enum e_unused_pads unused_pads,
 	       int iblk,
 	       int num_conn)
 {
@@ -188,7 +188,7 @@ check_clb_conn(boolean ignore_unused_pins,
     if(type == IO_TYPE)
 	{
 /* JR-031412 	    if(num_conn != 1) */
-	    if(num_conn != 1 && !ignore_unused_pins)
+	    if(num_conn != 1 && unused_pads == UNUSED_PADS_KEEP)
 		{
 		    printf(ERRTAG "io blk #%d (%s) has %d pins.\n",
 			   iblk, block[iblk].name, num_conn);

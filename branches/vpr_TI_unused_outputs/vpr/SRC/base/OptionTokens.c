@@ -56,7 +56,7 @@ const struct s_TokenPair OptionBaseTokenList[] = {
 	{"hill_climbing", OT_HILL_CLIMBING_FLAG},
 	{"sweep_hanging_nets_and_inputs", OT_SWEEP_HANGING_NETS_AND_INPUTS},
 /* JR-031412 */
-	{"ignore_unused_outputs", OT_IGNORE_UNUSED_OUTPUTS},
+	{"unused_outputs", OT_UNUSED_OUTPUTS},
 	{"no_clustering", OT_SKIP_CLUSTERING},
 	{"allow_unrelated_clustering", OT_ALLOW_UNRELATED_CLUSTERING},
 	{"allow_early_exit", OT_ALLOW_EARLY_EXIT},
@@ -99,5 +99,9 @@ const struct s_TokenPair OptionArgTokenList[] = {
 	{"greedy", OT_GREEDY},
 	{"lp", OT_LP},
 	{"brute_force", OT_BRUTE_FORCE},
+/* JR-031412 */
+	{"keep", OT_KEEP},
+	{"ignore", OT_IGNORE},
+	{"discard", OT_DISCARD},
     {NULL, OT_BASE_UNKNOWN}	/* End of list marker */
 };
