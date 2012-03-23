@@ -44,4 +44,4 @@
 /* Global architecture information */
 t_arch * g_arch; </code>
 
-10.	General style preferences (bracket style, parameter spacing, etc.) can be chosen by the user, but should remain consistent throughout the module.
+10.	General style preferences (bracket style, parameter spacing, etc.) can be chosen by the user, but should remain consistent throughout the source file and accompanying header file.
