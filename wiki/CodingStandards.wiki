@@ -29,7 +29,7 @@
 
 ==Comments==
 7. Comments should be provided for:
- * Modules: a broad overview at the beginning
+ * Source Files: a broad overview at the beginning
  * Functions: an overview and description of each parameter
  * Data Structures: an overview and description of each member variable
  * Enumeration:  an overview description and if helpful, a description of each value
