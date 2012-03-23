@@ -3,15 +3,16 @@
 = C Coding Standards for VTR =
 
 ==Naming==
-  # Variable Prefixes:
-    # Global variables shall be prefixed with ‘g_’
-    # Enumeration types shall be prefixed with ‘e_’
+ 
+1. Variable Prefixes:
+    * Global variables shall be prefixed with ‘g_’
+    * Enumeration types shall be prefixed with ‘e_’
     * Typedef types shall be prefixed with ‘t_’
     * Struct types shall be prefixed with ‘s_’
 
-  # Enumerated constants, #define, and #define macros shall be written ALL CAPS.
+2. Enumerated constants, #define, and #define macros shall be written ALL CAPS.
 
-  # Enumerated constants shall have a common prefix, and when appropriate an ending entry.
+3. Enumerated constants shall have a common prefix, and when appropriate an ending entry.
 <code>
     enum e_interconnect {
     INTERC_COMPLETE, 
@@ -19,23 +20,28 @@
     INTERC_MUX,
     INTERC_MAX_NUM}; </code>
 
-== File Management ==
-  # Variables that are local to a ‘.c’ file should use the ‘static’ keyword to prevent populating the global namespace.
+== File Organization ==
+5. Functions Declaration:
+ * Functions used by other source files shall be declared in the '.h' file. 
+ * Functions used only by the local source shall be declared at the top of the '.c' file and shall be of type 'static'.
+
+6. Variables that are local to a '.c' file should use the 'static' keyword to prevent populating the global namespace.
 
 ==Comments==
-  # Comments should be provided for:
-    * Modules: a broad overview at the beginning
-    * Functions: an overview and description of each parameter
-c.	Data Structures: an overview and description of each member variable
-d.	Enumeration:  an overview description and if helpful, a description of each value
-e.	Global variables: describing their function and scope (used in just packing, placement, etc.)
+7. Comments should be provided for:
+ * Modules: a broad overview at the beginning
+ * Functions: an overview and description of each parameter
+ * Data Structures: an overview and description of each member variable
+ * Enumeration:  an overview description and if helpful, a description of each value
+ * Global variables: describing their function and scope (used in just packing, placement, etc.)
 
-7.	Comments should always precede the code described, i.e. before function and structure definitions.
-Style
-8.	Global variables should be used very sparingly.  They are best used to share information across multiple separate modules.
+8. Comments should always precede the code described, i.e. before function and structure definitions.
+
+==Style==
+
+9. Global variables should be used very sparingly.  They are best used to share information across multiple separate modules.
+<code>
 /* Global architecture information */
-t_arch * g_arch;
+t_arch * g_arch; </code>
 
-
-9.	General style preferences (bracket style, parameter spacing, etc.) can be chosen by the user, but should remain consistent throughout the module.
-
+10.	General style preferences (bracket style, parameter spacing, etc.) can be chosen by the user, but should remain consistent throughout the module.
