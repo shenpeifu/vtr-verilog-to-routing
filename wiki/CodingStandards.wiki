@@ -25,19 +25,19 @@
  * Functions used by other source files shall be declared in the '.h' file. 
  * Functions used only by the local source shall be declared at the top of the '.c' file and shall be of type 'static'.
 
-6. Typedefs should be located in a single list at the top of the '.c' file.
+6. Typedefs shall be located in a single list at the top of the '.c' file.
 
-7. Variables that are local to a '.c' file should use the 'static' keyword to prevent populating the global namespace.
+7. Variables that are local to a '.c' file shall use the 'static' keyword to prevent populating the global namespace.
 
 ==Comments==
-8. Comments should be provided for:
+8. Comments shall be provided for:
  * Source Files: a broad overview at the beginning
  * Functions: an overview and description of each parameter
  * Data Structures: an overview and description of each member variable
  * Enumeration:  an overview description and if helpful, a description of each value
  * Global variables: describing their function and scope (used in just packing, placement, etc.)
 
-9. Comments should always precede the code described, i.e. before function and structure definitions.
+9. Comments shall always precede the code described, i.e. before function and structure definitions.
 
 ==Style==
 
