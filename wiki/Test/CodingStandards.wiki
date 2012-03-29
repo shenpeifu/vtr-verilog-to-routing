@@ -2,7 +2,7 @@
 
 = C Coding Standards for VTR =
 
-==Naming==
+==Naming Test==
  
 1. Variable Prefixes:
     * Global variables shall be prefixed with ‘g_’
