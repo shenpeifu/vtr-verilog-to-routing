@@ -46,4 +46,4 @@
 /* Global architecture information */
 t_arch * g_arch; </code>
 
-11. VTR has been formatted using the Eclipse K&R formatting style, which is built in to Eclipse CDT (also available [http://vtr-verilog-to-routing.googlecode.com/files/vtr_eclipse_formatting_profile.xml here]).  Contributors may write code according to their own style, and the VTR gatekeeper will format the code before committing to the trunk.  Users who wish to format their own code can update their Eclipse preferences (Window->Preferences->C/C++->Code Style) and format their code (Source->Format).
+11. VTR has been formatted using the Eclipse 'K&R [built-in]' formatting style, which is included by default in Eclipse CDT (also available [http://vtr-verilog-to-routing.googlecode.com/files/vtr_eclipse_formatting_profile.xml here]).  Contributors may write code according to their own style, and the VTR gatekeeper will format the code before committing to the trunk.  Users who wish to format their own code can update their Eclipse preferences (Window->Preferences->C/C++->Code Style) and format their code (Source->Format).
