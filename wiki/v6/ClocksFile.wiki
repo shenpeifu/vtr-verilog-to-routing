@@ -2,7 +2,7 @@
 
 = Circuit Clock Files =
 
-== Overview == 
+== Overview 123 == 
 The second stage of the VTR flow, ABC, removes the clock signals from the latches in the .blif file it produces.  However, VPR requires these clock signals.  The clock signals must be reinserted into the blif file prior to VPR execution.  This is one of the roles of the 'Script' stage of the VTR flow.
 
 The 'Script' stage will check two different files for the name of the clock signal for the circuit it is working with.  The first file is for circuits included in the VTR release, and the second file is for the user to provide his/her own circuits.  If the circuit name is found in both files, the clock signal name will be taken from the user provided file.
