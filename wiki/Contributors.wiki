@@ -10,7 +10,7 @@
 
 === University of New Brunswick ===
   * Kenneth Kent (Professor) - Odin II
-  * Andrew Somerville (MASc Student) - Odin II
+  * Andrew Somerville (MCS Student) - Odin II
 
 === Miami University in Ohio ===
   * Peter Jamieson (Professor, Miami University in Ohio) - Odin II
