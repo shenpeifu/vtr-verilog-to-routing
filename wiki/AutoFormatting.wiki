@@ -8,7 +8,7 @@ Code should be formatted using these tools before being committed to the VTR tru
 = File Types =
 
 == C Files (.c/.h) ==
-C code has been formatted using the Eclipse 'K&R [built-in]' formatting style, which is included by default in Eclipse CDT.    
+C code has been formatted using the Eclipse 'K&R [built-in]' formatting style, which is included by default in Eclipse CDT.   Be sure to use the latest version of Eclipse with all updates applied, as past versions of the CDT formatter contained bugs.  
 
 Instructions for formatting VPR:
  # Install Eclipse CDT as a [http://www.eclipse.org/cdt/downloads.php standalone program], or add CDT to your existing eclipse through the Eclipse Marketplace (Help->Eclipse Marketplace...).
