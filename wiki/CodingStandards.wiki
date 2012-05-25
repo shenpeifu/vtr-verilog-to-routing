@@ -46,4 +46,4 @@
 /* Global architecture information */
 t_arch * g_arch; </code>
 
-11. VTR uses auto-formatting of code.  C code has been formatted using the Eclipse 'K&R [built-in]' formatting style, which is included by default in Eclipse CDT.  Contributors may write code according to their own style, and the VTR gatekeeper will format the code before committing to the trunk.  Users who wish to format their own code can update their Eclipse preferences (Window->Preferences->C/C++->Code Style) and format their code (Source->Format).  Perl scripts are formatted using the PerlTidy formatter within Eclipse EPIC, with the additional options {{{"-nolc -nolq"}}}.
+11. VTR uses auto-formatting of code.  See [AutoFormatting Auto Formatting]. 
