@@ -1,7 +1,7 @@
 #summary VTR Whitespace Autoformatting
 
 = Overview =
-VTR uses auto formatting tools included in [http://www.eclipse.org/ Eclipse] to perform whitespace auto-formatting.  This formatting will not change code functionality, nor will it change any naming conventions.  Only whitespace will be modified.  
+VTR uses auto formatting tools included in [http://www.eclipse.org/ Eclipse] to perform whitespace auto-formatting.  This formatting will not change code functionality, nor will it change any variable/function naming.  Only whitespace will be modified.  
 
 Code should be formatted using these tools before being committed to the VTR trunk.
 
