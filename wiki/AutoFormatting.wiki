@@ -1,12 +1,22 @@
 #summary VTR Whitespace Autoformatting
 
 = Overview =
-TBD
+VTR uses auto formatting tools included in [http://www.eclipse.org/ Eclipse] to perform whitespace auto-formatting.  This formatting will not change code functionality, nor will it change any naming conventions.  Only whitespace will be modified.  
+
+Code should be formatted using these tools before being committed to the VTR trunk.
 
 = File Types =
 
 == C Files (.c/.h) ==
-C code has been formatted using the Eclipse 'K&R [built-in]' formatting style, which is included by default in Eclipse CDT.  Contributors may write code according to their own style, and the VTR gatekeeper will format the code before committing to the trunk.  Users who wish to format their own code can update their Eclipse preferences (Window->Preferences->C/C++->Code Style) and format their code (Source->Format).  
+C code has been formatted using the Eclipse 'K&R [built-in]' formatting style, which is included by default in Eclipse CDT.    
+
+Instructions for formatting VPR:
+ # Install Eclipse CDT as a [http://www.eclipse.org/cdt/downloads.php standalone program], or add CDT to your existing eclipse through the Eclipse Marketplace (Help->Eclipse Marketplace...).
+ # Create a VPR project: File->New->Makefile Project with Existing Code.
+ # Check formatter settings: Window->Preferences, C/C++->Code Style, and select the profile: *K&R [built-in]*.
+ # Format the Code: Right-click on the SRC directory, Source->Format.
+
+Similar steps can be taken for libvpr, and other C based code. 
 
 
 == Perl Files (.pl) ==
