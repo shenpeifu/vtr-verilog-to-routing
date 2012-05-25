@@ -21,7 +21,7 @@
   * [Parse_VTR_Task parse_vtr_task.pl]
   * [Parse_VTR_Flow parse_vtr_flow.pl]
 
-== Coding in VTR == 
+== Developing for VTR == 
   * [CommitProcedures Commit Procedures]
   * [CodingStandards Coding Standards]
   * [AutoFormatting Auto-Formatting]
