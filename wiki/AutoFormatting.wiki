@@ -11,3 +11,5 @@ C code has been formatted using the Eclipse 'K&R [built-in]' formatting style, w
 
 == Perl Files (.pl) ==
 Perl scripts are formatted using the PerlTidy formatter within Eclipse EPIC, with the additional options {{{"-nolc -nolq"}}}.
+
+== Python Files (.py) ==
