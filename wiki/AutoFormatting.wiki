@@ -20,6 +20,14 @@ Similar steps can be taken for libvpr, and other C based code.
 
 
 == Perl Files (.pl) ==
-Perl scripts are formatted using the PerlTidy formatter within Eclipse EPIC, with the additional options {{{"-nolc -nolq"}}}.
+Instructions for formatting Perl scripts:
+
+ # Install Eclipse EPIC through the Eclipse Marketplace (Help->Eclipse Marketplace...).  You must already have Eclipse installed.
+ # Create a project for your Perl scripts. 
+ # Set formatter settings: Window->Preferences, Perl EPIC->Source Formatter.  Additional options should be: {{{"-nolc -nolq"}}}
+ # Open code files and select Source->Format Code.
 
 == Python Files (.py) ==
+ # Install Eclipse Pydev through the Eclipse Marketplace (Help->Eclipse Marketplace...).  You must already have Eclipse installed.
+ # Create a project for your Python scripts. 
+ # Open code files and select Source->Format Code.
