@@ -13,6 +13,7 @@ C code has been formatted using the Eclipse 'K&R [built-in]' formatting style, w
 Instructions for formatting VPR:
  # Install Eclipse CDT as a [http://www.eclipse.org/cdt/downloads.php standalone program], or add CDT to your existing eclipse through the Eclipse Marketplace (Help->Eclipse Marketplace...).
  # Create a VPR project: File->New->Makefile Project with Existing Code.
+ # Make sure the project references libvpr.  If you have a project for libvpr, indicate the dependence in Project->Properties->Project References.  Alternatively, add the libvpr headers through Project->Properties->C/C++ General->Paths and Symbols->Includes. Without project references to libvpr, Eclipse will think that parts of code have syntax errors, and will not format these sections.
  # Check formatter settings: Window->Preferences, C/C++->Code Style, and select the profile: *K&R [built-in]*.
  # Format the Code: Right-click on the SRC directory, Source->Format.
 
