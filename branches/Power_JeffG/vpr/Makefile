@@ -11,7 +11,7 @@
 ENABLE_GRAPHICS = false
 # can be true or false
 
-export BUILD_TYPE = release
+export BUILD_TYPE = debug
 # can be debug or release - this option gets inherited by the library libvpr 
 # by default, though libvpr's build type can be set independently in libvpr's Makefile.
 
@@ -30,9 +30,9 @@ LIB_DIR = -L../libvpr
 LIB = -lm -lvpr_6
 SRC_DIR = SRC
 OBJ_DIR = OBJ
-OTHER_DIR = -ISRC/util -ISRC/timing -ISRC/pack -ISRC/place -ISRC/base -ISRC/route
+OTHER_DIR = -ISRC/util -ISRC/timing -ISRC/pack -ISRC/place -ISRC/base -ISRC/route -ISRC/power
 
-WARN_FLAGS = -Wall -Wpointer-arith -Wcast-qual -Wstrict-prototypes -D__USE_FIXED_PROTOTYPES__ -ansi -pedantic -Wmissing-prototypes -Wshadow -Wcast-align -D_POSIX_SOURCE -Wno-overlength-strings
+WARN_FLAGS = -Wall -Wpointer-arith -Wcast-qual -Wstrict-prototypes -D__USE_FIXED_PROTOTYPES__ -pedantic -Wmissing-prototypes -Wshadow -Wcast-align -D_POSIX_SOURCE -Wno-overlength-strings
 
 DEBUG_FLAGS = -g
 OPT_FLAGS = $(OPTIMIZATION_LEVEL_FOR_RELEASE_BUILD)

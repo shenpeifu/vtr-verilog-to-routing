@@ -9,6 +9,16 @@
 #ifndef GLOBALS_H
 #define GLOBALS_H
 
+/* Arhitecture Parameters */
+extern t_arch * g_arch;
+extern t_det_routing_arch * g_routing_arch;
+
+/* Options */
+extern t_router_opts * g_routing_opts;
+
+/* Solution Information */
+extern t_solution_inf * g_solution_inf;
+
 /********************************************************************
  User Netlist Globals
  ********************************************************************/

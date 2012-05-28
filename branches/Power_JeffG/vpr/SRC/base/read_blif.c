@@ -59,9 +59,13 @@ static void check_and_count_models(int doall, const char* model_name,
 static void load_default_models(INP t_model *library_models,
 		OUTP t_model** inpad_model, OUTP t_model** outpad_model,
 		OUTP t_model** logic_model, OUTP t_model** latch_model);
+static void read_activity(char * activity_file);
+static int add_activity_to_net(char * net_name, float probability,
+		float density);
 
 void read_blif(char *blif_file, boolean sweep_hanging_nets_and_inputs,
-		t_model *user_models, t_model *library_models) {
+		t_model *user_models, t_model *library_models,
+		t_power_opts * power_opts) {
 	char buffer[BUFSIZE];
 	int pass, doall;
 	boolean done;
@@ -98,6 +102,11 @@ void read_blif(char *blif_file, boolean sweep_hanging_nets_and_inputs,
 	}
 	fclose(blif);
 	check_net(sweep_hanging_nets_and_inputs);
+
+	if (power_opts->do_power) {
+		read_activity(power_opts->activity_file);
+	}
+
 	free_parse();
 }
 
@@ -1443,5 +1452,84 @@ static void free_parse(void) {
 	free((void *) num_driver);
 	free((void *) hash);
 	free((void *) temp_num_pins);
+}
+
+static void read_activity(char * activity_file) {
+	int net_idx;
+	boolean fail;
+	char buf[BUFSIZE];
+	char * ptr;
+	char * word1;
+	char * word2;
+	char * word3;
+
+	FILE * act_file_hdl;
+
+	if (num_logical_nets == 0) {
+		printf("Error reading activity file.  Must read netlist first\n");
+		exit(-1);
+	}
+
+	for (net_idx = 0; net_idx < num_logical_nets; net_idx++) {
+		vpack_net[net_idx].probability = -1.0;
+		vpack_net[net_idx].density = -1.0;
+	}
+
+	act_file_hdl = my_fopen(activity_file, "r", FALSE);
+	if (act_file_hdl == NULL) {
+		printf("Error: could not open activity file: %s\n", activity_file);
+		exit(-1);
+	}
+
+	fail = FALSE;
+	ptr = my_fgets(buf, BUFSIZE, act_file_hdl);
+	while (ptr != NULL) {
+		word1 = strtok(buf, TOKENS);
+		word2 = strtok(NULL, TOKENS);
+		word3 = strtok(NULL, TOKENS);
+		printf("word1:%s|word2:%s|word3:%s\n", word1, word2, word3);
+		fail |= add_activity_to_net(word1, atof(word2), atof(word3));
+
+		ptr = my_fgets(buf, BUFSIZE, act_file_hdl);
+	}
+	fclose(act_file_hdl);
+
+	/* Make sure all nets have an activity value */
+	for (net_idx = 0; net_idx < num_logical_nets; net_idx++) {
+		if (vpack_net[net_idx].probability < 0.0
+				|| vpack_net[net_idx].density < 0.0) {
+			printf("Error: Activity file does not contain signal %s\n",
+					vpack_net[net_idx].name);
+			fail = TRUE;
+		}
+	}
+
+	if (fail) {
+		exit(-1);
+	}
+}
+
+static int add_activity_to_net(char * net_name, float probability,
+		float density) {
+	int hash_idx, net_idx;
+	struct hash_logical_nets * h_ptr;
+
+	hash_idx = hash_value(net_name);
+	h_ptr = hash[hash_idx];
+
+	while (h_ptr != NULL) {
+		if (strcmp(h_ptr->name, net_name) == 0) {
+			net_idx = h_ptr->index;
+			vpack_net[net_idx].probability = probability;
+			vpack_net[net_idx].density = density;
+			return 0;
+		}
+		h_ptr = h_ptr->next;
+	}
+
+	printf(
+			"Error: net %s found in activity file, but it does not exist in the .blif file.\n",
+			net_name);
+	return 1;
 }
 

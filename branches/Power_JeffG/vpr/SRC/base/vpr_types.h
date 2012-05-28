@@ -369,6 +369,8 @@ struct s_net {
 	int *node_block_pin;
 	boolean is_global;
 	boolean is_const_gen;
+	float probability;
+	float density;
 };
 
 /* s_grid_tile is the minimum tile of the fpga                         
@@ -435,6 +437,8 @@ struct s_file_name_opts {
 	char *NetFile;
 	char *PlaceFile;
 	char *RouteFile;
+	char *ActFile;
+	char *PowerFile;
 	char *OutFilePrefix;
 };
 
@@ -535,6 +539,14 @@ struct s_placer_opts {
  * td_place_exp_last: value that the criticality exponent will be at the end *
  * doPlacement: TRUE if placement is supposed to be done in the CAD flow, FALSE otherwise */
 
+typedef struct s_power_opts t_power_opts;
+struct s_power_opts {
+	boolean do_power;
+	char * activity_file;
+	char * power_output_file;
+	char * cmos_tech_behavior_file;
+};
+
 enum e_route_type {
 	GLOBAL, DETAILED
 };
@@ -547,6 +559,7 @@ enum e_base_cost_type {
 
 #define NO_FIXED_CHANNEL_WIDTH -1
 
+typedef struct s_router_opts t_router_opts;
 struct s_router_opts {
 	float first_iter_pres_fac;
 	float initial_pres_fac;
@@ -608,6 +621,7 @@ struct s_router_opts {
  *                  criticality_exp (then clip to max_criticality).         
  * doRouting: True if routing is supposed to be done, FALSE otherwise */
 
+typedef struct s_det_routing_arch t_det_routing_arch;
 struct s_det_routing_arch {
 	enum e_directionality directionality; /* UDSD by AY */
 	int Fs;
@@ -675,6 +689,9 @@ typedef struct s_seg_details {
 	int group_start;
 	int group_size;
 	int index;
+
+	/* Power */
+	float Cmetal_per_m;
 } t_seg_details;
 
 /* Lists detailed information about segmentation.  [0 .. W-1].              *
@@ -768,6 +785,15 @@ typedef struct s_rr_node {
 	t_pb_graph_pin *pb_graph_pin;
 	t_tnode *tnode;
 	float pack_intrinsic_cost;
+
+	/* Used by power calculator */
+	boolean visited;
+	float * in_density;
+	float * in_prob;
+	short num_inputs;
+	short selected_input;
+	short driver_switch_type;
+	float C_tile_per_m;
 } t_rr_node;
 /* Main structure describing one routing resource node.  Everything in       *
  * this structure should describe the graph -- information needed only       *
@@ -862,6 +888,12 @@ enum e_cost_indices {
 struct s_TokenPair {
 	char *Str;
 	int Enum;
+};
+
+typedef struct s_solution_inf t_solution_inf;
+struct s_solution_inf {
+	float T_crit;
+	int channel_width;
 };
 
 #endif

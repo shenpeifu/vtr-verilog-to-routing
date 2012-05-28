@@ -12,6 +12,8 @@ struct s_options {
 	char *PlaceFile;
 	char *RouteFile;
 	char *BlifFile;
+	char *ActFile;
+	char *PowerFile;
 	char *OutFilePrefix;
 
 	/* General options */
@@ -80,6 +82,10 @@ struct s_options {
 	float astar_fac;
 	float criticality_exp;
 	float max_criticality;
+
+	/* Power options */
+	int operating_temp;
+	char * cmos_tech_behavior_file;
 
 	int Count[OT_BASE_UNKNOWN];
 };

@@ -9,6 +9,7 @@
 #include "SetupVPR.h"
 #include "pb_type_graph.h"
 #include "ReadOptions.h"
+#include "power.h"
 
 static void SetupOperation(INP t_options Options,
 		OUTP enum e_operation *Operation);
@@ -30,6 +31,8 @@ static void SetupTiming(INP t_options Options, INP t_arch Arch,
 static void SetupSwitches(INP t_arch Arch,
 		INOUTP struct s_det_routing_arch *RoutingArch,
 		INP struct s_switch_inf *ArchSwitches, INP int NumArchSwitches);
+static void SetupPowerOpts(t_options Options, struct s_power_opts *power_opts,
+		t_arch * Arch);
 
 /* Sets VPR parameters and defaults. Does not do any error checking
  * as this should have been done by the various input checkers */
@@ -42,7 +45,8 @@ void SetupVPR(INP t_options Options, INP boolean TimingEnabled,
 		OUTP struct s_router_opts *RouterOpts,
 		OUTP struct s_det_routing_arch *RoutingArch,
 		OUTP t_segment_inf ** Segments, OUTP t_timing_inf * Timing,
-		OUTP boolean * ShowGraphics, OUTP int *GraphPause) {
+		OUTP boolean * ShowGraphics, OUTP int *GraphPause,
+		OUTP struct s_power_opts *PowerOpts) {
 	int i, j, len;
 
 	/* init default filenames */
@@ -102,18 +106,49 @@ void SetupVPR(INP t_options Options, INP boolean TimingEnabled,
 		}
 	}
 
+	if (Options.ActFile == NULL) {
+		len = strlen(Options.CircuitName) + 7; /* circuit_name.route/0*/
+		if (Options.OutFilePrefix != NULL) {
+			len += strlen(Options.OutFilePrefix);
+		}
+		Options.ActFile = my_calloc(len, sizeof(char));
+		if (Options.OutFilePrefix == NULL) {
+			sprintf(Options.ActFile, "%s.act", Options.CircuitName);
+		} else {
+			sprintf(Options.ActFile, "%s%s.act", Options.OutFilePrefix,
+					Options.CircuitName);
+		}
+	}
+
+	if (Options.PowerFile == NULL) {
+		len = strlen(Options.CircuitName) + 7; /* circuit_name.route/0*/
+		if (Options.OutFilePrefix != NULL) {
+			len += strlen(Options.OutFilePrefix);
+		}
+		Options.PowerFile = my_calloc(len, sizeof(char));
+		if (Options.OutFilePrefix == NULL) {
+			sprintf(Options.PowerFile, "%s.power", Options.CircuitName);
+		} else {
+			sprintf(Options.ActFile, "%s%s.power", Options.OutFilePrefix,
+					Options.CircuitName);
+		}
+	}
+
 	FileNameOpts->CircuitName = Options.CircuitName;
 	FileNameOpts->ArchFile = Options.ArchFile;
 	FileNameOpts->BlifFile = Options.BlifFile;
 	FileNameOpts->NetFile = Options.NetFile;
 	FileNameOpts->PlaceFile = Options.PlaceFile;
 	FileNameOpts->RouteFile = Options.RouteFile;
+	FileNameOpts->ActFile = Options.ActFile;
+	FileNameOpts->PowerFile = Options.PowerFile;
 	FileNameOpts->OutFilePrefix = Options.OutFilePrefix;
 
 	SetupOperation(Options, Operation);
 	SetupPlacerOpts(Options, TimingEnabled, PlacerOpts);
 	SetupAnnealSched(Options, AnnealSched);
 	SetupRouterOpts(Options, TimingEnabled, RouterOpts);
+	SetupPowerOpts(Options, PowerOpts, Arch);
 
 	XmlReadArch(Options.ArchFile, TimingEnabled, Arch, &type_descriptors,
 			&num_types);
@@ -236,6 +271,9 @@ static void SetupSwitches(INP t_arch Arch,
 	switch_inf[RoutingArch->delayless_switch].Cin = 0.;
 	switch_inf[RoutingArch->delayless_switch].Cout = 0.;
 	switch_inf[RoutingArch->delayless_switch].Tdel = 0.;
+	switch_inf[RoutingArch->delayless_switch].autosize_buffer = FALSE;
+	switch_inf[RoutingArch->delayless_switch].buffer_last_stage_size = 0.;
+	switch_inf[RoutingArch->delayless_switch].mux_trans_size = 0.;
 
 	/* The wire to ipin switch for all types. Curently all types
 	 * must share ipin switch. Some of the timing code would
@@ -245,6 +283,9 @@ static void SetupSwitches(INP t_arch Arch,
 	switch_inf[RoutingArch->wire_to_ipin_switch].Cin = Arch.C_ipin_cblock;
 	switch_inf[RoutingArch->wire_to_ipin_switch].Cout = 0.;
 	switch_inf[RoutingArch->wire_to_ipin_switch].Tdel = Arch.T_ipin_cblock;
+	switch_inf[RoutingArch->wire_to_ipin_switch].autosize_buffer = FALSE;
+	switch_inf[RoutingArch->wire_to_ipin_switch].buffer_last_stage_size = 0.;
+	switch_inf[RoutingArch->wire_to_ipin_switch].mux_trans_size = 0.;
 }
 
 /* Sets up routing structures. Since checks are already done, this
@@ -690,5 +731,25 @@ boolean IsEchoEnabled(INP t_options Options) {
 		return Options.CreateEchoFile;
 	}
 	return FALSE;
+}
+static void SetupPowerOpts(t_options Options, t_power_opts *power_opts,
+		t_arch * Arch) {
+
+	if (Options.Count[OT_POWER]) {
+		power_opts->do_power = TRUE;
+	} else {
+		power_opts->do_power = FALSE;
+	}
+
+	if (Options.Count[OT_CMOS_TECH_BEHAVIOR_FILE]) {
+		power_opts->cmos_tech_behavior_file = Options.cmos_tech_behavior_file;
+	} else {
+		power_opts->cmos_tech_behavior_file = NULL;
+	}
+
+	if (power_opts->do_power) {
+		Arch->power = my_malloc(sizeof(t_power_arch));
+		Arch->clocks = my_malloc(sizeof(t_clocks));
+	}
 }
 

@@ -47,7 +47,8 @@ static void ProcessPb_TypePort(INOUTP ezxml_t Parent, t_port * port);
 static void ProcessPinToPinAnnotations(ezxml_t parent,
 		t_pin_to_pin_annotation *annotation);
 static void ProcessInterconnect(INOUTP ezxml_t Parent, t_mode * mode);
-static void ProcessMode(INOUTP ezxml_t Parent, t_mode * mode);
+static void ProcessMode(INOUTP ezxml_t Parent, t_mode * mode,
+		boolean * default_leakage_mode);
 static void Process_Fc(ezxml_t Fc_in_node, ezxml_t Fc_out_node,
 		t_type_descriptor * Type);
 static void ProcessComplexBlockProps(ezxml_t Node, t_type_descriptor * Type);
@@ -73,6 +74,11 @@ static void ProcessSegments(INOUTP ezxml_t Parent,
 		INP boolean timing_enabled);
 static void ProcessCB_SB(INOUTP ezxml_t Node, INOUTP boolean * list,
 		INP int len);
+static void ProcessPower( INOUTP ezxml_t parent,
+		INOUTP t_power_arch * power_arch, INP t_type_descriptor * Types,
+		INP int NumTypes);
+
+static void ProcessClocks( INOUTP ezxml_t Parent, OUTP t_clocks * clocks);
 
 static void CreateModelLibrary(OUTP struct s_arch *arch);
 static void UpdateAndCheckModels(INOUTP struct s_arch *arch);
@@ -697,6 +703,35 @@ static void ProcessPb_Type(INOUTP ezxml_t Parent, t_pb_type * pb_type,
 	}
 	assert(j == num_ports);
 
+	// Process Power
+	Cur = FindFirstElement(Parent, "power", FALSE);
+
+	Prop = FindProperty(Cur, "dynamic", FALSE);
+	if (Prop) {
+		pb_type->power_dynamic = GetFloatProperty(Cur, "dynamic", FALSE, 0.);
+		pb_type->power_dynamic_type = DYNAMIC_PROVIDED;
+	} else {
+		Prop = FindProperty(Cur, "C_internal", FALSE);
+		if (Prop) {
+			pb_type->C_internal = GetFloatProperty(Cur, "C_internal", FALSE,
+					0.);
+			pb_type->power_dynamic_type = DYNAMIC_C_INTERNAL;
+		} else {
+			pb_type->power_dynamic_type = DYNAMIC_UNDEFINED;
+		}
+	}
+
+	Prop = FindProperty(Cur, "leakage", FALSE);
+	if (Prop) {
+		pb_type->power_leakage = GetFloatProperty(Cur, "leakage", FALSE, 0.);
+		pb_type->power_leakage_type = LEAKAGE_PROVIDED;
+	} else {
+		pb_type->power_leakage_type = LEAKAGE_UNDEFINED;
+	}
+	if (Cur) {
+		FreeNode(Cur);
+	}
+
 	/* Count stats on the number of each type of pin */
 	pb_type->num_clock_pins = pb_type->num_input_pins =
 			pb_type->num_output_pins = 0;
@@ -783,9 +818,12 @@ static void ProcessPb_Type(INOUTP ezxml_t Parent, t_pb_type * pb_type,
 			assert(CountChildren(Parent, "mode", 0) == 0);
 		}
 	} else {
+		boolean default_leakage_mode;
+
 		/* container pb_type, process modes */
 		assert(pb_type->class_type == UNKNOWN_CLASS);
 		pb_type->num_modes = CountChildren(Parent, "mode", 0);
+		pb_type->leakage_default_mode = 0;
 
 		if (pb_type->num_modes == 0) {
 			/* The pb_type operates in an implied one mode */
@@ -793,7 +831,7 @@ static void ProcessPb_Type(INOUTP ezxml_t Parent, t_pb_type * pb_type,
 			pb_type->modes = my_calloc(pb_type->num_modes, sizeof(t_mode));
 			pb_type->modes[i].parent_pb_type = pb_type;
 			pb_type->modes[i].index = i;
-			ProcessMode(Parent, &pb_type->modes[i]);
+			ProcessMode(Parent, &pb_type->modes[i], &default_leakage_mode);
 			i++;
 		} else {
 			pb_type->modes = my_calloc(pb_type->num_modes, sizeof(t_mode));
@@ -803,7 +841,10 @@ static void ProcessPb_Type(INOUTP ezxml_t Parent, t_pb_type * pb_type,
 				if (0 == strcmp(Cur->name, "mode")) {
 					pb_type->modes[i].parent_pb_type = pb_type;
 					pb_type->modes[i].index = i;
-					ProcessMode(Cur, &pb_type->modes[i]);
+					ProcessMode(Cur, &pb_type->modes[i], &default_leakage_mode);
+					if (default_leakage_mode) {
+						pb_type->leakage_default_mode = i;
+					}
 
 					/* get next iteration */
 					Prev = Cur;
@@ -847,6 +888,87 @@ static void ProcessPb_TypePort(INOUTP ezxml_t Parent, t_port * port) {
 		printf(ERRTAG "[LINE %d] Unknown port type %s", Parent->line,
 				Parent->name);
 		exit(1);
+	}
+}
+
+static void ProcessInterconnectMuxArch(ezxml_t Parent, t_interconnect * interc) {
+	int level_idx;
+	int levels;
+	ezxml_t Cur, Cur2;
+	ezxml_t Prev2;
+
+	/* Get mux architecture information */
+	Cur = FindElement(Parent, "mux_arch", FALSE);
+
+	interc->mux_arch = my_calloc(1, sizeof(t_mux_arch));
+	if (Cur) {
+		levels = GetIntProperty(Cur, "levels", TRUE, 0);
+	} else {
+		levels = 2;
+	}
+	interc->mux_arch->levels = levels;
+	interc->mux_arch->num_inputs = OPEN;
+	interc->mux_arch->transistor_sizes = my_calloc(levels, sizeof(float));
+	interc->mux_arch->encoding_types = my_calloc(levels,
+			sizeof(enum e_encoding_type));
+
+	/* Initialize default properties */
+	for (level_idx = 0; level_idx < levels; level_idx++) {
+		interc->mux_arch->transistor_sizes[level_idx] = 1.0;
+		interc->mux_arch->encoding_types[level_idx] = ENCODING_DECODER;
+	}
+
+	if (Cur) {
+		Cur2 = FindFirstElement(Cur, "level", FALSE);
+		while (Cur2 != NULL) {
+			const char * encoding;
+			level_idx = GetIntProperty(Cur2, "index", TRUE, 0);
+			interc->mux_arch->transistor_sizes[level_idx] = GetFloatProperty(
+					Cur2, "trans_size", FALSE, 1.0);
+			encoding = FindProperty(Cur2, "encoding", FALSE);
+			if (encoding == NULL) {
+			} else if (strcmp(encoding, "one-hot") == 0) {
+				interc->mux_arch->encoding_types[level_idx] = ENCODING_ONE_HOT;
+			} else if (strcmp(encoding, "decoder") == 0) {
+				interc->mux_arch->encoding_types[level_idx] = ENCODING_DECODER;
+			} else {
+				printf(ERRTAG
+				"[Line %d] Invalid mux encoding '%s'.\n", Parent->line,
+						encoding);
+				exit(1);
+			}
+			ezxml_set_attr(Cur2, "encoding", NULL);
+
+			Prev2 = Cur2;
+			Cur2 = Cur2->next;
+			FreeNode(Prev2);
+		}
+
+		FreeNode(Cur);
+	}
+}
+
+void ProcessInterconnectCapacitance(ezxml_t Parent, t_interconnect * interc) {
+	ezxml_t Cur;
+
+	Cur = FindElement(Parent, "C_wire", FALSE);
+
+	if (Cur) {
+		interc->C_wire_in = GetFloatProperty(Cur, "in", FALSE, 0.0);
+		interc->C_wire_out = GetFloatProperty(Cur, "out", FALSE, 0.0);
+		FreeNode(Cur);
+	}
+}
+
+void ProcessInterconnectBuffers(ezxml_t Parent, t_interconnect * interc) {
+	ezxml_t Cur;
+
+	Cur = FindElement(Parent, "buffers", FALSE);
+
+	if (Cur) {
+		interc->buffer_in_size = GetFloatProperty(Cur, "in_size", FALSE, 0.0);
+		interc->buffer_out_size = GetFloatProperty(Cur, "out_size", FALSE, 0.0);
+		FreeNode(Cur);
 	}
 }
 
@@ -935,6 +1057,14 @@ static void ProcessInterconnect(INOUTP ezxml_t Parent, t_mode * mode) {
 			}
 			assert(k == num_annotations);
 
+			mode->interconnect[i].port_info_initialized = FALSE;
+
+			ProcessInterconnectMuxArch(Cur, &mode->interconnect[i]);
+
+			ProcessInterconnectCapacitance(Cur, &mode->interconnect[i]);
+
+			ProcessInterconnectBuffers(Cur, &mode->interconnect[i]);
+
 			/* get next iteration */
 			Prev = Cur;
 			Cur = Cur->next;
@@ -946,7 +1076,8 @@ static void ProcessInterconnect(INOUTP ezxml_t Parent, t_mode * mode) {
 	assert(i == num_interconnect);
 }
 
-static void ProcessMode(INOUTP ezxml_t Parent, t_mode * mode) {
+static void ProcessMode(INOUTP ezxml_t Parent, t_mode * mode,
+		boolean * default_leakage_mode) {
 	int i;
 	const char *Prop;
 	ezxml_t Cur, Prev;
@@ -981,6 +1112,14 @@ static void ProcessMode(INOUTP ezxml_t Parent, t_mode * mode) {
 	Cur = FindElement(Parent, "interconnect", TRUE);
 	ProcessInterconnect(Cur, mode);
 	FreeNode(Cur);
+
+	*default_leakage_mode = FALSE;
+	Cur = FindElement(Parent, "power", FALSE);
+	if (Cur) {
+		*default_leakage_mode = GetIntProperty(Cur, "leakage_default", FALSE,
+				0);
+		FreeNode(Cur);
+	}
 }
 
 /* Takes in the node ptr for the 'fc_in' and 'fc_out' elements and initializes
@@ -1385,6 +1524,7 @@ void ProcessLutClass(INOUTP t_pb_type *lut_pb_type) {
 	}
 
 	lut_pb_type->num_modes = 2;
+	lut_pb_type->leakage_default_mode = 1;
 	lut_pb_type->modes = my_calloc(lut_pb_type->num_modes, sizeof(t_mode));
 
 	/* First mode, route_through */
@@ -1837,6 +1977,36 @@ void XmlReadArch(INP const char *ArchFile, INP boolean timing_enabled,
 			arch->Switches, arch->num_switches, timing_enabled);
 	FreeNode(Next);
 
+	/* Process power segments */
+	boolean require_power = FALSE;
+	if (arch->power) {
+		require_power = TRUE;
+	}
+	Next = FindElement(Cur, "power", require_power);
+	if (Next) {
+		if (arch->power) {
+			ProcessPower(Next, arch->power, *Types, *NumTypes);
+		} else {
+			t_power_arch * power_arch_fake = my_calloc(1, sizeof(t_power_arch));
+			ProcessPower(Next, power_arch_fake, *Types, *NumTypes);
+			free(power_arch_fake);
+		}
+		FreeNode(Next);
+	}
+
+	// Process Clocks
+	Next = FindElement(Cur, "clocks", TRUE);
+	if (Next) {
+		if (arch->clocks) {
+			ProcessClocks(Next, arch->clocks);
+		} else {
+			t_clocks * clocks_fake = my_calloc(1, sizeof(t_clocks));
+			ProcessClocks(Next, clocks_fake);
+			free(clocks_fake);
+		}
+		FreeNode(Next);
+	}
+
 	SyncModelsPbTypes(arch, *Types, *NumTypes);
 	UpdateAndCheckModels(arch);
 
@@ -1894,6 +2064,10 @@ static void ProcessSegments(INOUTP ezxml_t Parent,
 		/* Get timing info */
 		(*Segs)[i].Rmetal = GetFloatProperty(Node, "Rmetal", timing_enabled, 0);
 		(*Segs)[i].Cmetal = GetFloatProperty(Node, "Cmetal", timing_enabled, 0);
+
+		/* Get Power info */
+		(*Segs)[i].Cmetal_per_m = GetFloatProperty(Node, "Cmetal_per_m", FALSE,
+				0.);
 
 		/* Get the type */
 		tmp = FindProperty(Node, "type", TRUE);
@@ -2082,6 +2256,7 @@ static void ProcessSwitches(INOUTP ezxml_t Parent,
 	int i, j;
 	const char *type_name;
 	const char *switch_name;
+	const char *buf_size;
 
 	boolean has_buf_size;
 	ezxml_t Node;
@@ -2144,6 +2319,17 @@ static void ProcessSwitches(INOUTP ezxml_t Parent,
 				has_buf_size, 0);
 		(*Switches)[i].mux_trans_size = GetFloatProperty(Node, "mux_trans_size",
 				FALSE, 1);
+
+		buf_size = FindProperty(Node, "buf_last_stage_size", FALSE);
+		if (buf_size == NULL) {
+			(*Switches)[i].autosize_buffer = TRUE;
+		} else if (strcmp(buf_size, "auto") == 0) {
+			(*Switches)[i].autosize_buffer = TRUE;
+		} else {
+			(*Switches)[i].autosize_buffer = FALSE;
+			(*Switches)[i].buffer_last_stage_size = atof(buf_size);
+		}
+		ezxml_set_attr(Node, "buf_last_stage_size", NULL);
 
 		/* Remove the switch element from parse tree */
 		FreeNode(Node);
@@ -2507,4 +2693,122 @@ static void PrintPb_types_rec(INP FILE * Echo, INP const t_pb_type * pb_type,
 	}
 	free(tabs);
 }
+
+static void ProcessPower( INOUTP ezxml_t parent,
+		INOUTP t_power_arch * power_arch, INP t_type_descriptor * Types,
+		INP int NumTypes) {
+	ezxml_t Cur;
+
+	/*
+	 Cur = FindElement (parent, "Vgs_for_leakage", TRUE);
+	 Tokens = GetNodeTokens (Cur);
+	 assert (CountTokens (Tokens) == 1);
+	 power_arch->Vgs_for_leakage = atof (Tokens[0]);
+	 FreeTokens (&Tokens);
+	 FreeNode (Cur);
+
+	 Cur = FindElement (parent, "SRAM_leakage", TRUE);
+	 Tokens = GetNodeTokens (Cur);
+	 assert (CountTokens (Tokens) == 1);
+	 power_arch->SRAM_leakage = atof (Tokens[0]);
+	 FreeTokens (&Tokens);
+	 FreeNode (Cur);
+	 */
+
+	Cur = FindElement(parent, "short_circuit_power", TRUE);
+	power_arch->short_circuit_power_percentage = GetFloatProperty(Cur,
+			"percentage", TRUE, 0.);
+	FreeNode(Cur);
+
+	Cur = FindElement(parent, "local_interconnect", FALSE);
+	if (Cur) {
+		power_arch->C_wire_local = GetFloatProperty(Cur, "C_wire", FALSE, 0.);
+		FreeNode(Cur);
+	}
+}
+
+static void ProcessClocks( INOUTP ezxml_t Parent, OUTP t_clocks * clocks) {
+	ezxml_t Node;
+	int i;
+	const char *tmp;
+
+	clocks->num_global_clock = CountChildren(Parent, "clock", 0);
+
+	/* Alloc the clockdetails */
+	clocks->clock_inf = NULL;
+	if (clocks->num_global_clock > 0) {
+		clocks->clock_inf = (t_clock_inf *) my_malloc(
+				clocks->num_global_clock * sizeof(t_clock_inf));
+		memset(clocks->clock_inf, 0,
+				clocks->num_global_clock * sizeof(t_clock_inf));
+	}
+
+	/* Load the clock info. */
+	for (i = 0; i < clocks->num_global_clock; ++i) {
+		/* get the next clock item */
+		Node = ezxml_child(Parent, "clock");
+
+		tmp = FindProperty(Node, "buffer_size", TRUE);
+		if (strcmp(tmp, "auto") == 0) {
+			clocks->clock_inf[i].autosize_buffer = TRUE;
+		} else {
+			clocks->clock_inf[i].autosize_buffer = FALSE;
+			clocks->clock_inf[i].buffer_size = atof(tmp);
+		}
+		ezxml_set_attr(Node, "buffer_size", NULL);
+
+		clocks->clock_inf[i].C_wire = GetFloatProperty(Node, "C_wire", TRUE, 0);
+		FreeNode(Node);
+	}
+}
+
+#if 0
+static void ProcessTempRecords (
+		INOUTP ezxml_t Parent,
+		OUTP t_power_arch * power)
+{
+	ezxml_t Node;
+	int i;
+	const char *tmp;
+	char **Tokens;
+
+	power->num_temperature_records = CountChildren (Parent, "temp", 1);
+
+	/* Alloc the temperature record */
+	power->NFS_records = NULL;
+	if (power->num_temperature_records > 0)
+	{
+		power->NFS_records = (struct temperature_record *) my_malloc (power->num_temperature_records * sizeof (struct temperature_record));
+		memset (power->NFS_records, 0, power->num_temperature_records * sizeof (struct temperature_record));
+	}
+
+	/* Load the temp record */
+	for (i = 0; i < power->num_temperature_records; ++i)
+	{
+		/* get the next temp record item */
+		Node = ezxml_child (Parent, "temp");
+
+		tmp = FindProperty (Node, "NMOS_NFS", TRUE);
+		if (tmp)
+		{
+			power->NFS_records[i].NMOS_NFS_value = atof (tmp);
+		}
+		ezxml_set_attr (Node, "NMOS_NFS", NULL);
+
+		tmp = FindProperty (Node, "PMOS_NFS", TRUE);
+		if (tmp)
+		{
+			power->NFS_records[i].PMOS_NFS_value = atof (tmp);
+		}
+		ezxml_set_attr (Node, "PMOS_NFS", NULL);
+
+		Tokens = GetNodeTokens (Node);
+		assert (CountTokens (Tokens) == 1);
+		power->NFS_records[i].temperature = atof (Tokens[0]);
+		FreeTokens (&Tokens);
+
+		FreeNode (Node);
+	}
+}
+#endif
 

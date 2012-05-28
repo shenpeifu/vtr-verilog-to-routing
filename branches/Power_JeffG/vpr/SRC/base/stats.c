@@ -84,6 +84,7 @@ void routing_stats(boolean full_stats, enum e_route_type route_type,
 
 			load_timing_graph_net_delays(net_delay);
 			T_crit = load_net_slack(net_slack, 0);
+			g_solution_inf->T_crit = T_crit;
 
 			if (GetEchoOption()) {
 				print_timing_graph("timing_graph.echo");

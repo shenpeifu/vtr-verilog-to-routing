@@ -18,6 +18,7 @@
 #include "pb_type_graph.h"
 #include "pb_type_graph_annotations.h"
 #include "cluster_feasibility_filter.h"
+#include "power.h"
 
 /* variable global to this section that indexes each pb graph pin within a cluster */
 static int pin_count_in_cluster;
@@ -75,6 +76,12 @@ static void echo_pb_rec(INP const t_pb_graph_node *pb, INP int level,
 static void echo_pb_pins(INP t_pb_graph_pin **pb_graph_pins, INP int num_ports,
 		INP int level, INP FILE * fp);
 static void free_pb_graph(INOUTP t_pb_graph_node *pb_graph_node);
+
+static void alloc_and_load_interconnect_pins(t_interconnect_pins * interc_pins,
+		t_interconnect * interconnect, t_pb_graph_pin *** input_pins,
+		int num_input_sets, int * num_input_pins,
+		t_pb_graph_pin *** output_pins, int num_output_sets,
+		int * num_output_pins);
 
 /**
  * Allocate memory into types and load the pb graph with interconnect edges 
@@ -331,6 +338,8 @@ static void alloc_and_load_pb_graph(INOUTP t_pb_graph_node *pb_graph_node,
 		}
 	}
 
+	pb_graph_node->interconnect_pins = my_calloc(pb_type->num_modes,
+			sizeof(t_interconnect_pins *));
 	for (i = 0; i < pb_type->num_modes; i++) {
 		/* Create interconnect for mode */
 		alloc_and_load_mode_interconnect(pb_graph_node,
@@ -422,8 +431,139 @@ static void free_pb_graph(INOUTP t_pb_graph_node *pb_graph_node) {
 	}
 }
 
+static void alloc_and_load_interconnect_pins(t_interconnect_pins * interc_pins,
+		t_interconnect * interconnect, t_pb_graph_pin *** input_pins,
+		int num_input_sets, int * num_input_pins,
+		t_pb_graph_pin *** output_pins, int num_output_sets,
+		int * num_output_pins) {
+	int set_idx;
+	int pin_idx;
+	int port_idx;
+	int num_ports;
+
+	interc_pins->interconnect = interconnect;
+
+	switch (interconnect->type) {
+	case DIRECT_INTERC:
+		assert(num_output_sets == 1);
+		/* Fall through here */
+
+	case MUX_INTERC:
+		if (!interconnect->port_info_initialized) {
+			for (set_idx = 0; set_idx < num_input_sets; set_idx++) {
+				assert(num_input_pins[set_idx] == num_output_pins[0]);
+			}
+			interconnect->num_pins_per_port = num_input_pins[0];
+			interconnect->num_input_ports = num_input_sets;
+			interconnect->num_output_ports = 1;
+
+			if (interconnect->mux_arch) {
+				interconnect->mux_arch->num_inputs =
+						interconnect->num_input_ports;
+
+				mux_arch_fix_levels(interconnect->mux_arch);
+
+				interconnect->mux_arch->mux_graph_head =
+						alloc_and_load_mux_graph(interconnect->num_input_ports,
+								interconnect->mux_arch->levels);
+			}
+
+			interconnect->port_info_initialized = TRUE;
+		}
+
+		interc_pins->input_pins = my_calloc(num_input_sets,
+				sizeof(t_pb_graph_pin**));
+		for (set_idx = 0; set_idx < num_input_sets; set_idx++) {
+			interc_pins->input_pins[set_idx] = my_calloc(
+					interconnect->num_pins_per_port, sizeof(t_pb_graph_pin*));
+		}
+
+		interc_pins->output_pins = my_calloc(1, sizeof(t_pb_graph_pin**));
+		interc_pins->output_pins[0] = my_calloc(interconnect->num_pins_per_port,
+				sizeof(t_pb_graph_pin*));
+
+		for (pin_idx = 0; pin_idx < interconnect->num_pins_per_port;
+				pin_idx++) {
+			for (set_idx = 0; set_idx < num_input_sets; set_idx++) {
+				interc_pins->input_pins[set_idx][pin_idx] =
+						input_pins[set_idx][pin_idx];
+			}
+			interc_pins->output_pins[0][pin_idx] = output_pins[0][pin_idx];
+		}
+
+		break;
+	case COMPLETE_INTERC:
+
+		if (!interconnect->port_info_initialized) {
+			/* The code does not support bus-based crossbars, so all pins from all input sets
+			 * connect to all pins from all output sets */
+			interconnect->num_pins_per_port = 1;
+
+			num_ports = 0;
+			for (set_idx = 0; set_idx < num_input_sets; set_idx++) {
+				num_ports += num_input_pins[set_idx];
+			}
+			interconnect->num_input_ports = num_ports;
+
+			num_ports = 0;
+			for (set_idx = 0; set_idx < num_output_sets; set_idx++) {
+				num_ports += num_output_pins[set_idx];
+			}
+			interconnect->num_output_ports = num_ports;
+
+			if (interconnect->mux_arch) {
+				interconnect->mux_arch->num_inputs =
+						interconnect->num_input_ports;
+
+				mux_arch_fix_levels(interconnect->mux_arch);
+
+				interconnect->mux_arch->mux_graph_head =
+						alloc_and_load_mux_graph(interconnect->num_input_ports,
+								interconnect->mux_arch->levels);
+			}
+
+			interconnect->port_info_initialized = TRUE;
+		}
+
+		/* Input Pins */
+		interc_pins->input_pins = my_calloc(interconnect->num_input_ports,
+				sizeof(t_pb_graph_pin**));
+		for (port_idx = 0; port_idx < interconnect->num_input_ports;
+				port_idx++) {
+			interc_pins->input_pins[port_idx] = my_calloc(
+					interconnect->num_pins_per_port, sizeof(t_pb_graph_pin*));
+		}
+		num_ports = 0;
+		for (set_idx = 0; set_idx < num_input_sets; set_idx++) {
+			for (pin_idx = 0; pin_idx < num_input_pins[set_idx]; pin_idx++) {
+				interc_pins->input_pins[num_ports++][0] =
+						input_pins[set_idx][pin_idx];
+			}
+		}
+
+		/* Output Pins */
+		interc_pins->output_pins = my_calloc(interconnect->num_output_ports,
+				sizeof(t_pb_graph_pin**));
+		for (port_idx = 0; port_idx < interconnect->num_output_ports;
+				port_idx++) {
+			interc_pins->output_pins[port_idx] = my_calloc(
+					interconnect->num_pins_per_port, sizeof(t_pb_graph_pin*));
+		}
+		num_ports = 0;
+		for (set_idx = 0; set_idx < num_output_sets; set_idx++) {
+			for (pin_idx = 0; pin_idx < num_output_pins[set_idx]; pin_idx++) {
+				interc_pins->output_pins[num_ports++][0] =
+						output_pins[set_idx][pin_idx];
+			}
+		}
+
+		break;
+	}
+
+}
+
 /**
- * Generate interconnect associated with a mode of operation 
+ * Generate interconnect associated with a mode of operation
  * pb_graph_parent_node: parent node of pb in mode
  * pb_graph_children_nodes: [0..num_pb_type_in_mode-1][0..num_pb]
  * mode: mode of operation
@@ -436,6 +576,11 @@ static void alloc_and_load_mode_interconnect(
 	int *num_input_pb_graph_node_pins, *num_output_pb_graph_node_pins; /* number of pins in a set [0..num_sets-1] */
 	int num_input_pb_graph_node_sets, num_output_pb_graph_node_sets;
 	t_pb_graph_pin *** input_pb_graph_node_pins, ***output_pb_graph_node_pins;
+
+	assert(pb_graph_parent_node->interconnect_pins[mode->index] == NULL);
+	pb_graph_parent_node->interconnect_pins[mode->index] = my_calloc(
+			mode->num_interconnect, sizeof(t_interconnect_pins));
+
 	for (i = 0; i < mode->num_interconnect; i++) {
 		/* determine the interconnect input and output pins */
 		input_pb_graph_node_pins = alloc_and_load_port_pin_ptrs_from_string(
@@ -449,6 +594,13 @@ static void alloc_and_load_mode_interconnect(
 				mode->interconnect[i].output_string,
 				&num_output_pb_graph_node_pins, &num_output_pb_graph_node_sets,
 				FALSE, TRUE);
+
+		alloc_and_load_interconnect_pins(
+				&pb_graph_parent_node->interconnect_pins[mode->index][i],
+				&mode->interconnect[i], input_pb_graph_node_pins,
+				num_input_pb_graph_node_sets, num_input_pb_graph_node_pins,
+				output_pb_graph_node_pins, num_output_pb_graph_node_sets,
+				num_output_pb_graph_node_pins);
 
 		/* process the interconnect based on its type */
 		switch (mode->interconnect[i].type) {

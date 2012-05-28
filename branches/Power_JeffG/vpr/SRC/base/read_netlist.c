@@ -63,6 +63,7 @@ static void mark_constant_generators_rec(INP t_pb *pb, INP t_rr_node *rr_graph,
 		INOUTP struct s_net nlist[]);
 
 static void restore_logical_block_from_saved_block(INP int iblk, INP t_pb *pb);
+static void resync_logical_block_nets_with_new_vpack_nets(void);
 
 /**
  * Initializes the block_list with info from a netlist 
@@ -197,6 +198,8 @@ void read_netlist(INP const char *net_file, INP const t_arch *arch,
 		}
 		assert(j != ncount);
 	}
+
+	resync_logical_block_nets_with_new_vpack_nets();
 
 	if (saved_logical_blocks != NULL) {
 		free(saved_logical_blocks);
@@ -1317,6 +1320,24 @@ static void restore_logical_block_from_saved_block(INP int iblk, INP t_pb *pb) {
 	saved_logical_blocks[i].output_net_tnodes = NULL;
 	saved_logical_blocks[i].output_nets = NULL;
 	saved_logical_blocks[i].truth_table = NULL;
+}
+
+/* Indexing of vpack_nets and logical blocks have changed since reading the new input format, ensure the same */
+static void resync_logical_block_nets_with_new_vpack_nets(void) {
+	int old_net_idx, new_net_idx;
+
+	for (new_net_idx = 0; new_net_idx < num_logical_nets; new_net_idx++) {
+		for (old_net_idx = 0; old_net_idx < num_saved_logical_nets;
+				old_net_idx++) {
+			if (strcmp(vpack_net[new_net_idx].name,
+					saved_logical_nets[old_net_idx].name) == 0) {
+				vpack_net[new_net_idx].density =
+						saved_logical_nets[old_net_idx].density;
+				vpack_net[new_net_idx].probability =
+						saved_logical_nets[old_net_idx].probability;
+			}
+		}
+	}
 }
 
 /* Free logical blocks of netlist */

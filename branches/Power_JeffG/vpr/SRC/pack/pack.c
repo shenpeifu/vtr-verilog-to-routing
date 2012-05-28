@@ -17,7 +17,7 @@
 /* #define DUMP_BLIF_INPUT 1 */
 
 void try_pack(INP struct s_packer_opts *packer_opts, INP const t_arch * arch,
-		INP t_model *user_models, INP t_model *library_models) {
+		INP t_model *user_models, INP t_model *library_models, t_power_opts * power_opts) {
 	boolean *is_clock;
 	int num_models;
 	t_model *cur_model;
@@ -44,7 +44,7 @@ void try_pack(INP struct s_packer_opts *packer_opts, INP const t_arch * arch,
 	/* begin parsing blif input file */
 	read_blif(packer_opts->blif_file_name,
 			packer_opts->sweep_hanging_nets_and_inputs, user_models,
-			library_models);
+			library_models, power_opts);
 	/* TODO: Do check blif here 
 	 eg. 
 	 for(i = 0; i < num_logical_blocks; i++) {

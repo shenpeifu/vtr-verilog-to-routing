@@ -2,7 +2,7 @@
 # Makefile to build CAD tools in Verilog-to-Routing (VTR) Framework #
 #####################################################################
 
-all: notifications ODIN_II/odin_II.exe abc_with_bb_support/abc vpr/vpr
+all: notifications libvpr/libvpr_6.a ODIN_II/odin_II.exe abc_with_bb_support/abc vpr/vpr
 	
 notifications: 
 	@ # checks if required packages are installed, and notifies the user if not
@@ -19,7 +19,7 @@ packages:
 	@ if cat /etc/issue | grep Ubuntu -c >>/dev/null; then if ! dpkg -l | grep g++ -c >>/dev/null; then sudo apt-get install g++; fi; fi
 	@ cd vpr && make packages
 
-.PHONY: packages
+.PHONY: packages vpr/vpr
 
 ODIN_II/odin_II.exe: libvpr/libvpr_6.a
 	@ cd ODIN_II && make

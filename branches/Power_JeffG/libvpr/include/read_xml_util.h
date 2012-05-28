@@ -19,11 +19,11 @@ extern char **GetNodeTokens(INP ezxml_t Node);
 extern char **LookaheadNodeTokens(INP ezxml_t Node);
 extern int CountChildren(INP ezxml_t Node, INP const char *Name,
 		INP int min_count);
-extern int GetIntProperty(INP ezxml_t Parent, INP char *Name,
+extern int GetIntProperty(INP ezxml_t Parent, INP const char *Name,
 		INP boolean Required, INP int default_value);
-extern float GetFloatProperty(INP ezxml_t Parent, INP char *Name,
+extern float GetFloatProperty(INP ezxml_t Parent, INP const char *Name,
 		INP boolean Required, INP float default_value);
-extern boolean GetBooleanProperty(INP ezxml_t Parent, INP char *Name,
+extern boolean GetBooleanProperty(INP ezxml_t Parent, INP const char *Name,
 		INP boolean Required, INP boolean default_value);
 
 #endif
