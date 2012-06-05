@@ -20,5 +20,18 @@ clock_power_perc;*.power;<Clock.*?P_total="(.*?)"
 tile_power_perc;*.power;<Tiles.*?P_total="(.*?)"
 power_dyn_perc;*.power;<Total.*?P_dyn="(.*?)"
 clb_array_size;vpr.out;The circuit will be mapped into a (\d+) x \d+ array of clbs.
+chan_width;vpr.crit_path.out;--route_chan_width (\d+)
+sb_power_perc;*.power;<Switchbox.*?P_total="(.*?)"
+cb_power_perc;*.power;<Connectionbox.*?P_total="(.*?)"
+glb_wire_power_perc;*.power;<GlobalWires.*?P_total="(.*?)"
+clkbuffer_power_perc;*.power;<ClockBuffer.*?P_total="(.*?)"
+clkwire_power_perc;*.power;<ClockWire.*?P_total="(.*?)"
+interc_power_perc;*.power;<Interc.*?P_total="(.*?)"
+local_wire_power_perc;*.power;<LocalWire.*?P_total="(.*?)"
+ff_power_perc;*.power;<FF.*?P_total="(.*?)"
+lut_power_perc;*.power;<LUT.*?P_total="(.*?)"
+route_dyn_perc;*.power;<Routing.*?P_dyn="(.*?)"
+tile_dyn_perc;*.power;<Tiles.*?P_dyn="(.*?)"
+clock_dyn_perc;*.power;<Clock.*?P_dyn="(.*?)"
 error;output.txt;error=(.*)
 

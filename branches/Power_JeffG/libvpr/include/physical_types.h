@@ -388,7 +388,7 @@ struct s_cluster_placement_primitive;
  * parent_pb_graph_node: parent pb graph node
  */
 struct s_pb_graph_node {
-	struct s_pb_type *pb_type;
+	const struct s_pb_type *pb_type;
 
 	int placement_index;
 
@@ -408,9 +408,9 @@ struct s_pb_graph_node {
 	struct s_pb_graph_node *parent_pb_graph_node;
 
 	int total_pb_pins; /* only valid for top-level */\
-	
+
 	t_interconnect_pins ** interconnect_pins; /* [0..num_modes-1][0..num_interconnect_in_mode] */
-	
+
 	void *temp_scratch_pad; /* temporary data, useful for keeping track of things when traversing data structure */
 	struct s_cluster_placement_primitive *cluster_placement_primitive; /* pointer to indexing structure useful during packing stage */
 
@@ -456,7 +456,7 @@ struct s_pb_type {
 	float max_internal_delay;
 	t_pin_to_pin_annotation *annotations; /* [0..num_annotations-1] */
 	int num_annotations;
-	
+
 	/* Power - Jeff */
 	enum e_power_dynamic_type power_dynamic_type;
 	enum e_power_leakage_type power_leakage_type;
@@ -469,6 +469,7 @@ struct s_pb_type {
 
 	t_power_usage power_usage;
 	float transistor_cnt;
+	float transistor_cnt_interc;
 };
 typedef struct s_pb_type t_pb_type;
 
@@ -667,9 +668,12 @@ struct s_transistor_size_inf {
 	float size;
 
 	float leakage;
-	float C_gate;
-	float C_source;
-	float C_drain;
+	float C_gate_cmos;
+	float C_source_cmos;
+	float C_drain_cmos;
+	float C_gate_pass;
+	float C_source_pass;
+	float C_drain_pass;
 };
 
 struct s_transistor_inf {

@@ -14,6 +14,8 @@
 #include "ezxml.h"
 #include "read_xml_util.h"
 
+#define PRINT_SPICE_COMPARISON 1
+
 /* Future */
 /* TODO_POWER - Analyze run-time */
 /* TODO_POWER - What if packing is run separately? */
@@ -43,23 +45,31 @@ struct s_power_breakdown {
 };
 
 typedef enum {
+	POWER_CIRCUIT_TYPE_CMOS = 0, POWER_CIRCUIT_TYPE_PASS
+} e_power_circuit_type;
+
+typedef enum {
 	POWER_ELEMENT_IGNORE = 0,
 	POWER_ELEMENT_TOTAL,
+
 	POWER_ELEMENT_ROUTING,
-	POWER_ELEMENT_TILES,
-	POWER_ELEMENT_FF,
-	POWER_ELEMENT_LUT,
-	POWER_ELEMENT_LUT_DRIVER,
-	POWER_ELEMENT_LUT_MUX,
-	POWER_ELEMENT_LUT_RESTORER,
-	POWER_ELEMENT_CLOCK,
-	POWER_ELEMENT_IO,
-	POWER_ELEMENT_SWITCHBOX,
-	POWER_ELEMENT_CONNECTIONBOX,
-	POWER_ELEMENT_GLB_ROUTE_WIRE,
+	POWER_ELEMENT_ROUTE_SB,
 	POWER_ELEMENT_ROUTE_BUFFER,
+	POWER_ELEMENT_ROUTE_CB,
+	POWER_ELEMENT_ROUTE_GLB_WIRE,
+
+	POWER_ELEMENT_CLOCK,
 	POWER_ELEMENT_CLOCK_BUFFER,
 	POWER_ELEMENT_CLOCK_WIRE,
+
+	POWER_ELEMENT_TILES,
+	POWER_ELEMENT_TILE_INTERC,
+	POWER_ELEMENT_TILE_LOCAL_WIRE,
+	POWER_ELEMENT_TILE_FF,
+	POWER_ELEMENT_TILE_LUT,
+	POWER_ELEMENT_TILE_LUT_DRIVER,
+	POWER_ELEMENT_TILE_LUT_MUX,
+	POWER_ELEMENT_TILE_LUT_RESTORER,
 
 	POWER_ELEMENT_MAX_NUM
 } e_power_element_type;
@@ -77,14 +87,20 @@ typedef struct s_power_output {
 } t_power_output;
 
 typedef struct s_power_commonly_used {
-	float NMOS_1X_C_gate;
-	float NMOS_1X_C_drain;
-	float NMOS_1X_C_source;
+	float NMOS_1X_C_gate_max;
+	float NMOS_1X_C_drain_max;
+	float NMOS_1X_C_source_max;
+	float NMOS_1X_C_gate_avg;
+	float NMOS_1X_C_drain_avg;
+	float NMOS_1X_C_source_avg;
 	float NMOS_1X_leakage;
 	float NMOS_2X_leakage;
-	float PMOS_1X_C_gate;
-	float PMOS_1X_C_drain;
-	float PMOS_1X_C_source;
+	float PMOS_1X_C_gate_max;
+	float PMOS_1X_C_drain_max;
+	float PMOS_1X_C_source_max;
+	float PMOS_1X_C_gate_avg;
+	float PMOS_1X_C_drain_avg;
+	float PMOS_1X_C_source_avg;
 	float PMOS_1X_leakage;
 	float PMOS_2X_leakage;
 	float INV_1X_C_in;
@@ -159,6 +175,8 @@ void power_print_element_usage_close(char * name, int indent_level);
 
 void power_print_spice_comparison(void);
 
+static float power_transistor_area(float num_transistors);
+
 void power_reset_tile_usage(void);
 
 void power_add_usage_element(t_power_usage * dest, t_power_usage * src,
@@ -169,8 +187,10 @@ static void power_zero_usage(t_power_usage * power_usage);
 static void power_calc_level_restorer(t_power_usage * power_usage,
 		float in_density, float in_probability);
 
+void log_msg(t_log * log_ptr, char * msg);
+
 static void power_calc_interconnect(t_power_usage * power_usage, t_pb * pb,
-		t_interconnect_pins * interc_pins);
+		t_interconnect_pins * interc_pins, float interc_length);
 
 void alloc_and_load_mux_graph_recursive(t_mux_node * node,
 		int num_primary_inputs, int level, int starting_pin_idx);
@@ -235,7 +255,8 @@ void power_calc_MUX(t_power_usage * power_usage, t_mux_arch * mux_arch,
 float power_calc_transistor_leakage(e_tx_type transistor_type, float size);
 
 void power_calc_transistor_capacitance(float *C_drain, float *C_source,
-		float *C_gate, e_tx_type transistor_type, float size);
+		float *C_gate, e_tx_type transistor_type, float size,
+		e_power_circuit_type circuit_type);
 
 void power_calc_INV(t_power_usage * power_usage, float in_density,
 		float in_probability, float PMOS_size, float NMOS_size);
@@ -661,17 +682,17 @@ void power_calc_LUT(t_power_usage * power_usage, int LUT_size,
 		power_calc_INV1(&driver_power_usage, input_densities[reverse_idx],
 				input_probabilities[reverse_idx]);
 		power_add_usage_element(power_usage, &driver_power_usage,
-				POWER_ELEMENT_LUT_DRIVER);
+				POWER_ELEMENT_TILE_LUT_DRIVER);
 
 		power_calc_INV2(&driver_power_usage, input_densities[reverse_idx],
 				input_probabilities[reverse_idx]);
 		power_add_usage_element(power_usage, &driver_power_usage,
-				POWER_ELEMENT_LUT_DRIVER);
+				POWER_ELEMENT_TILE_LUT_DRIVER);
 
 		power_calc_INV2(&driver_power_usage, input_densities[reverse_idx],
 				1 - input_probabilities[reverse_idx]);
 		power_add_usage_element(power_usage, &driver_power_usage,
-				POWER_ELEMENT_LUT_DRIVER);
+				POWER_ELEMENT_TILE_LUT_DRIVER);
 
 		MUXCounter = 0;
 		SRAMCounter = 0;
@@ -762,7 +783,7 @@ void power_calc_LUT(t_power_usage * power_usage, int LUT_size,
 					input_densities[reverse_idx],
 					input_probabilities[reverse_idx]);
 			power_add_usage_element(power_usage, &sub_power,
-					POWER_ELEMENT_LUT_MUX);
+					POWER_ELEMENT_TILE_LUT_MUX);
 
 			if (level_restorer_this_level) {
 				/* Level restorer */
@@ -770,7 +791,7 @@ void power_calc_LUT(t_power_usage * power_usage, int LUT_size,
 						internal_density[level_idx + 1][MUX_idx],
 						internal_prob[level_idx + 1][MUX_idx]);
 				power_add_usage_element(power_usage, &sub_power,
-						POWER_ELEMENT_LUT_RESTORER);
+						POWER_ELEMENT_TILE_LUT_RESTORER);
 			}
 		}
 
@@ -783,20 +804,20 @@ void power_calc_LUT(t_power_usage * power_usage, int LUT_size,
 	free(internal_prob);
 	free(internal_density);
 
-	power_add_usage_element(NULL, power_usage, POWER_ELEMENT_LUT);
+	power_add_usage_element(NULL, power_usage, POWER_ELEMENT_TILE_LUT);
 
 	return;
 }
 
 void int_2_binary_str(char * binary_str, int value, int str_length) {
 	int i;
-	int remainder;
+	int odd;
 
 	binary_str[str_length] = '\0';
 
 	for (i = str_length - 1; i >= 0; i--, value >>= 1) {
-		remainder = value % 2;
-		if (remainder == 0) {
+		odd = value % 2;
+		if (odd == 0) {
 			binary_str[i] = '0';
 		} else {
 			binary_str[i] = '1';
@@ -1010,7 +1031,7 @@ void power_calc_blif_primitive(t_power_usage * power_usage, t_pb * pb,
 		power_calc_FF(&sub_power_usage, D_dens, D_prob, Q_dens, Q_prob,
 				clk_dens, clk_prob);
 		power_add_usage_element(power_usage, &sub_power_usage,
-				POWER_ELEMENT_FF);
+				POWER_ELEMENT_TILE_FF);
 	} else {
 		char msg[BUFSIZE];
 		power_usage->dynamic = 0.;
@@ -1076,40 +1097,68 @@ float pin_prob(t_pb * pb, t_pb_graph_pin * pin) {
 }
 
 static void power_calc_interconnect(t_power_usage * power_usage, t_pb * pb,
-		t_interconnect_pins * interc_pins) {
+		t_interconnect_pins * interc_pins, float interc_length) {
 	int pin_idx;
 	int out_port_idx;
 	int in_port_idx;
 	float * input_densities;
 	float * input_prob;
+	float C_wire;
+	float dens;
 	t_interconnect * interc = interc_pins->interconnect;
 	t_power_usage sub_power_usage;
 
 	power_zero_usage(power_usage);
 
-	/* PB wire capacitances */
-	if (pb) {
-		sub_power_usage.leakage = 0.;
-		for (pin_idx = 0; pin_idx < interc->num_pins_per_port; pin_idx++) {
-			for (in_port_idx = 0; in_port_idx < interc->num_input_ports;
+	/* Ensure port/pins are structured as expected */
+	switch (interc_pins->interconnect->type) {
+	case DIRECT_INTERC:
+		assert(interc_pins->interconnect->num_input_ports == 1);
+		assert(interc_pins->interconnect->num_output_ports == 1);
+		break;
+	case MUX_INTERC:
+		assert(interc_pins->interconnect->num_output_ports == 1);
+		break;
+	case COMPLETE_INTERC:
+		break;
+	}
+
+	/* Interconnect Wire Capacitances */
+
+	/* Assume input/output wire length are each half of interc_length */
+	C_wire = 0.5 * interc_length * g_power_arch->C_wire_local;
+
+	power_zero_usage(&sub_power_usage);
+
+	for (out_port_idx = 0;
+			out_port_idx < interc_pins->interconnect->num_output_ports;
+			out_port_idx++) {
+		for (pin_idx = 0;
+				pin_idx < interc_pins->interconnect->num_pins_per_port;
+				pin_idx++) {
+
+			/* Wires to inputs */
+			for (in_port_idx = 0;
+					in_port_idx < interc_pins->interconnect->num_input_ports;
 					in_port_idx++) {
-				sub_power_usage.dynamic = power_calc_dynamic(interc->C_wire_in,
-						pin_density(pb,
-								interc_pins->input_pins[in_port_idx][pin_idx]));
-				power_add_usage(power_usage, &sub_power_usage);
+				dens = pin_density(pb,
+						interc_pins->input_pins[in_port_idx][pin_idx]);
+				sub_power_usage.dynamic = power_calc_dynamic(C_wire, dens);
+				power_add_usage_element(power_usage, &sub_power_usage,
+						POWER_ELEMENT_TILE_LOCAL_WIRE);
 			}
-			for (out_port_idx = 0; out_port_idx < interc->num_output_ports;
-					out_port_idx++) {
-				sub_power_usage.dynamic =
-						power_calc_dynamic(interc->C_wire_out,
-								pin_density(pb,
-										interc_pins->output_pins[out_port_idx][pin_idx]));
-				power_add_usage(power_usage, &sub_power_usage);
-			}
+
+			/* Wire from output */
+			dens = pin_density(pb,
+					interc_pins->output_pins[out_port_idx][pin_idx]);
+			sub_power_usage.dynamic = power_calc_dynamic(C_wire, dens);
+			power_add_usage_element(power_usage, &sub_power_usage,
+					POWER_ELEMENT_TILE_LOCAL_WIRE);
 		}
 	}
 
 	/* Buffers */
+#if 0
 	for (pin_idx = 0; pin_idx < interc->num_pins_per_port; pin_idx++) {
 		for (in_port_idx = 0; in_port_idx < interc->num_input_ports;
 				in_port_idx++) {
@@ -1130,6 +1179,7 @@ static void power_calc_interconnect(t_power_usage * power_usage, t_pb * pb,
 			power_add_usage(power_usage, &sub_power_usage);
 		}
 	}
+#endif
 
 	switch (interc_pins->interconnect->type) {
 	case DIRECT_INTERC:
@@ -1191,7 +1241,8 @@ static void power_calc_interconnect(t_power_usage * power_usage, t_pb * pb,
 				power_calc_MUX(&MUX_power, interc_pins->interconnect->mux_arch,
 						input_densities, input_prob, selected_input);
 
-				power_add_usage(power_usage, &MUX_power);
+				power_add_usage_element(power_usage, &MUX_power,
+						POWER_ELEMENT_TILE_INTERC);
 			}
 		}
 
@@ -1234,13 +1285,16 @@ void power_calc_pb_recursive(t_power_usage * power_usage, t_pb * pb,
 		continue_dynamic = FALSE;
 	}
 
-	/* Check if dynamic power and leakage power are specified */
+	/* Check if leakage power is explicitly specified */
 	if (continue_leakage
 			&& (pb_graph_node->pb_type->power_leakage_type == LEAKAGE_PROVIDED)) {
 		power_usage->leakage += pb_graph_node->pb_type->power_leakage;
 		continue_leakage = FALSE;
 	}
 
+	/* Check if dynamic power is explicitly specified, or internal capacitance is
+	 * specified
+	 */
 	if (continue_dynamic) {
 		assert(pb != NULL);
 
@@ -1292,15 +1346,38 @@ void power_calc_pb_recursive(t_power_usage * power_usage, t_pb * pb,
 		ignore_interconnect = TRUE;
 	}
 
-	if (pb_graph_node->pb_type->num_modes) {
-		/* There are child nodes */
+	if (pb_graph_node->pb_type->num_modes == 0) {
+		/* This is a leaf node */
+		/* All leaf nodes should implement a hardware primitive from the blif file */
+		assert(pb_graph_node->pb_type->blif_model);
+
+		power_calc_blif_primitive(&sub_power_usage, pb, pb_graph_node,
+				continue_dynamic, continue_leakage);
+		power_add_usage(power_usage, &sub_power_usage);
+	} else {
+		/* This node had children.  The power of this node is the sum of:
+		 *  - Interconnect from parent to children
+		 *  - Child nodes
+		 */
 		if (!ignore_interconnect) {
 			for (interc_idx = 0;
 					interc_idx
 							< pb_graph_node->pb_type->modes[pb_mode].num_interconnect;
 					interc_idx++) {
+				float interc_length;
+
+				/* Determine the length this interconnect covers.
+				 * This is assumed to be half of the square length of the
+				 * interconnect area */
+				interc_length =
+						0.5
+								* sqrt(
+										power_transistor_area(
+												pb_graph_node->pb_type->transistor_cnt_interc));
+
 				power_calc_interconnect(&sub_power_usage, pb,
-						&pb_graph_node->interconnect_pins[pb_mode][interc_idx]);
+						&pb_graph_node->interconnect_pins[pb_mode][interc_idx],
+						interc_length);
 				power_add_usage(power_usage, &sub_power_usage);
 			}
 		}
@@ -1332,13 +1409,6 @@ void power_calc_pb_recursive(t_power_usage * power_usage, t_pb * pb,
 		}
 		power_add_usage(&pb_graph_node->pb_type->modes[pb_mode].power_usage,
 				power_usage);
-	} else {
-		/* All leaf nodes should implement a hardware primitive from the blif file */
-		assert(pb_graph_node->pb_type->blif_model);
-
-		power_calc_blif_primitive(&sub_power_usage, pb, pb_graph_node,
-				continue_dynamic, continue_leakage);
-		power_add_usage(power_usage, &sub_power_usage);
 	}
 
 	power_add_usage(&pb_graph_node->pb_type->power_usage, power_usage);
@@ -1786,7 +1856,7 @@ static void power_calc_routing(t_power_usage * power_usage) {
 						&g_power_common->mux_arch[node->fan_in],
 						node->in_density, node->in_prob, node->selected_input);
 				power_add_usage_element(power_usage, &sub_power_usage,
-						POWER_ELEMENT_CONNECTIONBOX);
+						POWER_ELEMENT_ROUTE_CB);
 			}
 			break;
 		case CHANX:
@@ -1806,7 +1876,7 @@ static void power_calc_routing(t_power_usage * power_usage) {
 					&g_power_common->mux_arch[node->fan_in], node->in_density,
 					node->in_prob, node->selected_input);
 			power_add_usage_element(power_usage, &sub_power_usage,
-					POWER_ELEMENT_SWITCHBOX);
+					POWER_ELEMENT_ROUTE_SB);
 
 			/* Buffer Size */
 			if (switch_inf[node->driver_switch_type].autosize_buffer) {
@@ -1824,14 +1894,14 @@ static void power_calc_routing(t_power_usage * power_usage) {
 					node->in_density[node->selected_input],
 					node->in_prob[node->selected_input]);
 			power_add_usage_element(power_usage, &sub_power_usage,
-					POWER_ELEMENT_SWITCHBOX);
+					POWER_ELEMENT_ROUTE_SB);
 
 			/* Wire Capacitance */
 			sub_power_usage.dynamic = power_calc_dynamic(C_wire,
 					clb_net_density(node->net_num));
 			sub_power_usage.leakage = 0.;
 			power_add_usage_element(power_usage, &sub_power_usage,
-					POWER_ELEMENT_GLB_ROUTE_WIRE);
+					POWER_ELEMENT_ROUTE_GLB_WIRE);
 
 			/* Determine types of switches that this wire drives */
 			connectionbox_fanout = 0;
@@ -1854,13 +1924,13 @@ static void power_calc_routing(t_power_usage * power_usage) {
 						node->in_density[node->selected_input],
 						1 - node->in_prob[node->selected_input]);
 				power_add_usage_element(power_usage, &sub_power_usage,
-						POWER_ELEMENT_SWITCHBOX);
+						POWER_ELEMENT_ROUTE_SB);
 			}
 
 			/* Driver for ConnectionBox */
 			if (connectionbox_fanout) {
 				float connectionbox_effort = connectionbox_fanout
-						* (g_power_common->NMOS_1X_C_drain
+						* (g_power_common->NMOS_1X_C_drain_avg
 								/ g_power_common->INV_1X_C_in);
 				buffer_size =
 						max(1, connectionbox_effort / POWER_BUFFER_STAGE_GAIN);
@@ -1868,7 +1938,7 @@ static void power_calc_routing(t_power_usage * power_usage) {
 						node->in_density[node->selected_input],
 						1 - node->in_prob[node->selected_input]);
 				power_add_usage_element(power_usage, &sub_power_usage,
-						POWER_ELEMENT_CONNECTIONBOX);
+						POWER_ELEMENT_ROUTE_CB);
 			}
 			break;
 		case INTRA_CLUSTER_EDGE:
@@ -1922,7 +1992,8 @@ void power_calc_buffer(t_power_usage * power_usage, float size, float in_dens,
 
 		if (i == 0) {
 			/* Sense Buffer */
-			power_calc_INV(&sub_power_usage, in_dens, stage_in_prob, 1, 2);
+			power_calc_level_restorer(&sub_power_usage, in_dens, stage_in_prob);
+			/*power_calc_INV(&sub_power_usage, in_dens, stage_in_prob, 1, 2);*/
 		} else {
 			power_calc_INV(&sub_power_usage, in_dens, stage_in_prob,
 					stage_inv_size * g_power_arch->P_to_N_size_ratio,
@@ -2012,12 +2083,18 @@ void process_transistor_info(ezxml_t parent) {
 	FreeNode(grandchild);
 
 	grandchild = FindElement(child, "capacitance", TRUE);
-	trans_inf->long_trans_inf->C_gate = GetFloatProperty(grandchild, "gate",
-			TRUE, 0);
-	trans_inf->long_trans_inf->C_source = GetFloatProperty(grandchild, "source",
-			TRUE, 0);
-	trans_inf->long_trans_inf->C_drain = GetFloatProperty(grandchild, "drain",
-			TRUE, 0);
+	trans_inf->long_trans_inf->C_gate_cmos = GetFloatProperty(grandchild,
+			"gate_cmos", TRUE, 0);
+	/*trans_inf->long_trans_inf->C_source_cmos = GetFloatProperty(grandchild,
+			"source_cmos", TRUE, 0);*/
+	trans_inf->long_trans_inf->C_drain_cmos = GetFloatProperty(grandchild,
+			"drain_cmos", TRUE, 0);
+	trans_inf->long_trans_inf->C_gate_pass = GetFloatProperty(grandchild,
+			"gate_pass", TRUE, 0);
+	trans_inf->long_trans_inf->C_source_pass = GetFloatProperty(grandchild,
+			"source_pass", TRUE, 0);
+	trans_inf->long_trans_inf->C_drain_pass = GetFloatProperty(grandchild,
+			"drain_pass", TRUE, 0);
 	FreeNode(grandchild);
 
 	trans_inf->num_size_entries = CountChildren(parent, "size", 1);
@@ -2038,12 +2115,18 @@ void process_transistor_info(ezxml_t parent) {
 		FreeNode(grandchild);
 
 		grandchild = FindElement(child, "capacitance", TRUE);
-		trans_inf->size_inf[i].C_gate = GetFloatProperty(grandchild, "gate",
-				TRUE, 0);
-		trans_inf->size_inf[i].C_source = GetFloatProperty(grandchild, "source",
-				TRUE, 0);
-		trans_inf->size_inf[i].C_drain = GetFloatProperty(grandchild, "drain",
-				TRUE, 0);
+		trans_inf->size_inf[i].C_gate_cmos = GetFloatProperty(grandchild,
+				"gate_cmos", TRUE, 0);
+		/*trans_inf->size_inf[i].C_source_cmos = GetFloatProperty(grandchild,
+				"source_cmos", TRUE, 0); */
+		trans_inf->size_inf[i].C_drain_cmos = GetFloatProperty(grandchild,
+				"drain_cmos", TRUE, 0);
+		trans_inf->size_inf[i].C_gate_pass = GetFloatProperty(grandchild,
+				"gate_pass", TRUE, 0);
+		trans_inf->size_inf[i].C_source_pass = GetFloatProperty(grandchild,
+				"source_pass", TRUE, 0);
+		trans_inf->size_inf[i].C_drain_pass = GetFloatProperty(grandchild,
+				"drain_pass", TRUE, 0);
 		FreeNode(grandchild);
 
 		prev = child;
@@ -2179,16 +2262,29 @@ boolean power_init(t_power_opts * power_opts, t_power_arch * power_arch) {
 	}
 
 	/* Initialize Commonly Used Values */
-	power_calc_transistor_capacitance(&C_drain, &C_source, &C_gate, NMOS, 1.0);
-	g_power_common->NMOS_1X_C_drain = C_drain;
-	g_power_common->NMOS_1X_C_gate = C_gate;
-	g_power_common->NMOS_1X_C_source = C_source;
+	power_calc_transistor_capacitance(&C_drain, &C_source, &C_gate, NMOS, 1.0,
+			POWER_CIRCUIT_TYPE_CMOS);
+	g_power_common->NMOS_1X_C_drain_max = C_drain;
+	g_power_common->NMOS_1X_C_gate_max = C_gate;
+	g_power_common->NMOS_1X_C_source_max = C_source;
+
+	power_calc_transistor_capacitance(&C_drain, &C_source, &C_gate, NMOS, 1.0,
+			POWER_CIRCUIT_TYPE_PASS);
+	g_power_common->NMOS_1X_C_drain_avg = C_drain;
+	g_power_common->NMOS_1X_C_gate_avg = C_gate;
+	g_power_common->NMOS_1X_C_source_avg = C_source;
 
 	power_calc_transistor_capacitance(&C_drain, &C_source, &C_gate, NMOS,
-			power_arch->P_to_N_size_ratio);
-	g_power_common->PMOS_1X_C_drain = C_drain;
-	g_power_common->PMOS_1X_C_gate = C_gate;
-	g_power_common->PMOS_1X_C_source = C_source;
+			power_arch->P_to_N_size_ratio, POWER_CIRCUIT_TYPE_CMOS);
+	g_power_common->PMOS_1X_C_drain_max = C_drain;
+	g_power_common->PMOS_1X_C_gate_max = C_gate;
+	g_power_common->PMOS_1X_C_source_max = C_source;
+
+	power_calc_transistor_capacitance(&C_drain, &C_source, &C_gate, NMOS,
+			power_arch->P_to_N_size_ratio, POWER_CIRCUIT_TYPE_PASS);
+	g_power_common->PMOS_1X_C_drain_avg = C_drain;
+	g_power_common->PMOS_1X_C_gate_avg = C_gate;
+	g_power_common->PMOS_1X_C_source_avg = C_source;
 
 	g_power_common->NMOS_1X_leakage = power_calc_transistor_leakage(NMOS, 1.0);
 	g_power_common->PMOS_1X_leakage = power_calc_transistor_leakage(PMOS,
@@ -2197,16 +2293,16 @@ boolean power_init(t_power_opts * power_opts, t_power_arch * power_arch) {
 	g_power_common->PMOS_2X_leakage = power_calc_transistor_leakage(PMOS,
 			2.0 * g_power_arch->P_to_N_size_ratio);
 
-	g_power_common->INV_1X_C_in = g_power_common->NMOS_1X_C_gate
-			+ g_power_common->PMOS_1X_C_gate;
-	g_power_common->INV_1X_C = g_power_common->NMOS_1X_C_gate
-			+ g_power_common->PMOS_1X_C_gate + g_power_common->NMOS_1X_C_drain
-			+ g_power_common->PMOS_1X_C_drain;
+	g_power_common->INV_1X_C_in = g_power_common->NMOS_1X_C_gate_max
+			+ g_power_common->PMOS_1X_C_gate_max;
+	g_power_common->INV_1X_C = g_power_common->NMOS_1X_C_gate_max
+			+ g_power_common->PMOS_1X_C_gate_max + g_power_common->NMOS_1X_C_drain_max
+			+ g_power_common->PMOS_1X_C_drain_max;
 
-	power_calc_transistor_capacitance(&C_drain, &C_source, &C_gate, NMOS, 2.0);
+	power_calc_transistor_capacitance(&C_drain, &C_source, &C_gate, NMOS, 2.0, POWER_CIRCUIT_TYPE_CMOS);
 	g_power_common->INV_2X_C = C_gate + C_drain;
 	power_calc_transistor_capacitance(&C_drain, &C_source, &C_gate, PMOS,
-			2.0 * g_power_arch->P_to_N_size_ratio);
+			2.0 * g_power_arch->P_to_N_size_ratio, POWER_CIRCUIT_TYPE_CMOS);
 	g_power_common->INV_2X_C = C_gate + C_drain;
 
 	g_power_common->SRAM_bit_size = power_SRAM_bit_size();
@@ -2261,6 +2357,10 @@ boolean power_init(t_power_opts * power_opts, t_power_arch * power_arch) {
 	g_power_common->max_IPIN_fanin = max_IPIN_fanin;
 	g_power_common->max_fanout_to_IPIN = max_fanout_to_IPIN;
 
+	if (PRINT_SPICE_COMPARISON) {
+		g_power_common->max_mux_size = max(g_power_common->max_mux_size, 20);
+	}
+
 	/* Set up mux architectures for switch/connection boxes up to max size */
 	g_power_common->mux_arch = my_calloc(g_power_common->max_mux_size + 1,
 			sizeof(t_mux_arch));
@@ -2314,10 +2414,18 @@ boolean power_init(t_power_opts * power_opts, t_power_arch * power_arch) {
 	 *  - Assume an overhead to space transistors
 	 */
 	g_power_common->tile_size = sqrt(
-			transistors_per_tile * POWER_TRANSISTOR_SPACING_FACTOR
-					* (g_power_arch->tech_size * g_power_arch->tech_size * 6));
+			power_transistor_area(transistors_per_tile));
 
 	return error;
+}
+
+static float power_transistor_area(float num_transistors) {
+	/* Calculate transistor area, assuming:
+	 *  - Min transistor size is Wx6L
+	 *  - Overhead to space transistors is: POWER_TRANSISTOR_SPACING_FACTOR */
+
+	return num_transistors * POWER_TRANSISTOR_SPACING_FACTOR
+			* (g_power_arch->tech_size * g_power_arch->tech_size * 6);
 }
 
 static float power_SRAM_bit_size(void) {
@@ -2341,8 +2449,8 @@ static float power_count_transistors_LUT(int LUT_size) {
 			* ((1 + g_power_arch->P_to_N_size_ratio)
 					+ 2 * (2 + 2 * g_power_arch->P_to_N_size_ratio));
 	/*transistor_cnt = (float) LUT_size
-			* ((1 + g_power_arch->P_to_N_size_ratio)
-					+ 2 * (2 + 2 * g_power_arch->P_to_N_size_ratio));*/
+	 * ((1 + g_power_arch->P_to_N_size_ratio)
+	 + 2 * (2 + 2 * g_power_arch->P_to_N_size_ratio));*/
 
 	/* SRAM bits */
 	transistor_cnt += g_power_common->SRAM_bit_size * pow(2, LUT_size);
@@ -2496,20 +2604,22 @@ static float power_count_transistors_interconnect(t_interconnect * interc) {
 static float power_count_transistors_pb_type(t_pb_type * pb_type) {
 	int mode_idx;
 	float transistor_cnt_max = 0;
-	float transistor_cnt_mode;
+	float transistor_cnt_interc = 0;
 	boolean ignore_interc = FALSE;
 
 	/* Check if this is a leaf node, or whether it has children */
 	if (pb_type->num_modes == 0) {
 		/* Leaf node */
+		transistor_cnt_interc = 0;
 		transistor_cnt_max = power_count_transistors_blif_primitive(pb_type);
 	} else {
 		/* Find max transistor count between all modes */
 		for (mode_idx = 0; mode_idx < pb_type->num_modes; mode_idx++) {
 			int interc_idx;
 			int child_type_idx;
-
-			transistor_cnt_mode = 0;
+			float transistor_cnt_mode;
+			float transistor_cnt_children = 0;
+			float transistor_cnt_mode_interc = 0;
 
 			if (pb_type->class_type == LUT_CLASS) {
 				/* LUTs will have a child node that is used for routing purposes
@@ -2519,30 +2629,40 @@ static float power_count_transistors_pb_type(t_pb_type * pb_type) {
 				ignore_interc = TRUE;
 			}
 
+			/* Count Interconnect Transistors */
 			if (!ignore_interc) {
 				for (interc_idx = 0;
 						interc_idx < pb_type->modes[mode_idx].num_interconnect;
 						interc_idx++) {
-					transistor_cnt_mode += power_count_transistors_interconnect(
-							&pb_type->modes[mode_idx].interconnect[interc_idx]);
+					transistor_cnt_mode_interc +=
+							power_count_transistors_interconnect(
+									&pb_type->modes[mode_idx].interconnect[interc_idx]);
 				}
 			}
 
+			/* Count Child Transistors */
 			for (child_type_idx = 0;
 					child_type_idx
 							< pb_type->modes[mode_idx].num_pb_type_children;
 					child_type_idx++) {
 				t_pb_type * child_type =
 						&pb_type->modes[mode_idx].pb_type_children[child_type_idx];
-				transistor_cnt_mode += child_type->num_pb
+				transistor_cnt_children += child_type->num_pb
 						* power_count_transistors_pb_type(child_type);
 			}
 
-			transistor_cnt_max = max(transistor_cnt_max, transistor_cnt_mode);
+			transistor_cnt_mode = (transistor_cnt_mode_interc
+					+ transistor_cnt_children);
+
+			if (transistor_cnt_mode > transistor_cnt_max) {
+				transistor_cnt_max = transistor_cnt_mode;
+				transistor_cnt_interc = transistor_cnt_mode_interc;
+			}
 		}
 	}
 
 	pb_type->transistor_cnt = transistor_cnt_max;
+	pb_type->transistor_cnt_interc = transistor_cnt_interc;
 
 	return transistor_cnt_max;
 }
@@ -2558,7 +2678,7 @@ static float power_count_transistors_connectionbox(void) {
 	/* Buffers from Tracks */
 	buffer_size =
 			g_power_common->max_fanout_to_IPIN
-					* (g_power_common->NMOS_1X_C_drain
+					* (g_power_common->NMOS_1X_C_drain_avg
 							/ g_power_common->INV_1X_C_in)/ POWER_BUFFER_STAGE_GAIN;
 	buffer_size = max(1, buffer_size);
 	transistor_cnt += g_solution_inf->channel_width
@@ -2870,7 +2990,8 @@ char binary_not(char c) {
 void power_print_spice_comparison(void) {
 	float leakage;
 	t_power_usage sub_power_usage;
-	float buffer_sizes[3] = { 4, 9, 16 };
+	float inv_sizes[5] = {1, 8, 16, 32, 64};
+	float buffer_sizes[4] = { 4, 9, 16, 64 };
 	unsigned int i;
 	float * dens = NULL;
 	float * prob = NULL;
@@ -2885,10 +3006,10 @@ void power_print_spice_comparison(void) {
 	fprintf(g_power_output->out, "Leakage of min-size PMOS: %g\n", leakage);
 
 	fprintf(g_power_output->out, "Energy of INV\n");
-	for (size = 1; size <= 265; size *= 2) {
+	for (i = 0; i < (sizeof(inv_sizes) / sizeof(float)); i++) {
 		power_calc_INV(&sub_power_usage, 2, 0.5,
-				g_power_arch->P_to_N_size_ratio * size, size);
-		fprintf(g_power_output->out, "%g\t%g\n", size,
+				g_power_arch->P_to_N_size_ratio * inv_sizes[i], inv_sizes[i]);
+		fprintf(g_power_output->out, "%g\t%g\n", inv_sizes[i],
 				(sub_power_usage.dynamic + sub_power_usage.leakage)
 						* g_solution_inf->T_crit);
 	}
@@ -2931,37 +3052,44 @@ void power_print_spice_comparison(void) {
 			(sub_power_usage.dynamic + sub_power_usage.leakage)
 					* g_solution_inf->T_crit * 2);
 
-	fprintf(g_power_output->out, "Energy of CB\n");
+	fprintf(g_power_output->out, "Energy of Mux\n");
 	for (i = 1; i <= 10; i++) {
+		t_power_usage mux_power_usage;
+
+		power_zero_usage(&mux_power_usage);
+
 		dens = my_realloc(dens, i * sizeof(float));
 		prob = my_realloc(prob, i * sizeof(float));
 		dens[i - 1] = 2;
 		prob[i - 1] = 0.5;
-		power_calc_MUX(&sub_power_usage, &g_power_common->mux_arch[i], dens,
-				prob, 0);
+
+		power_calc_MUX(&mux_power_usage, & g_power_common->mux_arch[i], dens, prob, 0);
 		fprintf(g_power_output->out, "%d\t%g\n", i,
-				(sub_power_usage.dynamic + sub_power_usage.leakage)
-						* g_solution_inf->T_crit);
+						(mux_power_usage.dynamic + mux_power_usage.leakage)
+								* g_solution_inf->T_crit);
 	}
 
+
 	fprintf(g_power_output->out, "Energy of SB\n");
-	for (i = 1; i <= 10; i++) {
+	for (i = 2; i <= 20; i+=2) {
 		int buffer_size;
 		t_power_usage sb_power_usage;
 
 		power_zero_usage(&sb_power_usage);
-		if (i <= 4) {
-			buffer_size = 4;
-		} else if (i <= 8) {
+		if (i <= 8) {
 			buffer_size = 9;
-		} else {
+		} else if (i <= 14) {
 			buffer_size = 16;
+		} else {
+			buffer_size = 64;
 		}
 
 		dens = my_realloc(dens, i * sizeof(float));
 		prob = my_realloc(prob, i * sizeof(float));
 		dens[i - 1] = 2;
 		prob[i - 1] = 0.5;
+		dens[i - 2] = 2;
+		prob[i - 2] = 0.5;
 		power_calc_MUX(&sub_power_usage, &g_power_common->mux_arch[i], dens,
 				prob, 0);
 		power_add_usage(&sb_power_usage, &sub_power_usage);
@@ -2973,6 +3101,8 @@ void power_print_spice_comparison(void) {
 				(sb_power_usage.dynamic + sb_power_usage.leakage)
 						* g_solution_inf->T_crit);
 	}
+
+
 
 }
 
@@ -3009,7 +3139,9 @@ e_power_ret_code power_total(void) {
 		return POWER_RET_CODE_ERRORS;
 	}
 
-	/*power_print_spice_comparison();*/
+	if (PRINT_SPICE_COMPARISON) {
+		power_print_spice_comparison();
+	}
 
 	/* Calculate Power */
 
@@ -3064,11 +3196,11 @@ e_power_ret_code power_total(void) {
 
 	power_print_element_usage("Routing", POWER_ELEMENT_ROUTING,
 			POWER_ELEMENT_TOTAL, 1);
-	power_print_element_usage("Switchbox", POWER_ELEMENT_SWITCHBOX,
+	power_print_element_usage("Switchbox", POWER_ELEMENT_ROUTE_SB,
 			POWER_ELEMENT_ROUTING, 2);
-	power_print_element_usage("Connectionbox", POWER_ELEMENT_CONNECTIONBOX,
+	power_print_element_usage("Connectionbox", POWER_ELEMENT_ROUTE_CB,
 			POWER_ELEMENT_ROUTING, 2);
-	power_print_element_usage("GlobalWires", POWER_ELEMENT_GLB_ROUTE_WIRE,
+	power_print_element_usage("GlobalWires", POWER_ELEMENT_ROUTE_GLB_WIRE,
 			POWER_ELEMENT_ROUTING, 2);
 
 	power_print_element_usage("Clock", POWER_ELEMENT_CLOCK, POWER_ELEMENT_TOTAL,
@@ -3080,14 +3212,20 @@ e_power_ret_code power_total(void) {
 
 	power_print_element_usage("Tiles", POWER_ELEMENT_TILES, POWER_ELEMENT_TOTAL,
 			1);
-	power_print_element_usage("FF", POWER_ELEMENT_FF, POWER_ELEMENT_TILES, 2);
-	power_print_element_usage("LUT", POWER_ELEMENT_LUT, POWER_ELEMENT_TILES, 2);
-	power_print_element_usage("Driver", POWER_ELEMENT_LUT_DRIVER,
-			POWER_ELEMENT_LUT, 3);
-	power_print_element_usage("Mux", POWER_ELEMENT_LUT_MUX, POWER_ELEMENT_LUT,
-			3);
-	power_print_element_usage("Restorer", POWER_ELEMENT_LUT_RESTORER,
-			POWER_ELEMENT_LUT, 3);
+	power_print_element_usage("Interc", POWER_ELEMENT_TILE_INTERC,
+			POWER_ELEMENT_TILES, 2);
+	power_print_element_usage("LocalWire", POWER_ELEMENT_TILE_LOCAL_WIRE,
+			POWER_ELEMENT_TILES, 2);
+	power_print_element_usage("FF", POWER_ELEMENT_TILE_FF, POWER_ELEMENT_TILES,
+			2);
+	power_print_element_usage("LUT", POWER_ELEMENT_TILE_LUT,
+			POWER_ELEMENT_TILES, 2);
+	power_print_element_usage("Driver", POWER_ELEMENT_TILE_LUT_DRIVER,
+			POWER_ELEMENT_TILE_LUT, 3);
+	power_print_element_usage("Mux", POWER_ELEMENT_TILE_LUT_MUX,
+			POWER_ELEMENT_TILE_LUT, 3);
+	power_print_element_usage("Restorer", POWER_ELEMENT_TILE_LUT_RESTORER,
+			POWER_ELEMENT_TILE_LUT, 3);
 
 	fprintf(g_power_output->out,
 			"\n---------- Tile Power Breakdown ----------\n");
@@ -3170,11 +3308,11 @@ void power_calc_INV(t_power_usage * power_usage, float in_density,
 	C_inv = 0.;
 
 	power_calc_transistor_capacitance(&C_drain, &C_source, &C_gate, NMOS,
-			NMOS_size);
+			NMOS_size, POWER_CIRCUIT_TYPE_CMOS);
 	C_inv += C_gate + C_drain;
 
 	power_calc_transistor_capacitance(&C_drain, &C_source, &C_gate, PMOS,
-			PMOS_size);
+			PMOS_size, POWER_CIRCUIT_TYPE_CMOS);
 	C_inv += C_gate + C_drain;
 
 	power_usage->dynamic = power_calc_dynamic(C_inv, in_density);
@@ -3226,7 +3364,7 @@ void power_calc_MUX_node(t_power_usage * power_usage, float * out_dens,
 	in_prob = my_calloc(mux_node->num_inputs, sizeof(float));
 
 	power_calc_transistor_capacitance(&C_drain, &C_source, &C_gate, NMOS,
-			mux_arch->transistor_sizes[mux_node->level]);
+			mux_arch->transistor_sizes[mux_node->level], POWER_CIRCUIT_TYPE_PASS);
 
 	/* Leakage of all transistors */
 	leakage = power_calc_transistor_leakage(NMOS,
@@ -3296,8 +3434,8 @@ static void power_calc_level_restorer(t_power_usage * power_usage,
 				"No long transistor information exists.  Cannot determine transistor properties.");
 		return;
 	}
-	C = g_power_arch->PMOS_tx_record.long_trans_inf->C_drain
-			+ g_power_arch->PMOS_tx_record.long_trans_inf->C_gate;
+	C = g_power_arch->PMOS_tx_record.long_trans_inf->C_drain_cmos
+			+ g_power_arch->PMOS_tx_record.long_trans_inf->C_gate_cmos;
 
 	power_usage->dynamic += power_calc_dynamic(C, in_density);
 	power_usage->leakage += (1 - in_probability)
@@ -3369,22 +3507,22 @@ static void power_calc_MUX2_transmission(t_power_usage * power_usage,
 	/* Gate switching */
 	power_usage->dynamic += 2
 			* power_calc_dynamic(
-					g_power_common->NMOS_1X_C_gate
-							+ g_power_common->PMOS_1X_C_gate, sel_dens);
+					g_power_common->NMOS_1X_C_gate_avg
+							+ g_power_common->PMOS_1X_C_gate_avg, sel_dens);
 
 	/* Input switching */
 	power_usage->dynamic += power_calc_dynamic(
-			g_power_common->NMOS_1X_C_drain + g_power_common->PMOS_1X_C_source,
+			g_power_common->NMOS_1X_C_drain_avg + g_power_common->PMOS_1X_C_source_avg,
 			in_dens[0]);
 	power_usage->dynamic += power_calc_dynamic(
-			g_power_common->NMOS_1X_C_drain + g_power_common->PMOS_1X_C_source,
+			g_power_common->NMOS_1X_C_drain_avg + g_power_common->PMOS_1X_C_source_avg,
 			in_dens[1]);
 
 	/* Output switching */
 	power_usage->dynamic += power_calc_dynamic(
 			2
-					* (g_power_common->NMOS_1X_C_source
-							+ g_power_common->PMOS_1X_C_drain), out_dens);
+					* (g_power_common->NMOS_1X_C_source_avg
+							+ g_power_common->PMOS_1X_C_drain_avg), out_dens);
 }
 
 static void power_calc_MUX2(t_power_usage * power_usage, float Vin, float Vout,
@@ -3400,17 +3538,17 @@ static void power_calc_MUX2(t_power_usage * power_usage, float Vin, float Vout,
 
 	/* Gate switching */
 	power_usage->dynamic += 2
-			* power_calc_dynamic(g_power_common->NMOS_1X_C_gate, sel_dens);
+			* power_calc_dynamic(g_power_common->NMOS_1X_C_gate_avg, sel_dens);
 
 	/* Input switching */
 	power_usage->dynamic += power_calc_dynamic_v(
-			g_power_common->NMOS_1X_C_drain, in_density[0], Vin);
+			g_power_common->NMOS_1X_C_drain_avg, in_density[0], Vin);
 	power_usage->dynamic += power_calc_dynamic_v(
-			g_power_common->NMOS_1X_C_drain, in_density[1], Vin);
+			g_power_common->NMOS_1X_C_drain_avg, in_density[1], Vin);
 
 	/* Output switching */
 	power_usage->dynamic += power_calc_dynamic_v(
-			2 * g_power_common->NMOS_1X_C_source, out_density, Vout);
+			2 * g_power_common->NMOS_1X_C_source_avg, out_density, Vout);
 }
 
 /*
@@ -3427,10 +3565,14 @@ static void power_calc_MUX2(t_power_usage * power_usage, float Vin, float Vout,
  * Returns		: 	Nothing
  */
 void power_calc_transistor_capacitance(float *C_drain, float *C_source,
-		float *C_gate, e_tx_type transistor_type, float size) {
+		float *C_gate, e_tx_type transistor_type, float size,
+		e_power_circuit_type circuit_type) {
 	t_transistor_size_inf * tx_info_lower;
 	t_transistor_size_inf * tx_info_upper;
 	boolean error;
+
+	assert(
+			circuit_type == POWER_CIRCUIT_TYPE_CMOS || circuit_type == POWER_CIRCUIT_TYPE_PASS);
 
 	/* Initialize to 0 */
 	*C_drain = 0.;
@@ -3445,24 +3587,45 @@ void power_calc_transistor_capacitance(float *C_drain, float *C_source,
 
 	if (tx_info_lower == NULL) {
 		/* No lower bound */
-		*C_drain = tx_info_upper->C_drain;
-		*C_source = tx_info_upper->C_source;
-		*C_gate = tx_info_upper->C_gate;
+		if (circuit_type == POWER_CIRCUIT_TYPE_CMOS) {
+			*C_drain = tx_info_upper->C_drain_cmos;
+			*C_source = tx_info_upper->C_source_cmos;
+			*C_gate = tx_info_upper->C_gate_cmos;
+		} else if (circuit_type == POWER_CIRCUIT_TYPE_PASS) {
+			*C_drain = tx_info_upper->C_drain_pass;
+			*C_source = tx_info_upper->C_source_pass;
+			*C_gate = tx_info_upper->C_gate_pass;
+		}
 	} else if (tx_info_upper == NULL) {
 		/* No upper bound */
-		*C_drain = tx_info_lower->C_drain;
-		*C_source = tx_info_lower->C_source;
-		*C_gate = tx_info_lower->C_gate;
+		if (circuit_type == POWER_CIRCUIT_TYPE_CMOS) {
+			*C_drain = tx_info_lower->C_drain_cmos;
+			*C_source = tx_info_lower->C_source_cmos;
+			*C_gate = tx_info_lower->C_gate_cmos;
+		} else if (circuit_type == POWER_CIRCUIT_TYPE_PASS) {
+			*C_drain = tx_info_lower->C_drain_pass;
+			*C_source = tx_info_lower->C_source_pass;
+			*C_gate = tx_info_lower->C_gate_pass;
+		}
 	} else {
 		/* Linear approximation between sizes */
 		float percent_upper = (size - tx_info_lower->size)
 				/ (tx_info_upper->size - tx_info_lower->size);
-		*C_drain = (1 - percent_upper) * tx_info_lower->C_drain
-				+ percent_upper * tx_info_upper->C_drain;
-		*C_source = (1 - percent_upper) * tx_info_lower->C_source
-				+ percent_upper * tx_info_upper->C_source;
-		*C_gate = (1 - percent_upper) * tx_info_lower->C_gate
-				+ percent_upper * tx_info_upper->C_gate;
+		if (circuit_type == POWER_CIRCUIT_TYPE_CMOS) {
+			*C_drain = (1 - percent_upper) * tx_info_lower->C_drain_cmos
+					+ percent_upper * tx_info_upper->C_drain_cmos;
+			*C_source = (1 - percent_upper) * tx_info_lower->C_source_cmos
+					+ percent_upper * tx_info_upper->C_source_cmos;
+			*C_gate = (1 - percent_upper) * tx_info_lower->C_gate_cmos
+					+ percent_upper * tx_info_upper->C_gate_cmos;
+		} else if (circuit_type == POWER_CIRCUIT_TYPE_PASS) {
+			*C_drain = (1 - percent_upper) * tx_info_lower->C_drain_pass
+					+ percent_upper * tx_info_upper->C_drain_pass;
+			*C_source = (1 - percent_upper) * tx_info_lower->C_source_pass
+					+ percent_upper * tx_info_upper->C_source_pass;
+			*C_gate = (1 - percent_upper) * tx_info_lower->C_gate_pass
+					+ percent_upper * tx_info_upper->C_gate_pass;
+		}
 	}
 
 	return;
