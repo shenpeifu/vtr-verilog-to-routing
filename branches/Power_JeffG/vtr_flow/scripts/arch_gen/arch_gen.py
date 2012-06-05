@@ -25,10 +25,6 @@ switch_T_del = 6.837e-11
 switch_mux_trans_size = 2.630740
 switch_buf_size = 27.645901
 
-seg_Cmetal_per_m = 2.52e-10
-CLB_interc_Cmetal_per_m = 2.52e-10
-clock_Cmetal_per_m = 2.52e-10 
-
 delay_CLB_I_to_ble = 8.044000e-11
 delay_ble_to_ble = 7.354000e-11
 
@@ -36,6 +32,30 @@ delay_LUT = 2.690e-10
 
 T_setup = 2.448e-10
 T_clock_to_Q = 7.732e-11
+
+def C_wire_glb(tech):
+    if (tech == 45):
+        return 252e-12
+    elif (tech == 130):
+        return 258e-12
+    else:
+        assert(0)
+
+def C_wire_local(tech):
+    if (tech == 45):
+        return 153e-12
+    elif (tech == 130):
+        return 252e-12
+    else:
+        assert(0)
+        
+def C_wire_clk(tech):
+    if (tech == 45):
+        return 252e-12
+    elif (tech == 130):
+        return 258e-12
+    else:
+        assert(0)
 
 def xprint(s, newline=False):
     for i in range(tabs):
@@ -434,14 +454,14 @@ def xCLB(k_LUT, N_BLE, I_CLB, I_BLE, fracture_level, num_FF):
     
     xend() #pb_type clb
     
-def gen_arch(dir, k_LUT, N_BLE, I_CLB, I_BLE, fracture_level, num_FF, seg_length):
+def gen_arch(dir, k_LUT, N_BLE, I_CLB, I_BLE, fracture_level, num_FF, seg_length, tech_nm):
     global f
     global tabs
 
     assert(fracture_level == 0 or fracture_level == 1 or fracture_level == 2)
     
 
-    filename = "k" + str(k_LUT) + "_N" + str(N_BLE) + "_I" + str(I_CLB) + "_Fi" + str(I_BLE) + "_L" + str(seg_length) + "_frac" + str(fracture_level) + "_ff" + str(num_FF) + ".xml"    
+    filename = "k" + str(k_LUT) + "_N" + str(N_BLE) + "_I" + str(I_CLB) + "_Fi" + str(I_BLE) + "_L" + str(seg_length) + "_frac" + str(fracture_level) + "_ff" + str(num_FF) + "_" + str(tech_nm) + "nm.xml"    
      
     tabs = 0
     
@@ -548,7 +568,7 @@ def gen_arch(dir, k_LUT, N_BLE, I_CLB, I_BLE, fracture_level, num_FF, seg_length
     xprop("Rmetal", 0.0)
     xprop("Cmetal", 0.0)
     if (do_power):
-        xprop("Cmetal_per_m", seg_Cmetal_per_m)
+        xprop("Cmetal_per_m", C_wire_glb(tech_nm))
     xclose()
     
     xbegin("mux")
@@ -603,7 +623,7 @@ def gen_arch(dir, k_LUT, N_BLE, I_CLB, I_BLE, fracture_level, num_FF, seg_length
         xcloseend()
         
         xbegin("local_interconnect")
-        xprop("C_wire", CLB_interc_Cmetal_per_m)
+        xprop("C_wire", C_wire_local(tech_nm))
         xcloseend()
         
         xend() #Power
@@ -612,7 +632,7 @@ def gen_arch(dir, k_LUT, N_BLE, I_CLB, I_BLE, fracture_level, num_FF, seg_length
         xclose()
         xbegin("clock")
         xprop("buffer_size", "auto")
-        xprop("C_wire", clock_Cmetal_per_m)
+        xprop("C_wire", C_wire_clk(tech_nm))
         xcloseend()
         xend() #clocks
     
@@ -626,24 +646,26 @@ arches = []
 #              k    N       I_CLB   I_BLE   frac    num_FF  seg_length
 
 # Base Arch
-arches.append([6, 10, 33, 6, 0, 1, 4])
+arches.append([6, 10, 33, 6, 0, 1, 4, 45])
 
 # Fracturable LUT
-arches.append([6, 10, 33, 6, 1, 1, 4])
-arches.append([6, 10, 33, 6, 1, 2, 4])
-arches.append([6, 10, 39, 7, 0, 1, 4])
-arches.append([6, 10, 39, 7, 1, 1, 4])
-arches.append([6, 10, 39, 7, 1, 2, 4])
-arches.append([6, 10, 44, 8, 0, 1, 4])
-arches.append([6, 10, 44, 8, 1, 1, 4])
-arches.append([6, 10, 44, 8, 1, 2, 4])
+arches.append([6, 10, 33, 6, 1, 1, 4, 45])
+arches.append([6, 10, 33, 6, 1, 2, 4, 45])
+arches.append([6, 10, 39, 7, 0, 1, 4, 45])
+arches.append([6, 10, 39, 7, 1, 1, 4, 45])
+arches.append([6, 10, 39, 7, 1, 2, 4, 45])
+arches.append([6, 10, 44, 8, 0, 1, 4, 45])
+arches.append([6, 10, 44, 8, 1, 1, 4, 45])
+arches.append([6, 10, 44, 8, 1, 2, 4, 45])
 
 #Segment Variation
-arches.append([6, 10, 33, 6, 0, 1, 1])
-arches.append([6, 10, 33, 6, 0, 1, 2])
-arches.append([6, 10, 33, 6, 0, 1, 3])
-arches.append([6, 10, 33, 6, 0, 1, 5])
-arches.append([6, 10, 33, 6, 0, 1, 6])
+arches.append([6, 10, 33, 6, 0, 1, 1, 45])
+arches.append([6, 10, 33, 6, 0, 1, 2, 45])
+arches.append([6, 10, 33, 6, 0, 1, 3, 45])
+arches.append([6, 10, 33, 6, 0, 1, 5, 45])
+arches.append([6, 10, 33, 6, 0, 1, 6, 45])
+
+arches.append([6, 10, 33, 6, 0, 1, 4, 130])
 
 
 
@@ -657,7 +679,7 @@ arches.append([6, 10, 33, 6, 0, 1, 6])
 dir = "C:/Users/Jeff/Dropbox/linux_home/vtr/vtr_flow/arch/timing_gen"
 
 for arch in arches:
-    gen_arch(dir, arch[0], arch[1], arch[2], arch[3], arch[4], arch[5], arch[6])
+    gen_arch(dir, arch[0], arch[1], arch[2], arch[3], arch[4], arch[5], arch[6], arch[7])
 print "Done\n"
 
 

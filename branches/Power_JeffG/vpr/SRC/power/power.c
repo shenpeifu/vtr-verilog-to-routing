@@ -113,7 +113,7 @@ typedef struct s_power_commonly_used {
 	int max_IPIN_fanin;
 	int max_fanout_to_IPIN;
 
-	float tile_size;
+	float tile_length;
 
 	float SRAM_bit_size;
 } t_power_commonly_used;
@@ -1598,7 +1598,7 @@ static void power_calc_clock_single(t_power_usage * power_usage,
 		assert(0);
 	}
 
-	C_segment = g_power_common->tile_size * single_clock->C_wire;
+	C_segment = g_power_common->tile_length * single_clock->C_wire;
 	if (single_clock->autosize_buffer) {
 		buffer_size = 1 + C_segment / g_power_common->INV_1X_C_in;
 	} else {
@@ -1868,7 +1868,7 @@ static void power_calc_routing(t_power_usage * power_usage) {
 			 * 	- A buffer at the end of the wire, going to switchbox/connectionbox */
 			assert(node->in_density);
 			assert(node->in_prob);
-			C_wire = node->C_tile_per_m * g_power_common->tile_size;
+			C_wire = node->C_tile_per_m * g_power_common->tile_length;
 			assert(node->selected_input < node->fan_in);
 
 			/* Multiplexor */
@@ -2413,7 +2413,7 @@ boolean power_init(t_power_opts * power_opts, t_power_arch * power_arch) {
 	 *  - Assume min transistor size is Wx6L
 	 *  - Assume an overhead to space transistors
 	 */
-	g_power_common->tile_size = sqrt(
+	g_power_common->tile_length = sqrt(
 			power_transistor_area(transistors_per_tile));
 
 	return error;
