@@ -14,7 +14,7 @@
 #include "ezxml.h"
 #include "read_xml_util.h"
 
-#define PRINT_SPICE_COMPARISON 1
+#define PRINT_SPICE_COMPARISON 0
 
 /* Future */
 /* TODO_POWER - Analyze run-time */
