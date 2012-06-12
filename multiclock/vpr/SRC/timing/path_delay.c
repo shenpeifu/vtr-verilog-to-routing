@@ -1015,7 +1015,7 @@ char *tnode_type_names[] = {  "INPAD_SOURCE", "INPAD_OPIN", "OUTPAD_IPIN",
 	fp = my_fopen(fname, "w", 0);
 
 	fprintf(fp, "num_tnodes: %d\n", num_tnodes);
-	fprintf(fp, "Node #\tType\t\tipin\tiblk\tClock Skew\t# edges\t"
+	fprintf(fp, "Node #\tType\t\tipin\tiblk\tDomain\tSkew\t\t# edges\t"
 			"Edges (to_node, Tdel)\n\n");
 
 	for (inode = 0; inode < num_tnodes; inode++) {
@@ -1033,11 +1033,11 @@ char *tnode_type_names[] = {  "INPAD_SOURCE", "INPAD_OPIN", "OUTPAD_IPIN",
 		}
 
 		if(itype == FF_CLOCK || itype == FF_SOURCE || itype == FF_SINK) {
-			fprintf(fp, "%f\t", tnode[inode].clock_skew);
+			fprintf(fp, "%d\t%f\t", tnode[inode].clock_domain, tnode[inode].clock_skew);
 		}
 
 		else {
-			fprintf(fp, "\t\t");
+			fprintf(fp, "\t\t\t");
 		}
 
 		fprintf(fp, "%d", tnode[inode].num_edges);
@@ -1076,7 +1076,7 @@ char *tnode_type_names[] = {  "INPAD_SOURCE", "INPAD_OPIN", "OUTPAD_IPIN",
 	fclose(fp);
 }
 
-float load_net_slack(float **net_slack, boolean do_lut_input_balancing) {
+float load_net_slack(float **net_slack, boolean do_lut_input_balancing, boolean is_final_analysis) {
 /* Perform timing analysis on circuit.  Return critical path delay and slack of nets in circuit, 
 	and returns the maximum delay d_max between any pair of source and sink nodes.  The timing 
 	graph must have already been built.	
@@ -1084,16 +1084,28 @@ float load_net_slack(float **net_slack, boolean do_lut_input_balancing) {
 	Optionally rebalance LUT inputs if requested.  LUT rebalancing takes advantage of the fact that 
 	different LUT inputs often have different delays.  Since which LUT inputs to take can be permuted 
 	for free by just changing the logic in the LUT,	these LUT permutations can be performed late 
-	into the routing stage of the flow. */
+	into the routing stage of the flow. 
+	
+	Is_final_analysis flags whether this is the final, analysis pass.  If it is, the analyser will 
+	compute actual slacks instead of normalized ones, and will populate output statistics data strucutres. */
 
 
-	float T_arr, Tdel, T_req, constraint, d_max;
+	float T_arr, Tdel, T_req, constraint;
 	int source_clock_domain, sink_clock_domain, inode, ilevel, num_at_level, i, num_edges, iedge, to_node;
 	int total;
 	t_tedge *tedge;
 	t_pb *pb;
 	long max_critical_input_paths = 0;
 	long max_critical_output_paths = 0;
+
+	/* Three different denominators used to calculate criticality, depending on what the flag CRITICALITY_DEF is set to in path_delay.h */
+#if   CRITICALITY_DEF == 1
+	float T_arr_max_global;
+#elif CRITICALITY_DEF == 2
+	float T_arr_with_least_slack;
+#elif CRITICALITY_DEF == 3
+	float T_arr_max_for_this_traversal;
+#endif
 
 	/* Reset LUT input rebalancing */
 	for (inode = 0; inode < num_tnodes; inode++) {
@@ -1125,7 +1137,7 @@ float load_net_slack(float **net_slack, boolean do_lut_input_balancing) {
 			} else {
 				tnode[inode].T_arr = INT_MIN;		/* Arrival time is set to a very large negative number.  
 													This acts as a flag to not analyze this tnode on this iteration of the iclock loop. 
-													INT_MAX was picked because of the analogy with constant generator (which this is not). */
+													INT_MAX was picked because of the analogy with constant generator (although this is not one). */
 			}
 		}
 
@@ -1203,7 +1215,7 @@ float load_net_slack(float **net_slack, boolean do_lut_input_balancing) {
 					if(constraint == DO_NOT_ANALYSE) {
 						tnode[inode].T_req = INT_MAX;	/* Arrival time is set to a very large positive number.  
 														This acts as a flag to not analyze this tnode on this iteration of the iclock loop. 
-														INT_MAX was picked because of the analogy with constant generator (which this is not). */
+														INT_MAX was picked because of the analogy with constant generator (although this is not one). */
 					} else {
 						tnode[inode].T_req = constraint + tnode[inode].clock_skew; 
 					}
@@ -2080,7 +2092,7 @@ static void alloc_and_load_netlist_clock_list(void) {
 	/* Creates an array of clock names and nets. The index of each
 	clock in this array will be used extensively in timing analysis. */
 
-	int bnum, iclock;
+	int bnum, iclock, clock_net;
 	char * clock_name;
 	boolean found;
 
@@ -2089,7 +2101,8 @@ static void alloc_and_load_netlist_clock_list(void) {
 
 	for (bnum = 0; bnum < num_logical_blocks; bnum++) {
 		if(logical_block[bnum].type == VPACK_LATCH) {
-			clock_name = logical_block[bnum].name;
+			clock_net = logical_block[bnum].clock_net;
+			clock_name = logical_block[clock_net].name;
 			/* Now that we've found a clock, let's see if we've counted it already */
 			found = FALSE;
 			for (iclock = 0; !found && iclock < num_netlist_clocks; iclock++) {

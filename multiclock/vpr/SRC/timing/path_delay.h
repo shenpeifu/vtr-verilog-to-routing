@@ -1,5 +1,16 @@
 #define DO_NOT_ANALYSE -1
 
+/*********************** Defines for timing options *******************************/
+
+#define CRITICALITY_DEF 1
+/* Which definition of criticality should VPR use?  Possible values:
+   #define CRITICALITY_DEF 1: criticality = 1 - (slack of this edge)/(maximum arrival time T_arr_max_global over any clock domain)
+   #define CRITICALITY_DEF 2: criticality = 1 - (slack of this edge)/(arrival time T_arr_with_least_slack over path with least slack)
+   #define CRITICALITY_DEF 3: criticality = maximum over all traversals of 1 - (slack of this edge for this traversal, if used)/(maximum arrival time T_arr_max_for_this_traversal for this traversal)									
+*/
+
+/**********************************************************************************/
+
 float **alloc_and_load_timing_graph(t_timing_inf timing_inf);
 
 float **alloc_and_load_pre_packing_timing_graph(float block_delay,
@@ -9,7 +20,7 @@ t_linked_int *allocate_and_load_critical_path(void);
 
 void load_timing_graph_net_delays(float **net_delay);
 
-float load_net_slack(float **net_slack, boolean do_lut_input_balancing);
+float load_net_slack(float **net_slack, boolean do_lut_input_balancing, boolean is_final_analysis);
 
 void free_timing_graph(float **net_slack);
 
