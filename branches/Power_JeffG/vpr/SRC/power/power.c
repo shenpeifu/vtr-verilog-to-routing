@@ -16,6 +16,9 @@
 
 #define PRINT_SPICE_COMPARISON 0
 
+#define CONVERT_NM_PER_M 1000000000
+#define CONVERT_UM_PER_M 1000000
+
 /* Future */
 /* TODO_POWER - Analyze run-time */
 /* TODO_POWER - What if packing is run separately? */
@@ -109,13 +112,22 @@ typedef struct s_power_commonly_used {
 
 	int max_mux_size;
 	t_mux_arch * mux_arch;
-	int max_routing_fanout;
+
 	int max_IPIN_fanin;
-	int max_fanout_to_IPIN;
+
+	int max_seg_fanout;
+	int max_seg_to_IPIN_fanout;
+	int max_seg_to_seg_fanout;
 
 	float tile_length;
 
 	float SRAM_bit_size;
+
+	int num_sb_buffers;
+	float total_sb_buffer_size;
+
+	int num_cb_buffers;
+	float total_cb_buffer_size;
 } t_power_commonly_used;
 
 enum e_power_log_type {
@@ -1758,8 +1770,12 @@ static void power_calc_routing(t_power_usage * power_usage) {
 	int net_idx;
 	int edge_idx;
 
-	power_usage->dynamic = 0.;
-	power_usage->leakage = 0.;
+	power_zero_usage(power_usage);
+
+	g_power_common->num_sb_buffers = 0;
+	g_power_common->total_sb_buffer_size = 0.;
+	g_power_common->num_cb_buffers = 0;
+	g_power_common->total_cb_buffer_size = 0.;
 
 	/* Reset rr graph net indices */
 	for (rr_node_idx = 0; rr_node_idx < num_rr_nodes; rr_node_idx++) {
@@ -1889,6 +1905,9 @@ static void power_calc_routing(t_power_usage * power_usage) {
 			}
 			buffer_size = max(buffer_size, 1);
 
+			g_power_common->num_sb_buffers++;
+			g_power_common->total_sb_buffer_size += buffer_size;
+
 			/* Buffer */
 			power_calc_buffer(&sub_power_usage, buffer_size,
 					node->in_density[node->selected_input],
@@ -1939,6 +1958,9 @@ static void power_calc_routing(t_power_usage * power_usage) {
 						1 - node->in_prob[node->selected_input]);
 				power_add_usage_element(power_usage, &sub_power_usage,
 						POWER_ELEMENT_ROUTE_CB);
+
+				g_power_common->num_cb_buffers++;
+				g_power_common->total_cb_buffer_size += buffer_size;
 			}
 			break;
 		case INTRA_CLUSTER_EDGE:
@@ -2086,7 +2108,7 @@ void process_transistor_info(ezxml_t parent) {
 	trans_inf->long_trans_inf->C_gate_cmos = GetFloatProperty(grandchild,
 			"gate_cmos", TRUE, 0);
 	/*trans_inf->long_trans_inf->C_source_cmos = GetFloatProperty(grandchild,
-			"source_cmos", TRUE, 0);*/
+	 "source_cmos", TRUE, 0);*/
 	trans_inf->long_trans_inf->C_drain_cmos = GetFloatProperty(grandchild,
 			"drain_cmos", TRUE, 0);
 	trans_inf->long_trans_inf->C_gate_pass = GetFloatProperty(grandchild,
@@ -2118,7 +2140,7 @@ void process_transistor_info(ezxml_t parent) {
 		trans_inf->size_inf[i].C_gate_cmos = GetFloatProperty(grandchild,
 				"gate_cmos", TRUE, 0);
 		/*trans_inf->size_inf[i].C_source_cmos = GetFloatProperty(grandchild,
-				"source_cmos", TRUE, 0); */
+		 "source_cmos", TRUE, 0); */
 		trans_inf->size_inf[i].C_drain_cmos = GetFloatProperty(grandchild,
 				"drain_cmos", TRUE, 0);
 		trans_inf->size_inf[i].C_gate_pass = GetFloatProperty(grandchild,
@@ -2224,8 +2246,9 @@ boolean power_init(t_power_opts * power_opts, t_power_arch * power_arch) {
 	int rr_node_idx;
 	int max_fanin;
 	int max_IPIN_fanin;
-	int max_fanout_to_IPIN;
-	int max_fanout;
+	int max_seg_to_IPIN_fanout;
+	int max_seg_to_seg_fanout;
+	int max_seg_fanout;
 	int mux_size;
 	int i;
 	float transistors_per_tile;
@@ -2296,10 +2319,12 @@ boolean power_init(t_power_opts * power_opts, t_power_arch * power_arch) {
 	g_power_common->INV_1X_C_in = g_power_common->NMOS_1X_C_gate_max
 			+ g_power_common->PMOS_1X_C_gate_max;
 	g_power_common->INV_1X_C = g_power_common->NMOS_1X_C_gate_max
-			+ g_power_common->PMOS_1X_C_gate_max + g_power_common->NMOS_1X_C_drain_max
+			+ g_power_common->PMOS_1X_C_gate_max
+			+ g_power_common->NMOS_1X_C_drain_max
 			+ g_power_common->PMOS_1X_C_drain_max;
 
-	power_calc_transistor_capacitance(&C_drain, &C_source, &C_gate, NMOS, 2.0, POWER_CIRCUIT_TYPE_CMOS);
+	power_calc_transistor_capacitance(&C_drain, &C_source, &C_gate, NMOS, 2.0,
+			POWER_CIRCUIT_TYPE_CMOS);
 	g_power_common->INV_2X_C = C_gate + C_drain;
 	power_calc_transistor_capacitance(&C_drain, &C_source, &C_gate, PMOS,
 			2.0 * g_power_arch->P_to_N_size_ratio, POWER_CIRCUIT_TYPE_CMOS);
@@ -2318,10 +2343,12 @@ boolean power_init(t_power_opts * power_opts, t_power_arch * power_arch) {
 	/* Initialize Mux Architectures */
 	max_fanin = 0;
 	max_IPIN_fanin = 0;
-	max_fanout_to_IPIN = 0;
+	max_seg_to_seg_fanout = 0;
+	max_seg_to_IPIN_fanout = 0;
 	for (rr_node_idx = 0; rr_node_idx < num_rr_nodes; rr_node_idx++) {
 		int switch_idx;
 		int fanout_to_IPIN = 0;
+		int fanout_to_seg = 0;
 		t_rr_node * node = &rr_node[rr_node_idx];
 
 		node->driver_switch_type = OPEN;
@@ -2340,9 +2367,13 @@ boolean power_init(t_power_opts * power_opts, t_power_arch * power_arch) {
 				if (node->switches[switch_idx]
 						== g_routing_arch->wire_to_ipin_switch) {
 					fanout_to_IPIN++;
+				} else if (node->switches[switch_idx]
+						!= g_routing_arch->delayless_switch) {
+					fanout_to_seg++;
 				}
 			}
-			max_fanout_to_IPIN = max(max_fanout_to_IPIN, fanout_to_IPIN);
+			max_seg_to_IPIN_fanout = max(max_seg_to_IPIN_fanout, fanout_to_IPIN);
+			max_seg_to_seg_fanout = max(max_seg_to_seg_fanout, fanout_to_seg);
 			max_fanin = max(max_fanin, node->fan_in);
 
 			node->in_density = my_calloc(node->fan_in, sizeof(float));
@@ -2355,7 +2386,8 @@ boolean power_init(t_power_opts * power_opts, t_power_arch * power_arch) {
 	}
 	g_power_common->max_mux_size = max_fanin;
 	g_power_common->max_IPIN_fanin = max_IPIN_fanin;
-	g_power_common->max_fanout_to_IPIN = max_fanout_to_IPIN;
+	g_power_common->max_seg_to_seg_fanout = max_seg_to_seg_fanout;
+	g_power_common->max_seg_to_IPIN_fanout = max_seg_to_IPIN_fanout;
 
 	if (PRINT_SPICE_COMPARISON) {
 		g_power_common->max_mux_size = max(g_power_common->max_mux_size, 20);
@@ -2387,15 +2419,15 @@ boolean power_init(t_power_opts * power_opts, t_power_arch * power_arch) {
 	}
 
 	/* Find Max Fanout of Routing Buffer	 */
-	max_fanout = 0;
+	max_seg_fanout = 0;
 	for (rr_node_idx = 0; rr_node_idx < num_rr_nodes; rr_node_idx++) {
 		t_rr_node * node = &rr_node[rr_node_idx];
 
 		switch (node->type) {
 		case CHANX:
 		case CHANY:
-			if (node->num_edges > max_fanout) {
-				max_fanout = node->num_edges;
+			if (node->num_edges > max_seg_fanout) {
+				max_seg_fanout = node->num_edges;
 			}
 			break;
 		default:
@@ -2403,7 +2435,7 @@ boolean power_init(t_power_opts * power_opts, t_power_arch * power_arch) {
 			break;
 		}
 	}
-	g_power_common->max_routing_fanout = max_fanout;
+	g_power_common->max_seg_fanout = max_seg_fanout;
 
 	/* Find # of transistors in each tile type */
 	transistors_per_tile = power_count_transistors_tiles();
@@ -2677,7 +2709,7 @@ static float power_count_transistors_connectionbox(void) {
 
 	/* Buffers from Tracks */
 	buffer_size =
-			g_power_common->max_fanout_to_IPIN
+			g_power_common->max_seg_to_IPIN_fanout
 					* (g_power_common->NMOS_1X_C_drain_avg
 							/ g_power_common->INV_1X_C_in)/ POWER_BUFFER_STAGE_GAIN;
 	buffer_size = max(1, buffer_size);
@@ -2717,10 +2749,8 @@ static float power_count_transistors_switchbox(void) {
 	int seg_idx;
 
 	/* Buffer */
-	transistors_per_buf_mux +=
-			power_count_transistors_buffer(
-					(float) g_power_common->max_routing_fanout
-							/ POWER_BUFFER_STAGE_GAIN);
+	transistors_per_buf_mux += power_count_transistors_buffer(
+			(float) g_power_common->max_seg_fanout / POWER_BUFFER_STAGE_GAIN);
 
 	/* Multiplexor */
 	transistors_per_buf_mux += power_count_transistors_MUX(
@@ -2990,7 +3020,7 @@ char binary_not(char c) {
 void power_print_spice_comparison(void) {
 	float leakage;
 	t_power_usage sub_power_usage;
-	float inv_sizes[5] = {1, 8, 16, 32, 64};
+	float inv_sizes[5] = { 1, 8, 16, 32, 64 };
 	float buffer_sizes[4] = { 4, 9, 16, 64 };
 	unsigned int i;
 	float * dens = NULL;
@@ -3063,15 +3093,15 @@ void power_print_spice_comparison(void) {
 		dens[i - 1] = 2;
 		prob[i - 1] = 0.5;
 
-		power_calc_MUX(&mux_power_usage, & g_power_common->mux_arch[i], dens, prob, 0);
+		power_calc_MUX(&mux_power_usage, &g_power_common->mux_arch[i], dens,
+				prob, 0);
 		fprintf(g_power_output->out, "%d\t%g\n", i,
-						(mux_power_usage.dynamic + mux_power_usage.leakage)
-								* g_solution_inf->T_crit);
+				(mux_power_usage.dynamic + mux_power_usage.leakage)
+						* g_solution_inf->T_crit);
 	}
 
-
 	fprintf(g_power_output->out, "Energy of SB\n");
-	for (i = 2; i <= 20; i+=2) {
+	for (i = 2; i <= 20; i += 2) {
 		int buffer_size;
 		t_power_usage sb_power_usage;
 
@@ -3101,8 +3131,6 @@ void power_print_spice_comparison(void) {
 				(sb_power_usage.dynamic + sb_power_usage.leakage)
 						* g_solution_inf->T_crit);
 	}
-
-
 
 }
 
@@ -3178,12 +3206,31 @@ e_power_ret_code power_total(void) {
 		}
 	}
 
-	fprintf(g_power_output->out, "Layout of FPGA: %d x %d\n", nx, ny);
+	fprintf(g_power_output->out, "\n---------- Statistics ----------\n");
+	fprintf(g_power_output->out, "Technology (nm): %.0f\n",
+			g_power_arch->tech_size * CONVERT_NM_PER_M);
+	fprintf(g_power_output->out, "Voltage: %.2f\n", g_power_arch->Vdd);
 	fprintf(g_power_output->out, "Operating temperature: %g\n",
 			g_power_arch->temperature);
-	fprintf(g_power_output->out, "Inputs: %d, Outputs: %d\n", num_p_inputs,
-			num_p_outputs);
-	fprintf(g_power_output->out, "Nets: %d Blocks: %d\n", num_nets, num_blocks);
+
+	fprintf(g_power_output->out, "Layout of FPGA: %d x %d\n", nx, ny);
+
+	fprintf(g_power_output->out, "Max Segment Fanout: %d\n",
+			g_power_common->max_seg_fanout);
+	fprintf(g_power_output->out, "Max Segment->Segment Fanout: %d\n",
+			g_power_common->max_seg_to_seg_fanout);
+	fprintf(g_power_output->out, "Max Segment->IPIN Fanout: %d\n",
+			g_power_common->max_seg_to_IPIN_fanout);
+	fprintf(g_power_output->out, "Max IPIN fanin: %d\n",
+			g_power_common->max_IPIN_fanin);
+	fprintf(g_power_output->out, "Average SB Buffer Size: %.1f\n",
+			g_power_common->total_sb_buffer_size
+					/ (float) g_power_common->num_sb_buffers);
+	fprintf(g_power_output->out, "Average CB Buffer Size: %.1f\n",
+			g_power_common->total_cb_buffer_size
+					/ (float) g_power_common->num_cb_buffers);
+	fprintf(g_power_output->out, "Tile length (um): %.2f\n",
+			g_power_common->tile_length * CONVERT_UM_PER_M);
 
 	/* Print Error & Warning Logs */
 	output_logs(g_power_output->logs, g_power_output->num_logs,
@@ -3364,7 +3411,8 @@ void power_calc_MUX_node(t_power_usage * power_usage, float * out_dens,
 	in_prob = my_calloc(mux_node->num_inputs, sizeof(float));
 
 	power_calc_transistor_capacitance(&C_drain, &C_source, &C_gate, NMOS,
-			mux_arch->transistor_sizes[mux_node->level], POWER_CIRCUIT_TYPE_PASS);
+			mux_arch->transistor_sizes[mux_node->level],
+			POWER_CIRCUIT_TYPE_PASS);
 
 	/* Leakage of all transistors */
 	leakage = power_calc_transistor_leakage(NMOS,
@@ -3512,11 +3560,11 @@ static void power_calc_MUX2_transmission(t_power_usage * power_usage,
 
 	/* Input switching */
 	power_usage->dynamic += power_calc_dynamic(
-			g_power_common->NMOS_1X_C_drain_avg + g_power_common->PMOS_1X_C_source_avg,
-			in_dens[0]);
+			g_power_common->NMOS_1X_C_drain_avg
+					+ g_power_common->PMOS_1X_C_source_avg, in_dens[0]);
 	power_usage->dynamic += power_calc_dynamic(
-			g_power_common->NMOS_1X_C_drain_avg + g_power_common->PMOS_1X_C_source_avg,
-			in_dens[1]);
+			g_power_common->NMOS_1X_C_drain_avg
+					+ g_power_common->PMOS_1X_C_source_avg, in_dens[1]);
 
 	/* Output switching */
 	power_usage->dynamic += power_calc_dynamic(
