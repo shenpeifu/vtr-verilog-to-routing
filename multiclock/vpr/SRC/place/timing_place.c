@@ -78,34 +78,6 @@ void print_sink_delays(char *fname) {
 }
 
 /**************************************/
-void load_criticalities(struct s_placer_opts placer_opts, float **net_slack,
-		float d_max, float crit_exponent) {
-
-	/*set criticality values, returns the maximum criticality found */
-	/*assumes that net_slack contains correct values, ie. assumes  *
-	 *that load_net_slack has been called*/
-
-	int inet, ipin;
-	float pin_crit;
-
-	for (inet = 0; inet < num_nets; inet++) {
-
-		if (inet == OPEN)
-			continue;
-		if (clb_net[inet].is_global)
-			continue;
-
-		for (ipin = 1; ipin <= clb_net[inet].num_sinks; ipin++) {
-			/*clip the criticality to never go negative (could happen */
-			/*for a constant generator since it's slack is huge) */
-			pin_crit = max(1 - net_slack[inet][ipin] / d_max, 0.);
-			timing_place_crit[inet][ipin] = pow(pin_crit, crit_exponent);
-
-		}
-	}
-}
-
-/**************************************/
 
 void alloc_lookups_and_criticalities(t_chan_width_dist chan_width_dist,
 		struct s_router_opts router_opts,

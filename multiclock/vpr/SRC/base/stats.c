@@ -26,7 +26,7 @@ void routing_stats(boolean full_stats, enum e_route_type route_type,
 		int num_switch, t_segment_inf * segment_inf, int num_segment,
 		float R_minW_nmos, float R_minW_pmos,
 		enum e_directionality directionality, boolean timing_analysis_enabled,
-		float **net_slack, float **net_delay) {
+		float **net_slack, float **net_delay, float **net_criticality) {
 
 	/* Prints out various statistics about the current routing.  Both a routing *
 	 * and an rr_graph must exist when you call this routine.                   */
@@ -82,7 +82,7 @@ void routing_stats(boolean full_stats, enum e_route_type route_type,
 			}
 
 			load_timing_graph_net_delays(net_delay);
-			load_net_slack(net_slack, TRUE);
+			load_net_slack_and_criticality(net_slack, net_criticality, TRUE, TRUE);
 
 			if (GetEchoOption()) {
 				print_timing_graph("timing_graph.echo");

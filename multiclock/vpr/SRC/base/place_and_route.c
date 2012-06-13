@@ -54,7 +54,7 @@ void place_and_route(enum e_operation operation,
 	char msg[BUFSIZE];
 	int width_fac, inet, i;
 	boolean success, Fc_clipped;
-	float **net_delay, **net_slack;
+	float **net_delay, **net_slack, **net_criticality;
 
 	t_chunk net_delay_ch = {NULL, 0, NULL};
 
@@ -150,7 +150,7 @@ void place_and_route(enum e_operation operation,
 		}
 
 		success = try_route(width_fac, router_opts, det_routing_arch,
-				segment_inf, timing_inf, net_slack, net_delay, chan_width_dist,
+				segment_inf, timing_inf, net_slack, net_delay, net_criticality, chan_width_dist,
 				clb_opins_used_locally, mst, &Fc_clipped);
 
 		if (Fc_clipped) {
@@ -181,7 +181,7 @@ void place_and_route(enum e_operation operation,
 					det_routing_arch.num_segment, det_routing_arch.R_minW_nmos,
 					det_routing_arch.R_minW_pmos,
 					det_routing_arch.directionality,
-					timing_inf.timing_analysis_enabled, net_slack, net_delay);
+					timing_inf.timing_analysis_enabled, net_slack, net_delay, net_criticality);
 
 			print_route(route_file);
 
@@ -261,7 +261,7 @@ static int binary_search_place_and_route(struct s_placer_opts placer_opts,
 	int max_pins_per_clb, i;
 	boolean success, prev_success, prev2_success, Fc_clipped = FALSE;
 	char msg[BUFSIZE];
-	float **net_delay, **net_slack;
+	float **net_delay, **net_slack, **net_criticality;
 
 	t_chunk net_delay_ch = {NULL, 0, NULL};
 
@@ -377,7 +377,7 @@ static int binary_search_place_and_route(struct s_placer_opts placer_opts,
 					&mst);
 		}
 		success = try_route(current, router_opts, det_routing_arch, segment_inf,
-				timing_inf, net_slack, net_delay, chan_width_dist,
+				timing_inf, net_slack, net_delay, net_criticality, chan_width_dist,
 				clb_opins_used_locally, mst, &Fc_clipped);
 		attempt_count++;
 		fflush(stdout);
@@ -487,7 +487,7 @@ static int binary_search_place_and_route(struct s_placer_opts placer_opts,
 			}
 
 			success = try_route(current, router_opts, det_routing_arch,
-					segment_inf, timing_inf, net_slack, net_delay,
+					segment_inf, timing_inf, net_slack, net_delay, net_criticality,
 					chan_width_dist, clb_opins_used_locally, mst, &Fc_clipped);
 
 			if (success && Fc_clipped == FALSE) {
@@ -549,7 +549,7 @@ static int binary_search_place_and_route(struct s_placer_opts placer_opts,
 			det_routing_arch.num_switch, segment_inf,
 			det_routing_arch.num_segment, det_routing_arch.R_minW_nmos,
 			det_routing_arch.R_minW_pmos, det_routing_arch.directionality,
-			timing_inf.timing_analysis_enabled, net_slack, net_delay);
+			timing_inf.timing_analysis_enabled, net_slack, net_delay, net_criticality);
 
 	print_route(route_file);
 

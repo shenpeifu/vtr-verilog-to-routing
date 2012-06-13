@@ -103,7 +103,7 @@ static int num_timing_nets = 0;
 
 static float **alloc_net_slack(void);
 
-static void update_net_slacks(float **net_slack);
+static void update_net_slacks_and_criticalities(float **net_slack);
 
 static void alloc_and_load_tnodes(t_timing_inf timing_inf);
 
@@ -118,7 +118,7 @@ static void normalize_costs(float t_crit, long max_critical_input_paths,
 
 static void print_primitive_as_blif(FILE *fpout, int iblk);
 
-static float set_and_balance_arrival_time(int to_node, int from_node, float Tdel, boolean do_lut_input_balancing, float d_max);
+static void set_and_balance_arrival_time(int to_node, int from_node, float Tdel, boolean do_lut_input_balancing); 
 
 static void alloc_and_load_netlist_clock_list(void);
 
@@ -1076,9 +1076,8 @@ char *tnode_type_names[] = {  "INPAD_SOURCE", "INPAD_OPIN", "OUTPAD_IPIN",
 	fclose(fp);
 }
 
-float load_net_slack(float **net_slack, boolean do_lut_input_balancing, boolean is_final_analysis) {
-/* Perform timing analysis on circuit.  Return critical path delay and slack of nets in circuit, 
-	and returns the maximum delay d_max between any pair of source and sink nodes.  The timing 
+void load_net_slack_and_criticality(float **net_slack, float **net_criticality, boolean do_lut_input_balancing, boolean is_final_analysis) {
+/*  Perform timing analysis on circuit.  Return slack and criticality of nets in the circuit.  The timing 
 	graph must have already been built.	
 
 	Optionally rebalance LUT inputs if requested.  LUT rebalancing takes advantage of the fact that 
@@ -1089,7 +1088,6 @@ float load_net_slack(float **net_slack, boolean do_lut_input_balancing, boolean 
 	Is_final_analysis flags whether this is the final, analysis pass.  If it is, the analyser will 
 	compute actual slacks instead of normalized ones, and will populate output statistics data strucutres. */
 
-
 	float T_arr, Tdel, T_req, constraint;
 	int source_clock_domain, sink_clock_domain, inode, ilevel, num_at_level, i, num_edges, iedge, to_node;
 	int total;
@@ -1098,13 +1096,15 @@ float load_net_slack(float **net_slack, boolean do_lut_input_balancing, boolean 
 	long max_critical_input_paths = 0;
 	long max_critical_output_paths = 0;
 
-	/* Three different denominators used to calculate criticality, depending on what the flag CRITICALITY_DEF is set to in path_delay.h */
+	/* Three different T_arr denominators to calculate criticality.  
+	The one that's used depends on the value of the flag CRITICALITY_DEF in path_delay.h. */
+
 #if   CRITICALITY_DEF == 1
-	float T_arr_max_global;
+	float T_arr_max_global = 0;
 #elif CRITICALITY_DEF == 2
-	float T_arr_with_least_slack;
+	float T_arr_with_least_slack = 0, least_slack = MAX_INT, current_slack;
 #elif CRITICALITY_DEF == 3
-	float T_arr_max_for_this_traversal;
+	float T_arr_max_for_this_traversal; /* set to 0 on each traversal */
 #endif
 
 	/* Reset LUT input rebalancing */
@@ -1122,13 +1122,15 @@ float load_net_slack(float **net_slack, boolean do_lut_input_balancing, boolean 
 			}
 		}
 	}
-	
-	d_max = 0;
 
 	/* For each source clock domain, we do one forward and one backward breadth-first traversal.  First, though, we have to set arrival times for all top-level (level-0) tnodes. */
 	for (source_clock_domain = 0; source_clock_domain < num_netlist_clocks; source_clock_domain++) {
 		num_at_level = tnodes_at_level[0].nelem;	/* There are num_at_level top-level tnodes. */
 				
+#if CRITICALITY_DEF == 3
+	T_arr_max_for_this_traversal = 0; /* unlike the other two, only updated once per traversal, as the name suggests */
+#endif
+
 		for (i = 0; i < num_at_level; i++) {
 			inode = tnodes_at_level[0].list[i];		/* Go through the list of each tnode at level 0. */
 			if (tnode[inode].clock_domain == source_clock_domain) {
@@ -1175,12 +1177,11 @@ float load_net_slack(float **net_slack, boolean do_lut_input_balancing, boolean 
 					if (tnode[to_node].num_critical_input_paths	> max_critical_input_paths) {
 						max_critical_input_paths = tnode[to_node].num_critical_input_paths;
 					}
-					/* Critical step: the arrival time T_arr at the destination node is set to the maximum of all the possible arrival times from all edges fanning in to the node. *
+					/* The arrival time T_arr at the destination node is set to the maximum of all the possible arrival times from all edges fanning in to the node. *
 					 * The arrival time represents the latest time that all inputs must arrive at a node. LUT input rebalancing also occurs at this step. */
-					d_max = set_and_balance_arrival_time(to_node, inode, Tdel, do_lut_input_balancing, d_max);			
+					set_and_balance_arrival_time(to_node, inode, Tdel, do_lut_input_balancing);	
 				}
 			}
-
 		}
 		assert(total == num_tnodes);
 
@@ -1217,7 +1218,35 @@ float load_net_slack(float **net_slack, boolean do_lut_input_balancing, boolean 
 														This acts as a flag to not analyze this tnode on this iteration of the iclock loop. 
 														INT_MAX was picked because of the analogy with constant generator (although this is not one). */
 					} else {
-						tnode[inode].T_req = constraint + tnode[inode].clock_skew; 
+#ifdef NORMALIZE_SLACKS	/* Normalize the required time at the sink node to be >=0 by taking the max of the "real" 
+						  required time (constraint + tnode[inode].clock_skew) and the arrival time, except for the
+						  final analysis pass.  E.g. if we have a 10 ns constraint and it takes 14 ns to get here, 
+						  we'll have a slack of at most -4 ns for any edge along the path that got us here.  If we 
+						  say the required time is 14 ns (no less than the arrival time), we don't have a negative 
+						  slack anymore.  However, in the final timing analysis, the real slacks are computed 
+						  (that's what human designers care about), not the normalized ones. */				
+						if(!is_final_analysis) {
+							tnode[inode].T_req = constraint + tnode[inode].clock_skew;
+						} else {
+							tnode[inode].T_req = constraint + tnode[inode].clock_skew;
+						}
+#else					/* Don't do the normalization and always set T_req equal to the "real" required time. */
+						tnode[inode].T_req = constraint + tnode[inode].clock_skew;
+#endif				 
+						/* Also, update the maximum T_arr for criticality computations */
+
+#if   CRITICALITY_DEF == 1 /* We just want to find the greatest T_arr in the entire design, 
+						      so update T_arr_max_global if this tnode's arrival time is greater than it. */
+						T_arr_max_global = max(T_arr_max_global, tnode[inode].T_arr);
+
+#elif CRITICALITY_DEF == 2 /* This case is more complicated since we first have to check whether the slack (i.e. T_req - T_arr) 
+							  is the least slack in the entire design.  
+						      If so, we then update T_arr_with_least_slack with the current T_arr. */
+						current_slack = tnode[inode].T_req - tnode[inode].T_arr;
+						if(least_slack - current_slack > EQUAL_DEF) { /* i.e. if current_slack < least_slack */
+							T_arr_with_least_slack = T_arr;
+						}
+#endif					/* If CRITICALITY_DEF = 3, we handle T_arr_max_for_this_traversal on the backward traversal, not here. */
 					}
 					tnode[inode].num_critical_output_paths = 1; /* Bottom-level tnodes have only one critical output path */
 				} else {
@@ -1256,27 +1285,26 @@ float load_net_slack(float **net_slack, boolean do_lut_input_balancing, boolean 
 						T_req = min(T_req, tnode[to_node].T_req - Tdel);
 					}
 
-					tnode[inode].T_req = T_req;
+					tnode[inode].T_req = T_req; /* After iterating through all the edges, 
+												   put the value of T_req (the minimum of all required times) into the tnode. */
 				}
 			}
 		}
-	/* After each iteration of the iclock loop, update the slack of each edge if it has a newer, lower value. */
-	update_net_slacks(net_slack);
+	/* After each iteration of the iclock loop, update the slack and/or criticality of each edge if either has a newer, lower value. */
+	update_net_slacks_and_criticalities(net_slack);
 
-	} /* end of iclock loop */
+	} /* end of source_clock_domain loop */
 	
 	/* To do: get this to work with multiple clocks */
 	/*normalize_costs(&net_slack, max_critical_input_paths,
 			max_critical_output_paths);*/
-
-	return d_max;
 }
 
-static void update_net_slacks(float **net_slack) {
+static void update_net_slacks_and_criticalities(float **net_slack) {
 
-	/* Updates the slack of each source-sink pair of block pins in net_slack. 
+	/* Updates the slack and criticalities of each source-sink pair of block pins in net_slack. 
 	 * For n clock domains, this function will be called n^2 times for each iteration of the timing analyser.
-	 * At each iteration, slacks of each edge will be updated if they are less than the previous lowest slack. */
+	 * At each iteration, slacks and criticalities of each edge will be updated if they are less than the previous lowest values. */
 
 	int inet, iedge, inode, to_node, num_edges;
 	t_tedge *tedge;
@@ -1475,7 +1503,7 @@ void do_constant_net_delay_timing_analysis(t_timing_inf timing_inf,
 
 	t_chunk net_delay_ch = {NULL, 0, NULL};
 
-	float **net_delay, **net_slack;
+	float **net_delay, **net_slack, **net_criticality;
 
 	net_slack = alloc_and_load_timing_graph(timing_inf);
 	net_delay = alloc_net_delay(&net_delay_ch, timing_nets,
@@ -1484,7 +1512,7 @@ void do_constant_net_delay_timing_analysis(t_timing_inf timing_inf,
 	load_constant_net_delay(net_delay, constant_net_delay_value, timing_nets,
 			num_timing_nets);
 	load_timing_graph_net_delays(net_delay);
-	load_net_slack(net_slack, FALSE);
+	load_net_slack_and_criticality(net_slack, net_criticality, FALSE, TRUE);
 
 	if (GetEchoOption()) {
 		print_critical_path("critical_path.echo");
@@ -1982,7 +2010,7 @@ static void print_primitive_as_blif(FILE *fpout, int iblk) {
 /* Set new arrival time
 	Special code for LUTs to enable LUT input delay balancing
 */
-static float set_and_balance_arrival_time(int to_node, int from_node, float Tdel, boolean do_lut_input_balancing, float d_max) {
+static void set_and_balance_arrival_time(int to_node, int from_node, float Tdel, boolean do_lut_input_balancing) {
 	int i, j;
 	t_pb *pb;
 	boolean rebalance;
@@ -2076,14 +2104,10 @@ static float set_and_balance_arrival_time(int to_node, int from_node, float Tdel
 				free(assigned);
 				if(balanced_T_arr != OPEN) {
 					tnode[to_node].T_arr = balanced_T_arr;
-					d_max = max(d_max, balanced_T_arr);
 				}
 			}
 		}
-	} else {
-		d_max = max(d_max, tnode[to_node].T_arr);
-	}
-	return d_max;
+	} 
 }
 
 
