@@ -83,13 +83,16 @@ enum e_subblock_pin_type {
 	SUB_INPUT = 0, SUB_OUTPUT, SUB_CLOCK, NUM_SUB_PIN_TYPES
 };
 
-/*************** Variables relating to timing constraints *******************/
+/******************* Externally-accessible variables ************************/
 
 int num_netlist_clocks = 0; /* number of clocks in netlist */
 t_clock * clock_list = NULL; /* [0..num_netlist_clocks - 1] array of clocks in netlist */
 float ** timing_constraints = NULL; /* [0..num_netlist_clocks - 1 (source)][0..num_netlist_clocks - 1 (destination)] */
 
-/***************** Variables local to this module ***************************/
+float ** net_slack = NULL; /* [0..num_nets-1][1..num_pins] */
+float ** net_slack_ratio = NULL; /* [0..num_nets-1][1..num_pins] */
+
+/******************** Variables local to this module ************************/
 
 /* Variables for "chunking" the tedge memory.  If the head pointer in tedge_ch is NULL, *
  * no timing graph exists now.                                              */
@@ -101,9 +104,9 @@ static int num_timing_nets = 0;
 
 /***************** Subroutines local to this module *************************/
 
-static float **alloc_net_slack(void);
+static void alloc_net_slack_and_slack_ratio(void);
 
-static void update_net_slacks_and_criticalities(float **net_slack);
+static void update_net_slack_and_slack_ratio(void);
 
 static void alloc_and_load_tnodes(t_timing_inf timing_inf);
 
@@ -130,25 +133,19 @@ static void propagate_clock_domain_and_skew(int inode);
 
 /********************* Subroutine definitions *******************************/
 
-float **
-alloc_and_load_timing_graph(t_timing_inf timing_inf) {
+void alloc_and_load_timing_graph(t_timing_inf timing_inf) {
 
 	/* This routine builds the graph used for timing analysis.  Every cb pin is a 
 	 * timing node (tnode).  The connectivity between pins is *
 	 * represented by timing edges (tedges).  All delay is marked on edges, not *
-	 * on nodes.  This routine returns an array that will store slack values:   *
-	 * net_slack[0..num_nets-1][1..num_pins-1].                                 */
-	/* The are below are valid only for CBs, not pads.						   */
+	 * on nodes.  This routine also allocates two arrays that will store slack values:   *
+	 * net_slack and net_slack_ratio ([0..num_nets-1][1..num_pins]).           */
 
-	/* Array for mapping from a pin on a block to a tnode index. For pads, only *
-	 * the first two pin locations are used (input to pad is first, output of   *
-	 * pad is second).  For CLBs, all OPEN pins on the cb have their mapping   *
-	 * set to OPEN so I won't use it by mistake.                                */
+	/*  For pads, only the first two pin locations are used (input to pad is first,
+	 * output of pad is second).  For CLBs, all OPEN pins on the cb have their 
+	 * mapping set to OPEN so I won't use it by mistake.                          */
 
 	int num_sinks;
-	float **net_slack; /* [0..num_nets-1][1..num_pins-1]. */
-
-	/************* End of variable declarations ********************************/
 
 	if (tedge_ch.chunk_ptr_head != NULL) {
 		printf("Error in alloc_and_load_timing_graph:\n"
@@ -178,34 +175,26 @@ alloc_and_load_timing_graph(t_timing_inf timing_inf) {
 	}
 
 	check_timing_graph(num_sinks);
-#if 0
-	load_clock_domain_and_skew(); /* Doesn't work yet post-packing. */
-#endif
-	net_slack = alloc_net_slack();
 
-	return (net_slack);
+	load_clock_domain_and_skew(); 
+
+	alloc_net_slack_and_slack_ratio();
 }
 
-float** alloc_and_load_pre_packing_timing_graph(float block_delay,
+void alloc_and_load_pre_packing_timing_graph(float block_delay,
 		float inter_cluster_net_delay, t_model *models, t_timing_inf timing_inf) {
 
-	/* This routine builds the graph used for timing analysis.  Every technology mapped netlist pin is a 
-	 * timing node (tnode).  The connectivity between pins is *
+	/* This routine builds the graph used for timing analysis.  Every technology-
+	 * mapped netlist pin is a timing node (tnode).  The connectivity between pins is *
 	 * represented by timing edges (tedges).  All delay is marked on edges, not *
-	 * on nodes.  This routine returns an array that will store slack values:   *
-	 * net_slack[0..num_nets-1][1..num_pins-1].                                 */
-	/* The are below are valid only for CBs, not pads.                  */
+	 * on nodes.  This routine also allocates two arrays that will store slack values:   *
+	 * net_slack and net_slack_ratio ([0..num_nets-1][1..num_pins]).           */
 
-	/* Array for mapping from a pin on a block to a tnode index. For pads, only *
-	 * the first two pin locations are used (input to pad is first, output of   *
-	 * pad is second).  For CLBs, all OPEN pins on the cb have their mapping   *
-	 * set to OPEN so I won't use it by mistake.                                */
+	/*  For pads, only the first two pin locations are used (input to pad is first,
+	 * output of pad is second).  For CLBs, all OPEN pins on the cb have their 
+	 * mapping set to OPEN so I won't use it by mistake.                          */
 
 	int num_sinks;
-
-	float **net_slack;
-
-	/************* End of variable declarations ********************************/
 
 	if (tedge_ch.chunk_ptr_head != NULL) {
 		printf("Error in alloc_and_load_timing_graph:\n"
@@ -234,39 +223,34 @@ float** alloc_and_load_pre_packing_timing_graph(float block_delay,
 
 	load_clock_domain_and_skew();
 
-	net_slack = alloc_net_slack();
+	alloc_net_slack_and_slack_ratio();
 
 	if (GetEchoOption()) {
 		print_timing_graph("pre_packing_timing_graph.echo");
 		print_timing_graph_as_blif("pre_packing_timing_graph_as_blif.blif",
 				models);
 	}
-
 	check_timing_graph(num_sinks);
-
-	return net_slack;
 }
 
-static float **
-alloc_net_slack(void) {
+static void alloc_net_slack_and_slack_ratio(void) {
 
-	/* Allocates the net_slack structure.  Chunk allocated to save space.      */
+	/* Allocates the net_slack and net_slack_ratio structures ([0..num_nets-1][1..num_pins-1]).  Chunk allocated to save space. */
 
-	float **net_slack; /* [0..num_nets-1][1..num_pins-1]  */
 	int inet, j;
-
-	net_slack = (float **) my_malloc(num_timing_nets * sizeof(float *));
+	
+	net_slack		= (float **) my_malloc(num_timing_nets * sizeof(float *));
+	net_slack_ratio	= (float **) my_malloc(num_timing_nets * sizeof(float *));
 
 	for (inet = 0; inet < num_timing_nets; inet++) {
-		net_slack[inet] = (float *) my_chunk_malloc(
-				(timing_nets[inet].num_sinks + 1) * sizeof(float),
-				&tedge_ch);
+		net_slack[inet]	   = (float *) my_chunk_malloc((timing_nets[inet].num_sinks + 1) * sizeof(float), &tedge_ch);
+		net_slack_ratio[inet] = (float *) my_chunk_malloc((timing_nets[inet].num_sinks + 1) * sizeof(float), &tedge_ch);
+		
 		for (j = 0; j <= timing_nets[inet].num_sinks; j++) {
-			net_slack[inet][j] = UNDEFINED;
+			net_slack[inet][j]		 = UNDEFINED;
+			net_slack_ratio[inet][j] = UNDEFINED;
 		}
 	}
-
-	return (net_slack);
 }
 
 void load_timing_graph_net_delays(float **net_delay) {
@@ -291,8 +275,7 @@ void load_timing_graph_net_delays(float **net_delay) {
 	}
 }
 
-void free_timing_graph(float **net_slack) {
-
+void free_timing_graph(void) {
 
 	if (tedge_ch.chunk_ptr_head == NULL) {
 		printf("Error in free_timing_graph: No timing graph to free.\n");
@@ -304,6 +287,7 @@ void free_timing_graph(float **net_slack) {
 	free(net_to_driver_tnode);
 	free_ivec_vector(tnodes_at_level, 0, num_tnode_levels - 1);
 	free(net_slack);
+	free(net_slack_ratio);
 
 	tnode = NULL;
 	num_tnodes = 0;
@@ -312,7 +296,7 @@ void free_timing_graph(float **net_slack) {
 	num_tnode_levels = 0;
 }
 
-void print_net_slack(char *fname, float **net_slack) {
+void print_net_slack(char *fname) {
 
 	/* Prints the net slacks into a file. */
 
@@ -1076,7 +1060,7 @@ char *tnode_type_names[] = {  "INPAD_SOURCE", "INPAD_OPIN", "OUTPAD_IPIN",
 	fclose(fp);
 }
 
-void load_net_slack_and_criticality(float **net_slack, float **net_criticality, boolean do_lut_input_balancing, boolean is_final_analysis) {
+void load_net_slack_and_slack_ratio(boolean do_lut_input_balancing, boolean is_final_analysis) {
 /*  Perform timing analysis on circuit.  Return slack and criticality of nets in the circuit.  The timing 
 	graph must have already been built.	
 
@@ -1291,7 +1275,7 @@ void load_net_slack_and_criticality(float **net_slack, float **net_criticality, 
 			}
 		}
 	/* After each iteration of the iclock loop, update the slack and/or criticality of each edge if either has a newer, lower value. */
-	update_net_slacks_and_criticalities(net_slack);
+	update_net_slack_and_slack_ratio();
 
 	} /* end of source_clock_domain loop */
 	
@@ -1300,7 +1284,7 @@ void load_net_slack_and_criticality(float **net_slack, float **net_criticality, 
 			max_critical_output_paths);*/
 }
 
-static void update_net_slacks_and_criticalities(float **net_slack) {
+static void update_net_slack_and_slack_ratio(void) {
 
 	/* Updates the slack and criticalities of each source-sink pair of block pins in net_slack. 
 	 * For n clock domains, this function will be called n^2 times for each iteration of the timing analyser.
@@ -1503,26 +1487,26 @@ void do_constant_net_delay_timing_analysis(t_timing_inf timing_inf,
 
 	t_chunk net_delay_ch = {NULL, 0, NULL};
 
-	float **net_delay, **net_slack, **net_criticality;
+	float **net_delay;
 
-	net_slack = alloc_and_load_timing_graph(timing_inf);
+	alloc_and_load_timing_graph(timing_inf);
 	net_delay = alloc_net_delay(&net_delay_ch, timing_nets,
 			num_timing_nets);
 
 	load_constant_net_delay(net_delay, constant_net_delay_value, timing_nets,
 			num_timing_nets);
 	load_timing_graph_net_delays(net_delay);
-	load_net_slack_and_criticality(net_slack, net_criticality, FALSE, TRUE);
+	load_net_slack_and_slack_ratio(FALSE, TRUE);
 
 	if (GetEchoOption()) {
 		print_critical_path("critical_path.echo");
 		print_timing_graph("timing_graph.echo");
-		print_net_slack("net_slack.echo", net_slack);
+		print_net_slack("net_slack.echo");
 		print_net_delay(net_delay, "net_delay.echo", timing_nets,
 				num_timing_nets);
 	}
 
-	free_timing_graph(net_slack);
+	free_timing_graph();
 	free_net_delay(net_delay, &net_delay_ch);
 }
 
@@ -2228,3 +2212,4 @@ static void propagate_clock_domain_and_skew(int inode) {
 		propagate_clock_domain_and_skew(to_node);
 	}
 }
+

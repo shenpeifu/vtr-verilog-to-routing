@@ -82,9 +82,9 @@ void print_sink_delays(char *fname) {
 void alloc_lookups_and_criticalities(t_chan_width_dist chan_width_dist,
 		struct s_router_opts router_opts,
 		struct s_det_routing_arch det_routing_arch, t_segment_inf * segment_inf,
-		t_timing_inf timing_inf, float ***net_delay, float ***net_slack) {
+		t_timing_inf timing_inf, float ***net_delay) {
 
-	(*net_slack) = alloc_and_load_timing_graph(timing_inf);
+	alloc_and_load_timing_graph(timing_inf);
 
 	(*net_delay) = alloc_net_delay(&net_delay_ch, clb_net,
 			num_nets);
@@ -97,12 +97,12 @@ void alloc_lookups_and_criticalities(t_chan_width_dist chan_width_dist,
 }
 
 /**************************************/
-void free_lookups_and_criticalities(float ***net_delay, float ***net_slack) {
+void free_lookups_and_criticalities(float ***net_delay) {
 
 	free(timing_place_crit);
 	free_crit(&timing_place_crit_ch);
 
-	free_timing_graph(*net_slack);
+	free_timing_graph();
 	free_net_delay(*net_delay, &net_delay_ch);
 
 }

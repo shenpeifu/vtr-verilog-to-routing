@@ -1,5 +1,5 @@
 boolean try_timing_driven_route(struct s_router_opts router_opts,
-		float **net_slack, float **net_delay, float **net_criticality, t_ivec ** clb_opins_used_locally);
+		float **net_slack, float **net_delay, float **net_slack_ratio, t_ivec ** clb_opins_used_locally);
 boolean timing_driven_route_net(int inet, float pres_fac, float max_criticality,
 		float criticality_exp, float astar_fac, float bend_cost,
 		float *net_slack, float *pin_criticality, int *sink_order,

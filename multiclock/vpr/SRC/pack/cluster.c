@@ -270,7 +270,6 @@ void do_clustering(const t_arch *arch, t_pack_molecule *molecule_head,
 	enum e_block_pack_status block_pack_status;
 
 	int *num_used_instances_type, *num_instances_type; /* [0..num_types] Holds array for total number of each cluster_type available */
-	float **net_slack = NULL, **net_criticality = NULL;
 	float num_paths_scaling, distance_scaling;
 
 	float crit;
@@ -348,9 +347,9 @@ void do_clustering(const t_arch *arch, t_pack_molecule *molecule_head,
 	/* Limit maximum number of elements for each cluster */
 
 	if (timing_driven) {
-		net_slack = alloc_and_load_pre_packing_timing_graph(block_delay,
+		alloc_and_load_pre_packing_timing_graph(block_delay,
 				inter_cluster_net_delay, arch->models, timing_inf);
-		load_net_slack_and_criticality(net_slack, net_criticality, FALSE, TRUE);
+		load_net_slack_and_slack_ratio(FALSE, TRUE);
 
 		criticality = (float*) my_calloc(num_logical_blocks, sizeof(float));
 
@@ -537,7 +536,7 @@ void do_clustering(const t_arch *arch, t_pack_molecule *molecule_head,
 	}
 
 	if (timing_driven) {
-		free_timing_graph(net_slack);
+		free_timing_graph();
 	}
 
 	free_cluster_legality_checker();

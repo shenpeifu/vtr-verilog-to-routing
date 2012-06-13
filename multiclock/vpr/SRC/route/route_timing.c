@@ -40,7 +40,7 @@ static int mark_node_expansion_by_bin(int inet, int target_node,
 /************************ Subroutine definitions *****************************/
 
 boolean try_timing_driven_route(struct s_router_opts router_opts,
-		float **net_slack, float **net_delay, float **net_criticality, t_ivec ** clb_opins_used_locally) {
+		float **net_slack, float **net_delay, float **net_slack_ratio, t_ivec ** clb_opins_used_locally) {
 
 	/* Timing-driven routing algorithm.  The timing graph (includes net_slack)   *
 	 * must have already been allocated, and net_delay must have been allocated. *
@@ -197,7 +197,7 @@ boolean try_timing_driven_route(struct s_router_opts router_opts,
 		 * Timing_driven_route_net updated the net delay values.                 */
 
 		load_timing_graph_net_delays(net_delay);
-		load_net_slack_and_criticality(net_slack, net_criticality, TRUE, FALSE);
+		load_net_slack_and_slack_ratio(TRUE, FALSE);
 		/*printf("T_crit: %g.\n", T_crit);*/
 		fflush(stdout);
 	}

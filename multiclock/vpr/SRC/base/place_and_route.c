@@ -54,7 +54,7 @@ void place_and_route(enum e_operation operation,
 	char msg[BUFSIZE];
 	int width_fac, inet, i;
 	boolean success, Fc_clipped;
-	float **net_delay, **net_slack, **net_criticality;
+	float **net_delay;
 
 	t_chunk net_delay_ch = {NULL, 0, NULL};
 
@@ -141,16 +141,15 @@ void place_and_route(enum e_operation operation,
 		clb_opins_used_locally = alloc_route_structs();
 
 		if (timing_inf.timing_analysis_enabled) {
-			net_slack = alloc_and_load_timing_graph(timing_inf);
+			alloc_and_load_timing_graph(timing_inf);
 			net_delay = alloc_net_delay(&net_delay_ch, clb_net,
 					num_nets);
 		} else {
 			net_delay = NULL; /* Defensive coding. */
-			net_slack = NULL;
 		}
 
 		success = try_route(width_fac, router_opts, det_routing_arch,
-				segment_inf, timing_inf, net_slack, net_delay, net_criticality, chan_width_dist,
+				segment_inf, timing_inf, net_delay, chan_width_dist,
 				clb_opins_used_locally, mst, &Fc_clipped);
 
 		if (Fc_clipped) {
@@ -181,7 +180,7 @@ void place_and_route(enum e_operation operation,
 					det_routing_arch.num_segment, det_routing_arch.R_minW_nmos,
 					det_routing_arch.R_minW_pmos,
 					det_routing_arch.directionality,
-					timing_inf.timing_analysis_enabled, net_slack, net_delay, net_criticality);
+					timing_inf.timing_analysis_enabled, net_delay);
 
 			print_route(route_file);
 
@@ -205,7 +204,7 @@ void place_and_route(enum e_operation operation,
 						models);
 			}
 
-			free_timing_graph(net_slack);
+			free_timing_graph();
 
 			assert(net_delay);
 			free_net_delay(net_delay, &net_delay_ch);
@@ -261,7 +260,7 @@ static int binary_search_place_and_route(struct s_placer_opts placer_opts,
 	int max_pins_per_clb, i;
 	boolean success, prev_success, prev2_success, Fc_clipped = FALSE;
 	char msg[BUFSIZE];
-	float **net_delay, **net_slack, **net_criticality;
+	float **net_delay;
 
 	t_chunk net_delay_ch = {NULL, 0, NULL};
 
@@ -295,9 +294,8 @@ static int binary_search_place_and_route(struct s_placer_opts placer_opts,
 			&saved_clb_opins_used_locally);
 
 	if (timing_inf.timing_analysis_enabled) {
-		net_slack = alloc_and_load_timing_graph(timing_inf);
-		net_delay = alloc_net_delay(&net_delay_ch, clb_net,
-				num_nets);
+		alloc_and_load_timing_graph(timing_inf);
+		net_delay = alloc_net_delay(&net_delay_ch, clb_net, num_nets);
 	} else {
 		net_delay = NULL; /* Defensive coding. */
 		net_slack = NULL;
@@ -377,7 +375,7 @@ static int binary_search_place_and_route(struct s_placer_opts placer_opts,
 					&mst);
 		}
 		success = try_route(current, router_opts, det_routing_arch, segment_inf,
-				timing_inf, net_slack, net_delay, net_criticality, chan_width_dist,
+				timing_inf, net_delay, chan_width_dist,
 				clb_opins_used_locally, mst, &Fc_clipped);
 		attempt_count++;
 		fflush(stdout);
@@ -487,7 +485,7 @@ static int binary_search_place_and_route(struct s_placer_opts placer_opts,
 			}
 
 			success = try_route(current, router_opts, det_routing_arch,
-					segment_inf, timing_inf, net_slack, net_delay, net_criticality,
+					segment_inf, timing_inf, net_delay,
 					chan_width_dist, clb_opins_used_locally, mst, &Fc_clipped);
 
 			if (success && Fc_clipped == FALSE) {
@@ -549,7 +547,7 @@ static int binary_search_place_and_route(struct s_placer_opts placer_opts,
 			det_routing_arch.num_switch, segment_inf,
 			det_routing_arch.num_segment, det_routing_arch.R_minW_nmos,
 			det_routing_arch.R_minW_pmos, det_routing_arch.directionality,
-			timing_inf.timing_analysis_enabled, net_slack, net_delay, net_criticality);
+			timing_inf.timing_analysis_enabled, net_delay);
 
 	print_route(route_file);
 
@@ -565,7 +563,7 @@ static int binary_search_place_and_route(struct s_placer_opts placer_opts,
 		if (GetEchoOption()) {
 			print_timing_graph_as_blif("post_flow_timing_graph.blif", models);
 		}
-		free_timing_graph(net_slack);
+		free_timing_graph();
 		free_net_delay(net_delay, &net_delay_ch);
 	}
 
