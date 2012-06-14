@@ -78,7 +78,25 @@ void print_sink_delays(char *fname) {
 }
 
 /**************************************/
+void load_criticalities(float crit_exponent) {
+	/* Performs a 1-to-1 mapping from net_slack_ratio to timing_place_crit.  
+	  For every pin on every net (or, equivalently, for every tedge ending 
+	  in that pin), criticality = (1-slack ratio)^(criticality exponent) */
 
+	int inet, ipin;
+
+	for (inet = 0; inet < num_nets; inet++) {
+		if (inet == OPEN)
+			continue;
+		if (clb_net[inet].is_global)
+			continue;
+        for (ipin = 1; ipin <= clb_net[inet].num_sinks; ipin++) {
+			timing_place_crit[inet][ipin] = pow(1-net_slack_ratio[inet][ipin], crit_exponent);
+		}
+	}
+}
+
+/**************************************/
 void alloc_lookups_and_criticalities(t_chan_width_dist chan_width_dist,
 		struct s_router_opts router_opts,
 		struct s_det_routing_arch det_routing_arch, t_segment_inf * segment_inf,

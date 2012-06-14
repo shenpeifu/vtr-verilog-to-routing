@@ -345,7 +345,7 @@ void try_place(struct s_placer_opts placer_opts,
 
 		load_timing_graph_net_delays(net_delay);
 		load_net_slack_and_slack_ratio(FALSE, FALSE);
-		//timing_place_crit[inet][ipin] = pow(net_slack_ratio[inet][ipin], crit_exponent);
+		load_criticalities(crit_exponent);
 		outer_crit_iter_count = 1;
 
 		/*now we can properly compute costs  */
@@ -457,7 +457,7 @@ void try_place(struct s_placer_opts placer_opts,
 
 				load_timing_graph_net_delays(net_delay);
 				load_net_slack_and_slack_ratio(FALSE, FALSE);
-				//timing_place_crit[inet][ipin] = pow(net_slack_ratio[inet][ipin], crit_exponent);
+				load_criticalities(crit_exponent);
 				/*recompute costs from scratch, based on new criticalities */
 				comp_td_costs(&timing_cost, &delay_cost);
 				outer_crit_iter_count = 0;
@@ -508,7 +508,7 @@ void try_place(struct s_placer_opts placer_opts,
 
 					load_timing_graph_net_delays(net_delay);
 					load_net_slack_and_slack_ratio(FALSE, FALSE);
-					//timing_place_crit[inet][ipin] = pow(net_slack_ratio[inet][ipin], crit_exponent);
+					load_criticalities(crit_exponent);
 					comp_td_costs(&timing_cost, &delay_cost);
 				}
 				inner_crit_iter_count++;
@@ -644,7 +644,7 @@ void try_place(struct s_placer_opts placer_opts,
 
 			load_timing_graph_net_delays(net_delay);
 			load_net_slack_and_slack_ratio(FALSE, FALSE);
-			//timing_place_crit[inet][ipin] = pow(net_slack_ratio[inet][ipin], crit_exponent);
+			load_criticalities(crit_exponent);
 			/*recompute criticaliies */
 			comp_td_costs(&timing_cost, &delay_cost);
 			outer_crit_iter_count = 0;
@@ -692,7 +692,7 @@ void try_place(struct s_placer_opts placer_opts,
 
 					load_timing_graph_net_delays(net_delay);
 					load_net_slack_and_slack_ratio(FALSE, FALSE);
-					//timing_place_crit[inet][ipin] = pow(net_slack_ratio[inet][ipin], crit_exponent);
+					load_criticalities(crit_exponent);
 					comp_td_costs(&timing_cost, &delay_cost);
 				}
 				inner_crit_iter_count++;
