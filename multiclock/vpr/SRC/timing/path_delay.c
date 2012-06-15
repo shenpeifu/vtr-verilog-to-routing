@@ -1135,7 +1135,7 @@ void load_net_slack_and_slack_ratio(boolean do_lut_input_balancing, boolean is_f
 
 			for (i = 0; i < num_at_level; i++) {					
 				inode = tnodes_at_level[ilevel].list[i];			/* Go through each of the tnodes at the level we're on. */
-				if (fabs(tnode[inode].T_arr - HUGE_NEGATIVE_FLOAT) < EQUAL_DEF) { /* If the arrival time for this tnode is approximately equal to HUGE_NEGATIVE_FLOAT... */
+				if (tnode[inode].T_arr < 0) { /* If the arrival time for this tnode is less than 0 (it must be HUGE_NEGATIVE_FLOAT)... */
 					continue;	/* End this iteration of the num_at_level for loop since this node is not part of the clock domain we're analyzing. 
 								   (If it were, it would have received an arrival time already.) */
 				}
@@ -1234,7 +1234,7 @@ void load_net_slack_and_slack_ratio(boolean do_lut_input_balancing, boolean is_f
 					assert(!(tnode[inode].type == OUTPAD_SINK || tnode[inode].type == FF_SINK || tnode[inode].type == FF_CLOCK));
 					tedge = tnode[inode].out_edges;
 					to_node = tedge[0].to_node;
-					if (fabs(tnode[to_node].T_req == HUGE_POSITIVE_FLOAT) < EQUAL_DEF) { /* If the required time for this tnode is approximately equal to HUGE_POSITIVE_FLOAT... */
+					if (tnode[to_node].T_req > HUGE_POSITIVE_FLOAT - 1) { /* If the required time for this tnode is approximately equal to HUGE_POSITIVE_FLOAT... */
 						continue;	/*  End this iteration of the num_at_level for loop if tnode[to_node] is a sink tnode which is not part of the clock domain we're analyzing. 
 									 * This has the effect of not back-propagating required times from nodes we don't care about. 
 									 * We exploit the fact that sink tnodes are their parent nodes' only edge, so we only have to check tedge[0] for sink nodes. 

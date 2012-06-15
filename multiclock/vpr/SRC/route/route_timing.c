@@ -197,7 +197,12 @@ boolean try_timing_driven_route(struct s_router_opts router_opts,
 		 * Timing_driven_route_net updated the net delay values.                 */
 
 		load_timing_graph_net_delays(net_delay);
+		
+#ifdef HACK_LUT_PIN_SWAPPING
 		load_net_slack_and_slack_ratio(TRUE, FALSE);
+#else
+		load_net_slack_and_slack_ratio(FALSE, FALSE);
+#endif
 		/*printf("T_crit: %g.\n", T_crit);*/
 		fflush(stdout);
 	}
