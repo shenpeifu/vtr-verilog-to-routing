@@ -5,7 +5,7 @@
 
 /*********************** Defines for timing options *******************************/
 
-#define SLACK_DEFINITION 3
+#define SLACK_DEFINITION 4
 /* Choose whether, and how, to normalize negative slacks load_net_slack_and_slack_ratio for optimization 
   (not for final analysis, since real slacks are always given here).
   Possible values:
@@ -21,6 +21,8 @@
    2: slack ratio = (slack of this edge)/(maximum required time T_req_max in design)
    Note that if SLACK_DEFINITION = 4 above, T_req_max will be taken from normalized required times, not real required times.
 */
+
+/* WARNING: SLACK_DEFINITION 3 and SLACK_RATIO_DEFINITION 1 are not compatible. */
 
 /*************************** Function declarations ********************************/
 

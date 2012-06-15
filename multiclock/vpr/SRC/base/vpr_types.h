@@ -68,7 +68,8 @@ typedef size_t bitfield;
 #define MINOR 0			/* For update_screen.  Denotes importance of update. */
 #define MAJOR 1
 
-#define HUGE_FLOAT 1.e30
+#define HUGE_POSITIVE_FLOAT 1.e30
+#define HUGE_NEGATIVE_FLOAT -1.e30
 
 #define MAX_SHORT 32767
 
@@ -209,7 +210,7 @@ typedef struct s_logical_block {
 
 	int **input_nets; /* [0..num_input_ports-1][0..num_port_pins-1] List of input nets connected to this logical_block. */
 	int **output_nets; /* [0..num_output_ports-1][0..num_port_pins-1] List of output nets connected to this logical_block. */
-	int clock_net; /* List of clock net connected to this logical_block.  		*/
+	int clock_net; /* Clock net connected to this logical_block. */
 
 	int used_input_pins; /* Number of used input pins */
 
@@ -324,6 +325,7 @@ typedef struct s_tnode {
 	float T_arr;
 	float T_req;
 	int block;
+	boolean used_on_this_traversal; /* Has this tnode been touched on this timing graph traversal? */
 
 	/* For flipflops only. Clock_domain contains the index of the clock in clock_list; clock_skew is the time taken for a clock signal to get to the flip-flop. */
 	int clock_domain; 

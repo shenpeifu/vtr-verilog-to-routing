@@ -188,7 +188,7 @@ boolean try_timing_driven_route(struct s_router_opts router_opts,
 			pres_fac *= router_opts.pres_fac_mult;
 
 			/* Avoid overflow for high iteration counts, even if acc_cost is big */
-			pres_fac = min(pres_fac, HUGE_FLOAT / 1e5);
+			pres_fac = min(pres_fac, HUGE_POSITIVE_FLOAT / 1e5);
 
 			pathfinder_update_cost(pres_fac, router_opts.acc_fac);
 		}
@@ -335,8 +335,8 @@ boolean timing_driven_route_net(int inet, float pres_fac, float max_criticality,
 			old_tcost = rr_node_route_inf[inode].path_cost;
 			new_tcost = current->cost;
 
-			if (old_tcost > 0.99 * HUGE_FLOAT) /* First time touched. */
-				old_back_cost = HUGE_FLOAT;
+			if (old_tcost > 0.99 * HUGE_POSITIVE_FLOAT) /* First time touched. */
+				old_back_cost = HUGE_POSITIVE_FLOAT;
 			else
 				old_back_cost = rr_node_route_inf[inode].backward_path_cost;
 
@@ -356,7 +356,7 @@ boolean timing_driven_route_net(int inet, float pres_fac, float max_criticality,
 				rr_node_route_inf[inode].path_cost = new_tcost;
 				rr_node_route_inf[inode].backward_path_cost = new_back_cost;
 
-				if (old_tcost > 0.99 * HUGE_FLOAT) /* First time touched. */
+				if (old_tcost > 0.99 * HUGE_POSITIVE_FLOAT) /* First time touched. */
 					add_to_mod_list(&rr_node_route_inf[inode].path_cost);
 
 				timing_driven_expand_neighbours(current, inet, bend_cost,

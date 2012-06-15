@@ -497,7 +497,7 @@ update_traceback(struct s_heap *hptr, int inet) {
 
 void reset_path_costs(void) {
 
-	/* The routine sets the path_cost to HUGE_FLOAT for all channel segments   *
+	/* The routine sets the path_cost to HUGE_POSITIVE_FLOAT for all channel segments   *
 	 * touched by previous routing phases.                                     */
 
 	struct s_linked_f_pointer *mod_ptr;
@@ -516,13 +516,13 @@ void reset_path_costs(void) {
 #endif
 
 		while (mod_ptr->next != NULL) {
-			*(mod_ptr->fptr) = HUGE_FLOAT;
+			*(mod_ptr->fptr) = HUGE_POSITIVE_FLOAT;
 			mod_ptr = mod_ptr->next;
 #ifdef DEBUG
 			num_mod_ptrs++;
 #endif
 		}
-		*(mod_ptr->fptr) = HUGE_FLOAT; /* Do last one. */
+		*(mod_ptr->fptr) = HUGE_POSITIVE_FLOAT; /* Do last one. */
 
 		/* Reset the modified list and put all the elements back in the free   *
 		 * list.                                                               */
@@ -804,7 +804,7 @@ void alloc_and_load_rr_node_route_structs(void) {
 		rr_node_route_inf[inode].prev_edge = NO_PREVIOUS;
 		rr_node_route_inf[inode].pres_cost = 1.;
 		rr_node_route_inf[inode].acc_cost = 1.;
-		rr_node_route_inf[inode].path_cost = HUGE_FLOAT;
+		rr_node_route_inf[inode].path_cost = HUGE_POSITIVE_FLOAT;
 		rr_node_route_inf[inode].target_flag = 0;
 	}
 }
@@ -823,7 +823,7 @@ void reset_rr_node_route_structs(void) {
 		rr_node_route_inf[inode].prev_edge = NO_PREVIOUS;
 		rr_node_route_inf[inode].pres_cost = 1.;
 		rr_node_route_inf[inode].acc_cost = 1.;
-		rr_node_route_inf[inode].path_cost = HUGE_FLOAT;
+		rr_node_route_inf[inode].path_cost = HUGE_POSITIVE_FLOAT;
 		rr_node_route_inf[inode].target_flag = 0;
 	}
 }
