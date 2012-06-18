@@ -349,7 +349,7 @@ void do_clustering(const t_arch *arch, t_pack_molecule *molecule_head,
 	if (timing_driven) {
 		alloc_and_load_pre_packing_timing_graph(block_delay,
 				inter_cluster_net_delay, arch->models, timing_inf);
-		load_net_slack_and_slack_ratio(FALSE, TRUE);
+		load_net_slack_and_slack_ratio(FALSE, FALSE);
 
 		criticality = (float*) my_calloc(num_logical_blocks, sizeof(float));
 

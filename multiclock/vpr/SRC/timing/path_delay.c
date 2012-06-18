@@ -247,7 +247,7 @@ static void alloc_net_slack_and_slack_ratio(void) {
 		net_slack_ratio[inet] = (float *) my_chunk_malloc((timing_nets[inet].num_sinks + 1) * sizeof(float), &tedge_ch);
 		
 		for (j = 0; j <= timing_nets[inet].num_sinks; j++) {
-			net_slack[inet][j]		 = UNDEFINED;
+			net_slack[inet][j]		 = HUGE_NEGATIVE_FLOAT;
 			net_slack_ratio[inet][j] = HUGE_POSITIVE_FLOAT;
 		}
 	}
@@ -1083,10 +1083,8 @@ void load_net_slack_and_slack_ratio(boolean do_lut_input_balancing, boolean is_f
 	t_pb *pb;
 	long max_critical_output_paths = 0, max_critical_input_paths = 0;
 	float smallest_slack_in_design = HUGE_POSITIVE_FLOAT; /* Starts off very large so that everything will be less than it. */
-
-#if SLACK_DEFINITION == 3 || SLACK_RATIO_DEFINITION == 2
+	boolean found;
 	int inet; 
-#endif
 
 	/* Reset LUT input rebalancing */
 	for (inode = 0; inode < num_tnodes; inode++) {
@@ -1108,13 +1106,14 @@ void load_net_slack_and_slack_ratio(boolean do_lut_input_balancing, boolean is_f
 	for (source_clock_domain = 0; source_clock_domain < num_netlist_clocks; source_clock_domain++) {
 		
 #if SLACK_RATIO_DEFINITION == 1		
-		T_req_max = 0; /* Reset before each pair of traversals. */
+		T_req_max = 0; /* Reset before each pair of traversals. If SLACK_RATIO_DEFINITION = 2, we want the global T_req_max, so don't reset except in the declaration. */
 #endif
 
-		/* Reset all used_on_this_traversal flags to FALSE.  Also, reset all arrival times to a very large negative number. */
+		/* Reset all used_on_this_traversal flags to FALSE.  Also, reset all arrival times to a very large negative number, and all required times to a very large positive number. */
 		for(inode = 0; inode < num_tnodes; inode++) {
 			tnode[inode].used_on_this_traversal = FALSE;
 			tnode[inode].T_arr = HUGE_NEGATIVE_FLOAT; 
+			tnode[inode].T_req = HUGE_POSITIVE_FLOAT;
 		}
 
 		num_at_level = tnodes_at_level[0].nelem;	/* There are num_at_level top-level tnodes. */
@@ -1142,7 +1141,6 @@ void load_net_slack_and_slack_ratio(boolean do_lut_input_balancing, boolean is_f
 
 				if (ilevel == 0) {
 					tnode[inode].num_critical_input_paths = 1;		/* Top-level tnodes have only one critical input path */
-					tnode[inode].used_on_this_traversal = TRUE;		/* Mark that we've used this node on this traversal (tnodes which are not level 0 will be marked later) */
 				}
 				T_arr = tnode[inode].T_arr;							/* Get the arrival time from the node we're visiting */
 				num_edges = tnode[inode].num_edges;					/* Get the number of edges fanning out from the node we're visiting */
@@ -1151,8 +1149,7 @@ void load_net_slack_and_slack_ratio(boolean do_lut_input_balancing, boolean is_f
 				for (iedge = 0; iedge < num_edges; iedge++) {		/* Now go through each edge coming out from this tnode */
 					to_node = tedge[iedge].to_node;					/* Get the index of the destination tnode of this edge... */
 					Tdel = tedge[iedge].Tdel;						/* ...and get the delay to that tnode, along this edge. */
-					tnode[to_node].used_on_this_traversal = TRUE;	/* Mark that we've used this node on this traversal */
-
+					
 					/* Update number of near critical paths entering tnode. */
 					/* Check for approximate equality. */
 					if (fabs(tnode[to_node].T_arr - (T_arr + Tdel)) < EQUAL_DEF) {
@@ -1189,22 +1186,24 @@ void load_net_slack_and_slack_ratio(boolean do_lut_input_balancing, boolean is_f
 				}
 
 				if (num_edges == 0) { /* sink */
-					assert(tnode[inode].type == OUTPAD_SINK || tnode[inode].type == FF_SINK || tnode[inode].type == FF_CLOCK); 
-					/* Assign each sink (leaf) node to have the required time T_req = T_crit + clock_skew.								     *
+					if (tnode[inode].type == OUTPAD_SINK || tnode[inode].type == FF_CLOCK) {
+						continue; /* Skip FF_CLOCK and (until I/Os are added) OUTPAD_SINK nodes */
+					}
+					assert(tnode[inode].type == FF_SINK); 
+
+					/* Assign each FF_SINK leaf node to have the required time T_req = T_crit + clock_skew.								     *
 					 * T_req is the time we need all inputs to a tnode to arrive by, before it begins to affect the speed of the circuit.    *
 					 * Roughly speaking, the slack along a path is the difference between the required time and the arrival time - the       *
 					 * amount of time a signal could be delayed on that connection before it would begin to affect the speed of the circuit. */
 					
-					/* For multiple clocks, we can no longer base the required time on the critical path delay.  
+					/* For multiple clocks, we can no longer base T_req on the critical path delay.  
 					 * Instead, we must use the timing constraint for the pair of source and sink clock domains we're considering, which is stored in timing_constraints. 
-					 * However, if the timing constraint is DO_NOT_ANALYSE, set a flag so that we don't propagate this tnode backward. */ 
+					 * However, if the timing constraint is DO_NOT_ANALYSE, T_req remains HUGE_POSITIVE_FLOAT, flagging that we should not propagate this tnode backward. */ 
+
 					sink_clock_domain = tnode[inode].clock_domain;
 					constraint = timing_constraints[source_clock_domain][sink_clock_domain];
-					if(constraint == DO_NOT_ANALYSE) {
-						/* Arrival time is set to a very large positive number.  This acts as a flag to not analyze this tnode on this iteration of the iclock loop. */
-						tnode[inode].T_req = HUGE_POSITIVE_FLOAT;	
-					} else {
-
+					if(constraint > -0.01) { /* i.e. constraint != DO_NOT_ANALYSE */
+						tnode[inode].used_on_this_traversal = TRUE;	/* Mark that we've changed this node on this traversal (signalling we should update its slack later). */
 #if SLACK_DEFINITION == 4	
 						/* Normalize the required time at the sink node to be >=0 by taking the max of the "real" 
 							required time (constraint + tnode[inode].clock_skew) and the arrival time, except for the
@@ -1220,7 +1219,8 @@ void load_net_slack_and_slack_ratio(boolean do_lut_input_balancing, boolean is_f
 							tnode[inode].T_req = constraint + tnode[inode].clock_skew;
 						}
 
-#else					/* Don't do the normalization and always set T_req equal to the "real" required time. */
+#else					
+						/* Don't do the normalization and always set T_req equal to the "real" required time. */
 						tnode[inode].T_req = constraint + tnode[inode].clock_skew;
 #endif				 
 						
@@ -1230,16 +1230,24 @@ void load_net_slack_and_slack_ratio(boolean do_lut_input_balancing, boolean is_f
 			
 					}
 					tnode[inode].num_critical_output_paths = 1; /* Bottom-level tnodes have only one critical output path */
-				} else {
+				} else { /* not a sink */
 					assert(!(tnode[inode].type == OUTPAD_SINK || tnode[inode].type == FF_SINK || tnode[inode].type == FF_CLOCK));
 					tedge = tnode[inode].out_edges;
 					to_node = tedge[0].to_node;
-					if (tnode[to_node].T_req > HUGE_POSITIVE_FLOAT - 1) { /* If the required time for this tnode is approximately equal to HUGE_POSITIVE_FLOAT... */
-						continue;	/*  End this iteration of the num_at_level for loop if tnode[to_node] is a sink tnode which is not part of the clock domain we're analyzing. 
+					if (tnode[to_node].T_req > HUGE_POSITIVE_FLOAT - 1) { /* If T_req = HUGE_POSITIVE_FLOAT... */
+						continue;	/* End this iteration of the num_at_level for loop if this tnode is not part of the clock domain we're analyzing. 
 									 * This has the effect of not back-propagating required times from nodes we don't care about. 
 									 * We exploit the fact that sink tnodes are their parent nodes' only edge, so we only have to check tedge[0] for sink nodes. 
 									 * If this were not true, the HUGE_POSITIVE_FLOAT would still act as a safeguard to ensure non-propagation. */
 					}
+
+					if (tnode[to_node].T_arr < HUGE_NEGATIVE_FLOAT + 1) { /* If T_arr = HUGE_NEGATIVE_FLOAT... */
+						continue;	/* As above, except this catches FF_IPIN nodes which ARE part of the sink clock domain, but come directly from an I/O, 
+									in which case we don't want to analyze. This can probably be taken out once I/Os are incorporated into the timing analysis. */
+					}
+
+					tnode[inode].used_on_this_traversal = TRUE;	/* Mark that we've changed this node on this traversal (signalling we should update its slack later). */
+
 					Tdel = tedge[0].Tdel;
 					T_req = tnode[to_node].T_req - Tdel; 
 
@@ -1264,7 +1272,7 @@ void load_net_slack_and_slack_ratio(boolean do_lut_input_balancing, boolean is_f
 							max_critical_output_paths = tnode[to_node].num_critical_output_paths;
 						}
 
-						/* Opposite to T_arr, set T_req to the MINIMUM of the required times of all edges fanning OUT from this node. */
+						/* Opposite to T_arr, set T_req to the minimum of the required times of all edges fanning out from this node. */
 						T_req = min(T_req, tnode[to_node].T_req - Tdel);
 					}
 
@@ -1304,6 +1312,23 @@ void load_net_slack_and_slack_ratio(boolean do_lut_input_balancing, boolean is_f
 		}
 	}		
 #endif
+
+	/* Make sure something has been actually analyzed. */
+	found = FALSE;
+	for (inet = 0; inet < num_timing_nets; inet++) {
+		inode = net_to_driver_tnode[inet];
+		num_edges = tnode[inode].num_edges;
+		for (iedge = 1; iedge < num_edges && !found; iedge++) {
+			 if (net_slack[inet][iedge + 1] > HUGE_NEGATIVE_FLOAT + 1) {
+				 found = TRUE;
+			 }
+		}
+	}
+	if(!found) {
+		fprintf(stderr, "\nNo flipflop-to-flipflop paths with valid timing constraints were found."  
+			"Consider changing (or creating) the SDC file associated with the design.\n");
+		exit(1);
+	}
 
 	/* To do: get this to work with multiple clocks */
 	/*normalize_costs(&net_slack, max_critical_input_paths,
@@ -2191,7 +2216,7 @@ static void load_clock_domain_and_skew(boolean is_prepacked) {
 
 	int i, iclock, inode, iblock, num_at_level, clock_index;
 
-	/* Wipe fanout of each clock domain in clock_list, in case the indexing of our clocks changes. */
+	/* Wipe fanout of each clock domain in clock_list. */
 	for(iclock=0; iclock < num_netlist_clocks; iclock++) {
 		clock_list[iclock].fanout = 0;
 	}
