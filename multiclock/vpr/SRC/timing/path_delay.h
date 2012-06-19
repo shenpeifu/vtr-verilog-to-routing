@@ -43,6 +43,8 @@ void print_timing_graph(char *fname);
 
 void print_net_slack(char *fname);
 
+void print_net_slack_ratio(char *fname);
+
 void print_lut_remapping(char *fname);
 
 void print_critical_path(char *fname);

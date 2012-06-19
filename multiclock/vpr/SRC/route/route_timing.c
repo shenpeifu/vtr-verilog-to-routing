@@ -271,7 +271,7 @@ static int get_max_pins_per_net(void) {
 
 boolean timing_driven_route_net(int inet, float pres_fac, float max_criticality,
 		float criticality_exp, float astar_fac, float bend_cost,
-		float *net_slack, float *pin_criticality, int *sink_order,
+		float *net_slack_of_inet, float *pin_criticality, int *sink_order,
 		t_rt_node ** rt_node_of_sink, float T_crit, float *net_delay) {
 
 	/* Returns TRUE as long is found some way to hook up this net, even if that *
@@ -294,7 +294,7 @@ boolean timing_driven_route_net(int inet, float pres_fac, float max_criticality,
 	free_traceback(inet);
 
 	for (ipin = 1; ipin <= clb_net[inet].num_sinks; ipin++) { /* For all sinks */
-		pin_crit = max(max_criticality - net_slack[ipin] / T_crit, 0.);
+		pin_crit = max(max_criticality - net_slack_of_inet[ipin] / T_crit, 0.);
 		pin_crit = pow(pin_crit, criticality_exp);
 		pin_crit = min(pin_crit, max_criticality);
 		pin_criticality[ipin] = pin_crit;

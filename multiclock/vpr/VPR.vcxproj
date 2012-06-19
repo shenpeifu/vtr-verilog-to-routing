@@ -115,6 +115,7 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <DisableSpecificWarnings>4100; 4244; 4305;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <AdditionalIncludeDirectories>SRC\util;SRC\timing;SRC\route;SRC\place;SRC\pack;SRC\base;..\libvpr\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <Optimization>Full</Optimization>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>

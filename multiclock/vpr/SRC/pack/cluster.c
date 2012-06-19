@@ -353,6 +353,7 @@ void do_clustering(const t_arch *arch, t_pack_molecule *molecule_head,
 
 		if (GetEchoOption()) {
 				print_net_slack("pre_packing_net_slack.echo");
+				print_net_slack_ratio("pre_packing_net_slack_ratio.echo");
 		}
 
 		criticality = (float*) my_calloc(num_logical_blocks, sizeof(float));

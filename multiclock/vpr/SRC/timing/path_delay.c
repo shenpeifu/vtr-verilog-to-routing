@@ -248,7 +248,7 @@ static void alloc_net_slack_and_slack_ratio(void) {
 		
 		for (j = 0; j <= timing_nets[inet].num_sinks; j++) {
 			net_slack[inet][j]		 = HUGE_POSITIVE_FLOAT; /* So that when we take the min, it will always be replaced. */
-			net_slack_ratio[inet][j] = HUGE_NEGATIVE_FLOAT; /* So that when we take the max, it will always be replaced. */
+			net_slack_ratio[inet][j] = HUGE_POSITIVE_FLOAT; /* So that when we take the min, it will always be replaced. */
 		}
 	}
 }
@@ -306,15 +306,38 @@ void print_net_slack(char *fname) {
 
 	fp = my_fopen(fname, "w", 0);
 
-	fprintf(fp, "Net #\tDriver_tnode\tSlack\tto_node\n\n");
+	fprintf(fp, "Net #\tDriver_tnode\tto_node\tSlack\n\n");
 
 	for (inet = 0; inet < num_timing_nets; inet++) {
 		driver_tnode = net_to_driver_tnode[inet];
 		num_edges = tnode[driver_tnode].num_edges;
 		tedge = tnode[driver_tnode].out_edges;
-		fprintf(fp, "%5d\t%5d\t\t%g\t%5d\n", inet, driver_tnode, net_slack[inet][1], tedge[0].to_node);
+		fprintf(fp, "%5d\t%5d\t\t%5d\t%5g\n", inet, driver_tnode, tedge[0].to_node, net_slack[inet][1]);
 		for (iedge = 1; iedge < num_edges; iedge++) { /* newline and indent subsequent edges after the first */
-			fprintf(fp, "\t\t\t%g\t%5d\n", net_slack[inet][iedge+1], tedge[iedge].to_node);
+			fprintf(fp, "\t\t\t%5d\t%g\n", tedge[iedge].to_node, net_slack[inet][iedge+1]);
+		}
+	}
+}
+
+void print_net_slack_ratio(char *fname) {
+
+	/* Prints the net slack ratios into a file. */
+
+	int inet, iedge, driver_tnode, num_edges;
+	t_tedge * tedge;
+	FILE *fp;
+
+	fp = my_fopen(fname, "w", 0);
+
+	fprintf(fp, "Net #\tDriver_tnode\tto_node\tSlack_ratio\n\n");
+
+	for (inet = 0; inet < num_timing_nets; inet++) {
+		driver_tnode = net_to_driver_tnode[inet];
+		num_edges = tnode[driver_tnode].num_edges;
+		tedge = tnode[driver_tnode].out_edges;
+		fprintf(fp, "%5d\t%5d\t\t%5d\t%g\n", inet, driver_tnode, tedge[0].to_node, net_slack_ratio[inet][1]);
+		for (iedge = 1; iedge < num_edges; iedge++) { /* newline and indent subsequent edges after the first */
+			fprintf(fp, "\t\t\t%5d\t%g\n", tedge[iedge].to_node, net_slack_ratio[inet][iedge+1]);
 		}
 	}
 }
@@ -1086,10 +1109,12 @@ void load_net_slack_and_slack_ratio(boolean do_lut_input_balancing, boolean is_f
 	t_pb *pb;
 	long max_critical_output_paths = 0, max_critical_input_paths = 0;
 	float smallest_slack_in_design = HUGE_POSITIVE_FLOAT; /* Starts off very large so that everything will be less than it. */
-
+	
+#if defined VERBOSE || SLACK_RATIO_DEFINITION == 2
+	int inet; 
+#endif
 #ifdef VERBOSE
 	boolean found;
-	int inet; 
 #endif
 
 	/* Reset LUT input rebalancing */
@@ -1315,7 +1340,7 @@ void load_net_slack_and_slack_ratio(boolean do_lut_input_balancing, boolean is_f
 		num_edges = tnode[inode].num_edges;
 		for (iedge = 0; iedge < num_edges; iedge++) {
 			/* The slack ratio of each edge is its slack divided by the maximum (possibly normalized) required time in the entire design. */
-			net_slack_ratio[inode][iedge + 1] = net_slack[inode][iedge + 1]/T_req_max; 
+			net_slack_ratio[inet][iedge + 1] = net_slack[inet][iedge + 1]/T_req_max; 
 		}
 	}		
 #endif
@@ -1587,6 +1612,7 @@ void do_constant_net_delay_timing_analysis(t_timing_inf timing_inf,
 		/*print_critical_path("critical_path.echo");*/
 		print_timing_graph("timing_graph.echo");
 		print_net_slack("net_slack.echo");
+		print_net_slack_ratio("net_slack_ratio.echo");
 		print_net_delay(net_delay, "net_delay.echo", timing_nets,
 				num_timing_nets);
 	}

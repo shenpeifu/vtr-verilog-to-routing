@@ -216,7 +216,7 @@ void try_place(struct s_placer_opts placer_opts,
 
 	int tot_iter, inner_iter, success_sum;
 	int move_lim, moves_since_cost_recompute, width_fac;
-	float t, success_rat, rlim, d_max;
+	float t, success_rat, rlim;
 	float cost, timing_cost, bb_cost, new_bb_cost, new_timing_cost;
 	float delay_cost, new_delay_cost, place_delay_value;
 	float inverse_prev_bb_cost, inverse_prev_timing_cost;
@@ -364,7 +364,6 @@ void try_place(struct s_placer_opts placer_opts,
 		place_delay_value = 0;
 		outer_crit_iter_count = 0;
 		num_connections = 0;
-		d_max = 0;
 		crit_exponent = 0;
 
 		inverse_prev_timing_cost = 0; /*inverses not used */
@@ -753,8 +752,9 @@ void try_place(struct s_placer_opts placer_opts,
 		load_net_slack_and_slack_ratio(FALSE, TRUE);
 
 		if (GetEchoOption()) {
-			print_sink_delays("placement_sink_delays.echo");
-			print_net_slack("placement_net_slacks.echo");
+			print_sink_delays("placement_sink_delay.echo");
+			print_net_slack("placement_net_slack.echo");
+			print_net_slack_ratio("placement_net_slack_ratio.echo");
 			/*print_critical_path("placement_crit_path.echo");*/
 		}
 
