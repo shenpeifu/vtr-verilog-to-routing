@@ -247,8 +247,8 @@ static void alloc_net_slack_and_slack_ratio(void) {
 		net_slack_ratio[inet] = (float *) my_chunk_malloc((timing_nets[inet].num_sinks + 1) * sizeof(float), &tedge_ch);
 		
 		for (j = 0; j <= timing_nets[inet].num_sinks; j++) {
-			net_slack[inet][j]		 = HUGE_NEGATIVE_FLOAT;
-			net_slack_ratio[inet][j] = HUGE_POSITIVE_FLOAT;
+			net_slack[inet][j]		 = HUGE_POSITIVE_FLOAT; /* So that when we take the min, it will always be replaced. */
+			net_slack_ratio[inet][j] = HUGE_NEGATIVE_FLOAT; /* So that when we take the max, it will always be replaced. */
 		}
 	}
 }
@@ -300,19 +300,22 @@ void print_net_slack(char *fname) {
 
 	/* Prints the net slacks into a file. */
 
-	int inet, ipin;
+	int inet, iedge, driver_tnode, num_edges;
+	t_tedge * tedge;
 	FILE *fp;
 
 	fp = my_fopen(fname, "w", 0);
 
-	fprintf(fp, "Net #\tSlacks\n\n");
+	fprintf(fp, "Net #\tDriver_tnode\tSlack\tto_node\n\n");
 
 	for (inet = 0; inet < num_timing_nets; inet++) {
-		fprintf(fp, "%5d", inet);
-		for (ipin = 1; ipin < (timing_nets[inet].num_sinks + 1); ipin++) {
-			fprintf(fp, "\t%g", net_slack[inet][ipin]);
+		driver_tnode = net_to_driver_tnode[inet];
+		num_edges = tnode[driver_tnode].num_edges;
+		tedge = tnode[driver_tnode].out_edges;
+		fprintf(fp, "%5d\t%5d\t\t%g\t%5d\n", inet, driver_tnode, net_slack[inet][1], tedge[0].to_node);
+		for (iedge = 1; iedge < num_edges; iedge++) { /* newline and indent subsequent edges after the first */
+			fprintf(fp, "\t\t\t%g\t%5d\n", net_slack[inet][iedge+1], tedge[iedge].to_node);
 		}
-		fprintf(fp, "\n");
 	}
 }
 
@@ -1083,8 +1086,11 @@ void load_net_slack_and_slack_ratio(boolean do_lut_input_balancing, boolean is_f
 	t_pb *pb;
 	long max_critical_output_paths = 0, max_critical_input_paths = 0;
 	float smallest_slack_in_design = HUGE_POSITIVE_FLOAT; /* Starts off very large so that everything will be less than it. */
+
+#ifdef VERBOSE
 	boolean found;
 	int inet; 
+#endif
 
 	/* Reset LUT input rebalancing */
 	for (inode = 0; inode < num_tnodes; inode++) {
@@ -1161,6 +1167,7 @@ void load_net_slack_and_slack_ratio(boolean do_lut_input_balancing, boolean is_f
 					if (tnode[to_node].num_critical_input_paths	> max_critical_input_paths) {
 						max_critical_input_paths = tnode[to_node].num_critical_input_paths;
 					}
+
 					/* The arrival time T_arr at the destination node is set to the maximum of all the possible arrival times from all edges fanning in to the node. *
 					 * The arrival time represents the latest time that all inputs must arrive at a node. LUT input rebalancing also occurs at this step. */
 					set_and_balance_arrival_time(to_node, inode, Tdel, do_lut_input_balancing);	
@@ -1202,7 +1209,7 @@ void load_net_slack_and_slack_ratio(boolean do_lut_input_balancing, boolean is_f
 
 					sink_clock_domain = tnode[inode].clock_domain;
 					constraint = timing_constraints[source_clock_domain][sink_clock_domain];
-					if(constraint > -0.01) { /* i.e. constraint != DO_NOT_ANALYSE */
+					if(constraint > -0.01) { /* i.e. constraint is not set to DO_NOT_ANALYSE */
 						tnode[inode].used_on_this_traversal = TRUE;	/* Mark that we've changed this node on this traversal (signalling we should update its slack later). */
 #if SLACK_DEFINITION == 4	
 						/* Normalize the required time at the sink node to be >=0 by taking the max of the "real" 
@@ -1256,7 +1263,7 @@ void load_net_slack_and_slack_ratio(boolean do_lut_input_balancing, boolean is_f
 						max_critical_output_paths = tnode[to_node].num_critical_output_paths;
 					}
 
-					for (iedge = 1; iedge < num_edges; iedge++) {
+					for (iedge = 1; iedge < num_edges; iedge++) { 
 						to_node = tedge[iedge].to_node;
 						Tdel = tedge[iedge].Tdel;
 
@@ -1281,9 +1288,9 @@ void load_net_slack_and_slack_ratio(boolean do_lut_input_balancing, boolean is_f
 				}
 			}
 		}
-		/* After each iteration of the iclock loop, update the slack of each edge if it has a newer, lower value. */
+		/* After each iteration of the iclock loop, update the slack if it has a newer, lower value.  Also update the normalized costs (for packing). */
 		smallest_slack_in_design = update_slacks(T_req_max, smallest_slack_in_design);
-
+		normalize_costs(T_req_max, max_critical_input_paths, max_critical_output_paths);
 	} /* end of source_clock_domain loop */
 	
 #if SLACK_DEFINITION == 3 
@@ -1306,33 +1313,31 @@ void load_net_slack_and_slack_ratio(boolean do_lut_input_balancing, boolean is_f
 	for (inet = 0; inet < num_timing_nets; inet++) {
 		inode = net_to_driver_tnode[inet];
 		num_edges = tnode[inode].num_edges;
-		for (iedge = 1; iedge < num_edges; iedge++) {
+		for (iedge = 0; iedge < num_edges; iedge++) {
 			/* The slack ratio of each edge is its slack divided by the maximum (possibly normalized) required time in the entire design. */
 			net_slack_ratio[inode][iedge + 1] = net_slack[inode][iedge + 1]/T_req_max; 
 		}
 	}		
 #endif
 
-	/* Make sure something has been actually analyzed. */
+#ifdef VERBOSE
+	/* Make sure something has been actually analyzed during this iteration. */
 	found = FALSE;
-	for (inet = 0; inet < num_timing_nets; inet++) {
+	for (inet = 0; inet < num_timing_nets && !found; inet++) {
 		inode = net_to_driver_tnode[inet];
 		num_edges = tnode[inode].num_edges;
-		for (iedge = 1; iedge < num_edges && !found; iedge++) {
-			 if (net_slack[inet][iedge + 1] > HUGE_NEGATIVE_FLOAT + 1) {
+		for (iedge = 0; iedge < num_edges && !found; iedge++) {
+			 if (net_slack[inet][iedge + 1] < HUGE_POSITIVE_FLOAT - 1) {
 				 found = TRUE;
 			 }
 		}
 	}
 	if(!found) {
-		fprintf(stderr, "\nNo flipflop-to-flipflop paths with valid timing constraints were found."  
+		printf("\nWarning: No flipflop-to-flipflop paths with valid timing constraints were found on this traversal.  "  
 			"Consider changing (or creating) the SDC file associated with the design.\n");
-		exit(1);
 	}
+#endif
 
-	/* To do: get this to work with multiple clocks */
-	/*normalize_costs(&net_slack, max_critical_input_paths,
-			max_critical_output_paths);*/
 }
 
 static float update_slacks(float T_req_max, float smallest_slack_in_design) {
@@ -1590,18 +1595,15 @@ void do_constant_net_delay_timing_analysis(t_timing_inf timing_inf,
 	free_net_delay(net_delay, &net_delay_ch);
 }
 
-static void normalize_costs(float t_crit, long max_critical_input_paths,
+static void normalize_costs(float T_req_max, long max_critical_input_paths,
 		long max_critical_output_paths) {
 	int i;
 	for (i = 0; i < num_tnodes; i++) {
-		tnode[i].normalized_slack = ((float) tnode[i].T_req - tnode[i].T_arr)
-				/ t_crit;
-		tnode[i].normalized_T_arr = (float) tnode[i].T_arr / (float) t_crit;
-		tnode[i].normalized_total_critical_paths =
-				((float) tnode[i].num_critical_input_paths
-						+ tnode[i].num_critical_output_paths)
-						/ ((float) max_critical_input_paths
-								+ max_critical_output_paths);
+		tnode[i].normalized_slack = min(tnode[i].normalized_slack, (tnode[i].T_req - tnode[i].T_arr)/T_req_max);
+		tnode[i].normalized_T_arr = min(tnode[i].normalized_T_arr, tnode[i].T_arr/T_req_max);
+		tnode[i].normalized_total_critical_paths = min(tnode[i].normalized_total_critical_paths, 
+				((float) tnode[i].num_critical_input_paths + tnode[i].num_critical_output_paths) /
+						 ((float) max_critical_input_paths + max_critical_output_paths));
 	}
 }
 

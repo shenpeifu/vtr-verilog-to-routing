@@ -351,6 +351,10 @@ void do_clustering(const t_arch *arch, t_pack_molecule *molecule_head,
 				inter_cluster_net_delay, arch->models, timing_inf);
 		load_net_slack_and_slack_ratio(FALSE, FALSE);
 
+		if (GetEchoOption()) {
+				print_net_slack("pre_packing_net_slack.echo");
+		}
+
 		criticality = (float*) my_calloc(num_logical_blocks, sizeof(float));
 
 		critindexarray = (int*) my_malloc(num_logical_blocks * sizeof(int));
@@ -362,15 +366,20 @@ void do_clustering(const t_arch *arch, t_pack_molecule *molecule_head,
 
 		/* Calculate criticality based on slacks and tie breakers (# paths, distance from source) */
 		for (i = 0; i < num_tnodes; i++) {
-			iblk = tnode[i].block;
-			num_paths_scaling = SCALE_NUM_PATHS
-					* (float) tnode[i].normalized_total_critical_paths;
-			distance_scaling = SCALE_DISTANCE_VAL
-					* (float) tnode[i].normalized_T_arr;
-			crit = (1 - tnode[i].normalized_slack) + num_paths_scaling
-					+ distance_scaling;
-			if (criticality[iblk] < crit) {
-				criticality[iblk] = crit;
+			/* Only calculate for tnodes which have valid arrival and required times.  
+			Tnodes that do not have both times valid were not part of the analysis. 
+			Because we calloc-ed the array criticality, such nodes will have criticality 0, the lowest possible value. */
+			if(tnode[i].T_arr > HUGE_NEGATIVE_FLOAT + 1 && tnode[i].T_req < HUGE_POSITIVE_FLOAT - 1) {
+				iblk = tnode[i].block;
+				num_paths_scaling = SCALE_NUM_PATHS
+						* (float) tnode[i].normalized_total_critical_paths;
+				distance_scaling = SCALE_DISTANCE_VAL
+						* (float) tnode[i].normalized_T_arr;
+				crit = (1 - tnode[i].normalized_slack) + num_paths_scaling
+						+ distance_scaling;
+				if (criticality[iblk] < crit) {
+					criticality[iblk] = crit;
+				}
 			}
 		}
 
