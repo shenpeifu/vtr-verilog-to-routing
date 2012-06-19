@@ -6,7 +6,7 @@
 /*********************** Defines for timing options *******************************/
 
 #define SLACK_DEFINITION 4
-/* Choose whether, and how, to normalize negative slacks load_net_slack_and_slack_ratio for optimization 
+/* Choose whether, and how, to normalize negative slacks for optimization 
   (not for final analysis, since real slacks are always given here).
   Possible values:
    1: Slacks are not normalized at all.  Negative slacks are possible.
@@ -35,7 +35,7 @@ t_linked_int *allocate_and_load_critical_path(void);
 
 void load_timing_graph_net_delays(float **net_delay);
 
-void load_net_slack_and_slack_ratio(boolean do_lut_input_balancing, boolean is_final_analysis);
+void do_timing_analysis(boolean do_lut_input_balancing, boolean is_final_analysis);
 
 void free_timing_graph(void);
 
@@ -62,8 +62,8 @@ extern int num_netlist_clocks; /* [0..num_netlist_clocks - 1] number of clocks i
 
 extern t_clock * clock_list; /* [0..num_netlist_clocks - 1] array of clocks in netlist */
 
-extern float ** timing_constraints; /* [0..num_netlist_clocks - 1 (source)][0..num_netlist_clocks - 1 (destination)] */
+extern float ** timing_constraint, ** critical_path_delay; /* [0..num_netlist_clocks - 1 (source)][0..num_netlist_clocks - 1 (destination)] */
 
-extern float ** net_slack, **net_slack_ratio; /* [0..num_nets-1][1..num_pins] */
+extern float ** net_slack, ** net_slack_ratio; /* [0..num_nets-1][1..num_pins] */
 
 #endif

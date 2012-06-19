@@ -84,9 +84,9 @@ void routing_stats(boolean full_stats, enum e_route_type route_type,
 			load_timing_graph_net_delays(net_delay);
 
 #ifdef HACK_LUT_PIN_SWAPPING			
-			load_net_slack_and_slack_ratio(TRUE, TRUE);
+			do_timing_analysis(TRUE, TRUE);
 #else
-			load_net_slack_and_slack_ratio(FALSE, TRUE);
+			do_timing_analysis(FALSE, TRUE);
 #endif
 
 			if (GetEchoOption()) {

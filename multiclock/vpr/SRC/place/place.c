@@ -268,7 +268,7 @@ void try_place(struct s_placer_opts placer_opts,
 
 		load_constant_net_delay(net_delay, place_delay_value);
 		load_timing_graph_net_delays(net_delay);
-		load_net_slack_and_slack_ratio(FALSE, TRUE);
+		do_timing_analysis(FALSE, TRUE);
 
 		if (GetEchoOption()) {
 			/*print_critical_path("Placement_Lower_Bound.echo");*/
@@ -281,7 +281,7 @@ void try_place(struct s_placer_opts placer_opts,
 
 		load_constant_net_delay(net_delay, 0);
 		load_timing_graph_net_delays(net_delay);
-		load_net_slack_and_slack_ratio(FALSE, TRUE);
+		do_timing_analysis(FALSE, TRUE);
 
 #endif
 
@@ -344,7 +344,7 @@ void try_place(struct s_placer_opts placer_opts,
 		}
 
 		load_timing_graph_net_delays(net_delay);
-		load_net_slack_and_slack_ratio(FALSE, FALSE);
+		do_timing_analysis(FALSE, FALSE);
 		load_criticalities(crit_exponent);
 		outer_crit_iter_count = 1;
 
@@ -455,7 +455,7 @@ void try_place(struct s_placer_opts placer_opts,
 				 *because it accesses point_to_point_delay array */
 
 				load_timing_graph_net_delays(net_delay);
-				load_net_slack_and_slack_ratio(FALSE, FALSE);
+				do_timing_analysis(FALSE, FALSE);
 				load_criticalities(crit_exponent);
 				/*recompute costs from scratch, based on new criticalities */
 				comp_td_costs(&timing_cost, &delay_cost);
@@ -506,7 +506,7 @@ void try_place(struct s_placer_opts placer_opts,
 					}
 
 					load_timing_graph_net_delays(net_delay);
-					load_net_slack_and_slack_ratio(FALSE, FALSE);
+					do_timing_analysis(FALSE, FALSE);
 					load_criticalities(crit_exponent);
 					comp_td_costs(&timing_cost, &delay_cost);
 				}
@@ -642,7 +642,7 @@ void try_place(struct s_placer_opts placer_opts,
 						num_nets);
 
 			load_timing_graph_net_delays(net_delay);
-			load_net_slack_and_slack_ratio(FALSE, FALSE);
+			do_timing_analysis(FALSE, FALSE);
 			load_criticalities(crit_exponent);
 			/*recompute criticaliies */
 			comp_td_costs(&timing_cost, &delay_cost);
@@ -690,7 +690,7 @@ void try_place(struct s_placer_opts placer_opts,
 					}
 
 					load_timing_graph_net_delays(net_delay);
-					load_net_slack_and_slack_ratio(FALSE, FALSE);
+					do_timing_analysis(FALSE, FALSE);
 					load_criticalities(crit_exponent);
 					comp_td_costs(&timing_cost, &delay_cost);
 				}
@@ -749,7 +749,7 @@ void try_place(struct s_placer_opts placer_opts,
 		net_delay = point_to_point_delay_cost; /*this makes net_delay up to date with    *
 		 *the same values that the placer is using*/
 		load_timing_graph_net_delays(net_delay);
-		load_net_slack_and_slack_ratio(FALSE, TRUE);
+		do_timing_analysis(FALSE, TRUE);
 
 		if (GetEchoOption()) {
 			print_sink_delays("placement_sink_delay.echo");

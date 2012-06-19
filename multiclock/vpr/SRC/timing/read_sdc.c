@@ -30,17 +30,17 @@ void read_sdc(char * sdc_file) {
 /*This function reads the constraints from the SDC file *
 * specified on the command line into float ** timing_   *
 * constraints.  If no file is specified, it leaves      *
-* timing_constraints pointing to NULL.                  */
+* timing_constraint pointing to NULL.                  */
 
 	char buf[BUFSIZE];
 	int num_lines = 1; /* Line counter for SDC file, used to report errors */
 	int i, j;
 		
 	/* Allocate matrix of timing constraints [0..num_netlist_clocks-1][0..num_netlist_clocks-1] and initialize to 0 */
-	timing_constraints = (float **) alloc_matrix(0, num_netlist_clocks-1, 0, num_netlist_clocks-1, sizeof(float));
+	timing_constraint = (float **) alloc_matrix(0, num_netlist_clocks-1, 0, num_netlist_clocks-1, sizeof(float));
 	for(i=0;i<num_netlist_clocks;i++) {
 		for(j=0;j<num_netlist_clocks;j++) {
-				timing_constraints[i][j] = 0.;
+				timing_constraint[i][j] = 0.;
 		}
 	}
 
@@ -51,8 +51,8 @@ void read_sdc(char * sdc_file) {
 		printf("Paths between clock domains will be cut.\n\n");
 		for(i=0;i<num_netlist_clocks;i++) {
 			for(j=0;j<num_netlist_clocks;j++) {
-				if(i==j) timing_constraints[i][j] = 0.;
-				else timing_constraints[i][j] = DO_NOT_ANALYSE;
+				if(i==j) timing_constraint[i][j] = 0.;
+				else timing_constraint[i][j] = DO_NOT_ANALYSE;
 			}
 		}
 		return;
@@ -69,12 +69,12 @@ void read_sdc(char * sdc_file) {
 	/* Based on the information from sdc_clocks, calculate constraints for all paths not excluded by set_false_path or set_clock_groups -exclusive */
 		for(i=0;i<num_netlist_clocks;i++) {
 			for(j=0;j<num_netlist_clocks;j++) {
-				if(timing_constraints[i][j] != DO_NOT_ANALYSE)
-					timing_constraints[i][j] = calculate_constraint(sdc_clocks[i], sdc_clocks[j]);
+				if(timing_constraint[i][j] != DO_NOT_ANALYSE)
+					timing_constraint[i][j] = calculate_constraint(sdc_clocks[i], sdc_clocks[j]);
 			}
 		}
 
-	/* Since all the information we need is stored in timing_constraints, free other data structures used in this routine */
+	/* Since all the information we need is stored in timing_constraint, free other data structures used in this routine */
 	free(sdc_clocks);
 	return;
 }
@@ -162,7 +162,7 @@ static boolean get_sdc_tok(char * buf, int num_lines) {
 		if(strcmp(ptr, "*") == 0) {
 			for(i=0;i<num_netlist_clocks;i++) {
 				for(j=0;j<num_netlist_clocks;j++) {
-					timing_constraints[i][j] = temp_clock_period;
+					timing_constraint[i][j] = temp_clock_period;
 				}
 			}
 			return TRUE;
@@ -171,7 +171,7 @@ static boolean get_sdc_tok(char * buf, int num_lines) {
 			 * clock nets to be associated with this clock period.  An array sdc_clocks will
 			 * store the period and offset of each clock at the same index which that clock has in clock_list.
 			 * After everything has been parsed, we take the information from this array to calculate the actual timing constraints
-			 * which these periods and offsets imply, and put them in the matrix timing_constraints. */
+			 * which these periods and offsets imply, and put them in the matrix timing_constraint. */
 
 			for(;;) {
 				if(ptr == NULL) { /* end of line */
@@ -205,11 +205,11 @@ static boolean get_sdc_tok(char * buf, int num_lines) {
 		 * -group commands, followed by lists of clocks in that group.  An array exclusive_clock_groups will
 		 * store the group number of each clock at the index location of that clock in clock_list - i.e. if the clock
 		 * at index 5 in clock_list appears after the second -group token, then exclusive_clock_groups[5] = 2. 
-		 * Finally, we set timing_constraints to not analyse between clock domains with different group numbers.  */
+		 * Finally, we set timing_constraint to not analyse between clock domains with different group numbers.  */
 		for(;;) {
 			ptr = my_strtok(NULL, SDC_TOKENS, sdc, buf);
 			if(ptr == NULL) { /* end of line */
-				break; /* exit the infinite for loop - but don't return yet - we still have to populate timing_constraints!  */
+				break; /* exit the infinite for loop - but don't return yet - we still have to populate timing_constraint!  */
 			}
 			if(strcmp(ptr, "-group") == 0) {
 			/* add 1 to the group number we're assigning clocks to every time the token -group is hit */
@@ -224,13 +224,13 @@ static boolean get_sdc_tok(char * buf, int num_lines) {
 			}
 		}
 
-		/* Finally, set every element of timing_constraints for which the two indices have different group numbers to DO_NOT_ANALYSE */
+		/* Finally, set every element of timing_constraint for which the two indices have different group numbers to DO_NOT_ANALYSE */
 		for(i=0;i<num_netlist_clocks;i++) {
 			for(j=0;j<num_netlist_clocks;j++) {
 				/* if either source or sink domain is part of group 0 (i.e. not part of an exclusive group), don't touch it */
 				if(exclusive_clock_groups[i] != 0 && exclusive_clock_groups[j] != 0) {
 					if(exclusive_clock_groups[i] != exclusive_clock_groups[j]) {
-						timing_constraints[i][j] = DO_NOT_ANALYSE;
+						timing_constraint[i][j] = DO_NOT_ANALYSE;
 					}
 				}
 			}
@@ -257,8 +257,8 @@ static boolean get_sdc_tok(char * buf, int num_lines) {
 		ptr = my_strtok(NULL, SDC_TOKENS, sdc, buf);
 		to = find_clock(ptr, num_lines);
 
-		/* Set the path from 'from' to 'to' in timing_constraints to not be analysed */
-		timing_constraints[from][to] = DO_NOT_ANALYSE;
+		/* Set the path from 'from' to 'to' in timing_constraint to not be analysed */
+		timing_constraint[from][to] = DO_NOT_ANALYSE;
 		
 		return FALSE;
 

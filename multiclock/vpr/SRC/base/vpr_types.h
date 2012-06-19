@@ -203,6 +203,7 @@ typedef struct s_pb {
 } t_pb;
 
 struct s_tnode;
+
 /* Technology-mapped user netlist block */
 typedef struct s_logical_block {
 	char *name; /* Taken from the first vpack_net which it drives. */
