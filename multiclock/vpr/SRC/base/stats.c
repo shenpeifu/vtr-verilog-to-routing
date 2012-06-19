@@ -92,7 +92,7 @@ void routing_stats(boolean full_stats, enum e_route_type route_type,
 			if (GetEchoOption()) {
 				print_timing_graph("timing_graph.echo");
 				print_net_slack("net_slack.echo");
-				print_critical_path("critical_path.echo");
+				/*print_critical_path("critical_path.echo");*/
 			}
 			/*
 			printf("\n");

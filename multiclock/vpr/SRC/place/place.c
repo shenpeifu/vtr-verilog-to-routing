@@ -271,7 +271,7 @@ void try_place(struct s_placer_opts placer_opts,
 		load_net_slack_and_slack_ratio(FALSE, TRUE);
 
 		if (GetEchoOption()) {
-			print_critical_path("Placement_Lower_Bound.echo");
+			/*print_critical_path("Placement_Lower_Bound.echo");*/
 			print_sink_delays("Placement_Lower_Bound_Sink_Delays.echo");
 			print_sink_delays("Placement_Logic_Sink_Delays.echo");
 		}
@@ -755,7 +755,7 @@ void try_place(struct s_placer_opts placer_opts,
 		if (GetEchoOption()) {
 			print_sink_delays("placement_sink_delays.echo");
 			print_net_slack("placement_net_slacks.echo");
-			print_critical_path("placement_crit_path.echo");
+			/*print_critical_path("placement_crit_path.echo");*/
 		}
 
 		/*printf("Placement Estimated Crit Path Delay: %g\n\n", est_crit);*/

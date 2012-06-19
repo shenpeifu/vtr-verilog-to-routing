@@ -1584,7 +1584,7 @@ void do_constant_net_delay_timing_analysis(t_timing_inf timing_inf,
 	load_net_slack_and_slack_ratio(FALSE, TRUE);
 
 	if (GetEchoOption()) {
-		print_critical_path("critical_path.echo");
+		/*print_critical_path("critical_path.echo");*/
 		print_timing_graph("timing_graph.echo");
 		print_net_slack("net_slack.echo");
 		print_net_delay(net_delay, "net_delay.echo", timing_nets,
