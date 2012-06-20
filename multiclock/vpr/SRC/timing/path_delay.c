@@ -1231,20 +1231,22 @@ void do_timing_analysis(boolean do_lut_input_balancing, boolean is_final_analysi
 	
 	Please see path_delay.h for information about SLACK_DEFINITION and SLACK_RATIO_DEFINITION. */
 
-	float T_arr, Tdel, T_req, constraint;
+	float constraint;
 	float T_req_max = 0; /* Denominator of slack ratio */
+	float smallest_slack_in_design = HUGE_POSITIVE_FLOAT; 
 	int source_clock_domain, sink_clock_domain, inode, ilevel, num_at_level, i, num_edges, iedge, to_node;
 	int total;
 	t_tedge *tedge;
 	t_pb *pb;
 	long max_critical_output_paths = 0, max_critical_input_paths = 0;
-	float smallest_slack_in_design = HUGE_POSITIVE_FLOAT; /* Starts off very large so that everything will be less than it. */
+	boolean found;
 	
 #if defined VERBOSE || SLACK_RATIO_DEFINITION == 2
 	int inet; 
 #endif
-#ifdef VERBOSE
-	boolean found;
+
+#if SLACK_RATIO_DEFINITION == 2
+	float slack;
 #endif
 
 	/* Allocate critical path delay matrix, if not done already */
@@ -1308,19 +1310,18 @@ void do_timing_analysis(boolean do_lut_input_balancing, boolean is_final_analysi
 				if (ilevel == 0) {
 					tnode[inode].num_critical_input_paths = 1;		/* Top-level tnodes have only one critical input path */
 				}
-				T_arr = tnode[inode].T_arr;							/* Get the arrival time from the node we're visiting */
+
 				num_edges = tnode[inode].num_edges;					/* Get the number of edges fanning out from the node we're visiting */
 				tedge = tnode[inode].out_edges;						/* Get the list of edges from the node we're visiting */
 				
 				for (iedge = 0; iedge < num_edges; iedge++) {		/* Now go through each edge coming out from this tnode */
-					to_node = tedge[iedge].to_node;					/* Get the index of the destination tnode of this edge... */
-					Tdel = tedge[iedge].Tdel;						/* ...and get the delay to that tnode, along this edge. */
+					to_node = tedge[iedge].to_node;					/* Get the index of the destination tnode of this edge. */
 					
 					/* Update number of near critical paths entering tnode. */
 					/* Check for approximate equality. */
-					if (fabs(tnode[to_node].T_arr - (T_arr + Tdel)) < EQUAL_DEF) {
+					if (fabs(tnode[to_node].T_arr - (tnode[inode].T_arr + tedge[iedge].Tdel)) < EQUAL_DEF) {
 						tnode[to_node].num_critical_input_paths += tnode[inode].num_critical_input_paths;
-					} else if (tnode[to_node].T_arr < T_arr + Tdel) {
+					} else if (tnode[to_node].T_arr < tnode[inode].T_arr + tedge[iedge].Tdel) {
 						tnode[to_node].num_critical_input_paths = tnode[inode].num_critical_input_paths;
 					}
 
@@ -1330,7 +1331,7 @@ void do_timing_analysis(boolean do_lut_input_balancing, boolean is_final_analysi
 
 					/* The arrival time T_arr at the destination node is set to the maximum of all the possible arrival times from all edges fanning in to the node. *
 					 * The arrival time represents the latest time that all inputs must arrive at a node. LUT input rebalancing also occurs at this step. */
-					set_and_balance_arrival_time(to_node, inode, Tdel, do_lut_input_balancing);	
+					set_and_balance_arrival_time(to_node, inode, tedge[iedge].Tdel, do_lut_input_balancing);	
 				}
 			}
 		}
@@ -1354,7 +1355,7 @@ void do_timing_analysis(boolean do_lut_input_balancing, boolean is_final_analysi
 
 				if (num_edges == 0) { /* sink */
 					if (tnode[inode].type == OUTPAD_SINK || tnode[inode].type == FF_CLOCK) {
-						continue; /* Skip FF_CLOCK and (until I/Os are added) OUTPAD_SINK nodes */
+						continue; /* Skip FF_CLOCK and (until I/Os are added) OUTPAD_SINK nodes. */
 					}
 					assert(tnode[inode].type == FF_SINK); 
 
@@ -1369,7 +1370,7 @@ void do_timing_analysis(boolean do_lut_input_balancing, boolean is_final_analysi
 
 					sink_clock_domain = tnode[inode].clock_domain;
 					constraint = timing_constraint[source_clock_domain][sink_clock_domain];
-					if(constraint > -0.01) { /* i.e. constraint is not set to DO_NOT_ANALYSE */
+					if(constraint > -0.01) { /* This means the constraint is not set to DO_NOT_ANALYSE (-1), and therefore we need to analyze this node. */
 						tnode[inode].used_on_this_traversal = TRUE;	/* Mark that we've changed this node on this traversal (signalling we should update its slack later). */
 #if SLACK_DEFINITION == 4	
 						/* Normalize the required time at the sink node to be >=0 by taking the max of the "real" 
@@ -1420,39 +1421,51 @@ void do_timing_analysis(boolean do_lut_input_balancing, boolean is_final_analysi
 					tnode[inode].num_critical_output_paths = 1; /* Bottom-level tnodes have only one critical output path */
 				} else { /* not a sink */
 					assert(!(tnode[inode].type == OUTPAD_SINK || tnode[inode].type == FF_SINK || tnode[inode].type == FF_CLOCK));
-					tedge = tnode[inode].out_edges;
-					to_node = tedge[0].to_node;
-					if (tnode[to_node].T_req > HUGE_POSITIVE_FLOAT - 1) { /* If T_req = HUGE_POSITIVE_FLOAT... */
-						continue;	/* End this iteration of the num_at_level for loop if this tnode is not part of the clock domain we're analyzing. 
-									 * This has the effect of not back-propagating required times from nodes we don't care about. 
-									 * We exploit the fact that sink tnodes are their parent nodes' only edge, so we only have to check tedge[0] for sink nodes. 
-									 * If this were not true, the HUGE_POSITIVE_FLOAT would still act as a safeguard to ensure non-propagation. */
-					}
 
-					if (tnode[to_node].T_arr < HUGE_NEGATIVE_FLOAT + 1) { /* If T_arr = HUGE_NEGATIVE_FLOAT... */
-						continue;	/* As above, except this catches FF_IPIN nodes which ARE part of the sink clock domain, but come directly from an I/O, 
-									in which case we don't want to analyze. This can probably be taken out once I/Os are incorporated into the timing analysis. */
+					/* We need to skip this node if it is not on a path from source_clock_domain to sink_clock_domain (let's call these paths "happy paths").  
+					There are 3 possibilities we need to worry about: 
+					   1. Node is not on a happy path, but intersects a happy path somewhere in its fanout. 
+					   2. Node is not on a happy path, but intersects a happy path somewhere in its fanin.
+					   3. Node is not on a happy path, and never intersects a happy path. 
+					If a node does not fan in from a happy path, it will not have a valid arrival time.  So cases 1 and 3 can be skipped by continuing if T_arr = HUGE_NEGATIVE_FLOAT. 
+					We cannot treat case 2 as simply since the required time for this node has not yet been assigned, so we have to look at the required time for every node in its fanout instead. */
+
+					/* Cases 1 and 3 */
+					if (tnode[inode].T_arr < HUGE_NEGATIVE_FLOAT + 1) { /* If T_arr = HUGE_NEGATIVE_FLOAT... */
+						continue;	
 					}
+					
+					/* Case 2 */
+					found = FALSE;
+					tedge = tnode[inode].out_edges;
+					for (iedge = 0; iedge < num_edges && !found; iedge++) { 
+						to_node = tedge[iedge].to_node;
+						if (tnode[to_node].T_req < HUGE_POSITIVE_FLOAT) { /* If T_req = HUGE_POSITIVE_FLOAT... */
+							found = TRUE;
+						}
+					}
+					if(!found) {
+						continue;
+					}
+					/* Now we know this node is on a happy path, and needs to be analyzed. */
 
 					tnode[inode].used_on_this_traversal = TRUE;	/* Mark that we've changed this node on this traversal (signalling we should update its slack later). */
-
-					Tdel = tedge[0].Tdel;
-					T_req = tnode[to_node].T_req - Tdel; 
+/******************************* SEE IF THIS CODE IS NECESSARY OR IF WE CAN PUT IT INTO THE FOR LOOP DIRECTLY BELOW */
+					to_node = tedge[0].to_node;
 
 					tnode[inode].num_critical_output_paths = tnode[to_node].num_critical_output_paths;
 					if (tnode[to_node].num_critical_output_paths > max_critical_output_paths) {
 						max_critical_output_paths = tnode[to_node].num_critical_output_paths;
 					}
-
-					for (iedge = 1; iedge < num_edges; iedge++) { 
+/*********************************/
+					for (iedge = 0; iedge < num_edges; iedge++) { 
 						to_node = tedge[iedge].to_node;
-						Tdel = tedge[iedge].Tdel;
 
 						/* Update number of near critical paths affected by output of tnode. */
 						/* Check for approximate equality. */
-						if (fabs(tnode[to_node].T_req - Tdel - T_req) < EQUAL_DEF) {
+						if (fabs(tnode[to_node].T_req - tedge[iedge].Tdel - tnode[inode].T_req) < EQUAL_DEF) {
 							tnode[inode].num_critical_output_paths += tnode[to_node].num_critical_output_paths;
-						} else if (tnode[to_node].T_req - Tdel < T_req) {
+						} else if (tnode[to_node].T_req - tedge[iedge].Tdel < tnode[inode].T_req) {
 							tnode[inode].num_critical_output_paths = tnode[to_node].num_critical_output_paths;
 						}
 
@@ -1461,11 +1474,8 @@ void do_timing_analysis(boolean do_lut_input_balancing, boolean is_final_analysi
 						}
 
 						/* Opposite to T_arr, set T_req to the minimum of the required times of all edges fanning out from this node. */
-						T_req = min(T_req, tnode[to_node].T_req - Tdel);
+						tnode[inode].T_req = min(tnode[inode].T_req, tnode[to_node].T_req - tedge[iedge].Tdel);
 					}
-
-					tnode[inode].T_req = T_req; /* After iterating through all the edges, 
-												   put the value of T_req (the minimum of all required times) into the tnode. */
 				}
 			}
 		}
@@ -1483,6 +1493,8 @@ void do_timing_analysis(boolean do_lut_input_balancing, boolean is_final_analysi
 			for (iedge = 0; iedge < num_edges; iedge++) {
 				net_slack[inet][iedge + 1] -= smallest_slack_in_design; 
 				/* Remember, smallest_slack_in_design is negative, so we're INCREASING all the slacks. */
+				/* Note that if net_slack was equal to HUGE_POSITIVE_FLOAT, it will still be equal to more than this, 
+				so we can ignore it properly when calculating slack ratios directly below. */
 			}
 		}
 	}
@@ -1496,7 +1508,11 @@ void do_timing_analysis(boolean do_lut_input_balancing, boolean is_final_analysi
 		num_edges = tnode[inode].num_edges;
 		for (iedge = 0; iedge < num_edges; iedge++) {
 			/* The slack ratio of each edge is its slack divided by the maximum (possibly normalized) required time in the entire design. */
-			net_slack_ratio[inet][iedge + 1] = net_slack[inet][iedge + 1]/T_req_max; 
+			slack = net_slack[inet][iedge + 1];
+			if (slack < HUGE_POSITIVE_FLOAT - 1) { /* if the slack is valid */
+				net_slack_ratio[inet][iedge + 1] = slack/T_req_max; 
+			}
+			/* otherwise, slack ratio remains HUGE_POSITIVE_FLOAT, as it was initialized */
 		}
 	}		
 #endif
@@ -1539,14 +1555,18 @@ static float update_slacks(float T_req_max, float smallest_slack_in_design) {
 		inode = net_to_driver_tnode[inet];
 		T_arr = tnode[inode].T_arr;
 
-		if (!tnode[inode].used_on_this_traversal) 
-			continue; /* Only update on this traversal if this node has been changed on this traversal. */
+		if (!tnode[inode].used_on_this_traversal) {
+			continue; /* Only update this net on this traversal if its driver node has been changed on this traversal. */
+		}
 
 		num_edges = tnode[inode].num_edges;
 		tedge = tnode[inode].out_edges;
 
 		for (iedge = 0; iedge < num_edges; iedge++) {
 			to_node = tedge[iedge].to_node;
+			if (!tnode[to_node].used_on_this_traversal) {
+				continue; /* Only update this edge on this traversal if this particular sink node has been changed on this traversal. */
+			}
 			Tdel = tedge[iedge].Tdel;
 			T_req = tnode[to_node].T_req;
 
