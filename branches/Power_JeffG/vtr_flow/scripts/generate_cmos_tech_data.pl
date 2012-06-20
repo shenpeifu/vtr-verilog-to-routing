@@ -104,7 +104,7 @@ sub get_optimal_sizing {
 	my $opt_size;
 	my $opt_percent;
 	
-	for (my $size = 0.5; $size < 5; $size += 0.05) {
+	for (my $size = 0.5; $size < 4; $size += 0.05) {
 		push (@sizes, $size);
 	}
 	
@@ -188,8 +188,8 @@ sub get_riset_fallt_diff {
 	$spice_string = $spice_string . ".include \"$tech_file\"\n";
 	$spice_string = $spice_string . ".param tech = $tech_size\n";
 	$spice_string = $spice_string . ".param Vol = $Vdd\n";	
-	$spice_string = $spice_string . ".param psize = $size\n";
-	$spice_string = $spice_string . ".param nsize = 1.0\n";	
+	$spice_string = $spice_string . ".param psize = '2*$size'\n";
+	$spice_string = $spice_string . ".param nsize = '2.0'\n";	
 	$spice_string = $spice_string . ".param Wn = 'nsize*tech'\n";
 	$spice_string = $spice_string . ".param Wp = 'psize*tech'\n";
 	$spice_string = $spice_string . ".param L = 'tech'\n";
@@ -199,7 +199,7 @@ sub get_riset_fallt_diff {
 	$spice_string = $spice_string . "Vdd Vdd 0 Vol\n";
 	
 	# Input Voltage
-	$spice_string = $spice_string . "Vin gate 0 PULSE(0 Vol 10n 0.0n 0.0n 10n 20n)\n";
+	$spice_string = $spice_string . "Vin gate 0 PULSE(0 Vol 10n 0.01n 0.01n 10n 20n)\n";
 	
 	# Transistors
 	$spice_string = $spice_string . "M1 drain gate nsource nbody nmos L='L' W='Wn' AS='Wn*D' PS='2*D+Wn' AD='Wn*D' PD='2*D+Wn'\n";
@@ -223,8 +223,8 @@ sub get_riset_fallt_diff {
 	$spice_string = $spice_string . ".tran 1f 30n\n";
 	
 	
-	$spice_string = $spice_string . ".measure tran fallt TRIG V(out) VAL = '0.9*Vol' TD = 9ns FALL = 1 TARG V(out) VAL = '0.1*Vol' FALL = 1\n";
-	$spice_string = $spice_string . ".measure tran riset TRIG V(out) VAL = '0.1*Vol' TD = 19ns RISE = 1 TARG V(out) VAL = '0.9*Vol' RISE = 1\n";
+	$spice_string = $spice_string . ".measure tran fallt TRIG V(gate) VAL = '0.5*Vol' TD = 9ns RISE = 1 TARG V(out) VAL = '0.5*Vol' FALL = 1\n";
+	$spice_string = $spice_string . ".measure tran riset TRIG V(gate) VAL = '0.5*Vol' TD = 19ns FALL = 1 TARG V(out) VAL = '0.5*Vol' RISE = 1\n";
 	$spice_string = $spice_string . ".end\n\n";
 	
 	open (SP_FILE, "> $spice_file");
