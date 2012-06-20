@@ -311,7 +311,7 @@ void print_net_slack(char *fname) {
 
 	fp = my_fopen(fname, "w", 0);
 
-	fprintf(fp, "Note: nets with slack equal to 1.e30 have not been used by the timing analyzer (e.g. paths to/from I/Os).\n\n");  
+	fprintf(fp, "Note: nets with slack equal to 1e+30 have not been used by the timing analyzer (e.g. paths to/from I/Os).\n\n");  
 
 	/* Go through net_slack once to get the largest and smallest slack, both for reporting and 
 	   so that we can delimit the buckets. Also calculate the total negative slack in the design. */
@@ -324,50 +324,52 @@ void print_net_slack(char *fname) {
 			if (slack < HUGE_POSITIVE_FLOAT - 1) {
 				max_slack = max(max_slack, slack);
 				min_slack = min(min_slack, slack);
-				if (slack < 0) {
+				if (slack < -1e-15) { /* if slack is negative */
 					total_negative_slack -= slack; /* By convention, we'll have total_negative_slack be a positive number. */
 				}
 			}
 		}
 	}
 
-	fprintf(fp, "Largest slack in design: %g\nSmallest slack in design: %g\n\n", max_slack, min_slack);
+	fprintf(fp, "Largest slack in design: %g\nSmallest slack in design: %g", max_slack, min_slack);
 
-	/* Initialize slacks_in_bucket, an array counting how many slacks are within certain linearly-spaced ranges (buckets). */
-	for (ibucket = 0; ibucket < NUM_BUCKETS; ibucket++) {
-		slacks_in_bucket[ibucket] = 0;
-	}
+	if (max_slack - min_slack > 1e-15) { /* Only sort the slacks into buckets if not all slacks are the same (if they are identical, no need to sort). */
+		/* Initialize slacks_in_bucket, an array counting how many slacks are within certain linearly-spaced ranges (buckets). */
+		for (ibucket = 0; ibucket < NUM_BUCKETS; ibucket++) {
+			slacks_in_bucket[ibucket] = 0;
+		}
 
-	/* The size of each bucket is the range of slacks, divided by the number of buckets. */
-	bucket_size = (max_slack - min_slack)/NUM_BUCKETS;
+		/* The size of each bucket is the range of slacks, divided by the number of buckets. */
+		bucket_size = (max_slack - min_slack)/NUM_BUCKETS;
 
-	/* Now, pass through again, incrementing the number of slacks in the nth bucket 
-		for each slack between (min_slack + n*bucket_size) and (min_slack + (n+1)*bucket_size). */
+		/* Now, pass through again, incrementing the number of slacks in the nth bucket 
+			for each slack between (min_slack + n*bucket_size) and (min_slack + (n+1)*bucket_size). */
 
-	for (inet = 0; inet < num_timing_nets; inet++) {
-		driver_tnode = net_to_driver_tnode[inet];
-		num_edges = tnode[driver_tnode].num_edges;
-		tedge = tnode[driver_tnode].out_edges;
-		for (iedge = 0; iedge < num_edges; iedge++) { 
-			slack = net_slack[inet][iedge + 1];
-			if (slack < HUGE_POSITIVE_FLOAT - 1) {
-				/* We have to watch out for the special case where slack = max_slack, in which case ibucket = NUM_BUCKETS and we go out of bounds of the array. */
-				ibucket = min(NUM_BUCKETS - 1, (int) (slack - min_slack)/bucket_size);
-				slacks_in_bucket[ibucket]++;
+		for (inet = 0; inet < num_timing_nets; inet++) {
+			driver_tnode = net_to_driver_tnode[inet];
+			num_edges = tnode[driver_tnode].num_edges;
+			tedge = tnode[driver_tnode].out_edges;
+			for (iedge = 0; iedge < num_edges; iedge++) { 
+				slack = net_slack[inet][iedge + 1];
+				if (slack < HUGE_POSITIVE_FLOAT - 1) {
+					/* We have to watch out for the special case where slack = max_slack, in which case ibucket = NUM_BUCKETS and we go out of bounds of the array. */
+					ibucket = min(NUM_BUCKETS - 1, (int) ((slack - min_slack)/bucket_size));
+					slacks_in_bucket[ibucket]++;
+				}
 			}
 		}
-	}
 
-	/* Now print how many slacks are in each bucket. */
-	fprintf(fp, "Range\t\t");
-	for (ibucket = 0; ibucket < NUM_BUCKETS; ibucket++) {
-		fprintf(fp, "%.1e to ", min_slack);
-		min_slack += bucket_size;
-		fprintf(fp, "%.1e\t", min_slack);
-	}
-	fprintf(fp, "\nSlacks in range\t\t");
-	for (ibucket = 0; ibucket < NUM_BUCKETS; ibucket++) {
-		fprintf(fp, "%d\t\t\t", slacks_in_bucket[ibucket]);
+		/* Now print how many slacks are in each bucket. */
+		fprintf(fp, "\n\nRange\t\t");
+		for (ibucket = 0; ibucket < NUM_BUCKETS; ibucket++) {
+			fprintf(fp, "%.1e to ", min_slack);
+			min_slack += bucket_size;
+			fprintf(fp, "%.1e\t", min_slack);
+		}
+		fprintf(fp, "\nSlacks in range\t\t");
+		for (ibucket = 0; ibucket < NUM_BUCKETS; ibucket++) {
+			fprintf(fp, "%d\t\t\t", slacks_in_bucket[ibucket]);
+		}
 	}
 
 	/* Finally, print all the slacks, organized by net. */
@@ -377,7 +379,7 @@ void print_net_slack(char *fname) {
 		driver_tnode = net_to_driver_tnode[inet];
 		num_edges = tnode[driver_tnode].num_edges;
 		tedge = tnode[driver_tnode].out_edges;
-		fprintf(fp, "%5d\t%5d\t\t%5d\t%5g\n", inet, driver_tnode, tedge[0].to_node, net_slack[inet][1]);
+		fprintf(fp, "%5d\t%5d\t\t%5d\t%g\n", inet, driver_tnode, tedge[0].to_node, net_slack[inet][1]);
 		for (iedge = 1; iedge < num_edges; iedge++) { /* newline and indent subsequent edges after the first */
 			fprintf(fp, "\t\t\t%5d\t%g\n", tedge[iedge].to_node, net_slack[inet][iedge+1]);
 		}
@@ -386,8 +388,9 @@ void print_net_slack(char *fname) {
 
 void print_net_slack_ratio(char *fname) {
 
-	/* Prints the net slack_ratios into a file.  
-	Note: this is an exact clone of print_net_slack, with all occurrences of "slack" replaced by "slack_ratio". 
+	/* Prints the net slack_ratios into a file. 
+
+	/* Note: this is an exact clone of print_net_slack, with all occurrences of "slack" replaced by "slack_ratio". 
 	Make sure you port all changes made in one function to the other. */
 
 	int inet, iedge, ibucket, driver_tnode, num_edges;
@@ -398,7 +401,7 @@ void print_net_slack_ratio(char *fname) {
 
 	fp = my_fopen(fname, "w", 0);
 
-	fprintf(fp, "Note: nets with slack_ratio equal to 1.e30 have not been used by the timing analyzer (e.g. paths to/from I/Os).\n\n");  
+	fprintf(fp, "Note: nets with slack_ratio equal to 1e+30 have not been used by the timing analyzer (e.g. paths to/from I/Os).\n\n");  
 
 	/* Go through net_slack_ratio once to get the largest and smallest slack_ratio, both for reporting and 
 	   so that we can delimit the buckets. Also calculate the total negative slack_ratio in the design. */
@@ -418,54 +421,55 @@ void print_net_slack_ratio(char *fname) {
 		}
 	}
 
-	fprintf(fp, "Largest slack_ratio in design: %g\nSmallest slack_ratio in design: %g\n\n", max_slack_ratio, min_slack_ratio);
+	fprintf(fp, "Largest slack_ratio in design: %g\nSmallest slack_ratio in design: %g", max_slack_ratio, min_slack_ratio);
 
-	/* Initialize slack_ratios_in_bucket, an array counting how many slack_ratios are within certain linearly-spaced ranges (buckets). */
-	for (ibucket = 0; ibucket < NUM_BUCKETS; ibucket++) {
-		slack_ratios_in_bucket[ibucket] = 0;
-	}
+	if (max_slack_ratio - min_slack_ratio > 1e-15) { /* Only sort the slack_ratios into buckets if not all slack_ratios are the same (if they are identical, no need to sort). */
+		/* Initialize slack_ratios_in_bucket, an array counting how many slack_ratios are within certain linearly-spaced ranges (buckets). */
+		for (ibucket = 0; ibucket < NUM_BUCKETS; ibucket++) {
+			slack_ratios_in_bucket[ibucket] = 0;
+		}
 
-	/* The size of each bucket is the range of slack_ratios, divided by the number of buckets. */
-	bucket_size = (max_slack_ratio - min_slack_ratio)/NUM_BUCKETS;
+		/* The size of each bucket is the range of slack_ratios, divided by the number of buckets. */
+		bucket_size = (max_slack_ratio - min_slack_ratio)/NUM_BUCKETS;
 
-	/* Now, pass through again, incrementing the kth bucket each time we see a slack_ratio 
-	between (min_slack_ratio + k*bucket_size) and (min_slack_ratio + (k+1)*bucket_size). */
+		/* Now, pass through again, incrementing the number of slack_ratios in the nth bucket 
+			for each slack_ratio between (min_slack_ratio + n*bucket_size) and (min_slack_ratio + (n+1)*bucket_size). */
 
-	for (inet = 0; inet < num_timing_nets; inet++) {
-		driver_tnode = net_to_driver_tnode[inet];
-		num_edges = tnode[driver_tnode].num_edges;
-		tedge = tnode[driver_tnode].out_edges;
-		for (iedge = 0; iedge < num_edges; iedge++) { 
-			slack_ratio = net_slack_ratio[inet][iedge + 1];
-			if (slack_ratio < HUGE_POSITIVE_FLOAT - 1) {
-				/* We have to watch out for the special case where slack_ratio = max_slack_ratio, 
-				in which case ibucket = NUM_BUCKETS and we go out of bounds of the array. */
-				ibucket = min(NUM_BUCKETS - 1, (int) (slack_ratio - min_slack_ratio)/bucket_size);
-				slack_ratios_in_bucket[ibucket]++;
+		for (inet = 0; inet < num_timing_nets; inet++) {
+			driver_tnode = net_to_driver_tnode[inet];
+			num_edges = tnode[driver_tnode].num_edges;
+			tedge = tnode[driver_tnode].out_edges;
+			for (iedge = 0; iedge < num_edges; iedge++) { 
+				slack_ratio = net_slack_ratio[inet][iedge + 1];
+				if (slack_ratio < HUGE_POSITIVE_FLOAT - 1) {
+					/* We have to watch out for the special case where slack_ratio = max_slack_ratio, in which case ibucket = NUM_BUCKETS and we go out of bounds of the array. */
+					ibucket = min(NUM_BUCKETS - 1, (int) ((slack_ratio - min_slack_ratio)/bucket_size));
+					slack_ratios_in_bucket[ibucket]++;
+				}
 			}
+		}
+
+		/* Now print how many slack_ratios are in each bucket. */
+		fprintf(fp, "\n\nRange\t\t");
+		for (ibucket = 0; ibucket < NUM_BUCKETS; ibucket++) {
+			fprintf(fp, "%.1e to ", min_slack_ratio);
+			min_slack_ratio += bucket_size;
+			fprintf(fp, "%.1e\t", min_slack_ratio);
+		}
+		fprintf(fp, "\nslack_ratios in range\t\t");
+		for (ibucket = 0; ibucket < NUM_BUCKETS; ibucket++) {
+			fprintf(fp, "%d\t\t\t", slack_ratios_in_bucket[ibucket]);
 		}
 	}
 
-	/* Now print how many slack_ratios are in each bucket. */
-	fprintf(fp, "Range\t\t");
-	for (ibucket = 0; ibucket < NUM_BUCKETS; ibucket++) {
-		fprintf(fp, "%.1e to ", min_slack_ratio);
-		min_slack_ratio += bucket_size;
-		fprintf(fp, "%.1e\t", min_slack_ratio);
-	}
-	fprintf(fp, "\nSlacks in range\t\t");
-	for (ibucket = 0; ibucket < NUM_BUCKETS; ibucket++) {
-		fprintf(fp, "%d\t\t\t", slack_ratios_in_bucket[ibucket]);
-	}
-
 	/* Finally, print all the slack_ratios, organized by net. */
-	fprintf(fp, "\n\nNet #\tDriver_tnode\tto_node\tSlack\n\n");
+	fprintf(fp, "\n\nNet #\tDriver_tnode\tto_node\tslack_ratio\n\n");
 
 	for (inet = 0; inet < num_timing_nets; inet++) {
 		driver_tnode = net_to_driver_tnode[inet];
 		num_edges = tnode[driver_tnode].num_edges;
 		tedge = tnode[driver_tnode].out_edges;
-		fprintf(fp, "%5d\t%5d\t\t%5d\t%5g\n", inet, driver_tnode, tedge[0].to_node, net_slack_ratio[inet][1]);
+		fprintf(fp, "%5d\t%5d\t\t%5d\t%g\n", inet, driver_tnode, tedge[0].to_node, net_slack_ratio[inet][1]);
 		for (iedge = 1; iedge < num_edges; iedge++) { /* newline and indent subsequent edges after the first */
 			fprintf(fp, "\t\t\t%5d\t%g\n", tedge[iedge].to_node, net_slack_ratio[inet][iedge+1]);
 		}
@@ -1370,8 +1374,12 @@ void do_timing_analysis(boolean do_lut_input_balancing, boolean is_final_analysi
 
 					sink_clock_domain = tnode[inode].clock_domain;
 					constraint = timing_constraint[source_clock_domain][sink_clock_domain];
-					if(constraint > -0.01) { /* This means the constraint is not set to DO_NOT_ANALYSE (-1), and therefore we need to analyze this node. */
+					if(constraint > -1e-15) { /* This means the constraint is not set to DO_NOT_ANALYSE (-1), and therefore we need to analyze this node. */
 						tnode[inode].used_on_this_traversal = TRUE;	/* Mark that we've changed this node on this traversal (signalling we should update its slack later). */
+
+						/* Note: until I/O timing analysis is implemented, FF_SINK nodes coming from an input I/O pad to the source clock domain will be erroneously marked TRUE here.  
+						However, such nodes will have an invalid T_req, meaning that all nodes fanning into this node will not be analyzed. */
+
 #if SLACK_DEFINITION == 4	
 						/* Normalize the required time at the sink node to be >=0 by taking the max of the "real" 
 							required time (constraint + tnode[inode].clock_skew) and the arrival time, except for the
