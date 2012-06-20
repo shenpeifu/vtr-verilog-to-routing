@@ -4,7 +4,7 @@
 
 script_params=-power
 
-cmos_tech_behavior=PTM_NanoCMOS_45nm/45nm.xml
+cmos_tech_behavior=PTM_45nm/45nm.xml
 
 # Path to directory of circuits to use
 circuits_dir=benchmarks/verilog
