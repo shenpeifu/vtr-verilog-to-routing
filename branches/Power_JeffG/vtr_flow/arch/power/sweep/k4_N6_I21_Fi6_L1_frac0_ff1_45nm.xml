@@ -72,7 +72,7 @@
 		<switch type="mux" name="0" R="0.0" Cin="0.0" Cout="0.0" Tdel="6.837e-11" mux_trans_size="2.63074" buf_size="27.645901" buf_last_stage_size="auto"/>
 	</switchlist>
 	<segmentlist>
-		<segment freq="1.0" length="1" type="unidir" Rmetal="0.0" Cmetal="0.0" Cmetal_per_m="2.52e-10">
+		<segment freq="1.0" length="1" type="unidir" Rmetal="0.0" Cmetal="0.0" Cmetal_per_m="1.7e-10">
 			<mux name="0"/>
 			<sb type="pattern">
 				1 1
@@ -571,9 +571,9 @@
 	</complexblocklist>
 	<power>
 		<short_circuit_power percentage="0.1"/>
-		<local_interconnect C_wire="1.53e-10"/>
+		<local_interconnect C_wire="1.7e-10"/>
 	</power>
 	<clocks>
-		<clock buffer_size="auto" C_wire="2.52e-10"/>
+		<clock buffer_size="auto" C_wire="1.7e-10"/>
 	</clocks>
 </architecture>
