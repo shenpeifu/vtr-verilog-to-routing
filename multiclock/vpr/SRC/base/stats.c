@@ -20,6 +20,8 @@ static void get_length_and_bends_stats(void);
 
 static void get_channel_occupancy_stats(void);
 
+static void get_timing_stats(t_timing_stats * timing_stats);
+
 /************************* Subroutine definitions ****************************/
 
 void routing_stats(boolean full_stats, enum e_route_type route_type,
@@ -33,6 +35,7 @@ void routing_stats(boolean full_stats, enum e_route_type route_type,
 
 	float area, used_area;
 	int i, j;
+	t_timing_stats * timing_stats;
 
 	get_length_and_bends_stats();
 	get_channel_occupancy_stats();
@@ -78,15 +81,15 @@ void routing_stats(boolean full_stats, enum e_route_type route_type,
 			load_net_delay_from_routing(net_delay, clb_net, num_nets);
 
 			if (GetEchoOption()) {
-				print_net_delay(net_delay, "net_delay.echo", clb_net, num_nets);
+				print_net_delay(net_delay, "net_delay.echo");
 			}
 
 			load_timing_graph_net_delays(net_delay);
 
 #ifdef HACK_LUT_PIN_SWAPPING			
-			do_timing_analysis(TRUE, TRUE);
+			timing_stats = do_timing_analysis(TRUE, TRUE);
 #else
-			do_timing_analysis(FALSE, TRUE);
+			timing_stats = do_timing_analysis(FALSE, TRUE);
 #endif
 
 			if (GetEchoOption()) {
@@ -95,16 +98,10 @@ void routing_stats(boolean full_stats, enum e_route_type route_type,
 				print_net_slack_ratio("net_slack_ratio.echo");
 				/*print_critical_path("critical_path.echo");*/
 			}
-			/*
-			printf("\n");
-			if (pb_max_internal_delay == UNDEFINED
-					|| pb_max_internal_delay < T_crit) {
-				printf("Critical Path: %g (s)\n", T_crit);
-			} else {
-				printf(
-						"Critical Path: %g (s) - capped by fmax of block type %s\n",
-						pb_max_internal_delay, pbtype_max_internal_delay->name);
-			}*/
+
+			get_timing_stats(timing_stats);
+
+			free_timing_stats(timing_stats);
 		}
 	}
 
@@ -456,4 +453,55 @@ void print_lambda(void) {
 
 	lambda = (float) num_inputs_used / (float) num_blocks;
 	printf("Average lambda (input pins used per clb) is: %g\n", lambda);
+}
+
+static void get_timing_stats(t_timing_stats * timing_stats) {
+
+	/* Prints critical path delay per constraint, frequency of each clock 
+	(based only on paths within that clock's domain), geometric average
+	clock frequency, fanout-weighted geometric average clock frequency,
+	and the single worst slack per domain (with the tnodes on either side
+	of the edge with this worst slack).*/
+
+	if (num_netlist_clocks == 1) {
+		printf("\nCritical path delay: %g", timing_stats->critical_path_delay[0][0]);
+		printf("\nf_max: %g", timing_stats->f_max[0]);
+		printf("\nLeast slack in design: %g\n\n", timing_stats->least_slack_in_domain[0]);
+	} else {
+		int i, j, fanout, total_fanout = 0;
+		float geomean_f_max = 1, fanout_weighted_geomean_f_max = 1;
+
+		printf("\nCritical path delay per constraint:\n");
+		for (i = 0; i < num_netlist_clocks; i++) {
+			for (j = 0; j < num_netlist_clocks; j++) {
+				if (timing_constraint[i][j] > -0.01) { /* if timing constraint is not DO_NOT_ANALYSE */
+					printf("%s to %s: %g\n", clock_list[i].name, clock_list[j].name, timing_stats->critical_path_delay[i][j]);
+				}
+			}
+		}
+
+		printf("\nf_max of each clock (excluding paths between domains):\n");
+		for (i = 0; i < num_netlist_clocks; i++) {
+			printf("%s: %g\n", clock_list[i].name, timing_stats->f_max[i]);
+		}
+	
+		/* Calculate geometric mean f_max (fanout-weighted and unweighted) from the array f_max. */
+		for (i = 0; i < num_netlist_clocks; i++) {
+			geomean_f_max *= timing_stats->f_max[i];
+			fanout = clock_list[i].fanout;
+			fanout_weighted_geomean_f_max *= pow(timing_stats->f_max[i], fanout);
+			total_fanout += fanout;
+		}
+		geomean_f_max = pow(geomean_f_max, 1/num_netlist_clocks);
+		fanout_weighted_geomean_f_max = pow(fanout_weighted_geomean_f_max, 1/total_fanout);
+		printf("\nGeometric mean f_max: %g\n", geomean_f_max);
+		printf("Fanout-weighted geometric mean f_max: %g\n", fanout_weighted_geomean_f_max);
+
+		printf("\nLeast slack in each domain:\n");
+		for (i = 0; i < num_netlist_clocks; i++) {
+			printf("%s: %g\n", clock_list[i].name, timing_stats->least_slack_in_domain[i]);
+		}
+		printf("\n");
+	}
+
 }

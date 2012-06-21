@@ -235,6 +235,9 @@ void try_place(struct s_placer_opts placer_opts,
 	float **remember_net_delay_original_ptr; /*used to free net_delay if it is re-assigned */
 
 	int *x_lookup; /* Used to quickly determine valid swap columns */
+	
+	int i, j;
+	t_timing_stats * timing_stats;
 
 	/* Allocated here because it goes into timing critical code where each memory allocation is expensive */
 	x_lookup = my_malloc(nx * sizeof(int));
@@ -268,7 +271,7 @@ void try_place(struct s_placer_opts placer_opts,
 
 		load_constant_net_delay(net_delay, place_delay_value);
 		load_timing_graph_net_delays(net_delay);
-		do_timing_analysis(FALSE, TRUE);
+		timing_stats = do_timing_analysis(FALSE, TRUE);
 
 		if (GetEchoOption()) {
 			/*print_critical_path("Placement_Lower_Bound.echo");*/
@@ -281,7 +284,8 @@ void try_place(struct s_placer_opts placer_opts,
 
 		load_constant_net_delay(net_delay, 0);
 		load_timing_graph_net_delays(net_delay);
-		do_timing_analysis(FALSE, TRUE);
+		timing_stats = do_timing_analysis(FALSE, TRUE);
+		free_timing_stats(timing_stats);
 
 #endif
 
@@ -344,7 +348,8 @@ void try_place(struct s_placer_opts placer_opts,
 		}
 
 		load_timing_graph_net_delays(net_delay);
-		do_timing_analysis(FALSE, FALSE);
+		timing_stats = do_timing_analysis(FALSE, FALSE);
+		free_timing_stats(timing_stats);
 		load_criticalities(crit_exponent);
 		outer_crit_iter_count = 1;
 
@@ -455,7 +460,8 @@ void try_place(struct s_placer_opts placer_opts,
 				 *because it accesses point_to_point_delay array */
 
 				load_timing_graph_net_delays(net_delay);
-				do_timing_analysis(FALSE, FALSE);
+				timing_stats = do_timing_analysis(FALSE, FALSE);
+				free_timing_stats(timing_stats);
 				load_criticalities(crit_exponent);
 				/*recompute costs from scratch, based on new criticalities */
 				comp_td_costs(&timing_cost, &delay_cost);
@@ -506,7 +512,8 @@ void try_place(struct s_placer_opts placer_opts,
 					}
 
 					load_timing_graph_net_delays(net_delay);
-					do_timing_analysis(FALSE, FALSE);
+					timing_stats = do_timing_analysis(FALSE, FALSE);
+					free_timing_stats(timing_stats);
 					load_criticalities(crit_exponent);
 					comp_td_costs(&timing_cost, &delay_cost);
 				}
@@ -642,7 +649,8 @@ void try_place(struct s_placer_opts placer_opts,
 						num_nets);
 
 			load_timing_graph_net_delays(net_delay);
-			do_timing_analysis(FALSE, FALSE);
+			timing_stats = do_timing_analysis(FALSE, FALSE);
+			free_timing_stats(timing_stats);
 			load_criticalities(crit_exponent);
 			/*recompute criticaliies */
 			comp_td_costs(&timing_cost, &delay_cost);
@@ -690,7 +698,8 @@ void try_place(struct s_placer_opts placer_opts,
 					}
 
 					load_timing_graph_net_delays(net_delay);
-					do_timing_analysis(FALSE, FALSE);
+					timing_stats = do_timing_analysis(FALSE, FALSE);
+					free_timing_stats(timing_stats);
 					load_criticalities(crit_exponent);
 					comp_td_costs(&timing_cost, &delay_cost);
 				}
@@ -749,7 +758,7 @@ void try_place(struct s_placer_opts placer_opts,
 		net_delay = point_to_point_delay_cost; /*this makes net_delay up to date with    *
 		 *the same values that the placer is using*/
 		load_timing_graph_net_delays(net_delay);
-		do_timing_analysis(FALSE, TRUE);
+		timing_stats = do_timing_analysis(FALSE, TRUE);
 
 		if (GetEchoOption()) {
 			print_sink_delays("placement_sink_delay.echo");
@@ -757,8 +766,20 @@ void try_place(struct s_placer_opts placer_opts,
 			print_net_slack_ratio("placement_net_slack_ratio.echo");
 			/*print_critical_path("placement_crit_path.echo");*/
 		}
-
-		/*printf("Placement Estimated Crit Path Delay: %g\n\n", est_crit);*/
+		if (num_netlist_clocks == 1) {
+			printf("Placement estimated critical path delay: %g\n\n", timing_stats->critical_path_delay[0][0]);
+		} else {
+			printf("Placement estimated critical path delay by constraint:\n");
+			for (i = 0; i < num_netlist_clocks; i++) {
+				for (j = 0; j < num_netlist_clocks; j++) {
+					if (timing_constraint[i][j] > -0.01) { /* if timing constraint is not DO_NOT_ANALYSE */
+						printf("%s to %s: %g\n", clock_list[i].name, clock_list[j].name, timing_stats->critical_path_delay[i][j]);
+					}
+				}
+			}
+			printf("\n");
+		}
+		free_timing_stats(timing_stats);
 	}
 
 	sprintf(msg,

@@ -11,7 +11,7 @@
 ENABLE_GRAPHICS = true
 # can be true or false
 
-export BUILD_TYPE = release
+export BUILD_TYPE = debug
 # can be debug or release - this option gets inherited by the library libvpr 
 # by default, though libvpr's build type can be set independently in libvpr's Makefile.
 

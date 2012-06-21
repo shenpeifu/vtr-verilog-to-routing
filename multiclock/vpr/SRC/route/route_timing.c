@@ -46,7 +46,7 @@ boolean try_timing_driven_route(struct s_router_opts router_opts,
 	 * must have already been allocated, and net_delay must have been allocated. *
 	 * Returns TRUE if the routing succeeds, FALSE otherwise.                    */
 
-	int itry, inet, ipin, i;
+	int itry, inet, ipin, i, j;
 	boolean success, is_routable, rip_up_local_opins;
 	float *pin_criticality; /* [1..max_pins_per_net-1]. */
 	int *sink_order; /* [1..max_pins_per_net-1]. */
@@ -59,6 +59,8 @@ boolean try_timing_driven_route(struct s_router_opts router_opts,
 	int bends;
 	int wirelength, total_wirelength, available_wirelength;
 	int segments;
+
+	t_timing_stats * timing_stats;
 
 	sinks = my_malloc(sizeof(float) * num_nets);
 	net_index = my_malloc(sizeof(int) * num_nets);
@@ -199,11 +201,24 @@ boolean try_timing_driven_route(struct s_router_opts router_opts,
 		load_timing_graph_net_delays(net_delay);
 		
 #ifdef HACK_LUT_PIN_SWAPPING
-		do_timing_analysis(TRUE, FALSE);
+		timing_stats = do_timing_analysis(TRUE, FALSE);
 #else
-		do_timing_analysis(FALSE, FALSE);
+		timing_stats = do_timing_analysis(FALSE, FALSE);
 #endif
-		/*printf("T_crit: %g.\n", T_crit);*/
+		if (num_netlist_clocks == 1) {
+			printf("T_crit: %g\n", timing_stats->critical_path_delay[0][0]);
+		} else {
+			printf("T_crit per constraint:\n");
+			for (i = 0; i < num_netlist_clocks; i++) {
+				for (j = 0; j < num_netlist_clocks; j++) {
+					if (timing_constraint[i][j] > -0.01) { /* if timing constraint is not DO_NOT_ANALYSE */
+						printf("%s to %s: %g\n", clock_list[i].name, clock_list[j].name, timing_stats->critical_path_delay[i][j]);
+					}
+				}
+			}
+			printf("\n");
+		}
+
 		fflush(stdout);
 	}
 

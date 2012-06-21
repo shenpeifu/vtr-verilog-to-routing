@@ -35,15 +35,19 @@ t_linked_int *allocate_and_load_critical_path(void);
 
 void load_timing_graph_net_delays(float **net_delay);
 
-void do_timing_analysis(boolean do_lut_input_balancing, boolean is_final_analysis);
+t_timing_stats * do_timing_analysis(boolean do_lut_input_balancing, boolean is_final_analysis);
 
 void free_timing_graph(void);
+
+void free_timing_stats(t_timing_stats * timing_stats);
 
 void print_timing_graph(char *fname);
 
 void print_net_slack(char *fname);
 
 void print_net_slack_ratio(char *fname);
+
+void print_net_delay(float **net_delay, char *fname);
 
 void print_lut_remapping(char *fname);
 
@@ -62,7 +66,7 @@ extern int num_netlist_clocks; /* [0..num_netlist_clocks - 1] number of clocks i
 
 extern t_clock * clock_list; /* [0..num_netlist_clocks - 1] array of clocks in netlist */
 
-extern float ** timing_constraint, ** critical_path_delay; /* [0..num_netlist_clocks - 1 (source)][0..num_netlist_clocks - 1 (destination)] */
+extern float ** timing_constraint; /* [0..num_netlist_clocks - 1 (source)][0..num_netlist_clocks - 1 (destination)] */
 
 extern float ** net_slack, ** net_slack_ratio; /* [0..num_nets-1][1..num_pins] */
 

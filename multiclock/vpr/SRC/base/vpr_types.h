@@ -360,6 +360,13 @@ typedef struct s_sdc_clock {
 /* Stores the period and offset constraints for each SDC file.  Only used
    when parsing the SDC file. */
 
+typedef struct s_timing_stats {
+	float ** critical_path_delay; /* [0..num_netlist_clocks - 1 (source)][0..num_netlist_clocks - 1 (destination)] */
+	float * f_max; /* [0..num_netlist_clocks - 1] - only considers paths within each clock domain */
+	float * least_slack_in_domain; /* [0..num_netlist_clocks - 1] */
+} t_timing_stats;
+/* Timing statistics for final reporting. */
+
 /***************************************************************************
  * Placement and routing data types
  ****************************************************************************/
