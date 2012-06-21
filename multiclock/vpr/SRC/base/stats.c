@@ -492,8 +492,8 @@ static void get_timing_stats(t_timing_stats * timing_stats) {
 			fanout_weighted_geomean_f_max *= pow(timing_stats->f_max[i], fanout);
 			total_fanout += fanout;
 		}
-		geomean_f_max = pow(geomean_f_max, 1/num_netlist_clocks);
-		fanout_weighted_geomean_f_max = pow(fanout_weighted_geomean_f_max, 1/total_fanout);
+		geomean_f_max = pow(geomean_f_max, (float) 1/num_netlist_clocks);
+		fanout_weighted_geomean_f_max = pow(fanout_weighted_geomean_f_max, (float) 1/total_fanout);
 		printf("\nGeometric mean f_max: %g\n", geomean_f_max);
 		printf("Fanout-weighted geometric mean f_max: %g\n", fanout_weighted_geomean_f_max);
 

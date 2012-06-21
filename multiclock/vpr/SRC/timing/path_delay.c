@@ -117,10 +117,10 @@ static void alloc_and_load_tnodes_from_prepacked_netlist(float block_delay,
 
 static void load_tnode(INP t_pb_graph_pin *pb_graph_pin, INP int iblock,
 		INOUTP int *inode, INP t_timing_inf timing_inf);
-
+#ifdef FANCY_CRIT
 static void normalize_costs(float t_crit, long max_critical_input_paths,
 		long max_critical_output_paths);
-
+#endif
 static void print_primitive_as_blif(FILE *fpout, int iblk);
 
 static void set_and_balance_arrival_time(int to_node, int from_node, float Tdel, boolean do_lut_input_balancing); 
@@ -1522,7 +1522,9 @@ t_timing_stats * do_timing_analysis(boolean do_lut_input_balancing, boolean is_f
 		}
 		/* After each iteration of the iclock loop, update the slack if it has a newer, lower value.  Also update the normalized costs (for packing). */
 		timing_stats->least_slack_in_domain[source_clock_domain] = update_slacks(T_req_max);
+#ifdef FANCY_CRIT
 		normalize_costs(T_req_max, max_critical_input_paths, max_critical_output_paths);
+#endif
 	} /* end of source_clock_domain loop */
 	
 #if SLACK_DEFINITION == 3 
@@ -1838,7 +1840,7 @@ void do_constant_net_delay_timing_analysis(t_timing_inf timing_inf,
 	free_net_delay(net_delay, &net_delay_ch);
 	free_timing_stats(timing_stats);
 }
-
+#ifdef FANCY_CRIT
 static void normalize_costs(float T_req_max, long max_critical_input_paths,
 		long max_critical_output_paths) {
 	int i;
@@ -1850,7 +1852,7 @@ static void normalize_costs(float T_req_max, long max_critical_input_paths,
 						 ((float) max_critical_input_paths + max_critical_output_paths));
 	}
 }
-
+#endif
 void print_timing_graph_as_blif(char *fname, t_model *models) {
 	struct s_model_ports *port;
 	struct s_linked_vptr *p_io_removed;

@@ -24,6 +24,10 @@
 
 /* WARNING: SLACK_DEFINITION 3 and SLACK_RATIO_DEFINITION 1 are not compatible. */
 
+//#define FANCY_CRIT
+/* If defined, uses different, normalized and directional criticalities in the clusterer.  
+	If not defined, uses the same slack ratio fpr the clusterer as for the placer/router. */
+
 /*************************** Function declarations ********************************/
 
 void alloc_and_load_timing_graph(t_timing_inf timing_inf);
