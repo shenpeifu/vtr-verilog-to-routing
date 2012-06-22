@@ -1,0 +1,2808 @@
+<technology file="45nm.pm" size="45e-9">
+	<operating_point temperature="27" Vdd="1.0"/>
+	<p_to_n ratio="1.65"/>
+	<transistor type="nmos" Vth="3.3904E-01">
+		<long_size W="1" L="2">
+			<current leakage="1.3660E-11"/>
+			<capacitance gate_cmos="1.0005E-16" drain_cmos="1.1845E-16" gate_pass="7.2087E-17" source_pass="4.4885E-16" drain_pass="1.3899E-16"/>
+		</long_size>
+		<size W="1.00" L="1">
+			<current leakage="7.4181E-10"/>
+			<capacitance gate_cmos="5.3218E-17" drain_cmos="1.1845E-16" gate_pass="4.3052E-17" source_pass="4.2726E-16" drain_pass="1.3899E-16"/>
+		</size>
+		<size W="1.02" L="1">
+			<current leakage="7.6089E-10"/>
+			<capacitance gate_cmos="5.4575E-17" drain_cmos="1.1908E-16" gate_pass="4.4148E-17" source_pass="4.2893E-16" drain_pass="1.3973E-16"/>
+		</size>
+		<size W="1.04" L="1">
+			<current leakage="7.7996E-10"/>
+			<capacitance gate_cmos="5.5932E-17" drain_cmos="1.1971E-16" gate_pass="4.5243E-17" source_pass="4.3061E-16" drain_pass="1.4048E-16"/>
+		</size>
+		<size W="1.06" L="1">
+			<current leakage="7.9904E-10"/>
+			<capacitance gate_cmos="5.7289E-17" drain_cmos="1.2034E-16" gate_pass="4.6339E-17" source_pass="4.3228E-16" drain_pass="1.4122E-16"/>
+		</size>
+		<size W="1.08" L="1">
+			<current leakage="8.1812E-10"/>
+			<capacitance gate_cmos="5.8646E-17" drain_cmos="1.2097E-16" gate_pass="4.7434E-17" source_pass="4.3395E-16" drain_pass="1.4197E-16"/>
+		</size>
+		<size W="1.10" L="1">
+			<current leakage="8.3720E-10"/>
+			<capacitance gate_cmos="6.0003E-17" drain_cmos="1.2160E-16" gate_pass="4.8530E-17" source_pass="4.3562E-16" drain_pass="1.4271E-16"/>
+		</size>
+		<size W="1.13" L="1">
+			<current leakage="8.6581E-10"/>
+			<capacitance gate_cmos="6.2039E-17" drain_cmos="1.2255E-16" gate_pass="5.0173E-17" source_pass="4.3813E-16" drain_pass="1.4383E-16"/>
+		</size>
+		<size W="1.15" L="1">
+			<current leakage="8.8489E-10"/>
+			<capacitance gate_cmos="6.3396E-17" drain_cmos="1.2318E-16" gate_pass="5.1268E-17" source_pass="4.3980E-16" drain_pass="1.4458E-16"/>
+		</size>
+		<size W="1.17" L="1">
+			<current leakage="9.0397E-10"/>
+			<capacitance gate_cmos="6.4753E-17" drain_cmos="1.2382E-16" gate_pass="5.2364E-17" source_pass="4.4147E-16" drain_pass="1.4532E-16"/>
+		</size>
+		<size W="1.20" L="1">
+			<current leakage="9.3258E-10"/>
+			<capacitance gate_cmos="6.6788E-17" drain_cmos="1.2476E-16" gate_pass="5.4007E-17" source_pass="4.4398E-16" drain_pass="1.4644E-16"/>
+		</size>
+		<size W="1.22" L="1">
+			<current leakage="9.5166E-10"/>
+			<capacitance gate_cmos="6.8145E-17" drain_cmos="1.2540E-16" gate_pass="5.5103E-17" source_pass="4.4565E-16" drain_pass="1.4719E-16"/>
+		</size>
+		<size W="1.24" L="1">
+			<current leakage="9.7074E-10"/>
+			<capacitance gate_cmos="6.9502E-17" drain_cmos="1.2603E-16" gate_pass="5.6198E-17" source_pass="4.4732E-16" drain_pass="1.4793E-16"/>
+		</size>
+		<size W="1.27" L="1">
+			<current leakage="9.9936E-10"/>
+			<capacitance gate_cmos="7.1537E-17" drain_cmos="1.2698E-16" gate_pass="5.7842E-17" source_pass="4.4983E-16" drain_pass="1.4905E-16"/>
+		</size>
+		<size W="1.29" L="1">
+			<current leakage="1.0184E-09"/>
+			<capacitance gate_cmos="7.2894E-17" drain_cmos="1.2761E-16" gate_pass="5.8937E-17" source_pass="4.5150E-16" drain_pass="1.4979E-16"/>
+		</size>
+		<size W="1.32" L="1">
+			<current leakage="1.0471E-09"/>
+			<capacitance gate_cmos="7.4930E-17" drain_cmos="1.2856E-16" gate_pass="6.0580E-17" source_pass="4.5401E-16" drain_pass="1.5091E-16"/>
+		</size>
+		<size W="1.35" L="1">
+			<current leakage="1.0757E-09"/>
+			<capacitance gate_cmos="7.6965E-17" drain_cmos="1.2950E-16" gate_pass="6.2224E-17" source_pass="4.5652E-16" drain_pass="1.5203E-16"/>
+		</size>
+		<size W="1.37" L="1">
+			<current leakage="1.0948E-09"/>
+			<capacitance gate_cmos="7.8322E-17" drain_cmos="1.3013E-16" gate_pass="6.3319E-17" source_pass="4.5819E-16" drain_pass="1.5278E-16"/>
+		</size>
+		<size W="1.40" L="1">
+			<current leakage="1.1234E-09"/>
+			<capacitance gate_cmos="8.0358E-17" drain_cmos="1.3108E-16" gate_pass="6.4963E-17" source_pass="4.6070E-16" drain_pass="1.5389E-16"/>
+		</size>
+		<size W="1.43" L="1">
+			<current leakage="1.1520E-09"/>
+			<capacitance gate_cmos="8.2393E-17" drain_cmos="1.3203E-16" gate_pass="6.6606E-17" source_pass="4.6321E-16" drain_pass="1.5501E-16"/>
+		</size>
+		<size W="1.46" L="1">
+			<current leakage="1.1806E-09"/>
+			<capacitance gate_cmos="8.4428E-17" drain_cmos="1.3298E-16" gate_pass="6.8249E-17" source_pass="4.6571E-16" drain_pass="1.5613E-16"/>
+		</size>
+		<size W="1.49" L="1">
+			<current leakage="1.2092E-09"/>
+			<capacitance gate_cmos="8.6464E-17" drain_cmos="1.3393E-16" gate_pass="6.9893E-17" source_pass="4.6822E-16" drain_pass="1.5725E-16"/>
+		</size>
+		<size W="1.52" L="1">
+			<current leakage="1.2378E-09"/>
+			<capacitance gate_cmos="8.8499E-17" drain_cmos="1.3487E-16" gate_pass="7.1536E-17" source_pass="4.7073E-16" drain_pass="1.5837E-16"/>
+		</size>
+		<size W="1.55" L="1">
+			<current leakage="1.2665E-09"/>
+			<capacitance gate_cmos="9.0535E-17" drain_cmos="1.3582E-16" gate_pass="7.3179E-17" source_pass="4.7324E-16" drain_pass="1.5948E-16"/>
+		</size>
+		<size W="1.58" L="1">
+			<current leakage="1.2951E-09"/>
+			<capacitance gate_cmos="9.2570E-17" drain_cmos="1.3677E-16" gate_pass="7.4822E-17" source_pass="4.7575E-16" drain_pass="1.6060E-16"/>
+		</size>
+		<size W="1.61" L="1">
+			<current leakage="1.3237E-09"/>
+			<capacitance gate_cmos="9.4606E-17" drain_cmos="1.3772E-16" gate_pass="7.6466E-17" source_pass="4.7826E-16" drain_pass="1.6172E-16"/>
+		</size>
+		<size W="1.64" L="1">
+			<current leakage="1.3523E-09"/>
+			<capacitance gate_cmos="9.6641E-17" drain_cmos="1.3866E-16" gate_pass="7.8109E-17" source_pass="4.8076E-16" drain_pass="1.6284E-16"/>
+		</size>
+		<size W="1.67" L="1">
+			<current leakage="1.3809E-09"/>
+			<capacitance gate_cmos="9.8676E-17" drain_cmos="1.3961E-16" gate_pass="7.9752E-17" source_pass="4.8327E-16" drain_pass="1.6396E-16"/>
+		</size>
+		<size W="1.71" L="1">
+			<current leakage="1.4191E-09"/>
+			<capacitance gate_cmos="1.0139E-16" drain_cmos="1.4088E-16" gate_pass="8.1943E-17" source_pass="4.8662E-16" drain_pass="1.6545E-16"/>
+		</size>
+		<size W="1.74" L="1">
+			<current leakage="1.4477E-09"/>
+			<capacitance gate_cmos="1.0343E-16" drain_cmos="1.4182E-16" gate_pass="8.3587E-17" source_pass="4.8912E-16" drain_pass="1.6656E-16"/>
+		</size>
+		<size W="1.78" L="1">
+			<current leakage="1.4859E-09"/>
+			<capacitance gate_cmos="1.0614E-16" drain_cmos="1.4309E-16" gate_pass="8.5778E-17" source_pass="4.9247E-16" drain_pass="1.6806E-16"/>
+		</size>
+		<size W="1.81" L="1">
+			<current leakage="1.5145E-09"/>
+			<capacitance gate_cmos="1.0818E-16" drain_cmos="1.4404E-16" gate_pass="8.7421E-17" source_pass="4.9498E-16" drain_pass="1.6917E-16"/>
+		</size>
+		<size W="1.85" L="1">
+			<current leakage="1.5527E-09"/>
+			<capacitance gate_cmos="1.1089E-16" drain_cmos="1.4530E-16" gate_pass="8.9612E-17" source_pass="4.9832E-16" drain_pass="1.7066E-16"/>
+		</size>
+		<size W="1.88" L="1">
+			<current leakage="1.5813E-09"/>
+			<capacitance gate_cmos="1.1292E-16" drain_cmos="1.4625E-16" gate_pass="9.1255E-17" source_pass="5.0083E-16" drain_pass="1.7178E-16"/>
+		</size>
+		<size W="1.92" L="1">
+			<current leakage="1.6194E-09"/>
+			<capacitance gate_cmos="1.1564E-16" drain_cmos="1.4751E-16" gate_pass="9.3446E-17" source_pass="5.0418E-16" drain_pass="1.7327E-16"/>
+		</size>
+		<size W="1.96" L="1">
+			<current leakage="1.6576E-09"/>
+			<capacitance gate_cmos="1.1835E-16" drain_cmos="1.4877E-16" gate_pass="9.5637E-17" source_pass="5.0752E-16" drain_pass="1.7476E-16"/>
+		</size>
+		<size W="2.00" L="1">
+			<current leakage="1.6958E-09"/>
+			<capacitance gate_cmos="1.2107E-16" drain_cmos="1.5004E-16" gate_pass="9.7829E-17" source_pass="5.1087E-16" drain_pass="1.7625E-16"/>
+		</size>
+		<size W="2.04" L="1">
+			<current leakage="1.7339E-09"/>
+			<capacitance gate_cmos="1.2378E-16" drain_cmos="1.5130E-16" gate_pass="1.0002E-16" source_pass="5.1421E-16" drain_pass="1.7775E-16"/>
+		</size>
+		<size W="2.08" L="1">
+			<current leakage="1.7721E-09"/>
+			<capacitance gate_cmos="1.2649E-16" drain_cmos="1.5257E-16" gate_pass="1.0221E-16" source_pass="5.1756E-16" drain_pass="1.7924E-16"/>
+		</size>
+		<size W="2.12" L="1">
+			<current leakage="1.8103E-09"/>
+			<capacitance gate_cmos="1.2921E-16" drain_cmos="1.5383E-16" gate_pass="1.0440E-16" source_pass="5.2090E-16" drain_pass="1.8073E-16"/>
+		</size>
+		<size W="2.16" L="1">
+			<current leakage="1.8484E-09"/>
+			<capacitance gate_cmos="1.3192E-16" drain_cmos="1.5509E-16" gate_pass="1.0659E-16" source_pass="5.2424E-16" drain_pass="1.8222E-16"/>
+		</size>
+		<size W="2.21" L="1">
+			<current leakage="1.8961E-09"/>
+			<capacitance gate_cmos="1.3531E-16" drain_cmos="1.5667E-16" gate_pass="1.0933E-16" source_pass="5.2843E-16" drain_pass="1.8408E-16"/>
+		</size>
+		<size W="2.25" L="1">
+			<current leakage="1.9343E-09"/>
+			<capacitance gate_cmos="1.3803E-16" drain_cmos="1.5794E-16" gate_pass="1.1152E-16" source_pass="5.3177E-16" drain_pass="1.8557E-16"/>
+		</size>
+		<size W="2.30" L="1">
+			<current leakage="1.9820E-09"/>
+			<capacitance gate_cmos="1.4142E-16" drain_cmos="1.5952E-16" gate_pass="1.1426E-16" source_pass="5.3595E-16" drain_pass="1.8743E-16"/>
+		</size>
+		<size W="2.34" L="1">
+			<current leakage="2.0201E-09"/>
+			<capacitance gate_cmos="1.4413E-16" drain_cmos="1.6078E-16" gate_pass="1.1645E-16" source_pass="5.3930E-16" drain_pass="1.8893E-16"/>
+		</size>
+		<size W="2.39" L="1">
+			<current leakage="2.0678E-09"/>
+			<capacitance gate_cmos="1.4753E-16" drain_cmos="1.6236E-16" gate_pass="1.1919E-16" source_pass="5.4348E-16" drain_pass="1.9079E-16"/>
+		</size>
+		<size W="2.44" L="1">
+			<current leakage="2.1155E-09"/>
+			<capacitance gate_cmos="1.5092E-16" drain_cmos="1.6394E-16" gate_pass="1.2193E-16" source_pass="5.4766E-16" drain_pass="1.9265E-16"/>
+		</size>
+		<size W="2.49" L="1">
+			<current leakage="2.1632E-09"/>
+			<capacitance gate_cmos="1.5431E-16" drain_cmos="1.6552E-16" gate_pass="1.2467E-16" source_pass="5.5184E-16" drain_pass="1.9452E-16"/>
+		</size>
+		<size W="2.54" L="1">
+			<current leakage="2.2109E-09"/>
+			<capacitance gate_cmos="1.5770E-16" drain_cmos="1.6710E-16" gate_pass="1.2741E-16" source_pass="5.5602E-16" drain_pass="1.9638E-16"/>
+		</size>
+		<size W="2.59" L="1">
+			<current leakage="2.2587E-09"/>
+			<capacitance gate_cmos="1.6110E-16" drain_cmos="1.6868E-16" gate_pass="1.3015E-16" source_pass="5.6020E-16" drain_pass="1.9824E-16"/>
+		</size>
+		<size W="2.64" L="1">
+			<current leakage="2.3064E-09"/>
+			<capacitance gate_cmos="1.6449E-16" drain_cmos="1.7026E-16" gate_pass="1.3289E-16" source_pass="5.6438E-16" drain_pass="2.0011E-16"/>
+		</size>
+		<size W="2.69" L="1">
+			<current leakage="2.3541E-09"/>
+			<capacitance gate_cmos="1.6788E-16" drain_cmos="1.7184E-16" gate_pass="1.3562E-16" source_pass="5.6857E-16" drain_pass="2.0197E-16"/>
+		</size>
+		<size W="2.75" L="1">
+			<current leakage="2.4113E-09"/>
+			<capacitance gate_cmos="1.7195E-16" drain_cmos="1.7373E-16" gate_pass="1.3891E-16" source_pass="5.7358E-16" drain_pass="2.0421E-16"/>
+		</size>
+		<size W="2.80" L="1">
+			<current leakage="2.4590E-09"/>
+			<capacitance gate_cmos="1.7534E-16" drain_cmos="1.7531E-16" gate_pass="1.4165E-16" source_pass="5.7777E-16" drain_pass="2.0607E-16"/>
+		</size>
+		<size W="2.86" L="1">
+			<current leakage="2.5162E-09"/>
+			<capacitance gate_cmos="1.7942E-16" drain_cmos="1.7721E-16" gate_pass="1.4494E-16" source_pass="5.8278E-16" drain_pass="2.0831E-16"/>
+		</size>
+		<size W="2.91" L="1">
+			<current leakage="2.5640E-09"/>
+			<capacitance gate_cmos="1.8281E-16" drain_cmos="1.7879E-16" gate_pass="1.4768E-16" source_pass="5.8696E-16" drain_pass="2.1017E-16"/>
+		</size>
+		<size W="2.97" L="1">
+			<current leakage="2.6212E-09"/>
+			<capacitance gate_cmos="1.8688E-16" drain_cmos="1.8068E-16" gate_pass="1.5096E-16" source_pass="5.9198E-16" drain_pass="2.1240E-16"/>
+		</size>
+		<size W="3.03" L="1">
+			<current leakage="2.6784E-09"/>
+			<capacitance gate_cmos="1.9095E-16" drain_cmos="1.8258E-16" gate_pass="1.5425E-16" source_pass="5.9700E-16" drain_pass="2.1464E-16"/>
+		</size>
+		<size W="3.09" L="1">
+			<current leakage="2.7357E-09"/>
+			<capacitance gate_cmos="1.9502E-16" drain_cmos="1.8447E-16" gate_pass="1.5754E-16" source_pass="6.0202E-16" drain_pass="2.1688E-16"/>
+		</size>
+		<size W="3.15" L="1">
+			<current leakage="2.7929E-09"/>
+			<capacitance gate_cmos="1.9909E-16" drain_cmos="1.8637E-16" gate_pass="1.6082E-16" source_pass="6.0704E-16" drain_pass="2.1911E-16"/>
+		</size>
+		<size W="3.22" L="1">
+			<current leakage="2.8597E-09"/>
+			<capacitance gate_cmos="2.0384E-16" drain_cmos="1.8858E-16" gate_pass="1.6466E-16" source_pass="6.1289E-16" drain_pass="2.2172E-16"/>
+		</size>
+		<size W="3.28" L="1">
+			<current leakage="2.9170E-09"/>
+			<capacitance gate_cmos="2.0791E-16" drain_cmos="1.9048E-16" gate_pass="1.6794E-16" source_pass="6.1791E-16" drain_pass="2.2396E-16"/>
+		</size>
+		<size W="3.35" L="1">
+			<current leakage="2.9837E-09"/>
+			<capacitance gate_cmos="2.1266E-16" drain_cmos="1.9269E-16" gate_pass="1.7178E-16" source_pass="6.2376E-16" drain_pass="2.2657E-16"/>
+		</size>
+		<size W="3.41" L="1">
+			<current leakage="3.0410E-09"/>
+			<capacitance gate_cmos="2.1673E-16" drain_cmos="1.9458E-16" gate_pass="1.7506E-16" source_pass="6.2878E-16" drain_pass="2.2880E-16"/>
+		</size>
+		<size W="3.48" L="1">
+			<current leakage="3.1078E-09"/>
+			<capacitance gate_cmos="2.2148E-16" drain_cmos="1.9680E-16" gate_pass="1.7890E-16" source_pass="6.3463E-16" drain_pass="2.3141E-16"/>
+		</size>
+		<size W="3.55" L="1">
+			<current leakage="3.1746E-09"/>
+			<capacitance gate_cmos="2.2623E-16" drain_cmos="1.9901E-16" gate_pass="1.8273E-16" source_pass="6.4049E-16" drain_pass="2.3402E-16"/>
+		</size>
+		<size W="3.62" L="1">
+			<current leakage="3.2413E-09"/>
+			<capacitance gate_cmos="2.3098E-16" drain_cmos="2.0122E-16" gate_pass="1.8657E-16" source_pass="6.4634E-16" drain_pass="2.3663E-16"/>
+		</size>
+		<size W="3.69" L="1">
+			<current leakage="3.3081E-09"/>
+			<capacitance gate_cmos="2.3573E-16" drain_cmos="2.0343E-16" gate_pass="1.9040E-16" source_pass="6.5220E-16" drain_pass="2.3924E-16"/>
+		</size>
+		<size W="3.77" L="1">
+			<current leakage="3.3844E-09"/>
+			<capacitance gate_cmos="2.4116E-16" drain_cmos="2.0596E-16" gate_pass="1.9478E-16" source_pass="6.5889E-16" drain_pass="2.4222E-16"/>
+		</size>
+		<size W="3.84" L="1">
+			<current leakage="3.4512E-09"/>
+			<capacitance gate_cmos="2.4591E-16" drain_cmos="2.0817E-16" gate_pass="1.9862E-16" source_pass="6.6474E-16" drain_pass="2.4483E-16"/>
+		</size>
+		<size W="3.92" L="1">
+			<current leakage="3.5276E-09"/>
+			<capacitance gate_cmos="2.5133E-16" drain_cmos="2.1070E-16" gate_pass="2.0300E-16" source_pass="6.7143E-16" drain_pass="2.4781E-16"/>
+		</size>
+		<size W="4.00" L="1">
+			<current leakage="3.6039E-09"/>
+			<capacitance gate_cmos="2.5676E-16" drain_cmos="2.1322E-16" gate_pass="2.0738E-16" source_pass="6.7812E-16" drain_pass="2.5079E-16"/>
+		</size>
+		<size W="4.08" L="1">
+			<current leakage="3.6802E-09"/>
+			<capacitance gate_cmos="2.6219E-16" drain_cmos="2.1575E-16" gate_pass="2.1176E-16" source_pass="6.8481E-16" drain_pass="2.5377E-16"/>
+		</size>
+		<size W="4.16" L="1">
+			<current leakage="3.7565E-09"/>
+			<capacitance gate_cmos="2.6762E-16" drain_cmos="2.1828E-16" gate_pass="2.1615E-16" source_pass="6.9150E-16" drain_pass="2.5675E-16"/>
+		</size>
+		<size W="4.24" L="1">
+			<current leakage="3.8329E-09"/>
+			<capacitance gate_cmos="2.7305E-16" drain_cmos="2.2081E-16" gate_pass="2.2053E-16" source_pass="6.9819E-16" drain_pass="2.5974E-16"/>
+		</size>
+		<size W="4.33" L="1">
+			<current leakage="3.9187E-09"/>
+			<capacitance gate_cmos="2.7915E-16" drain_cmos="2.2365E-16" gate_pass="2.2546E-16" source_pass="7.0572E-16" drain_pass="2.6309E-16"/>
+		</size>
+		<size W="4.42" L="1">
+			<current leakage="4.0046E-09"/>
+			<capacitance gate_cmos="2.8526E-16" drain_cmos="2.2649E-16" gate_pass="2.3039E-16" source_pass="7.1325E-16" drain_pass="2.6644E-16"/>
+		</size>
+		<size W="4.50" L="1">
+			<current leakage="4.0809E-09"/>
+			<capacitance gate_cmos="2.9069E-16" drain_cmos="2.2902E-16" gate_pass="2.3477E-16" source_pass="7.1994E-16" drain_pass="2.6943E-16"/>
+		</size>
+		<size W="4.59" L="1">
+			<current leakage="4.1668E-09"/>
+			<capacitance gate_cmos="2.9679E-16" drain_cmos="2.3186E-16" gate_pass="2.3970E-16" source_pass="7.2746E-16" drain_pass="2.7278E-16"/>
+		</size>
+		<size W="4.69" L="1">
+			<current leakage="4.2622E-09"/>
+			<capacitance gate_cmos="3.0358E-16" drain_cmos="2.3502E-16" gate_pass="2.4518E-16" source_pass="7.3583E-16" drain_pass="2.7651E-16"/>
+		</size>
+		<size W="4.78" L="1">
+			<current leakage="4.3481E-09"/>
+			<capacitance gate_cmos="3.0968E-16" drain_cmos="2.3787E-16" gate_pass="2.5011E-16" source_pass="7.4335E-16" drain_pass="2.7986E-16"/>
+		</size>
+		<size W="4.88" L="1">
+			<current leakage="4.4435E-09"/>
+			<capacitance gate_cmos="3.1647E-16" drain_cmos="2.4103E-16" gate_pass="2.5559E-16" source_pass="7.5172E-16" drain_pass="2.8359E-16"/>
+		</size>
+		<size W="4.97" L="1">
+			<current leakage="4.5293E-09"/>
+			<capacitance gate_cmos="3.2257E-16" drain_cmos="2.4387E-16" gate_pass="2.6051E-16" source_pass="7.5924E-16" drain_pass="2.8694E-16"/>
+		</size>
+		<size W="5.07" L="1">
+			<current leakage="4.6248E-09"/>
+			<capacitance gate_cmos="3.2936E-16" drain_cmos="2.4703E-16" gate_pass="2.6599E-16" source_pass="7.6761E-16" drain_pass="2.9067E-16"/>
+		</size>
+		<size W="5.17" L="1">
+			<current leakage="4.7202E-09"/>
+			<capacitance gate_cmos="3.3614E-16" drain_cmos="2.5019E-16" gate_pass="2.7147E-16" source_pass="7.7597E-16" drain_pass="2.9440E-16"/>
+		</size>
+		<size W="5.28" L="1">
+			<current leakage="4.8251E-09"/>
+			<capacitance gate_cmos="3.4361E-16" drain_cmos="2.5366E-16" gate_pass="2.7750E-16" source_pass="7.8517E-16" drain_pass="2.9849E-16"/>
+		</size>
+		<size W="5.38" L="1">
+			<current leakage="4.9205E-09"/>
+			<capacitance gate_cmos="3.5039E-16" drain_cmos="2.5682E-16" gate_pass="2.8297E-16" source_pass="7.9353E-16" drain_pass="3.0222E-16"/>
+		</size>
+		<size W="5.49" L="1">
+			<current leakage="5.0255E-09"/>
+			<capacitance gate_cmos="3.5785E-16" drain_cmos="2.6030E-16" gate_pass="2.8900E-16" source_pass="8.0273E-16" drain_pass="3.0632E-16"/>
+		</size>
+		<size W="5.60" L="1">
+			<current leakage="5.1304E-09"/>
+			<capacitance gate_cmos="3.6532E-16" drain_cmos="2.6377E-16" gate_pass="2.9502E-16" source_pass="8.1193E-16" drain_pass="3.1042E-16"/>
+		</size>
+		<size W="5.71" L="1">
+			<current leakage="5.2354E-09"/>
+			<capacitance gate_cmos="3.7278E-16" drain_cmos="2.6725E-16" gate_pass="3.0105E-16" source_pass="8.2113E-16" drain_pass="3.1452E-16"/>
+		</size>
+		<size W="5.83" L="1">
+			<current leakage="5.3499E-09"/>
+			<capacitance gate_cmos="3.8092E-16" drain_cmos="2.7104E-16" gate_pass="3.0762E-16" source_pass="8.3116E-16" drain_pass="3.1899E-16"/>
+		</size>
+		<size W="5.94" L="1">
+			<current leakage="5.4548E-09"/>
+			<capacitance gate_cmos="3.8839E-16" drain_cmos="2.7451E-16" gate_pass="3.1365E-16" source_pass="8.4036E-16" drain_pass="3.2309E-16"/>
+		</size>
+		<size W="6.06" L="1">
+			<current leakage="5.5693E-09"/>
+			<capacitance gate_cmos="3.9653E-16" drain_cmos="2.7830E-16" gate_pass="3.2022E-16" source_pass="8.5040E-16" drain_pass="3.2756E-16"/>
+		</size>
+		<size W="6.18" L="1">
+			<current leakage="5.6838E-09"/>
+			<capacitance gate_cmos="4.0467E-16" drain_cmos="2.8210E-16" gate_pass="3.2679E-16" source_pass="8.6043E-16" drain_pass="3.3204E-16"/>
+		</size>
+		<size W="6.31" L="1">
+			<current leakage="5.8078E-09"/>
+			<capacitance gate_cmos="4.1349E-16" drain_cmos="2.8620E-16" gate_pass="3.3392E-16" source_pass="8.7131E-16" drain_pass="3.3688E-16"/>
+		</size>
+		<size W="6.43" L="1">
+			<current leakage="5.9223E-09"/>
+			<capacitance gate_cmos="4.2163E-16" drain_cmos="2.8999E-16" gate_pass="3.4049E-16" source_pass="8.8134E-16" drain_pass="3.4135E-16"/>
+		</size>
+		<size W="6.56" L="1">
+			<current leakage="6.0463E-09"/>
+			<capacitance gate_cmos="4.3045E-16" drain_cmos="2.9410E-16" gate_pass="3.4761E-16" source_pass="8.9221E-16" drain_pass="3.4620E-16"/>
+		</size>
+		<size W="6.69" L="1">
+			<current leakage="6.1704E-09"/>
+			<capacitance gate_cmos="4.3927E-16" drain_cmos="2.9821E-16" gate_pass="3.5473E-16" source_pass="9.0308E-16" drain_pass="3.5104E-16"/>
+		</size>
+		<size W="6.83" L="1">
+			<current leakage="6.3039E-09"/>
+			<capacitance gate_cmos="4.4877E-16" drain_cmos="3.0263E-16" gate_pass="3.6240E-16" source_pass="9.1479E-16" drain_pass="3.5626E-16"/>
+		</size>
+		<size W="6.96" L="1">
+			<current leakage="6.4280E-09"/>
+			<capacitance gate_cmos="4.5759E-16" drain_cmos="3.0674E-16" gate_pass="3.6952E-16" source_pass="9.2566E-16" drain_pass="3.6111E-16"/>
+		</size>
+		<size W="7.10" L="1">
+			<current leakage="6.5615E-09"/>
+			<capacitance gate_cmos="4.6709E-16" drain_cmos="3.1116E-16" gate_pass="3.7719E-16" source_pass="9.3737E-16" drain_pass="3.6632E-16"/>
+		</size>
+		<size W="7.24" L="1">
+			<current leakage="6.6951E-09"/>
+			<capacitance gate_cmos="4.7659E-16" drain_cmos="3.1558E-16" gate_pass="3.8486E-16" source_pass="9.4908E-16" drain_pass="3.7154E-16"/>
+		</size>
+		<size W="7.39" L="1">
+			<current leakage="6.8382E-09"/>
+			<capacitance gate_cmos="4.8677E-16" drain_cmos="3.2032E-16" gate_pass="3.9307E-16" source_pass="9.6162E-16" drain_pass="3.7713E-16"/>
+		</size>
+		<size W="7.54" L="1">
+			<current leakage="6.9813E-09"/>
+			<capacitance gate_cmos="4.9694E-16" drain_cmos="3.2506E-16" gate_pass="4.0129E-16" source_pass="9.7416E-16" drain_pass="3.8272E-16"/>
+		</size>
+		<size W="7.69" L="1">
+			<current leakage="7.1245E-09"/>
+			<capacitance gate_cmos="5.0712E-16" drain_cmos="3.2980E-16" gate_pass="4.0951E-16" source_pass="9.8671E-16" drain_pass="3.8831E-16"/>
+		</size>
+		<size W="7.84" L="1">
+			<current leakage="7.2676E-09"/>
+			<capacitance gate_cmos="5.1730E-16" drain_cmos="3.3454E-16" gate_pass="4.1772E-16" source_pass="9.9925E-16" drain_pass="3.9390E-16"/>
+		</size>
+		<size W="8.00" L="1">
+			<current leakage="7.4202E-09"/>
+			<capacitance gate_cmos="5.2815E-16" drain_cmos="3.3959E-16" gate_pass="4.2649E-16" source_pass="1.0126E-15" drain_pass="3.9986E-16"/>
+		</size>
+		<size W="8.16" L="1">
+			<current leakage="7.5729E-09"/>
+			<capacitance gate_cmos="5.3901E-16" drain_cmos="3.4465E-16" gate_pass="4.3525E-16" source_pass="1.0260E-15" drain_pass="4.0583E-16"/>
+		</size>
+		<size W="8.32" L="1">
+			<current leakage="7.7255E-09"/>
+			<capacitance gate_cmos="5.4986E-16" drain_cmos="3.4970E-16" gate_pass="4.4402E-16" source_pass="1.0394E-15" drain_pass="4.1179E-16"/>
+		</size>
+		<size W="8.49" L="1">
+			<current leakage="7.8877E-09"/>
+			<capacitance gate_cmos="5.6140E-16" drain_cmos="3.5508E-16" gate_pass="4.5333E-16" source_pass="1.0536E-15" drain_pass="4.1813E-16"/>
+		</size>
+		<size W="8.66" L="1">
+			<current leakage="8.0499E-09"/>
+			<capacitance gate_cmos="5.7293E-16" drain_cmos="3.6045E-16" gate_pass="4.6264E-16" source_pass="1.0678E-15" drain_pass="4.2446E-16"/>
+		</size>
+		<size W="8.83" L="1">
+			<current leakage="8.2121E-09"/>
+			<capacitance gate_cmos="5.8447E-16" drain_cmos="3.6582E-16" gate_pass="4.7195E-16" source_pass="1.0820E-15" drain_pass="4.3080E-16"/>
+		</size>
+		<size W="9.01" L="1">
+			<current leakage="8.3839E-09"/>
+			<capacitance gate_cmos="5.9668E-16" drain_cmos="3.7150E-16" gate_pass="4.8181E-16" source_pass="1.0971E-15" drain_pass="4.3751E-16"/>
+		</size>
+		<size W="9.19" L="1">
+			<current leakage="8.5556E-09"/>
+			<capacitance gate_cmos="6.0889E-16" drain_cmos="3.7719E-16" gate_pass="4.9167E-16" source_pass="1.1121E-15" drain_pass="4.4421E-16"/>
+		</size>
+		<size W="9.37" L="1">
+			<current leakage="8.7273E-09"/>
+			<capacitance gate_cmos="6.2110E-16" drain_cmos="3.8288E-16" gate_pass="5.0153E-16" source_pass="1.1272E-15" drain_pass="4.5092E-16"/>
+		</size>
+		<size W="9.56" L="1">
+			<current leakage="8.9086E-09"/>
+			<capacitance gate_cmos="6.3400E-16" drain_cmos="3.8888E-16" gate_pass="5.1194E-16" source_pass="1.1431E-15" drain_pass="4.5800E-16"/>
+		</size>
+		<size W="9.75" L="1">
+			<current leakage="9.0899E-09"/>
+			<capacitance gate_cmos="6.4689E-16" drain_cmos="3.9488E-16" gate_pass="5.2235E-16" source_pass="1.1590E-15" drain_pass="4.6508E-16"/>
+		</size>
+		<size W="9.95" L="1">
+			<current leakage="9.2807E-09"/>
+			<capacitance gate_cmos="6.6046E-16" drain_cmos="4.0120E-16" gate_pass="5.3330E-16" source_pass="1.1757E-15" drain_pass="4.7254E-16"/>
+		</size>
+		<size W="10.14" L="1">
+			<current leakage="9.4620E-09"/>
+			<capacitance gate_cmos="6.7335E-16" drain_cmos="4.0720E-16" gate_pass="5.4371E-16" source_pass="1.1916E-15" drain_pass="4.7962E-16"/>
+		</size>
+		<size W="10.35" L="1">
+			<current leakage="9.6623E-09"/>
+			<capacitance gate_cmos="6.8759E-16" drain_cmos="4.1384E-16" gate_pass="5.5521E-16" source_pass="1.2091E-15" drain_pass="4.8745E-16"/>
+		</size>
+		<size W="10.55" L="1">
+			<current leakage="9.8531E-09"/>
+			<capacitance gate_cmos="7.0116E-16" drain_cmos="4.2016E-16" gate_pass="5.6617E-16" source_pass="1.2258E-15" drain_pass="4.9490E-16"/>
+		</size>
+		<size W="10.77" L="1">
+			<current leakage="1.0063E-08"/>
+			<capacitance gate_cmos="7.1609E-16" drain_cmos="4.2711E-16" gate_pass="5.7822E-16" source_pass="1.2442E-15" drain_pass="5.0310E-16"/>
+		</size>
+		<size W="10.98" L="1">
+			<current leakage="1.0263E-08"/>
+			<capacitance gate_cmos="7.3034E-16" drain_cmos="4.3374E-16" gate_pass="5.8972E-16" source_pass="1.2618E-15" drain_pass="5.1092E-16"/>
+		</size>
+		<size W="11.20" L="1">
+			<current leakage="1.0473E-08"/>
+			<capacitance gate_cmos="7.4527E-16" drain_cmos="4.4069E-16" gate_pass="6.0177E-16" source_pass="1.2802E-15" drain_pass="5.1912E-16"/>
+		</size>
+		<size W="11.42" L="1">
+			<current leakage="1.0683E-08"/>
+			<capacitance gate_cmos="7.6019E-16" drain_cmos="4.4764E-16" gate_pass="6.1382E-16" source_pass="1.2986E-15" drain_pass="5.2732E-16"/>
+		</size>
+		<size W="11.65" L="1">
+			<current leakage="1.0903E-08"/>
+			<capacitance gate_cmos="7.7580E-16" drain_cmos="4.5491E-16" gate_pass="6.2642E-16" source_pass="1.3178E-15" drain_pass="5.3589E-16"/>
+		</size>
+		<size W="11.89" L="1">
+			<current leakage="1.1132E-08"/>
+			<capacitance gate_cmos="7.9208E-16" drain_cmos="4.6249E-16" gate_pass="6.3957E-16" source_pass="1.3379E-15" drain_pass="5.4484E-16"/>
+		</size>
+		<size W="12.12" L="1">
+			<current leakage="1.1351E-08"/>
+			<capacitance gate_cmos="8.0769E-16" drain_cmos="4.6976E-16" gate_pass="6.5217E-16" source_pass="1.3571E-15" drain_pass="5.5341E-16"/>
+		</size>
+		<size W="12.37" L="1">
+			<current leakage="1.1590E-08"/>
+			<capacitance gate_cmos="8.2465E-16" drain_cmos="4.7766E-16" gate_pass="6.6586E-16" source_pass="1.3780E-15" drain_pass="5.6273E-16"/>
+		</size>
+		<size W="12.61" L="1">
+			<current leakage="1.1819E-08"/>
+			<capacitance gate_cmos="8.4093E-16" drain_cmos="4.8524E-16" gate_pass="6.7901E-16" source_pass="1.3981E-15" drain_pass="5.7167E-16"/>
+		</size>
+		<size W="12.87" L="1">
+			<current leakage="1.2067E-08"/>
+			<capacitance gate_cmos="8.5857E-16" drain_cmos="4.9345E-16" gate_pass="6.9325E-16" source_pass="1.4198E-15" drain_pass="5.8136E-16"/>
+		</size>
+		<size W="13.12" L="1">
+			<current leakage="1.2305E-08"/>
+			<capacitance gate_cmos="8.7553E-16" drain_cmos="5.0135E-16" gate_pass="7.0694E-16" source_pass="1.4407E-15" drain_pass="5.9068E-16"/>
+		</size>
+		<size W="13.39" L="1">
+			<current leakage="1.2563E-08"/>
+			<capacitance gate_cmos="8.9385E-16" drain_cmos="5.0988E-16" gate_pass="7.2173E-16" source_pass="1.4633E-15" drain_pass="6.0074E-16"/>
+		</size>
+		<size W="13.65" L="1">
+			<current leakage="1.2811E-08"/>
+			<capacitance gate_cmos="9.1149E-16" drain_cmos="5.1809E-16" gate_pass="7.3598E-16" source_pass="1.4850E-15" drain_pass="6.1043E-16"/>
+		</size>
+		<size W="13.93" L="1">
+			<current leakage="1.3078E-08"/>
+			<capacitance gate_cmos="9.3049E-16" drain_cmos="5.2694E-16" gate_pass="7.5131E-16" source_pass="1.5084E-15" drain_pass="6.2087E-16"/>
+		</size>
+		<size W="14.20" L="1">
+			<current leakage="1.3336E-08"/>
+			<capacitance gate_cmos="9.4881E-16" drain_cmos="5.3547E-16" gate_pass="7.6610E-16" source_pass="1.5310E-15" drain_pass="6.3093E-16"/>
+		</size>
+		<size W="14.49" L="1">
+			<current leakage="1.3612E-08"/>
+			<capacitance gate_cmos="9.6848E-16" drain_cmos="5.4463E-16" gate_pass="7.8199E-16" source_pass="1.5552E-15" drain_pass="6.4174E-16"/>
+		</size>
+		<size W="14.78" L="1">
+			<current leakage="1.3889E-08"/>
+			<capacitance gate_cmos="9.8816E-16" drain_cmos="5.5379E-16" gate_pass="7.9787E-16" source_pass="1.5795E-15" drain_pass="6.5254E-16"/>
+		</size>
+		<size W="15.07" L="1">
+			<current leakage="1.4166E-08"/>
+			<capacitance gate_cmos="1.0078E-15" drain_cmos="5.6296E-16" gate_pass="8.1376E-16" source_pass="1.6037E-15" drain_pass="6.6335E-16"/>
+		</size>
+		<size W="15.38" L="1">
+			<current leakage="1.4461E-08"/>
+			<capacitance gate_cmos="1.0289E-15" drain_cmos="5.7275E-16" gate_pass="8.3074E-16" source_pass="1.6296E-15" drain_pass="6.7491E-16"/>
+		</size>
+		<size W="15.68" L="1">
+			<current leakage="1.4748E-08"/>
+			<capacitance gate_cmos="1.0492E-15" drain_cmos="5.8223E-16" gate_pass="8.4717E-16" source_pass="1.6547E-15" drain_pass="6.8609E-16"/>
+		</size>
+		<size W="16.00" L="1">
+			<current leakage="1.5053E-08"/>
+			<capacitance gate_cmos="1.0709E-15" drain_cmos="5.9234E-16" gate_pass="8.6470E-16" source_pass="1.6815E-15" drain_pass="6.9801E-16"/>
+		</size>
+		<size W="16.32" L="1">
+			<current leakage="1.5358E-08"/>
+			<capacitance gate_cmos="1.0926E-15" drain_cmos="6.0245E-16" gate_pass="8.8223E-16" source_pass="1.7082E-15" drain_pass="7.0994E-16"/>
+		</size>
+		<size W="16.64" L="1">
+			<current leakage="1.5664E-08"/>
+			<capacitance gate_cmos="1.1144E-15" drain_cmos="6.1256E-16" gate_pass="8.9976E-16" source_pass="1.7350E-15" drain_pass="7.2186E-16"/>
+		</size>
+		<size W="16.98" L="1">
+			<current leakage="1.5988E-08"/>
+			<capacitance gate_cmos="1.1374E-15" drain_cmos="6.2330E-16" gate_pass="9.1838E-16" source_pass="1.7634E-15" drain_pass="7.3453E-16"/>
+		</size>
+		<size W="17.32" L="1">
+			<current leakage="1.6312E-08"/>
+			<capacitance gate_cmos="1.1605E-15" drain_cmos="6.3404E-16" gate_pass="9.3701E-16" source_pass="1.7918E-15" drain_pass="7.4721E-16"/>
+		</size>
+		<size W="17.66" L="1">
+			<current leakage="1.6637E-08"/>
+			<capacitance gate_cmos="1.1836E-15" drain_cmos="6.4478E-16" gate_pass="9.5563E-16" source_pass="1.8202E-15" drain_pass="7.5988E-16"/>
+		</size>
+		<size W="18.01" L="1">
+			<current leakage="1.6971E-08"/>
+			<capacitance gate_cmos="1.2073E-15" drain_cmos="6.5584E-16" gate_pass="9.7480E-16" source_pass="1.8495E-15" drain_pass="7.7292E-16"/>
+		</size>
+		<size W="18.37" L="1">
+			<current leakage="1.7314E-08"/>
+			<capacitance gate_cmos="1.2317E-15" drain_cmos="6.6721E-16" gate_pass="9.9452E-16" source_pass="1.8796E-15" drain_pass="7.8634E-16"/>
+		</size>
+		<size W="18.74" L="1">
+			<current leakage="1.7667E-08"/>
+			<capacitance gate_cmos="1.2568E-15" drain_cmos="6.7890E-16" gate_pass="1.0148E-15" source_pass="1.9105E-15" drain_pass="8.0013E-16"/>
+		</size>
+		<size W="19.12" L="1">
+			<current leakage="1.8030E-08"/>
+			<capacitance gate_cmos="1.2826E-15" drain_cmos="6.9091E-16" gate_pass="1.0356E-15" source_pass="1.9423E-15" drain_pass="8.1429E-16"/>
+		</size>
+		<size W="19.50" L="1">
+			<current leakage="1.8392E-08"/>
+			<capacitance gate_cmos="1.3084E-15" drain_cmos="7.0291E-16" gate_pass="1.0564E-15" source_pass="1.9740E-15" drain_pass="8.2845E-16"/>
+		</size>
+		<size W="19.89" L="1">
+			<current leakage="1.8764E-08"/>
+			<capacitance gate_cmos="1.3349E-15" drain_cmos="7.1523E-16" gate_pass="1.0778E-15" source_pass="2.0066E-15" drain_pass="8.4299E-16"/>
+		</size>
+		<size W="20.29" L="1">
+			<current leakage="1.9146E-08"/>
+			<capacitance gate_cmos="1.3620E-15" drain_cmos="7.2787E-16" gate_pass="1.0997E-15" source_pass="2.0401E-15" drain_pass="8.5789E-16"/>
+		</size>
+		<size W="20.69" L="1">
+			<current leakage="1.9528E-08"/>
+			<capacitance gate_cmos="1.3891E-15" drain_cmos="7.4051E-16" gate_pass="1.1216E-15" source_pass="2.0735E-15" drain_pass="8.7280E-16"/>
+		</size>
+		<size W="21.11" L="1">
+			<current leakage="1.9928E-08"/>
+			<capacitance gate_cmos="1.4176E-15" drain_cmos="7.5378E-16" gate_pass="1.1446E-15" source_pass="2.1086E-15" drain_pass="8.8845E-16"/>
+		</size>
+		<size W="21.53" L="1">
+			<current leakage="2.0329E-08"/>
+			<capacitance gate_cmos="1.4461E-15" drain_cmos="7.6704E-16" gate_pass="1.1676E-15" source_pass="2.1437E-15" drain_pass="9.0411E-16"/>
+		</size>
+		<size W="21.96" L="1">
+			<current leakage="2.0739E-08"/>
+			<capacitance gate_cmos="1.4753E-15" drain_cmos="7.8063E-16" gate_pass="1.1912E-15" source_pass="2.1796E-15" drain_pass="9.2013E-16"/>
+		</size>
+		<size W="22.40" L="1">
+			<current leakage="2.1159E-08"/>
+			<capacitance gate_cmos="1.5052E-15" drain_cmos="7.9453E-16" gate_pass="1.2153E-15" source_pass="2.2164E-15" drain_pass="9.3653E-16"/>
+		</size>
+		<size W="22.85" L="1">
+			<current leakage="2.1588E-08"/>
+			<capacitance gate_cmos="1.5357E-15" drain_cmos="8.0875E-16" gate_pass="1.2399E-15" source_pass="2.2540E-15" drain_pass="9.5330E-16"/>
+		</size>
+		<size W="23.30" L="1">
+			<current leakage="2.2018E-08"/>
+			<capacitance gate_cmos="1.5662E-15" drain_cmos="8.2296E-16" gate_pass="1.2646E-15" source_pass="2.2916E-15" drain_pass="9.7007E-16"/>
+		</size>
+		<size W="23.77" L="1">
+			<current leakage="2.2466E-08"/>
+			<capacitance gate_cmos="1.5981E-15" drain_cmos="8.3781E-16" gate_pass="1.2903E-15" source_pass="2.3309E-15" drain_pass="9.8759E-16"/>
+		</size>
+		<size W="24.25" L="1">
+			<current leakage="2.2924E-08"/>
+			<capacitance gate_cmos="1.6307E-15" drain_cmos="8.5298E-16" gate_pass="1.3166E-15" source_pass="2.3710E-15" drain_pass="1.0055E-15"/>
+		</size>
+		<size W="24.73" L="1">
+			<current leakage="2.3382E-08"/>
+			<capacitance gate_cmos="1.6632E-15" drain_cmos="8.6814E-16" gate_pass="1.3429E-15" source_pass="2.4111E-15" drain_pass="1.0234E-15"/>
+		</size>
+		<size W="25.22" L="1">
+			<current leakage="2.3850E-08"/>
+			<capacitance gate_cmos="1.6965E-15" drain_cmos="8.8362E-16" gate_pass="1.3697E-15" source_pass="2.4521E-15" drain_pass="1.0416E-15"/>
+		</size>
+		<size W="25.73" L="1">
+			<current leakage="2.4336E-08"/>
+			<capacitance gate_cmos="1.7311E-15" drain_cmos="8.9973E-16" gate_pass="1.3977E-15" source_pass="2.4947E-15" drain_pass="1.0606E-15"/>
+		</size>
+		<size W="26.24" L="1">
+			<current leakage="2.4823E-08"/>
+			<capacitance gate_cmos="1.7657E-15" drain_cmos="9.1585E-16" gate_pass="1.4256E-15" source_pass="2.5373E-15" drain_pass="1.0796E-15"/>
+		</size>
+		<size W="26.77" L="1">
+			<current leakage="2.5329E-08"/>
+			<capacitance gate_cmos="1.8017E-15" drain_cmos="9.3259E-16" gate_pass="1.4546E-15" source_pass="2.5816E-15" drain_pass="1.0994E-15"/>
+		</size>
+		<size W="27.30" L="1">
+			<current leakage="2.5834E-08"/>
+			<capacitance gate_cmos="1.8376E-15" drain_cmos="9.4933E-16" gate_pass="1.4837E-15" source_pass="2.6259E-15" drain_pass="1.1191E-15"/>
+		</size>
+		<size W="27.85" L="1">
+			<current leakage="2.6359E-08"/>
+			<capacitance gate_cmos="1.8749E-15" drain_cmos="9.6671E-16" gate_pass="1.5138E-15" source_pass="2.6719E-15" drain_pass="1.1396E-15"/>
+		</size>
+		<size W="28.41" L="1">
+			<current leakage="2.6893E-08"/>
+			<capacitance gate_cmos="1.9129E-15" drain_cmos="9.8440E-16" gate_pass="1.5445E-15" source_pass="2.7187E-15" drain_pass="1.1605E-15"/>
+		</size>
+		<size W="28.98" L="1">
+			<current leakage="2.7437E-08"/>
+			<capacitance gate_cmos="1.9516E-15" drain_cmos="1.0024E-15" gate_pass="1.5757E-15" source_pass="2.7663E-15" drain_pass="1.1818E-15"/>
+		</size>
+		<size W="29.55" L="1">
+			<current leakage="2.7981E-08"/>
+			<capacitance gate_cmos="1.9903E-15" drain_cmos="1.0204E-15" gate_pass="1.6069E-15" source_pass="2.8139E-15" drain_pass="1.2030E-15"/>
+		</size>
+		<size W="30.15" L="1">
+			<current leakage="2.8553E-08"/>
+			<capacitance gate_cmos="2.0310E-15" drain_cmos="1.0394E-15" gate_pass="1.6398E-15" source_pass="2.8641E-15" drain_pass="1.2254E-15"/>
+		</size>
+		<size W="30.75" L="1">
+			<current leakage="2.9126E-08"/>
+			<capacitance gate_cmos="2.0717E-15" drain_cmos="1.0583E-15" gate_pass="1.6727E-15" source_pass="2.9142E-15" drain_pass="1.2477E-15"/>
+		</size>
+		<size W="31.36" L="1">
+			<current leakage="2.9708E-08"/>
+			<capacitance gate_cmos="2.1131E-15" drain_cmos="1.0776E-15" gate_pass="1.7061E-15" source_pass="2.9652E-15" drain_pass="1.2705E-15"/>
+		</size>
+		<size W="31.99" L="1">
+			<current leakage="3.0309E-08"/>
+			<capacitance gate_cmos="2.1558E-15" drain_cmos="1.0975E-15" gate_pass="1.7406E-15" source_pass="3.0178E-15" drain_pass="1.2939E-15"/>
+		</size>
+		<size W="32.63" L="1">
+			<current leakage="3.0919E-08"/>
+			<capacitance gate_cmos="2.1992E-15" drain_cmos="1.1177E-15" gate_pass="1.7756E-15" source_pass="3.0713E-15" drain_pass="1.3178E-15"/>
+		</size>
+		<size W="33.28" L="1">
+			<current leakage="3.1540E-08"/>
+			<capacitance gate_cmos="2.2433E-15" drain_cmos="1.1383E-15" gate_pass="1.8112E-15" source_pass="3.1256E-15" drain_pass="1.3420E-15"/>
+		</size>
+		<size W="33.95" L="1">
+			<current leakage="3.2179E-08"/>
+			<capacitance gate_cmos="2.2888E-15" drain_cmos="1.1594E-15" gate_pass="1.8479E-15" source_pass="3.1816E-15" drain_pass="1.3670E-15"/>
+		</size>
+		<size W="34.63" L="1">
+			<current leakage="3.2828E-08"/>
+			<capacitance gate_cmos="2.3349E-15" drain_cmos="1.1809E-15" gate_pass="1.8852E-15" source_pass="3.2384E-15" drain_pass="1.3923E-15"/>
+		</size>
+		<size W="35.32" L="1">
+			<current leakage="3.3486E-08"/>
+			<capacitance gate_cmos="2.3818E-15" drain_cmos="1.2027E-15" gate_pass="1.9230E-15" source_pass="3.2961E-15" drain_pass="1.4180E-15"/>
+		</size>
+		<size W="36.03" L="1">
+			<current leakage="3.4163E-08"/>
+			<capacitance gate_cmos="2.4299E-15" drain_cmos="1.2251E-15" gate_pass="1.9619E-15" source_pass="3.3554E-15" drain_pass="1.4445E-15"/>
+		</size>
+		<size W="36.75" L="1">
+			<current leakage="3.4850E-08"/>
+			<capacitance gate_cmos="2.4788E-15" drain_cmos="1.2479E-15" gate_pass="2.0013E-15" source_pass="3.4155E-15" drain_pass="1.4713E-15"/>
+		</size>
+		<size W="37.48" L="1">
+			<current leakage="3.5547E-08"/>
+			<capacitance gate_cmos="2.5283E-15" drain_cmos="1.2709E-15" gate_pass="2.0413E-15" source_pass="3.4765E-15" drain_pass="1.4985E-15"/>
+		</size>
+		<size W="38.23" L="1">
+			<current leakage="3.6262E-08"/>
+			<capacitance gate_cmos="2.5792E-15" drain_cmos="1.2946E-15" gate_pass="2.0824E-15" source_pass="3.5392E-15" drain_pass="1.5265E-15"/>
+		</size>
+		<size W="39.00" L="1">
+			<current leakage="3.6997E-08"/>
+			<capacitance gate_cmos="2.6314E-15" drain_cmos="1.3190E-15" gate_pass="2.1246E-15" source_pass="3.6035E-15" drain_pass="1.5552E-15"/>
+		</size>
+		<size W="39.78" L="1">
+			<current leakage="3.7741E-08"/>
+			<capacitance gate_cmos="2.6844E-15" drain_cmos="1.3436E-15" gate_pass="2.1673E-15" source_pass="3.6687E-15" drain_pass="1.5843E-15"/>
+		</size>
+		<size W="40.57" L="1">
+			<current leakage="3.8495E-08"/>
+			<capacitance gate_cmos="2.7380E-15" drain_cmos="1.3686E-15" gate_pass="2.2106E-15" source_pass="3.7347E-15" drain_pass="1.6137E-15"/>
+		</size>
+		<size W="41.38" L="1">
+			<current leakage="3.9268E-08"/>
+			<capacitance gate_cmos="2.7929E-15" drain_cmos="1.3942E-15" gate_pass="2.2549E-15" source_pass="3.8024E-15" drain_pass="1.6439E-15"/>
+		</size>
+		<size W="42.21" L="1">
+			<current leakage="4.0060E-08"/>
+			<capacitance gate_cmos="2.8492E-15" drain_cmos="1.4204E-15" gate_pass="2.3004E-15" source_pass="3.8717E-15" drain_pass="1.6748E-15"/>
+		</size>
+		<size W="43.06" L="1">
+			<current leakage="4.0871E-08"/>
+			<capacitance gate_cmos="2.9069E-15" drain_cmos="1.4472E-15" gate_pass="2.3470E-15" source_pass="3.9427E-15" drain_pass="1.7065E-15"/>
+		</size>
+		<size W="43.92" L="1">
+			<current leakage="4.1691E-08"/>
+			<capacitance gate_cmos="2.9652E-15" drain_cmos="1.4744E-15" gate_pass="2.3941E-15" source_pass="4.0146E-15" drain_pass="1.7385E-15"/>
+		</size>
+		<size W="44.80" L="1">
+			<current leakage="4.2531E-08"/>
+			<capacitance gate_cmos="3.0249E-15" drain_cmos="1.5022E-15" gate_pass="2.4423E-15" source_pass="4.0881E-15" drain_pass="1.7713E-15"/>
+		</size>
+		<size W="45.69" L="1">
+			<current leakage="4.3380E-08"/>
+			<capacitance gate_cmos="3.0853E-15" drain_cmos="1.5303E-15" gate_pass="2.4910E-15" source_pass="4.1624E-15" drain_pass="1.8045E-15"/>
+		</size>
+		<size W="46.61" L="1">
+			<current leakage="4.4258E-08"/>
+			<capacitance gate_cmos="3.1478E-15" drain_cmos="1.5594E-15" gate_pass="2.5414E-15" source_pass="4.2393E-15" drain_pass="1.8388E-15"/>
+		</size>
+		<size W="47.54" L="1">
+			<current leakage="4.5145E-08"/>
+			<capacitance gate_cmos="3.2109E-15" drain_cmos="1.5888E-15" gate_pass="2.5924E-15" source_pass="4.3170E-15" drain_pass="1.8735E-15"/>
+		</size>
+		<size W="48.49" L="1">
+			<current leakage="4.6051E-08"/>
+			<capacitance gate_cmos="3.2753E-15" drain_cmos="1.6188E-15" gate_pass="2.6444E-15" source_pass="4.3964E-15" drain_pass="1.9089E-15"/>
+		</size>
+		<size W="49.46" L="1">
+			<current leakage="4.6977E-08"/>
+			<capacitance gate_cmos="3.3411E-15" drain_cmos="1.6494E-15" gate_pass="2.6975E-15" source_pass="4.4774E-15" drain_pass="1.9450E-15"/>
+		</size>
+		<size W="50.45" L="1">
+			<current leakage="4.7921E-08"/>
+			<capacitance gate_cmos="3.4083E-15" drain_cmos="1.6807E-15" gate_pass="2.7518E-15" source_pass="4.5601E-15" drain_pass="1.9819E-15"/>
+		</size>
+		<size W="51.46" L="1">
+			<current leakage="4.8885E-08"/>
+			<capacitance gate_cmos="3.4768E-15" drain_cmos="1.7126E-15" gate_pass="2.8071E-15" source_pass="4.6445E-15" drain_pass="2.0195E-15"/>
+		</size>
+		<size W="52.48" L="1">
+			<current leakage="4.9858E-08"/>
+			<capacitance gate_cmos="3.5460E-15" drain_cmos="1.7448E-15" gate_pass="2.8629E-15" source_pass="4.7297E-15" drain_pass="2.0576E-15"/>
+		</size>
+		<size W="53.53" L="1">
+			<current leakage="5.0860E-08"/>
+			<capacitance gate_cmos="3.6173E-15" drain_cmos="1.7780E-15" gate_pass="2.9205E-15" source_pass="4.8174E-15" drain_pass="2.0967E-15"/>
+		</size>
+		<size W="54.61" L="1">
+			<current leakage="5.1890E-08"/>
+			<capacitance gate_cmos="3.6905E-15" drain_cmos="1.8121E-15" gate_pass="2.9796E-15" source_pass="4.9076E-15" drain_pass="2.1369E-15"/>
+		</size>
+		<size W="55.70" L="1">
+			<current leakage="5.2930E-08"/>
+			<capacitance gate_cmos="3.7645E-15" drain_cmos="1.8466E-15" gate_pass="3.0393E-15" source_pass="4.9986E-15" drain_pass="2.1776E-15"/>
+		</size>
+		<size W="56.81" L="1">
+			<current leakage="5.3989E-08"/>
+			<capacitance gate_cmos="3.8398E-15" drain_cmos="1.8816E-15" gate_pass="3.1001E-15" source_pass="5.0913E-15" drain_pass="2.2189E-15"/>
+		</size>
+		<size W="57.95" L="1">
+			<current leakage="5.5077E-08"/>
+			<capacitance gate_cmos="3.9171E-15" drain_cmos="1.9177E-15" gate_pass="3.1626E-15" source_pass="5.1866E-15" drain_pass="2.2614E-15"/>
+		</size>
+		<size W="59.11" L="1">
+			<current leakage="5.6184E-08"/>
+			<capacitance gate_cmos="3.9959E-15" drain_cmos="1.9543E-15" gate_pass="3.2261E-15" source_pass="5.2835E-15" drain_pass="2.3047E-15"/>
+		</size>
+		<size W="60.29" L="1">
+			<current leakage="5.7310E-08"/>
+			<capacitance gate_cmos="4.0759E-15" drain_cmos="1.9916E-15" gate_pass="3.2908E-15" source_pass="5.3820E-15" drain_pass="2.3486E-15"/>
+		</size>
+		<size W="61.49" L="1">
+			<current leakage="5.8455E-08"/>
+			<capacitance gate_cmos="4.1573E-15" drain_cmos="2.0295E-15" gate_pass="3.3565E-15" source_pass="5.4822E-15" drain_pass="2.3934E-15"/>
+		</size>
+		<size W="62.72" L="1">
+			<current leakage="5.9628E-08"/>
+			<capacitance gate_cmos="4.2408E-15" drain_cmos="2.0684E-15" gate_pass="3.4239E-15" source_pass="5.5850E-15" drain_pass="2.4392E-15"/>
+		</size>
+		<size W="63.98" L="1">
+			<current leakage="6.0830E-08"/>
+			<capacitance gate_cmos="4.3263E-15" drain_cmos="2.1082E-15" gate_pass="3.4929E-15" source_pass="5.6902E-15" drain_pass="2.4861E-15"/>
+		</size>
+		<size W="65.26" L="1">
+			<current leakage="6.2052E-08"/>
+			<capacitance gate_cmos="4.4131E-15" drain_cmos="2.1486E-15" gate_pass="3.5630E-15" source_pass="5.7971E-15" drain_pass="2.5339E-15"/>
+		</size>
+		<size W="66.56" L="1">
+			<current leakage="6.3292E-08"/>
+			<capacitance gate_cmos="4.5013E-15" drain_cmos="2.1897E-15" gate_pass="3.6342E-15" source_pass="5.9057E-15" drain_pass="2.5823E-15"/>
+		</size>
+		<size W="67.89" L="1">
+			<current leakage="6.4561E-08"/>
+			<capacitance gate_cmos="4.5916E-15" drain_cmos="2.2317E-15" gate_pass="3.7071E-15" source_pass="6.0168E-15" drain_pass="2.6319E-15"/>
+		</size>
+		<size W="69.25" L="1">
+			<current leakage="6.5858E-08"/>
+			<capacitance gate_cmos="4.6838E-15" drain_cmos="2.2747E-15" gate_pass="3.7816E-15" source_pass="6.1304E-15" drain_pass="2.6826E-15"/>
+		</size>
+		<size W="70.64" L="1">
+			<current leakage="6.7185E-08"/>
+			<capacitance gate_cmos="4.7781E-15" drain_cmos="2.3186E-15" gate_pass="3.8577E-15" source_pass="6.2464E-15" drain_pass="2.7344E-15"/>
+		</size>
+		<size W="72.05" L="1">
+			<current leakage="6.8530E-08"/>
+			<capacitance gate_cmos="4.8738E-15" drain_cmos="2.3631E-15" gate_pass="3.9349E-15" source_pass="6.3642E-15" drain_pass="2.7869E-15"/>
+		</size>
+		<size W="73.49" L="1">
+			<current leakage="6.9904E-08"/>
+			<capacitance gate_cmos="4.9715E-15" drain_cmos="2.4086E-15" gate_pass="4.0138E-15" source_pass="6.4845E-15" drain_pass="2.8406E-15"/>
+		</size>
+		<size W="74.96" L="1">
+			<current leakage="7.1306E-08"/>
+			<capacitance gate_cmos="5.0712E-15" drain_cmos="2.4550E-15" gate_pass="4.0943E-15" source_pass="6.6072E-15" drain_pass="2.8954E-15"/>
+		</size>
+		<size W="76.46" L="1">
+			<current leakage="7.2737E-08"/>
+			<capacitance gate_cmos="5.1730E-15" drain_cmos="2.5024E-15" gate_pass="4.1765E-15" source_pass="6.7325E-15" drain_pass="2.9513E-15"/>
+		</size>
+		<size W="77.99" L="1">
+			<current leakage="7.4197E-08"/>
+			<capacitance gate_cmos="5.2768E-15" drain_cmos="2.5508E-15" gate_pass="4.2603E-15" source_pass="6.8603E-15" drain_pass="3.0083E-15"/>
+		</size>
+		<size W="79.55" L="1">
+			<current leakage="7.5685E-08"/>
+			<capacitance gate_cmos="5.3827E-15" drain_cmos="2.6001E-15" gate_pass="4.3458E-15" source_pass="6.9905E-15" drain_pass="3.0664E-15"/>
+		</size>
+		<size W="81.14" L="1">
+			<current leakage="7.7203E-08"/>
+			<capacitance gate_cmos="5.4905E-15" drain_cmos="2.6503E-15" gate_pass="4.4328E-15" source_pass="7.1233E-15" drain_pass="3.1257E-15"/>
+		</size>
+		<size W="82.76" L="1">
+			<current leakage="7.8748E-08"/>
+			<capacitance gate_cmos="5.6004E-15" drain_cmos="2.7015E-15" gate_pass="4.5216E-15" source_pass="7.2586E-15" drain_pass="3.1860E-15"/>
+		</size>
+		<size W="84.42" L="1">
+			<current leakage="8.0332E-08"/>
+			<capacitance gate_cmos="5.7131E-15" drain_cmos="2.7539E-15" gate_pass="4.6125E-15" source_pass="7.3972E-15" drain_pass="3.2479E-15"/>
+		</size>
+		<size W="86.11" L="1">
+			<current leakage="8.1944E-08"/>
+			<capacitance gate_cmos="5.8277E-15" drain_cmos="2.8073E-15" gate_pass="4.7051E-15" source_pass="7.5383E-15" drain_pass="3.3109E-15"/>
+		</size>
+		<size W="87.83" L="1">
+			<current leakage="8.3585E-08"/>
+			<capacitance gate_cmos="5.9444E-15" drain_cmos="2.8616E-15" gate_pass="4.7993E-15" source_pass="7.6820E-15" drain_pass="3.3750E-15"/>
+		</size>
+		<size W="89.59" L="1">
+			<current leakage="8.5265E-08"/>
+			<capacitance gate_cmos="6.0639E-15" drain_cmos="2.9172E-15" gate_pass="4.8957E-15" source_pass="7.8289E-15" drain_pass="3.4406E-15"/>
+		</size>
+		<size W="91.38" L="1">
+			<current leakage="8.6972E-08"/>
+			<capacitance gate_cmos="6.1853E-15" drain_cmos="2.9738E-15" gate_pass="4.9938E-15" source_pass="7.9784E-15" drain_pass="3.5073E-15"/>
+		</size>
+		<size W="93.21" L="1">
+			<current leakage="8.8718E-08"/>
+			<capacitance gate_cmos="6.3095E-15" drain_cmos="3.0316E-15" gate_pass="5.0940E-15" source_pass="8.1312E-15" drain_pass="3.5755E-15"/>
+		</size>
+		<size W="95.07" L="1">
+			<current leakage="9.0493E-08"/>
+			<capacitance gate_cmos="6.4357E-15" drain_cmos="3.0904E-15" gate_pass="5.1959E-15" source_pass="8.2865E-15" drain_pass="3.6448E-15"/>
+		</size>
+		<size W="96.97" L="1">
+			<current leakage="9.2306E-08"/>
+			<capacitance gate_cmos="6.5646E-15" drain_cmos="3.1504E-15" gate_pass="5.3000E-15" source_pass="8.4451E-15" drain_pass="3.7156E-15"/>
+		</size>
+		<size W="98.91" L="1">
+			<current leakage="9.4157E-08"/>
+			<capacitance gate_cmos="6.6962E-15" drain_cmos="3.2117E-15" gate_pass="5.4062E-15" source_pass="8.6071E-15" drain_pass="3.7879E-15"/>
+		</size>
+		<size W="100.89" L="1">
+			<current leakage="9.6046E-08"/>
+			<capacitance gate_cmos="6.8305E-15" drain_cmos="3.2742E-15" gate_pass="5.5147E-15" source_pass="8.7724E-15" drain_pass="3.8617E-15"/>
+		</size>
+		<size W="102.91" L="1">
+			<current leakage="9.7973E-08"/>
+			<capacitance gate_cmos="6.9676E-15" drain_cmos="3.3381E-15" gate_pass="5.6253E-15" source_pass="8.9411E-15" drain_pass="3.9370E-15"/>
+		</size>
+		<size W="104.96" L="1">
+			<current leakage="9.9929E-08"/>
+			<capacitance gate_cmos="7.1067E-15" drain_cmos="3.4028E-15" gate_pass="5.7376E-15" source_pass="9.1123E-15" drain_pass="4.0134E-15"/>
+		</size>
+		<size W="107.06" L="1">
+			<current leakage="1.0193E-07"/>
+			<capacitance gate_cmos="7.2492E-15" drain_cmos="3.4692E-15" gate_pass="5.8527E-15" source_pass="9.2876E-15" drain_pass="4.0917E-15"/>
+		</size>
+		<size W="109.20" L="1">
+			<current leakage="1.0397E-07"/>
+			<capacitance gate_cmos="7.3943E-15" drain_cmos="3.5368E-15" gate_pass="5.9699E-15" source_pass="9.4663E-15" drain_pass="4.1714E-15"/>
+		</size>
+		<size W="111.39" L="1">
+			<current leakage="1.0606E-07"/>
+			<capacitance gate_cmos="7.5429E-15" drain_cmos="3.6060E-15" gate_pass="6.0898E-15" source_pass="9.6491E-15" drain_pass="4.2530E-15"/>
+		</size>
+		<size W="113.62" L="1">
+			<current leakage="1.0819E-07"/>
+			<capacitance gate_cmos="7.6942E-15" drain_cmos="3.6764E-15" gate_pass="6.2120E-15" source_pass="9.8353E-15" drain_pass="4.3362E-15"/>
+		</size>
+		<size W="115.89" L="1">
+			<current leakage="1.1036E-07"/>
+			<capacitance gate_cmos="7.8482E-15" drain_cmos="3.7481E-15" gate_pass="6.3363E-15" source_pass="1.0025E-14" drain_pass="4.4208E-15"/>
+		</size>
+		<size W="118.21" L="1">
+			<current leakage="1.1257E-07"/>
+			<capacitance gate_cmos="8.0057E-15" drain_cmos="3.8214E-15" gate_pass="6.4634E-15" source_pass="1.0218E-14" drain_pass="4.5072E-15"/>
+		</size>
+		<size W="120.57" L="1">
+			<current leakage="1.1482E-07"/>
+			<capacitance gate_cmos="8.1658E-15" drain_cmos="3.8960E-15" gate_pass="6.5927E-15" source_pass="1.0416E-14" drain_pass="4.5952E-15"/>
+		</size>
+		<size W="122.98" L="1">
+			<current leakage="1.1712E-07"/>
+			<capacitance gate_cmos="8.3293E-15" drain_cmos="3.9721E-15" gate_pass="6.7247E-15" source_pass="1.0617E-14" drain_pass="4.6850E-15"/>
+		</size>
+		<size W="125.44" L="1">
+			<current leakage="1.1947E-07"/>
+			<capacitance gate_cmos="8.4962E-15" drain_cmos="4.0498E-15" gate_pass="6.8594E-15" source_pass="1.0822E-14" drain_pass="4.7767E-15"/>
+		</size>
+		<size W="127.95" L="1">
+			<current leakage="1.2186E-07"/>
+			<capacitance gate_cmos="8.6665E-15" drain_cmos="4.1291E-15" gate_pass="6.9969E-15" source_pass="1.1032E-14" drain_pass="4.8702E-15"/>
+		</size>
+		<size W="130.51" L="1">
+			<current leakage="1.2431E-07"/>
+			<capacitance gate_cmos="8.8402E-15" drain_cmos="4.2100E-15" gate_pass="7.1372E-15" source_pass="1.1245E-14" drain_pass="4.9656E-15"/>
+		</size>
+		<size W="133.12" L="1">
+			<current leakage="1.2680E-07"/>
+			<capacitance gate_cmos="9.0173E-15" drain_cmos="4.2925E-15" gate_pass="7.2801E-15" source_pass="1.1463E-14" drain_pass="5.0629E-15"/>
+		</size>
+		<size W="135.78" L="1">
+			<current leakage="1.2933E-07"/>
+			<capacitance gate_cmos="9.1977E-15" drain_cmos="4.3765E-15" gate_pass="7.4258E-15" source_pass="1.1685E-14" drain_pass="5.1620E-15"/>
+		</size>
+		<size W="138.50" L="1">
+			<current leakage="1.3193E-07"/>
+			<capacitance gate_cmos="9.3823E-15" drain_cmos="4.4624E-15" gate_pass="7.5748E-15" source_pass="1.1912E-14" drain_pass="5.2634E-15"/>
+		</size>
+		<size W="141.27" L="1">
+			<current leakage="1.3457E-07"/>
+			<capacitance gate_cmos="9.5702E-15" drain_cmos="4.5500E-15" gate_pass="7.7266E-15" source_pass="1.2144E-14" drain_pass="5.3666E-15"/>
+		</size>
+		<size W="144.09" L="1">
+			<current leakage="1.3726E-07"/>
+			<capacitance gate_cmos="9.7616E-15" drain_cmos="4.6391E-15" gate_pass="7.8810E-15" source_pass="1.2379E-14" drain_pass="5.4717E-15"/>
+		</size>
+		<size W="146.97" L="1">
+			<current leakage="1.4001E-07"/>
+			<capacitance gate_cmos="9.9570E-15" drain_cmos="4.7300E-15" gate_pass="8.0388E-15" source_pass="1.2619E-14" drain_pass="5.5791E-15"/>
+		</size>
+		<size W="149.91" L="1">
+			<current leakage="1.4282E-07"/>
+			<capacitance gate_cmos="1.0156E-14" drain_cmos="4.8229E-15" gate_pass="8.1998E-15" source_pass="1.2865E-14" drain_pass="5.6886E-15"/>
+		</size>
+		<size W="152.91" L="1">
+			<current leakage="1.4568E-07"/>
+			<capacitance gate_cmos="1.0360E-14" drain_cmos="4.9177E-15" gate_pass="8.3642E-15" source_pass="1.3115E-14" drain_pass="5.8004E-15"/>
+		</size>
+		<size W="155.97" L="1">
+			<current leakage="1.4860E-07"/>
+			<capacitance gate_cmos="1.0568E-14" drain_cmos="5.0144E-15" gate_pass="8.5318E-15" source_pass="1.3371E-14" drain_pass="5.9145E-15"/>
+		</size>
+		<size W="159.09" L="1">
+			<current leakage="1.5157E-07"/>
+			<capacitance gate_cmos="1.0779E-14" drain_cmos="5.1129E-15" gate_pass="8.7027E-15" source_pass="1.3631E-14" drain_pass="6.0307E-15"/>
+		</size>
+		<size W="162.27" L="1">
+			<current leakage="1.5461E-07"/>
+			<capacitance gate_cmos="1.0995E-14" drain_cmos="5.2134E-15" gate_pass="8.8769E-15" source_pass="1.3896E-14" drain_pass="6.1493E-15"/>
+		</size>
+		<size W="165.52" L="1">
+			<current leakage="1.5771E-07"/>
+			<capacitance gate_cmos="1.1216E-14" drain_cmos="5.3161E-15" gate_pass="9.0549E-15" source_pass="1.4168E-14" drain_pass="6.2704E-15"/>
+		</size>
+		<size W="168.83" L="1">
+			<current leakage="1.6087E-07"/>
+			<capacitance gate_cmos="1.1440E-14" drain_cmos="5.4207E-15" gate_pass="9.2362E-15" source_pass="1.4444E-14" drain_pass="6.3937E-15"/>
+		</size>
+		<size W="172.20" L="1">
+			<current leakage="1.6408E-07"/>
+			<capacitance gate_cmos="1.1669E-14" drain_cmos="5.5271E-15" gate_pass="9.4208E-15" source_pass="1.4725E-14" drain_pass="6.5193E-15"/>
+		</size>
+		<size W="175.65" L="1">
+			<current leakage="1.6737E-07"/>
+			<capacitance gate_cmos="1.1903E-14" drain_cmos="5.6361E-15" gate_pass="9.6098E-15" source_pass="1.5013E-14" drain_pass="6.6479E-15"/>
+		</size>
+		<size W="179.16" L="1">
+			<current leakage="1.7072E-07"/>
+			<capacitance gate_cmos="1.2141E-14" drain_cmos="5.7470E-15" gate_pass="9.8020E-15" source_pass="1.5306E-14" drain_pass="6.7787E-15"/>
+		</size>
+		<size W="182.74" L="1">
+			<current leakage="1.7414E-07"/>
+			<capacitance gate_cmos="1.2384E-14" drain_cmos="5.8601E-15" gate_pass="9.9981E-15" source_pass="1.5605E-14" drain_pass="6.9121E-15"/>
+		</size>
+		<size W="186.40" L="1">
+			<current leakage="1.7763E-07"/>
+			<capacitance gate_cmos="1.2632E-14" drain_cmos="5.9757E-15" gate_pass="1.0199E-14" source_pass="1.5910E-14" drain_pass="7.0485E-15"/>
+		</size>
+		<size W="190.13" L="1">
+			<current leakage="1.8119E-07"/>
+			<capacitance gate_cmos="1.2885E-14" drain_cmos="6.0936E-15" gate_pass="1.0403E-14" source_pass="1.6222E-14" drain_pass="7.1876E-15"/>
+		</size>
+		<size W="193.93" L="1">
+			<current leakage="1.8481E-07"/>
+			<capacitance gate_cmos="1.3143E-14" drain_cmos="6.2136E-15" gate_pass="1.0611E-14" source_pass="1.6539E-14" drain_pass="7.3292E-15"/>
+		</size>
+		<size W="197.81" L="1">
+			<current leakage="1.8852E-07"/>
+			<capacitance gate_cmos="1.3406E-14" drain_cmos="6.3362E-15" gate_pass="1.0824E-14" source_pass="1.6862E-14" drain_pass="7.4738E-15"/>
+		</size>
+		<size W="201.77" L="1">
+			<current leakage="1.9229E-07"/>
+			<capacitance gate_cmos="1.3675E-14" drain_cmos="6.4613E-15" gate_pass="1.1041E-14" source_pass="1.7193E-14" drain_pass="7.6214E-15"/>
+		</size>
+		<size W="205.80" L="1">
+			<current leakage="1.9614E-07"/>
+			<capacitance gate_cmos="1.3948E-14" drain_cmos="6.5886E-15" gate_pass="1.1261E-14" source_pass="1.7529E-14" drain_pass="7.7716E-15"/>
+		</size>
+		<size W="209.92" L="1">
+			<current leakage="2.0007E-07"/>
+			<capacitance gate_cmos="1.4228E-14" drain_cmos="6.7188E-15" gate_pass="1.1487E-14" source_pass="1.7873E-14" drain_pass="7.9251E-15"/>
+		</size>
+		<size W="214.11" L="1">
+			<current leakage="2.0407E-07"/>
+			<capacitance gate_cmos="1.4512E-14" drain_cmos="6.8512E-15" gate_pass="1.1716E-14" source_pass="1.8223E-14" drain_pass="8.0813E-15"/>
+		</size>
+		<size W="218.40" L="1">
+			<current leakage="2.0816E-07"/>
+			<capacitance gate_cmos="1.4803E-14" drain_cmos="6.9867E-15" gate_pass="1.1951E-14" source_pass="1.8581E-14" drain_pass="8.2411E-15"/>
+		</size>
+		<size W="222.76" L="1">
+			<current leakage="2.1232E-07"/>
+			<capacitance gate_cmos="1.5099E-14" drain_cmos="7.1245E-15" gate_pass="1.2190E-14" source_pass="1.8945E-14" drain_pass="8.4036E-15"/>
+		</size>
+		<size W="227.22" L="1">
+			<current leakage="2.1658E-07"/>
+			<capacitance gate_cmos="1.5402E-14" drain_cmos="7.2654E-15" gate_pass="1.2435E-14" source_pass="1.9317E-14" drain_pass="8.5698E-15"/>
+		</size>
+		<size W="231.76" L="1">
+			<current leakage="2.2091E-07"/>
+			<capacitance gate_cmos="1.5710E-14" drain_cmos="7.4088E-15" gate_pass="1.2683E-14" source_pass="1.9696E-14" drain_pass="8.7390E-15"/>
+		</size>
+		<size W="236.40" L="1">
+			<current leakage="2.2534E-07"/>
+			<capacitance gate_cmos="1.6025E-14" drain_cmos="7.5554E-15" gate_pass="1.2937E-14" source_pass="2.0083E-14" drain_pass="8.9120E-15"/>
+		</size>
+		<size W="241.13" L="1">
+			<current leakage="2.2985E-07"/>
+			<capacitance gate_cmos="1.6345E-14" drain_cmos="7.7048E-15" gate_pass="1.3197E-14" source_pass="2.0477E-14" drain_pass="9.0882E-15"/>
+		</size>
+		<size W="245.95" L="1">
+			<current leakage="2.3445E-07"/>
+			<capacitance gate_cmos="1.6673E-14" drain_cmos="7.8571E-15" gate_pass="1.3461E-14" source_pass="2.0880E-14" drain_pass="9.2679E-15"/>
+		</size>
+		<size W="250.87" L="1">
+			<current leakage="2.3914E-07"/>
+			<capacitance gate_cmos="1.7006E-14" drain_cmos="8.0125E-15" gate_pass="1.3730E-14" source_pass="2.1290E-14" drain_pass="9.4512E-15"/>
+		</size>
+		<size W="255.89" L="1">
+			<current leakage="2.4393E-07"/>
+			<capacitance gate_cmos="1.7347E-14" drain_cmos="8.1711E-15" gate_pass="1.4005E-14" source_pass="2.1709E-14" drain_pass="9.6383E-15"/>
+		</size>
+		<size W="261.00" L="1">
+			<current leakage="2.4881E-07"/>
+			<capacitance gate_cmos="1.7694E-14" drain_cmos="8.3326E-15" gate_pass="1.4285E-14" source_pass="2.2135E-14" drain_pass="9.8288E-15"/>
+		</size>
+		<size W="266.22" L="1">
+			<current leakage="2.5379E-07"/>
+			<capacitance gate_cmos="1.8048E-14" drain_cmos="8.4975E-15" gate_pass="1.4571E-14" source_pass="2.2571E-14" drain_pass="1.0023E-14"/>
+		</size>
+		<size W="271.55" L="1">
+			<current leakage="2.5887E-07"/>
+			<capacitance gate_cmos="1.8409E-14" drain_cmos="8.6659E-15" gate_pass="1.4863E-14" source_pass="2.3016E-14" drain_pass="1.0222E-14"/>
+		</size>
+		<size W="276.98" L="1">
+			<current leakage="2.6405E-07"/>
+			<capacitance gate_cmos="1.8778E-14" drain_cmos="8.8374E-15" gate_pass="1.5160E-14" source_pass="2.3469E-14" drain_pass="1.0424E-14"/>
+		</size>
+		<size W="282.52" L="1">
+			<current leakage="2.6934E-07"/>
+			<capacitance gate_cmos="1.9154E-14" drain_cmos="9.0124E-15" gate_pass="1.5464E-14" source_pass="2.3931E-14" drain_pass="1.0631E-14"/>
+		</size>
+		<size W="288.17" L="1">
+			<current leakage="2.7473E-07"/>
+			<capacitance gate_cmos="1.9537E-14" drain_cmos="9.1909E-15" gate_pass="1.5773E-14" source_pass="2.4402E-14" drain_pass="1.0841E-14"/>
+		</size>
+		<size W="293.93" L="1">
+			<current leakage="2.8022E-07"/>
+			<capacitance gate_cmos="1.9928E-14" drain_cmos="9.3729E-15" gate_pass="1.6089E-14" source_pass="2.4883E-14" drain_pass="1.1056E-14"/>
+		</size>
+		<size W="299.81" L="1">
+			<current leakage="2.8583E-07"/>
+			<capacitance gate_cmos="2.0327E-14" drain_cmos="9.5587E-15" gate_pass="1.6411E-14" source_pass="2.5373E-14" drain_pass="1.1275E-14"/>
+		</size>
+		<size W="305.81" L="1">
+			<current leakage="2.9156E-07"/>
+			<capacitance gate_cmos="2.0734E-14" drain_cmos="9.7482E-15" gate_pass="1.6739E-14" source_pass="2.5874E-14" drain_pass="1.1499E-14"/>
+		</size>
+		<size W="311.92" L="1">
+			<current leakage="2.9739E-07"/>
+			<capacitance gate_cmos="2.1148E-14" drain_cmos="9.9413E-15" gate_pass="1.7074E-14" source_pass="2.6384E-14" drain_pass="1.1726E-14"/>
+		</size>
+		<size W="318.16" L="1">
+			<current leakage="3.0334E-07"/>
+			<capacitance gate_cmos="2.1572E-14" drain_cmos="1.0138E-14" gate_pass="1.7416E-14" source_pass="2.6904E-14" drain_pass="1.1959E-14"/>
+		</size>
+		<size W="324.53" L="1">
+			<current leakage="3.0942E-07"/>
+			<capacitance gate_cmos="2.2004E-14" drain_cmos="1.0340E-14" gate_pass="1.7765E-14" source_pass="2.7436E-14" drain_pass="1.2196E-14"/>
+		</size>
+		<size W="331.02" L="1">
+			<current leakage="3.1561E-07"/>
+			<capacitance gate_cmos="2.2444E-14" drain_cmos="1.0545E-14" gate_pass="1.8120E-14" source_pass="2.7977E-14" drain_pass="1.2438E-14"/>
+		</size>
+		<size W="337.64" L="1">
+			<current leakage="3.2193E-07"/>
+			<capacitance gate_cmos="2.2893E-14" drain_cmos="1.0754E-14" gate_pass="1.8483E-14" source_pass="2.8529E-14" drain_pass="1.2685E-14"/>
+		</size>
+		<size W="344.39" L="1">
+			<current leakage="3.2837E-07"/>
+			<capacitance gate_cmos="2.3351E-14" drain_cmos="1.0967E-14" gate_pass="1.8853E-14" source_pass="2.9092E-14" drain_pass="1.2937E-14"/>
+		</size>
+		<size W="351.28" L="1">
+			<current leakage="3.3494E-07"/>
+			<capacitance gate_cmos="2.3819E-14" drain_cmos="1.1185E-14" gate_pass="1.9230E-14" source_pass="2.9667E-14" drain_pass="1.3193E-14"/>
+		</size>
+		<size W="358.30" L="1">
+			<current leakage="3.4164E-07"/>
+			<capacitance gate_cmos="2.4295E-14" drain_cmos="1.1407E-14" gate_pass="1.9615E-14" source_pass="3.0253E-14" drain_pass="1.3455E-14"/>
+		</size>
+		<size W="365.47" L="1">
+			<current leakage="3.4848E-07"/>
+			<capacitance gate_cmos="2.4782E-14" drain_cmos="1.1633E-14" gate_pass="2.0007E-14" source_pass="3.0851E-14" drain_pass="1.3722E-14"/>
+		</size>
+		<size W="372.78" L="1">
+			<current leakage="3.5546E-07"/>
+			<capacitance gate_cmos="2.5278E-14" drain_cmos="1.1864E-14" gate_pass="2.0408E-14" source_pass="3.1461E-14" drain_pass="1.3995E-14"/>
+		</size>
+		<size W="380.23" L="1">
+			<current leakage="3.6256E-07"/>
+			<capacitance gate_cmos="2.5783E-14" drain_cmos="1.2099E-14" gate_pass="2.0816E-14" source_pass="3.2082E-14" drain_pass="1.4272E-14"/>
+		</size>
+		<size W="387.84" L="1">
+			<current leakage="3.6983E-07"/>
+			<capacitance gate_cmos="2.6299E-14" drain_cmos="1.2340E-14" gate_pass="2.1233E-14" source_pass="3.2717E-14" drain_pass="1.4556E-14"/>
+		</size>
+		<size W="395.60" L="1">
+			<current leakage="3.7723E-07"/>
+			<capacitance gate_cmos="2.6826E-14" drain_cmos="1.2585E-14" gate_pass="2.1658E-14" source_pass="3.3364E-14" drain_pass="1.4845E-14"/>
+		</size>
+		<size W="403.51" L="1">
+			<current leakage="3.8478E-07"/>
+			<capacitance gate_cmos="2.7363E-14" drain_cmos="1.2835E-14" gate_pass="2.2091E-14" source_pass="3.4024E-14" drain_pass="1.5140E-14"/>
+		</size>
+		<size W="411.58" L="1">
+			<current leakage="3.9248E-07"/>
+			<capacitance gate_cmos="2.7910E-14" drain_cmos="1.3090E-14" gate_pass="2.2533E-14" source_pass="3.4697E-14" drain_pass="1.5441E-14"/>
+		</size>
+		<size W="419.81" L="1">
+			<current leakage="4.0033E-07"/>
+			<capacitance gate_cmos="2.8469E-14" drain_cmos="1.3350E-14" gate_pass="2.2984E-14" source_pass="3.5383E-14" drain_pass="1.5747E-14"/>
+		</size>
+		<size W="428.21" L="1">
+			<current leakage="4.0834E-07"/>
+			<capacitance gate_cmos="2.9038E-14" drain_cmos="1.3615E-14" gate_pass="2.3444E-14" source_pass="3.6084E-14" drain_pass="1.6060E-14"/>
+		</size>
+		<size W="436.77" L="1">
+			<current leakage="4.1651E-07"/>
+			<capacitance gate_cmos="2.9619E-14" drain_cmos="1.3886E-14" gate_pass="2.3913E-14" source_pass="3.6798E-14" drain_pass="1.6379E-14"/>
+		</size>
+		<size W="445.51" L="1">
+			<current leakage="4.2485E-07"/>
+			<capacitance gate_cmos="3.0212E-14" drain_cmos="1.4162E-14" gate_pass="2.4392E-14" source_pass="3.7527E-14" drain_pass="1.6705E-14"/>
+		</size>
+		<size W="454.42" L="1">
+			<current leakage="4.3335E-07"/>
+			<capacitance gate_cmos="3.0817E-14" drain_cmos="1.4443E-14" gate_pass="2.4880E-14" source_pass="3.8270E-14" drain_pass="1.7037E-14"/>
+		</size>
+		<size W="463.50" L="1">
+			<current leakage="4.4201E-07"/>
+			<capacitance gate_cmos="3.1433E-14" drain_cmos="1.4730E-14" gate_pass="2.5377E-14" source_pass="3.9027E-14" drain_pass="1.7376E-14"/>
+		</size>
+		<size W="472.77" L="1">
+			<current leakage="4.5086E-07"/>
+			<capacitance gate_cmos="3.2062E-14" drain_cmos="1.5023E-14" gate_pass="2.5885E-14" source_pass="3.9800E-14" drain_pass="1.7721E-14"/>
+		</size>
+		<size W="482.23" L="1">
+			<current leakage="4.5988E-07"/>
+			<capacitance gate_cmos="3.2704E-14" drain_cmos="1.5322E-14" gate_pass="2.6403E-14" source_pass="4.0589E-14" drain_pass="1.8074E-14"/>
+		</size>
+		<size W="491.87" L="1">
+			<current leakage="4.6908E-07"/>
+			<capacitance gate_cmos="3.3358E-14" drain_cmos="1.5626E-14" gate_pass="2.6931E-14" source_pass="4.1393E-14" drain_pass="1.8433E-14"/>
+		</size>
+		<size W="501.71" L="1">
+			<current leakage="4.7847E-07"/>
+			<capacitance gate_cmos="3.4025E-14" drain_cmos="1.5937E-14" gate_pass="2.7470E-14" source_pass="4.2214E-14" drain_pass="1.8800E-14"/>
+		</size>
+		<size W="511.75" L="1">
+			<current leakage="4.8805E-07"/>
+			<capacitance gate_cmos="3.4706E-14" drain_cmos="1.6254E-14" gate_pass="2.8020E-14" source_pass="4.3051E-14" drain_pass="1.9174E-14"/>
+		</size>
+		<size W="521.98" L="1">
+			<current leakage="4.9781E-07"/>
+			<capacitance gate_cmos="3.5401E-14" drain_cmos="1.6578E-14" gate_pass="2.8581E-14" source_pass="4.3904E-14" drain_pass="1.9555E-14"/>
+		</size>
+		<size W="532.42" L="1">
+			<current leakage="5.0777E-07"/>
+			<capacitance gate_cmos="3.6109E-14" drain_cmos="1.6907E-14" gate_pass="2.9152E-14" source_pass="4.4775E-14" drain_pass="1.9944E-14"/>
+		</size>
+		<size W="543.07" L="1">
+			<current leakage="5.1793E-07"/>
+			<capacitance gate_cmos="3.6831E-14" drain_cmos="1.7244E-14" gate_pass="2.9736E-14" source_pass="4.5663E-14" drain_pass="2.0341E-14"/>
+		</size>
+		<size W="553.93" L="1">
+			<current leakage="5.2829E-07"/>
+			<capacitance gate_cmos="3.7568E-14" drain_cmos="1.7587E-14" gate_pass="3.0331E-14" source_pass="4.6569E-14" drain_pass="2.0746E-14"/>
+		</size>
+		<size W="565.01" L="1">
+			<current leakage="5.3887E-07"/>
+			<capacitance gate_cmos="3.8320E-14" drain_cmos="1.7937E-14" gate_pass="3.0938E-14" source_pass="4.7493E-14" drain_pass="2.1159E-14"/>
+		</size>
+		<size W="576.31" L="1">
+			<current leakage="5.4965E-07"/>
+			<capacitance gate_cmos="3.9087E-14" drain_cmos="1.8294E-14" gate_pass="3.1557E-14" source_pass="4.8435E-14" drain_pass="2.1580E-14"/>
+		</size>
+		<size W="587.83" L="1">
+			<current leakage="5.6064E-07"/>
+			<capacitance gate_cmos="3.9868E-14" drain_cmos="1.8658E-14" gate_pass="3.2188E-14" source_pass="4.9396E-14" drain_pass="2.2009E-14"/>
+		</size>
+		<size W="599.59" L="1">
+			<current leakage="5.7186E-07"/>
+			<capacitance gate_cmos="4.0666E-14" drain_cmos="1.9030E-14" gate_pass="3.2832E-14" source_pass="5.0376E-14" drain_pass="2.2447E-14"/>
+		</size>
+		<size W="611.58" L="1">
+			<current leakage="5.8330E-07"/>
+			<capacitance gate_cmos="4.1480E-14" drain_cmos="1.9408E-14" gate_pass="3.3489E-14" source_pass="5.1376E-14" drain_pass="2.2894E-14"/>
+		</size>
+		<size W="623.82" L="1">
+			<current leakage="5.9498E-07"/>
+			<capacitance gate_cmos="4.2310E-14" drain_cmos="1.9795E-14" gate_pass="3.4159E-14" source_pass="5.2397E-14" drain_pass="2.3350E-14"/>
+		</size>
+		<size W="636.29" L="1">
+			<current leakage="6.0688E-07"/>
+			<capacitance gate_cmos="4.3156E-14" drain_cmos="2.0189E-14" gate_pass="3.4842E-14" source_pass="5.3436E-14" drain_pass="2.3815E-14"/>
+		</size>
+		<size W="649.02" L="1">
+			<current leakage="6.1902E-07"/>
+			<capacitance gate_cmos="4.4020E-14" drain_cmos="2.0591E-14" gate_pass="3.5539E-14" source_pass="5.4498E-14" drain_pass="2.4290E-14"/>
+		</size>
+		<size W="662.00" L="1">
+			<current leakage="6.3141E-07"/>
+			<capacitance gate_cmos="4.4901E-14" drain_cmos="2.1001E-14" gate_pass="3.6250E-14" source_pass="5.5580E-14" drain_pass="2.4773E-14"/>
+		</size>
+		<size W="675.24" L="1">
+			<current leakage="6.4404E-07"/>
+			<capacitance gate_cmos="4.5799E-14" drain_cmos="2.1420E-14" gate_pass="3.6976E-14" source_pass="5.6684E-14" drain_pass="2.5267E-14"/>
+		</size>
+		<size W="688.74" L="1">
+			<current leakage="6.5692E-07"/>
+			<capacitance gate_cmos="4.6715E-14" drain_cmos="2.1846E-14" gate_pass="3.7715E-14" source_pass="5.7810E-14" drain_pass="2.5770E-14"/>
+		</size>
+		<size W="702.52" L="1">
+			<current leakage="6.7007E-07"/>
+			<capacitance gate_cmos="4.7650E-14" drain_cmos="2.2281E-14" gate_pass="3.8470E-14" source_pass="5.8958E-14" drain_pass="2.6284E-14"/>
+		</size>
+		<size W="716.57" L="1">
+			<current leakage="6.8348E-07"/>
+			<capacitance gate_cmos="4.8603E-14" drain_cmos="2.2725E-14" gate_pass="3.9240E-14" source_pass="6.0130E-14" drain_pass="2.6807E-14"/>
+		</size>
+		<size W="730.90" L="1">
+			<current leakage="6.9715E-07"/>
+			<capacitance gate_cmos="4.9575E-14" drain_cmos="2.3178E-14" gate_pass="4.0024E-14" source_pass="6.1325E-14" drain_pass="2.7341E-14"/>
+		</size>
+		<size W="745.52" L="1">
+			<current leakage="7.1110E-07"/>
+			<capacitance gate_cmos="5.0567E-14" drain_cmos="2.3640E-14" gate_pass="4.0825E-14" source_pass="6.2543E-14" drain_pass="2.7886E-14"/>
+		</size>
+		<size W="760.43" L="1">
+			<current leakage="7.2533E-07"/>
+			<capacitance gate_cmos="5.1579E-14" drain_cmos="2.4111E-14" gate_pass="4.1642E-14" source_pass="6.3786E-14" drain_pass="2.8442E-14"/>
+		</size>
+		<size W="775.64" L="1">
+			<current leakage="7.3984E-07"/>
+			<capacitance gate_cmos="5.2611E-14" drain_cmos="2.4591E-14" gate_pass="4.2475E-14" source_pass="6.5055E-14" drain_pass="2.9009E-14"/>
+		</size>
+		<size W="791.15" L="1">
+			<current leakage="7.5464E-07"/>
+			<capacitance gate_cmos="5.3663E-14" drain_cmos="2.5081E-14" gate_pass="4.3325E-14" source_pass="6.6348E-14" drain_pass="2.9587E-14"/>
+		</size>
+		<size W="806.97" L="1">
+			<current leakage="7.6973E-07"/>
+			<capacitance gate_cmos="5.4736E-14" drain_cmos="2.5581E-14" gate_pass="4.4191E-14" source_pass="6.7666E-14" drain_pass="3.0176E-14"/>
+		</size>
+		<size W="823.11" L="1">
+			<current leakage="7.8513E-07"/>
+			<capacitance gate_cmos="5.5832E-14" drain_cmos="2.6091E-14" gate_pass="4.5075E-14" source_pass="6.9012E-14" drain_pass="3.0778E-14"/>
+		</size>
+		<size W="839.57" L="1">
+			<current leakage="8.0084E-07"/>
+			<capacitance gate_cmos="5.6948E-14" drain_cmos="2.6611E-14" gate_pass="4.5977E-14" source_pass="7.0384E-14" drain_pass="3.1391E-14"/>
+		</size>
+		<size W="856.36" L="1">
+			<current leakage="8.1686E-07"/>
+			<capacitance gate_cmos="5.8087E-14" drain_cmos="2.7142E-14" gate_pass="4.6897E-14" source_pass="7.1784E-14" drain_pass="3.2017E-14"/>
+		</size>
+		<size W="873.49" L="1">
+			<current leakage="8.3321E-07"/>
+			<capacitance gate_cmos="5.9250E-14" drain_cmos="2.7683E-14" gate_pass="4.7835E-14" source_pass="7.3211E-14" drain_pass="3.2655E-14"/>
+		</size>
+		<size W="890.96" L="1">
+			<current leakage="8.4988E-07"/>
+			<capacitance gate_cmos="6.0435E-14" drain_cmos="2.8235E-14" gate_pass="4.8792E-14" source_pass="7.4667E-14" drain_pass="3.3306E-14"/>
+		</size>
+		<size W="908.78" L="1">
+			<current leakage="8.6688E-07"/>
+			<capacitance gate_cmos="6.1644E-14" drain_cmos="2.8798E-14" gate_pass="4.9768E-14" source_pass="7.6153E-14" drain_pass="3.3971E-14"/>
+		</size>
+		<size W="926.96" L="1">
+			<current leakage="8.8423E-07"/>
+			<capacitance gate_cmos="6.2877E-14" drain_cmos="2.9372E-14" gate_pass="5.0764E-14" source_pass="7.7668E-14" drain_pass="3.4648E-14"/>
+		</size>
+		<size W="945.50" L="1">
+			<current leakage="9.0192E-07"/>
+			<capacitance gate_cmos="6.4135E-14" drain_cmos="2.9958E-14" gate_pass="5.1780E-14" source_pass="7.9213E-14" drain_pass="3.5339E-14"/>
+		</size>
+		<size W="964.41" L="1">
+			<current leakage="9.1996E-07"/>
+			<capacitance gate_cmos="6.5418E-14" drain_cmos="3.0555E-14" gate_pass="5.2815E-14" source_pass="8.0789E-14" drain_pass="3.6044E-14"/>
+		</size>
+		<size W="983.69" L="1">
+			<current leakage="9.3836E-07"/>
+			<capacitance gate_cmos="6.6726E-14" drain_cmos="3.1164E-14" gate_pass="5.3871E-14" source_pass="8.2396E-14" drain_pass="3.6762E-14"/>
+		</size>
+	</transistor>
+	<transistor type="pmos" Vth="3.3521E-01">
+		<long_size W="1" L="2">
+			<current leakage="2.7235E-11"/>
+			<capacitance gate_cmos="3.8913E-17" drain_cmos="2.0289E-16" gate_pass="5.4732E-17" source_pass="4.1970E-16" drain_pass="1.6833E-16"/>
+		</long_size>
+		<size W="1.00" L="1">
+			<current leakage="1.8506E-10"/>
+			<capacitance gate_cmos="2.7775E-17" drain_cmos="1.7361E-16" gate_pass="3.2151E-17" source_pass="4.0502E-16" drain_pass="1.6357E-16"/>
+		</size>
+		<size W="1.02" L="1">
+			<current leakage="1.8980E-10"/>
+			<capacitance gate_cmos="2.8478E-17" drain_cmos="1.7504E-16" gate_pass="3.2967E-17" source_pass="4.0663E-16" drain_pass="1.6454E-16"/>
+		</size>
+		<size W="1.04" L="1">
+			<current leakage="1.9455E-10"/>
+			<capacitance gate_cmos="2.9181E-17" drain_cmos="1.7646E-16" gate_pass="3.3782E-17" source_pass="4.0824E-16" drain_pass="1.6550E-16"/>
+		</size>
+		<size W="1.06" L="1">
+			<current leakage="1.9929E-10"/>
+			<capacitance gate_cmos="2.9884E-17" drain_cmos="1.7789E-16" gate_pass="3.4597E-17" source_pass="4.0985E-16" drain_pass="1.6647E-16"/>
+		</size>
+		<size W="1.08" L="1">
+			<current leakage="2.0404E-10"/>
+			<capacitance gate_cmos="3.0586E-17" drain_cmos="1.7932E-16" gate_pass="3.5412E-17" source_pass="4.1147E-16" drain_pass="1.6744E-16"/>
+		</size>
+		<size W="1.10" L="1">
+			<current leakage="2.0878E-10"/>
+			<capacitance gate_cmos="3.1289E-17" drain_cmos="1.8075E-16" gate_pass="3.6227E-17" source_pass="4.1308E-16" drain_pass="1.6840E-16"/>
+		</size>
+		<size W="1.13" L="1">
+			<current leakage="2.1590E-10"/>
+			<capacitance gate_cmos="3.2343E-17" drain_cmos="1.8289E-16" gate_pass="3.7450E-17" source_pass="4.1550E-16" drain_pass="1.6986E-16"/>
+		</size>
+		<size W="1.15" L="1">
+			<current leakage="2.2064E-10"/>
+			<capacitance gate_cmos="3.3046E-17" drain_cmos="1.8432E-16" gate_pass="3.8265E-17" source_pass="4.1711E-16" drain_pass="1.7082E-16"/>
+		</size>
+		<size W="1.17" L="1">
+			<current leakage="2.2539E-10"/>
+			<capacitance gate_cmos="3.3748E-17" drain_cmos="1.8575E-16" gate_pass="3.9081E-17" source_pass="4.1872E-16" drain_pass="1.7179E-16"/>
+		</size>
+		<size W="1.20" L="1">
+			<current leakage="2.3250E-10"/>
+			<capacitance gate_cmos="3.4803E-17" drain_cmos="1.8789E-16" gate_pass="4.0303E-17" source_pass="4.2114E-16" drain_pass="1.7324E-16"/>
+		</size>
+		<size W="1.22" L="1">
+			<current leakage="2.3725E-10"/>
+			<capacitance gate_cmos="3.5505E-17" drain_cmos="1.8932E-16" gate_pass="4.1118E-17" source_pass="4.2275E-16" drain_pass="1.7421E-16"/>
+		</size>
+		<size W="1.24" L="1">
+			<current leakage="2.4199E-10"/>
+			<capacitance gate_cmos="3.6208E-17" drain_cmos="1.9075E-16" gate_pass="4.1934E-17" source_pass="4.2436E-16" drain_pass="1.7518E-16"/>
+		</size>
+		<size W="1.27" L="1">
+			<current leakage="2.4911E-10"/>
+			<capacitance gate_cmos="3.7262E-17" drain_cmos="1.9289E-16" gate_pass="4.3156E-17" source_pass="4.2678E-16" drain_pass="1.7663E-16"/>
+		</size>
+		<size W="1.29" L="1">
+			<current leakage="2.5385E-10"/>
+			<capacitance gate_cmos="3.7965E-17" drain_cmos="1.9432E-16" gate_pass="4.3972E-17" source_pass="4.2839E-16" drain_pass="1.7760E-16"/>
+		</size>
+		<size W="1.32" L="1">
+			<current leakage="2.6097E-10"/>
+			<capacitance gate_cmos="3.9019E-17" drain_cmos="1.9646E-16" gate_pass="4.5194E-17" source_pass="4.3081E-16" drain_pass="1.7905E-16"/>
+		</size>
+		<size W="1.35" L="1">
+			<current leakage="2.6809E-10"/>
+			<capacitance gate_cmos="4.0073E-17" drain_cmos="1.9860E-16" gate_pass="4.6417E-17" source_pass="4.3322E-16" drain_pass="1.8050E-16"/>
+		</size>
+		<size W="1.37" L="1">
+			<current leakage="2.7283E-10"/>
+			<capacitance gate_cmos="4.0776E-17" drain_cmos="2.0003E-16" gate_pass="4.7232E-17" source_pass="4.3484E-16" drain_pass="1.8147E-16"/>
+		</size>
+		<size W="1.40" L="1">
+			<current leakage="2.7995E-10"/>
+			<capacitance gate_cmos="4.1830E-17" drain_cmos="2.0217E-16" gate_pass="4.8456E-17" source_pass="4.3725E-16" drain_pass="1.8292E-16"/>
+		</size>
+		<size W="1.43" L="1">
+			<current leakage="2.8707E-10"/>
+			<capacitance gate_cmos="4.2884E-17" drain_cmos="2.0432E-16" gate_pass="4.9678E-17" source_pass="4.3967E-16" drain_pass="1.8437E-16"/>
+		</size>
+		<size W="1.46" L="1">
+			<current leakage="2.9419E-10"/>
+			<capacitance gate_cmos="4.3938E-17" drain_cmos="2.0646E-16" gate_pass="5.0901E-17" source_pass="4.4209E-16" drain_pass="1.8582E-16"/>
+		</size>
+		<size W="1.49" L="1">
+			<current leakage="3.0131E-10"/>
+			<capacitance gate_cmos="4.4992E-17" drain_cmos="2.0860E-16" gate_pass="5.2124E-17" source_pass="4.4451E-16" drain_pass="1.8727E-16"/>
+		</size>
+		<size W="1.52" L="1">
+			<current leakage="3.0842E-10"/>
+			<capacitance gate_cmos="4.6046E-17" drain_cmos="2.1074E-16" gate_pass="5.3347E-17" source_pass="4.4692E-16" drain_pass="1.8872E-16"/>
+		</size>
+		<size W="1.55" L="1">
+			<current leakage="3.1554E-10"/>
+			<capacitance gate_cmos="4.7100E-17" drain_cmos="2.1289E-16" gate_pass="5.4569E-17" source_pass="4.4934E-16" drain_pass="1.9017E-16"/>
+		</size>
+		<size W="1.58" L="1">
+			<current leakage="3.2266E-10"/>
+			<capacitance gate_cmos="4.8154E-17" drain_cmos="2.1503E-16" gate_pass="5.5792E-17" source_pass="4.5176E-16" drain_pass="1.9162E-16"/>
+		</size>
+		<size W="1.61" L="1">
+			<current leakage="3.2978E-10"/>
+			<capacitance gate_cmos="4.9208E-17" drain_cmos="2.1717E-16" gate_pass="5.7015E-17" source_pass="4.5418E-16" drain_pass="1.9308E-16"/>
+		</size>
+		<size W="1.64" L="1">
+			<current leakage="3.3690E-10"/>
+			<capacitance gate_cmos="5.0262E-17" drain_cmos="2.1931E-16" gate_pass="5.8238E-17" source_pass="4.5659E-16" drain_pass="1.9453E-16"/>
+		</size>
+		<size W="1.67" L="1">
+			<current leakage="3.4402E-10"/>
+			<capacitance gate_cmos="5.1316E-17" drain_cmos="2.2146E-16" gate_pass="5.9460E-17" source_pass="4.5901E-16" drain_pass="1.9598E-16"/>
+		</size>
+		<size W="1.71" L="1">
+			<current leakage="3.5351E-10"/>
+			<capacitance gate_cmos="5.2722E-17" drain_cmos="2.2431E-16" gate_pass="6.1091E-17" source_pass="4.6224E-16" drain_pass="1.9791E-16"/>
+		</size>
+		<size W="1.74" L="1">
+			<current leakage="3.6062E-10"/>
+			<capacitance gate_cmos="5.3776E-17" drain_cmos="2.2646E-16" gate_pass="6.2314E-17" source_pass="4.6465E-16" drain_pass="1.9937E-16"/>
+		</size>
+		<size W="1.78" L="1">
+			<current leakage="3.7012E-10"/>
+			<capacitance gate_cmos="5.5181E-17" drain_cmos="2.2931E-16" gate_pass="6.3944E-17" source_pass="4.6788E-16" drain_pass="2.0130E-16"/>
+		</size>
+		<size W="1.81" L="1">
+			<current leakage="3.7723E-10"/>
+			<capacitance gate_cmos="5.6235E-17" drain_cmos="2.3145E-16" gate_pass="6.5167E-17" source_pass="4.7029E-16" drain_pass="2.0275E-16"/>
+		</size>
+		<size W="1.85" L="1">
+			<current leakage="3.8673E-10"/>
+			<capacitance gate_cmos="5.7641E-17" drain_cmos="2.3431E-16" gate_pass="6.6797E-17" source_pass="4.7352E-16" drain_pass="2.0469E-16"/>
+		</size>
+		<size W="1.88" L="1">
+			<current leakage="3.9384E-10"/>
+			<capacitance gate_cmos="5.8695E-17" drain_cmos="2.3645E-16" gate_pass="6.8020E-17" source_pass="4.7594E-16" drain_pass="2.0614E-16"/>
+		</size>
+		<size W="1.92" L="1">
+			<current leakage="4.0334E-10"/>
+			<capacitance gate_cmos="6.0100E-17" drain_cmos="2.3931E-16" gate_pass="6.9650E-17" source_pass="4.7916E-16" drain_pass="2.0808E-16"/>
+		</size>
+		<size W="1.96" L="1">
+			<current leakage="4.1283E-10"/>
+			<capacitance gate_cmos="6.1505E-17" drain_cmos="2.4217E-16" gate_pass="7.1280E-17" source_pass="4.8238E-16" drain_pass="2.1001E-16"/>
+		</size>
+		<size W="2.00" L="1">
+			<current leakage="4.2232E-10"/>
+			<capacitance gate_cmos="6.2911E-17" drain_cmos="2.4502E-16" gate_pass="7.2911E-17" source_pass="4.8561E-16" drain_pass="2.1195E-16"/>
+		</size>
+		<size W="2.04" L="1">
+			<current leakage="4.3181E-10"/>
+			<capacitance gate_cmos="6.4316E-17" drain_cmos="2.4788E-16" gate_pass="7.4541E-17" source_pass="4.8883E-16" drain_pass="2.1388E-16"/>
+		</size>
+		<size W="2.08" L="1">
+			<current leakage="4.4130E-10"/>
+			<capacitance gate_cmos="6.5722E-17" drain_cmos="2.5074E-16" gate_pass="7.6171E-17" source_pass="4.9205E-16" drain_pass="2.1582E-16"/>
+		</size>
+		<size W="2.12" L="1">
+			<current leakage="4.5080E-10"/>
+			<capacitance gate_cmos="6.7127E-17" drain_cmos="2.5359E-16" gate_pass="7.7802E-17" source_pass="4.9528E-16" drain_pass="2.1775E-16"/>
+		</size>
+		<size W="2.16" L="1">
+			<current leakage="4.6029E-10"/>
+			<capacitance gate_cmos="6.8532E-17" drain_cmos="2.5645E-16" gate_pass="7.9432E-17" source_pass="4.9850E-16" drain_pass="2.1969E-16"/>
+		</size>
+		<size W="2.21" L="1">
+			<current leakage="4.7215E-10"/>
+			<capacitance gate_cmos="7.0289E-17" drain_cmos="2.6002E-16" gate_pass="8.1470E-17" source_pass="5.0253E-16" drain_pass="2.2211E-16"/>
+		</size>
+		<size W="2.25" L="1">
+			<current leakage="4.8164E-10"/>
+			<capacitance gate_cmos="7.1695E-17" drain_cmos="2.6288E-16" gate_pass="8.3100E-17" source_pass="5.0575E-16" drain_pass="2.2404E-16"/>
+		</size>
+		<size W="2.30" L="1">
+			<current leakage="4.9351E-10"/>
+			<capacitance gate_cmos="7.3451E-17" drain_cmos="2.6645E-16" gate_pass="8.5138E-17" source_pass="5.0978E-16" drain_pass="2.2646E-16"/>
+		</size>
+		<size W="2.34" L="1">
+			<current leakage="5.0300E-10"/>
+			<capacitance gate_cmos="7.4857E-17" drain_cmos="2.6930E-16" gate_pass="8.6768E-17" source_pass="5.1301E-16" drain_pass="2.2840E-16"/>
+		</size>
+		<size W="2.39" L="1">
+			<current leakage="5.1487E-10"/>
+			<capacitance gate_cmos="7.6614E-17" drain_cmos="2.7288E-16" gate_pass="8.8806E-17" source_pass="5.1703E-16" drain_pass="2.3082E-16"/>
+		</size>
+		<size W="2.44" L="1">
+			<current leakage="5.2673E-10"/>
+			<capacitance gate_cmos="7.8370E-17" drain_cmos="2.7645E-16" gate_pass="9.0844E-17" source_pass="5.2106E-16" drain_pass="2.3324E-16"/>
+		</size>
+		<size W="2.49" L="1">
+			<current leakage="5.3860E-10"/>
+			<capacitance gate_cmos="8.0127E-17" drain_cmos="2.8002E-16" gate_pass="9.2882E-17" source_pass="5.2509E-16" drain_pass="2.3566E-16"/>
+		</size>
+		<size W="2.54" L="1">
+			<current leakage="5.5046E-10"/>
+			<capacitance gate_cmos="8.1884E-17" drain_cmos="2.8359E-16" gate_pass="9.4920E-17" source_pass="5.2912E-16" drain_pass="2.3808E-16"/>
+		</size>
+		<size W="2.59" L="1">
+			<current leakage="5.6233E-10"/>
+			<capacitance gate_cmos="8.3641E-17" drain_cmos="2.8716E-16" gate_pass="9.6958E-17" source_pass="5.3315E-16" drain_pass="2.4050E-16"/>
+		</size>
+		<size W="2.64" L="1">
+			<current leakage="5.7419E-10"/>
+			<capacitance gate_cmos="8.5397E-17" drain_cmos="2.9073E-16" gate_pass="9.8995E-17" source_pass="5.3718E-16" drain_pass="2.4292E-16"/>
+		</size>
+		<size W="2.69" L="1">
+			<current leakage="5.8606E-10"/>
+			<capacitance gate_cmos="8.7154E-17" drain_cmos="2.9430E-16" gate_pass="1.0103E-16" source_pass="5.4121E-16" drain_pass="2.4534E-16"/>
+		</size>
+		<size W="2.75" L="1">
+			<current leakage="6.0030E-10"/>
+			<capacitance gate_cmos="8.9262E-17" drain_cmos="2.9859E-16" gate_pass="1.0348E-16" source_pass="5.4605E-16" drain_pass="2.4824E-16"/>
+		</size>
+		<size W="2.80" L="1">
+			<current leakage="6.1216E-10"/>
+			<capacitance gate_cmos="9.1019E-17" drain_cmos="3.0216E-16" gate_pass="1.0552E-16" source_pass="5.5008E-16" drain_pass="2.5066E-16"/>
+		</size>
+		<size W="2.86" L="1">
+			<current leakage="6.2640E-10"/>
+			<capacitance gate_cmos="9.3127E-17" drain_cmos="3.0644E-16" gate_pass="1.0796E-16" source_pass="5.5491E-16" drain_pass="2.5357E-16"/>
+		</size>
+		<size W="2.91" L="1">
+			<current leakage="6.3827E-10"/>
+			<capacitance gate_cmos="9.4884E-17" drain_cmos="3.1001E-16" gate_pass="1.1000E-16" source_pass="5.5894E-16" drain_pass="2.5599E-16"/>
+		</size>
+		<size W="2.97" L="1">
+			<current leakage="6.5251E-10"/>
+			<capacitance gate_cmos="9.6992E-17" drain_cmos="3.1430E-16" gate_pass="1.1245E-16" source_pass="5.6378E-16" drain_pass="2.5889E-16"/>
+		</size>
+		<size W="3.03" L="1">
+			<current leakage="6.6674E-10"/>
+			<capacitance gate_cmos="9.9100E-17" drain_cmos="3.1858E-16" gate_pass="1.1489E-16" source_pass="5.6861E-16" drain_pass="2.6179E-16"/>
+		</size>
+		<size W="3.09" L="1">
+			<current leakage="6.8098E-10"/>
+			<capacitance gate_cmos="1.0121E-16" drain_cmos="3.2287E-16" gate_pass="1.1734E-16" source_pass="5.7345E-16" drain_pass="2.6470E-16"/>
+		</size>
+		<size W="3.15" L="1">
+			<current leakage="6.9522E-10"/>
+			<capacitance gate_cmos="1.0332E-16" drain_cmos="3.2715E-16" gate_pass="1.1978E-16" source_pass="5.7828E-16" drain_pass="2.6760E-16"/>
+		</size>
+		<size W="3.22" L="1">
+			<current leakage="7.1183E-10"/>
+			<capacitance gate_cmos="1.0578E-16" drain_cmos="3.3215E-16" gate_pass="1.2263E-16" source_pass="5.8392E-16" drain_pass="2.7099E-16"/>
+		</size>
+		<size W="3.28" L="1">
+			<current leakage="7.2607E-10"/>
+			<capacitance gate_cmos="1.0788E-16" drain_cmos="3.3644E-16" gate_pass="1.2508E-16" source_pass="5.8876E-16" drain_pass="2.7389E-16"/>
+		</size>
+		<size W="3.35" L="1">
+			<current leakage="7.4268E-10"/>
+			<capacitance gate_cmos="1.1034E-16" drain_cmos="3.4143E-16" gate_pass="1.2793E-16" source_pass="5.9440E-16" drain_pass="2.7728E-16"/>
+		</size>
+		<size W="3.41" L="1">
+			<current leakage="7.5692E-10"/>
+			<capacitance gate_cmos="1.1245E-16" drain_cmos="3.4572E-16" gate_pass="1.3038E-16" source_pass="5.9923E-16" drain_pass="2.8018E-16"/>
+		</size>
+		<size W="3.48" L="1">
+			<current leakage="7.7354E-10"/>
+			<capacitance gate_cmos="1.1491E-16" drain_cmos="3.5072E-16" gate_pass="1.3323E-16" source_pass="6.0487E-16" drain_pass="2.8357E-16"/>
+		</size>
+		<size W="3.55" L="1">
+			<current leakage="7.9015E-10"/>
+			<capacitance gate_cmos="1.1737E-16" drain_cmos="3.5572E-16" gate_pass="1.3608E-16" source_pass="6.1052E-16" drain_pass="2.8696E-16"/>
+		</size>
+		<size W="3.62" L="1">
+			<current leakage="8.0676E-10"/>
+			<capacitance gate_cmos="1.1983E-16" drain_cmos="3.6072E-16" gate_pass="1.3894E-16" source_pass="6.1616E-16" drain_pass="2.9035E-16"/>
+		</size>
+		<size W="3.69" L="1">
+			<current leakage="8.2337E-10"/>
+			<capacitance gate_cmos="1.2229E-16" drain_cmos="3.6572E-16" gate_pass="1.4179E-16" source_pass="6.2180E-16" drain_pass="2.9373E-16"/>
+		</size>
+		<size W="3.77" L="1">
+			<current leakage="8.4236E-10"/>
+			<capacitance gate_cmos="1.2510E-16" drain_cmos="3.7143E-16" gate_pass="1.4505E-16" source_pass="6.2824E-16" drain_pass="2.9761E-16"/>
+		</size>
+		<size W="3.84" L="1">
+			<current leakage="8.5897E-10"/>
+			<capacitance gate_cmos="1.2756E-16" drain_cmos="3.7643E-16" gate_pass="1.4790E-16" source_pass="6.3389E-16" drain_pass="3.0099E-16"/>
+		</size>
+		<size W="3.92" L="1">
+			<current leakage="8.7795E-10"/>
+			<capacitance gate_cmos="1.3037E-16" drain_cmos="3.8214E-16" gate_pass="1.5116E-16" source_pass="6.4033E-16" drain_pass="3.0487E-16"/>
+		</size>
+		<size W="4.00" L="1">
+			<current leakage="8.9694E-10"/>
+			<capacitance gate_cmos="1.3318E-16" drain_cmos="3.8785E-16" gate_pass="1.5442E-16" source_pass="6.4678E-16" drain_pass="3.0874E-16"/>
+		</size>
+		<size W="4.08" L="1">
+			<current leakage="9.1593E-10"/>
+			<capacitance gate_cmos="1.3599E-16" drain_cmos="3.9357E-16" gate_pass="1.5768E-16" source_pass="6.5323E-16" drain_pass="3.1261E-16"/>
+		</size>
+		<size W="4.16" L="1">
+			<current leakage="9.3491E-10"/>
+			<capacitance gate_cmos="1.3880E-16" drain_cmos="3.9928E-16" gate_pass="1.6094E-16" source_pass="6.5967E-16" drain_pass="3.1648E-16"/>
+		</size>
+		<size W="4.24" L="1">
+			<current leakage="9.5390E-10"/>
+			<capacitance gate_cmos="1.4161E-16" drain_cmos="4.0499E-16" gate_pass="1.6421E-16" source_pass="6.6612E-16" drain_pass="3.2035E-16"/>
+		</size>
+		<size W="4.33" L="1">
+			<current leakage="9.7526E-10"/>
+			<capacitance gate_cmos="1.4478E-16" drain_cmos="4.1142E-16" gate_pass="1.6787E-16" source_pass="6.7337E-16" drain_pass="3.2471E-16"/>
+		</size>
+		<size W="4.42" L="1">
+			<current leakage="9.9661E-10"/>
+			<capacitance gate_cmos="1.4794E-16" drain_cmos="4.1785E-16" gate_pass="1.7154E-16" source_pass="6.8063E-16" drain_pass="3.2906E-16"/>
+		</size>
+		<size W="4.50" L="1">
+			<current leakage="1.0156E-09"/>
+			<capacitance gate_cmos="1.5075E-16" drain_cmos="4.2356E-16" gate_pass="1.7480E-16" source_pass="6.8707E-16" drain_pass="3.3294E-16"/>
+		</size>
+		<size W="4.59" L="1">
+			<current leakage="1.0370E-09"/>
+			<capacitance gate_cmos="1.5391E-16" drain_cmos="4.2999E-16" gate_pass="1.7847E-16" source_pass="6.9433E-16" drain_pass="3.3729E-16"/>
+		</size>
+		<size W="4.69" L="1">
+			<current leakage="1.0607E-09"/>
+			<capacitance gate_cmos="1.5742E-16" drain_cmos="4.3713E-16" gate_pass="1.8254E-16" source_pass="7.0238E-16" drain_pass="3.4213E-16"/>
+		</size>
+		<size W="4.78" L="1">
+			<current leakage="1.0820E-09"/>
+			<capacitance gate_cmos="1.6059E-16" drain_cmos="4.4356E-16" gate_pass="1.8621E-16" source_pass="7.0964E-16" drain_pass="3.4649E-16"/>
+		</size>
+		<size W="4.88" L="1">
+			<current leakage="1.1058E-09"/>
+			<capacitance gate_cmos="1.6410E-16" drain_cmos="4.5070E-16" gate_pass="1.9029E-16" source_pass="7.1770E-16" drain_pass="3.5133E-16"/>
+		</size>
+		<size W="4.97" L="1">
+			<current leakage="1.1271E-09"/>
+			<capacitance gate_cmos="1.6726E-16" drain_cmos="4.5713E-16" gate_pass="1.9396E-16" source_pass="7.2495E-16" drain_pass="3.5568E-16"/>
+		</size>
+		<size W="5.07" L="1">
+			<current leakage="1.1509E-09"/>
+			<capacitance gate_cmos="1.7078E-16" drain_cmos="4.6427E-16" gate_pass="1.9803E-16" source_pass="7.3301E-16" drain_pass="3.6052E-16"/>
+		</size>
+		<size W="5.17" L="1">
+			<current leakage="1.1746E-09"/>
+			<capacitance gate_cmos="1.7429E-16" drain_cmos="4.7141E-16" gate_pass="2.0211E-16" source_pass="7.4107E-16" drain_pass="3.6536E-16"/>
+		</size>
+		<size W="5.28" L="1">
+			<current leakage="1.2007E-09"/>
+			<capacitance gate_cmos="1.7815E-16" drain_cmos="4.7927E-16" gate_pass="2.0659E-16" source_pass="7.4993E-16" drain_pass="3.7068E-16"/>
+		</size>
+		<size W="5.38" L="1">
+			<current leakage="1.2244E-09"/>
+			<capacitance gate_cmos="1.8167E-16" drain_cmos="4.8641E-16" gate_pass="2.1067E-16" source_pass="7.5799E-16" drain_pass="3.7552E-16"/>
+		</size>
+		<size W="5.49" L="1">
+			<current leakage="1.2505E-09"/>
+			<capacitance gate_cmos="1.8553E-16" drain_cmos="4.9426E-16" gate_pass="2.1515E-16" source_pass="7.6685E-16" drain_pass="3.8085E-16"/>
+		</size>
+		<size W="5.60" L="1">
+			<current leakage="1.2767E-09"/>
+			<capacitance gate_cmos="1.8940E-16" drain_cmos="5.0212E-16" gate_pass="2.1963E-16" source_pass="7.7572E-16" drain_pass="3.8617E-16"/>
+		</size>
+		<size W="5.71" L="1">
+			<current leakage="1.3028E-09"/>
+			<capacitance gate_cmos="1.9326E-16" drain_cmos="5.0998E-16" gate_pass="2.2411E-16" source_pass="7.8458E-16" drain_pass="3.9149E-16"/>
+		</size>
+		<size W="5.83" L="1">
+			<current leakage="1.3312E-09"/>
+			<capacitance gate_cmos="1.9748E-16" drain_cmos="5.1854E-16" gate_pass="2.2900E-16" source_pass="7.9425E-16" drain_pass="3.9730E-16"/>
+		</size>
+		<size W="5.94" L="1">
+			<current leakage="1.3573E-09"/>
+			<capacitance gate_cmos="2.0134E-16" drain_cmos="5.2640E-16" gate_pass="2.3349E-16" source_pass="8.0312E-16" drain_pass="4.0262E-16"/>
+		</size>
+		<size W="6.06" L="1">
+			<current leakage="1.3858E-09"/>
+			<capacitance gate_cmos="2.0556E-16" drain_cmos="5.3497E-16" gate_pass="2.3838E-16" source_pass="8.1279E-16" drain_pass="4.0843E-16"/>
+		</size>
+		<size W="6.18" L="1">
+			<current leakage="1.4143E-09"/>
+			<capacitance gate_cmos="2.0978E-16" drain_cmos="5.4354E-16" gate_pass="2.4327E-16" source_pass="8.2246E-16" drain_pass="4.1423E-16"/>
+		</size>
+		<size W="6.31" L="1">
+			<current leakage="1.4452E-09"/>
+			<capacitance gate_cmos="2.1434E-16" drain_cmos="5.5282E-16" gate_pass="2.4857E-16" source_pass="8.3293E-16" drain_pass="4.2053E-16"/>
+		</size>
+		<size W="6.43" L="1">
+			<current leakage="1.4736E-09"/>
+			<capacitance gate_cmos="2.1856E-16" drain_cmos="5.6139E-16" gate_pass="2.5346E-16" source_pass="8.4260E-16" drain_pass="4.2633E-16"/>
+		</size>
+		<size W="6.56" L="1">
+			<current leakage="1.5045E-09"/>
+			<capacitance gate_cmos="2.2313E-16" drain_cmos="5.7068E-16" gate_pass="2.5875E-16" source_pass="8.5308E-16" drain_pass="4.3262E-16"/>
+		</size>
+		<size W="6.69" L="1">
+			<current leakage="1.5353E-09"/>
+			<capacitance gate_cmos="2.2770E-16" drain_cmos="5.7996E-16" gate_pass="2.6405E-16" source_pass="8.6356E-16" drain_pass="4.3891E-16"/>
+		</size>
+		<size W="6.83" L="1">
+			<current leakage="1.5686E-09"/>
+			<capacitance gate_cmos="2.3261E-16" drain_cmos="5.8996E-16" gate_pass="2.6976E-16" source_pass="8.7484E-16" drain_pass="4.4569E-16"/>
+		</size>
+		<size W="6.96" L="1">
+			<current leakage="1.5994E-09"/>
+			<capacitance gate_cmos="2.3718E-16" drain_cmos="5.9924E-16" gate_pass="2.7506E-16" source_pass="8.8532E-16" drain_pass="4.5198E-16"/>
+		</size>
+		<size W="7.10" L="1">
+			<current leakage="1.6326E-09"/>
+			<capacitance gate_cmos="2.4210E-16" drain_cmos="6.0924E-16" gate_pass="2.8076E-16" source_pass="8.9660E-16" drain_pass="4.5875E-16"/>
+		</size>
+		<size W="7.24" L="1">
+			<current leakage="1.6659E-09"/>
+			<capacitance gate_cmos="2.4702E-16" drain_cmos="6.1924E-16" gate_pass="2.8647E-16" source_pass="9.0788E-16" drain_pass="4.6553E-16"/>
+		</size>
+		<size W="7.39" L="1">
+			<current leakage="1.7015E-09"/>
+			<capacitance gate_cmos="2.5229E-16" drain_cmos="6.2995E-16" gate_pass="2.9258E-16" source_pass="9.1997E-16" drain_pass="4.7278E-16"/>
+		</size>
+		<size W="7.54" L="1">
+			<current leakage="1.7371E-09"/>
+			<capacitance gate_cmos="2.5756E-16" drain_cmos="6.4067E-16" gate_pass="2.9869E-16" source_pass="9.3206E-16" drain_pass="4.8004E-16"/>
+		</size>
+		<size W="7.69" L="1">
+			<current leakage="1.7727E-09"/>
+			<capacitance gate_cmos="2.6283E-16" drain_cmos="6.5138E-16" gate_pass="3.0481E-16" source_pass="9.4414E-16" drain_pass="4.8730E-16"/>
+		</size>
+		<size W="7.84" L="1">
+			<current leakage="1.8083E-09"/>
+			<capacitance gate_cmos="2.6810E-16" drain_cmos="6.6209E-16" gate_pass="3.1092E-16" source_pass="9.5623E-16" drain_pass="4.9456E-16"/>
+		</size>
+		<size W="8.00" L="1">
+			<current leakage="1.8462E-09"/>
+			<capacitance gate_cmos="2.7372E-16" drain_cmos="6.7352E-16" gate_pass="3.1744E-16" source_pass="9.6913E-16" drain_pass="5.0230E-16"/>
+		</size>
+		<size W="8.16" L="1">
+			<current leakage="1.8842E-09"/>
+			<capacitance gate_cmos="2.7934E-16" drain_cmos="6.8494E-16" gate_pass="3.2396E-16" source_pass="9.8202E-16" drain_pass="5.1004E-16"/>
+		</size>
+		<size W="8.32" L="1">
+			<current leakage="1.9222E-09"/>
+			<capacitance gate_cmos="2.8497E-16" drain_cmos="6.9637E-16" gate_pass="3.3048E-16" source_pass="9.9491E-16" drain_pass="5.1778E-16"/>
+		</size>
+		<size W="8.49" L="1">
+			<current leakage="1.9625E-09"/>
+			<capacitance gate_cmos="2.9094E-16" drain_cmos="7.0851E-16" gate_pass="3.3741E-16" source_pass="1.0086E-15" drain_pass="5.2600E-16"/>
+		</size>
+		<size W="8.66" L="1">
+			<current leakage="2.0029E-09"/>
+			<capacitance gate_cmos="2.9691E-16" drain_cmos="7.2065E-16" gate_pass="3.4434E-16" source_pass="1.0223E-15" drain_pass="5.3423E-16"/>
+		</size>
+		<size W="8.83" L="1">
+			<current leakage="2.0432E-09"/>
+			<capacitance gate_cmos="3.0289E-16" drain_cmos="7.3279E-16" gate_pass="3.5126E-16" source_pass="1.0360E-15" drain_pass="5.4245E-16"/>
+		</size>
+		<size W="9.01" L="1">
+			<current leakage="2.0859E-09"/>
+			<capacitance gate_cmos="3.0921E-16" drain_cmos="7.4565E-16" gate_pass="3.5860E-16" source_pass="1.0505E-15" drain_pass="5.5116E-16"/>
+		</size>
+		<size W="9.19" L="1">
+			<current leakage="2.1286E-09"/>
+			<capacitance gate_cmos="3.1553E-16" drain_cmos="7.5850E-16" gate_pass="3.6593E-16" source_pass="1.0650E-15" drain_pass="5.5987E-16"/>
+		</size>
+		<size W="9.37" L="1">
+			<current leakage="2.1714E-09"/>
+			<capacitance gate_cmos="3.2186E-16" drain_cmos="7.7136E-16" gate_pass="3.7327E-16" source_pass="1.0795E-15" drain_pass="5.6858E-16"/>
+		</size>
+		<size W="9.56" L="1">
+			<current leakage="2.2165E-09"/>
+			<capacitance gate_cmos="3.2853E-16" drain_cmos="7.8492E-16" gate_pass="3.8101E-16" source_pass="1.0948E-15" drain_pass="5.7777E-16"/>
+		</size>
+		<size W="9.75" L="1">
+			<current leakage="2.2615E-09"/>
+			<capacitance gate_cmos="3.3521E-16" drain_cmos="7.9849E-16" gate_pass="3.8876E-16" source_pass="1.1102E-15" drain_pass="5.8696E-16"/>
+		</size>
+		<size W="9.95" L="1">
+			<current leakage="2.3090E-09"/>
+			<capacitance gate_cmos="3.4224E-16" drain_cmos="8.1278E-16" gate_pass="3.9691E-16" source_pass="1.1263E-15" drain_pass="5.9664E-16"/>
+		</size>
+		<size W="10.14" L="1">
+			<current leakage="2.3541E-09"/>
+			<capacitance gate_cmos="3.4891E-16" drain_cmos="8.2635E-16" gate_pass="4.0465E-16" source_pass="1.1416E-15" drain_pass="6.0583E-16"/>
+		</size>
+		<size W="10.35" L="1">
+			<current leakage="2.4039E-09"/>
+			<capacitance gate_cmos="3.5629E-16" drain_cmos="8.4134E-16" gate_pass="4.1321E-16" source_pass="1.1585E-15" drain_pass="6.1599E-16"/>
+		</size>
+		<size W="10.55" L="1">
+			<current leakage="2.4514E-09"/>
+			<capacitance gate_cmos="3.6332E-16" drain_cmos="8.5563E-16" gate_pass="4.2136E-16" source_pass="1.1746E-15" drain_pass="6.2566E-16"/>
+		</size>
+		<size W="10.77" L="1">
+			<current leakage="2.5036E-09"/>
+			<capacitance gate_cmos="3.7105E-16" drain_cmos="8.7134E-16" gate_pass="4.3032E-16" source_pass="1.1924E-15" drain_pass="6.3630E-16"/>
+		</size>
+		<size W="10.98" L="1">
+			<current leakage="2.5535E-09"/>
+			<capacitance gate_cmos="3.7843E-16" drain_cmos="8.8633E-16" gate_pass="4.3888E-16" source_pass="1.2093E-15" drain_pass="6.4646E-16"/>
+		</size>
+		<size W="11.20" L="1">
+			<current leakage="2.6057E-09"/>
+			<capacitance gate_cmos="3.8616E-16" drain_cmos="9.0205E-16" gate_pass="4.4785E-16" source_pass="1.2270E-15" drain_pass="6.5710E-16"/>
+		</size>
+		<size W="11.42" L="1">
+			<current leakage="2.6579E-09"/>
+			<capacitance gate_cmos="3.9389E-16" drain_cmos="9.1776E-16" gate_pass="4.5682E-16" source_pass="1.2447E-15" drain_pass="6.6774E-16"/>
+		</size>
+		<size W="11.65" L="1">
+			<current leakage="2.7125E-09"/>
+			<capacitance gate_cmos="4.0197E-16" drain_cmos="9.3418E-16" gate_pass="4.6619E-16" source_pass="1.2633E-15" drain_pass="6.7887E-16"/>
+		</size>
+		<size W="11.89" L="1">
+			<current leakage="2.7694E-09"/>
+			<capacitance gate_cmos="4.1040E-16" drain_cmos="9.5132E-16" gate_pass="4.7597E-16" source_pass="1.2826E-15" drain_pass="6.9048E-16"/>
+		</size>
+		<size W="12.12" L="1">
+			<current leakage="2.8240E-09"/>
+			<capacitance gate_cmos="4.1848E-16" drain_cmos="9.6775E-16" gate_pass="4.8535E-16" source_pass="1.3011E-15" drain_pass="7.0160E-16"/>
+		</size>
+		<size W="12.37" L="1">
+			<current leakage="2.8833E-09"/>
+			<capacitance gate_cmos="4.2726E-16" drain_cmos="9.8560E-16" gate_pass="4.9554E-16" source_pass="1.3213E-15" drain_pass="7.1369E-16"/>
+		</size>
+		<size W="12.61" L="1">
+			<current leakage="2.9403E-09"/>
+			<capacitance gate_cmos="4.3570E-16" drain_cmos="1.0027E-15" gate_pass="5.0532E-16" source_pass="1.3406E-15" drain_pass="7.2530E-16"/>
+		</size>
+		<size W="12.87" L="1">
+			<current leakage="3.0020E-09"/>
+			<capacitance gate_cmos="4.4483E-16" drain_cmos="1.0213E-15" gate_pass="5.1591E-16" source_pass="1.3616E-15" drain_pass="7.3788E-16"/>
+		</size>
+		<size W="13.12" L="1">
+			<current leakage="3.0613E-09"/>
+			<capacitance gate_cmos="4.5362E-16" drain_cmos="1.0392E-15" gate_pass="5.2610E-16" source_pass="1.3817E-15" drain_pass="7.4997E-16"/>
+		</size>
+		<size W="13.39" L="1">
+			<current leakage="3.1254E-09"/>
+			<capacitance gate_cmos="4.6310E-16" drain_cmos="1.0584E-15" gate_pass="5.3710E-16" source_pass="1.4035E-15" drain_pass="7.6303E-16"/>
+		</size>
+		<size W="13.65" L="1">
+			<current leakage="3.1871E-09"/>
+			<capacitance gate_cmos="4.7224E-16" drain_cmos="1.0770E-15" gate_pass="5.4770E-16" source_pass="1.4244E-15" drain_pass="7.7560E-16"/>
+		</size>
+		<size W="13.93" L="1">
+			<current leakage="3.2536E-09"/>
+			<capacitance gate_cmos="4.8208E-16" drain_cmos="1.0970E-15" gate_pass="5.5911E-16" source_pass="1.4470E-15" drain_pass="7.8914E-16"/>
+		</size>
+		<size W="14.20" L="1">
+			<current leakage="3.3176E-09"/>
+			<capacitance gate_cmos="4.9156E-16" drain_cmos="1.1163E-15" gate_pass="5.7011E-16" source_pass="1.4688E-15" drain_pass="8.0220E-16"/>
+		</size>
+		<size W="14.49" L="1">
+			<current leakage="3.3865E-09"/>
+			<capacitance gate_cmos="5.0175E-16" drain_cmos="1.1370E-15" gate_pass="5.8193E-16" source_pass="1.4921E-15" drain_pass="8.1623E-16"/>
+		</size>
+		<size W="14.78" L="1">
+			<current leakage="3.4553E-09"/>
+			<capacitance gate_cmos="5.1194E-16" drain_cmos="1.1577E-15" gate_pass="5.9375E-16" source_pass="1.5155E-15" drain_pass="8.3025E-16"/>
+		</size>
+		<size W="15.07" L="1">
+			<current leakage="3.5241E-09"/>
+			<capacitance gate_cmos="5.2213E-16" drain_cmos="1.1784E-15" gate_pass="6.0557E-16" source_pass="1.5389E-15" drain_pass="8.4428E-16"/>
+		</size>
+		<size W="15.38" L="1">
+			<current leakage="3.5977E-09"/>
+			<capacitance gate_cmos="5.3302E-16" drain_cmos="1.2006E-15" gate_pass="6.1820E-16" source_pass="1.5639E-15" drain_pass="8.5927E-16"/>
+		</size>
+		<size W="15.68" L="1">
+			<current leakage="3.6689E-09"/>
+			<capacitance gate_cmos="5.4356E-16" drain_cmos="1.2220E-15" gate_pass="6.3042E-16" source_pass="1.5880E-15" drain_pass="8.7377E-16"/>
+		</size>
+		<size W="16.00" L="1">
+			<current leakage="3.7448E-09"/>
+			<capacitance gate_cmos="5.5481E-16" drain_cmos="1.2448E-15" gate_pass="6.4347E-16" source_pass="1.6138E-15" drain_pass="8.8925E-16"/>
+		</size>
+		<size W="16.32" L="1">
+			<current leakage="3.8208E-09"/>
+			<capacitance gate_cmos="5.6605E-16" drain_cmos="1.2677E-15" gate_pass="6.5651E-16" source_pass="1.6396E-15" drain_pass="9.0472E-16"/>
+		</size>
+		<size W="16.64" L="1">
+			<current leakage="3.8967E-09"/>
+			<capacitance gate_cmos="5.7729E-16" drain_cmos="1.2905E-15" gate_pass="6.6955E-16" source_pass="1.6654E-15" drain_pass="9.2020E-16"/>
+		</size>
+		<size W="16.98" L="1">
+			<current leakage="3.9774E-09"/>
+			<capacitance gate_cmos="5.8924E-16" drain_cmos="1.3148E-15" gate_pass="6.8340E-16" source_pass="1.6928E-15" drain_pass="9.3664E-16"/>
+		</size>
+		<size W="17.32" L="1">
+			<current leakage="4.0581E-09"/>
+			<capacitance gate_cmos="6.0118E-16" drain_cmos="1.3391E-15" gate_pass="6.9726E-16" source_pass="1.7202E-15" drain_pass="9.5308E-16"/>
+		</size>
+		<size W="17.66" L="1">
+			<current leakage="4.1388E-09"/>
+			<capacitance gate_cmos="6.1313E-16" drain_cmos="1.3634E-15" gate_pass="7.1111E-16" source_pass="1.7476E-15" drain_pass="9.6952E-16"/>
+		</size>
+		<size W="18.01" L="1">
+			<current leakage="4.2219E-09"/>
+			<capacitance gate_cmos="6.2543E-16" drain_cmos="1.3884E-15" gate_pass="7.2538E-16" source_pass="1.7758E-15" drain_pass="9.8644E-16"/>
+		</size>
+		<size W="18.37" L="1">
+			<current leakage="4.3073E-09"/>
+			<capacitance gate_cmos="6.3808E-16" drain_cmos="1.4141E-15" gate_pass="7.4005E-16" source_pass="1.8048E-15" drain_pass="1.0038E-15"/>
+		</size>
+		<size W="18.74" L="1">
+			<current leakage="4.3951E-09"/>
+			<capacitance gate_cmos="6.5108E-16" drain_cmos="1.4405E-15" gate_pass="7.5512E-16" source_pass="1.8346E-15" drain_pass="1.0217E-15"/>
+		</size>
+		<size W="19.12" L="1">
+			<current leakage="4.4853E-09"/>
+			<capacitance gate_cmos="6.6443E-16" drain_cmos="1.4677E-15" gate_pass="7.7061E-16" source_pass="1.8652E-15" drain_pass="1.0401E-15"/>
+		</size>
+		<size W="19.50" L="1">
+			<current leakage="4.5755E-09"/>
+			<capacitance gate_cmos="6.7778E-16" drain_cmos="1.4948E-15" gate_pass="7.8609E-16" source_pass="1.8959E-15" drain_pass="1.0585E-15"/>
+		</size>
+		<size W="19.89" L="1">
+			<current leakage="4.6680E-09"/>
+			<capacitance gate_cmos="6.9148E-16" drain_cmos="1.5226E-15" gate_pass="8.0199E-16" source_pass="1.9273E-15" drain_pass="1.0773E-15"/>
+		</size>
+		<size W="20.29" L="1">
+			<current leakage="4.7630E-09"/>
+			<capacitance gate_cmos="7.0554E-16" drain_cmos="1.5512E-15" gate_pass="8.1829E-16" source_pass="1.9595E-15" drain_pass="1.0967E-15"/>
+		</size>
+		<size W="20.69" L="1">
+			<current leakage="4.8579E-09"/>
+			<capacitance gate_cmos="7.1959E-16" drain_cmos="1.5798E-15" gate_pass="8.3459E-16" source_pass="1.9918E-15" drain_pass="1.1160E-15"/>
+		</size>
+		<size W="21.11" L="1">
+			<current leakage="4.9576E-09"/>
+			<capacitance gate_cmos="7.3435E-16" drain_cmos="1.6098E-15" gate_pass="8.5170E-16" source_pass="2.0256E-15" drain_pass="1.1363E-15"/>
+		</size>
+		<size W="21.53" L="1">
+			<current leakage="5.0573E-09"/>
+			<capacitance gate_cmos="7.4910E-16" drain_cmos="1.6398E-15" gate_pass="8.6882E-16" source_pass="2.0595E-15" drain_pass="1.1566E-15"/>
+		</size>
+		<size W="21.96" L="1">
+			<current leakage="5.1593E-09"/>
+			<capacitance gate_cmos="7.6421E-16" drain_cmos="1.6705E-15" gate_pass="8.8634E-16" source_pass="2.0941E-15" drain_pass="1.1774E-15"/>
+		</size>
+		<size W="22.40" L="1">
+			<current leakage="5.2637E-09"/>
+			<capacitance gate_cmos="7.7967E-16" drain_cmos="1.7019E-15" gate_pass="9.0427E-16" source_pass="2.1296E-15" drain_pass="1.1987E-15"/>
+		</size>
+		<size W="22.85" L="1">
+			<current leakage="5.3705E-09"/>
+			<capacitance gate_cmos="7.9548E-16" drain_cmos="1.7340E-15" gate_pass="9.2261E-16" source_pass="2.1658E-15" drain_pass="1.2204E-15"/>
+		</size>
+		<size W="23.30" L="1">
+			<current leakage="5.4773E-09"/>
+			<capacitance gate_cmos="8.1129E-16" drain_cmos="1.7662E-15" gate_pass="9.4095E-16" source_pass="2.2021E-15" drain_pass="1.2422E-15"/>
+		</size>
+		<size W="23.77" L="1">
+			<current leakage="5.5889E-09"/>
+			<capacitance gate_cmos="8.2781E-16" drain_cmos="1.7997E-15" gate_pass="9.6010E-16" source_pass="2.2400E-15" drain_pass="1.2649E-15"/>
+		</size>
+		<size W="24.25" L="1">
+			<current leakage="5.7028E-09"/>
+			<capacitance gate_cmos="8.4467E-16" drain_cmos="1.8340E-15" gate_pass="9.7966E-16" source_pass="2.2787E-15" drain_pass="1.2881E-15"/>
+		</size>
+		<size W="24.73" L="1">
+			<current leakage="5.8167E-09"/>
+			<capacitance gate_cmos="8.6154E-16" drain_cmos="1.8683E-15" gate_pass="9.9922E-16" source_pass="2.3173E-15" drain_pass="1.3113E-15"/>
+		</size>
+		<size W="25.22" L="1">
+			<current leakage="5.9330E-09"/>
+			<capacitance gate_cmos="8.7875E-16" drain_cmos="1.9033E-15" gate_pass="1.0192E-15" source_pass="2.3568E-15" drain_pass="1.3350E-15"/>
+		</size>
+		<size W="25.73" L="1">
+			<current leakage="6.0540E-09"/>
+			<capacitance gate_cmos="8.9667E-16" drain_cmos="1.9397E-15" gate_pass="1.0400E-15" source_pass="2.3979E-15" drain_pass="1.3597E-15"/>
+		</size>
+		<size W="26.24" L="1">
+			<current leakage="6.1751E-09"/>
+			<capacitance gate_cmos="9.1459E-16" drain_cmos="1.9761E-15" gate_pass="1.0608E-15" source_pass="2.4390E-15" drain_pass="1.3843E-15"/>
+		</size>
+		<size W="26.77" L="1">
+			<current leakage="6.3008E-09"/>
+			<capacitance gate_cmos="9.3321E-16" drain_cmos="2.0140E-15" gate_pass="1.0823E-15" source_pass="2.4817E-15" drain_pass="1.4099E-15"/>
+		</size>
+		<size W="27.30" L="1">
+			<current leakage="6.4266E-09"/>
+			<capacitance gate_cmos="9.5183E-16" drain_cmos="2.0518E-15" gate_pass="1.1039E-15" source_pass="2.5244E-15" drain_pass="1.4355E-15"/>
+		</size>
+		<size W="27.85" L="1">
+			<current leakage="6.5572E-09"/>
+			<capacitance gate_cmos="9.7116E-16" drain_cmos="2.0911E-15" gate_pass="1.1264E-15" source_pass="2.5688E-15" drain_pass="1.4621E-15"/>
+		</size>
+		<size W="28.41" L="1">
+			<current leakage="6.6901E-09"/>
+			<capacitance gate_cmos="9.9084E-16" drain_cmos="2.1311E-15" gate_pass="1.1492E-15" source_pass="2.6139E-15" drain_pass="1.4892E-15"/>
+		</size>
+		<size W="28.98" L="1">
+			<current leakage="6.8253E-09"/>
+			<capacitance gate_cmos="1.0109E-15" drain_cmos="2.1718E-15" gate_pass="1.1724E-15" source_pass="2.6598E-15" drain_pass="1.5167E-15"/>
+		</size>
+		<size W="29.55" L="1">
+			<current leakage="6.9606E-09"/>
+			<capacitance gate_cmos="1.0309E-15" drain_cmos="2.2125E-15" gate_pass="1.1956E-15" source_pass="2.7058E-15" drain_pass="1.5443E-15"/>
+		</size>
+		<size W="30.15" L="1">
+			<current leakage="7.1030E-09"/>
+			<capacitance gate_cmos="1.0520E-15" drain_cmos="2.2554E-15" gate_pass="1.2201E-15" source_pass="2.7541E-15" drain_pass="1.5733E-15"/>
+		</size>
+		<size W="30.75" L="1">
+			<current leakage="7.2454E-09"/>
+			<capacitance gate_cmos="1.0731E-15" drain_cmos="2.2982E-15" gate_pass="1.2445E-15" source_pass="2.8025E-15" drain_pass="1.6023E-15"/>
+		</size>
+		<size W="31.36" L="1">
+			<current leakage="7.3902E-09"/>
+			<capacitance gate_cmos="1.0945E-15" drain_cmos="2.3418E-15" gate_pass="1.2694E-15" source_pass="2.8516E-15" drain_pass="1.6317E-15"/>
+		</size>
+		<size W="31.99" L="1">
+			<current leakage="7.5397E-09"/>
+			<capacitance gate_cmos="1.1166E-15" drain_cmos="2.3868E-15" gate_pass="1.2951E-15" source_pass="2.9024E-15" drain_pass="1.6622E-15"/>
+		</size>
+		<size W="32.63" L="1">
+			<current leakage="7.6916E-09"/>
+			<capacitance gate_cmos="1.1391E-15" drain_cmos="2.4325E-15" gate_pass="1.3211E-15" source_pass="2.9540E-15" drain_pass="1.6931E-15"/>
+		</size>
+		<size W="33.28" L="1">
+			<current leakage="7.8458E-09"/>
+			<capacitance gate_cmos="1.1619E-15" drain_cmos="2.4789E-15" gate_pass="1.3476E-15" source_pass="3.0064E-15" drain_pass="1.7245E-15"/>
+		</size>
+		<size W="33.95" L="1">
+			<current leakage="8.0048E-09"/>
+			<capacitance gate_cmos="1.1855E-15" drain_cmos="2.5267E-15" gate_pass="1.3749E-15" source_pass="3.0603E-15" drain_pass="1.7569E-15"/>
+		</size>
+		<size W="34.63" L="1">
+			<current leakage="8.1662E-09"/>
+			<capacitance gate_cmos="1.2094E-15" drain_cmos="2.5753E-15" gate_pass="1.4026E-15" source_pass="3.1151E-15" drain_pass="1.7898E-15"/>
+		</size>
+		<size W="35.32" L="1">
+			<current leakage="8.3300E-09"/>
+			<capacitance gate_cmos="1.2336E-15" drain_cmos="2.6246E-15" gate_pass="1.4308E-15" source_pass="3.1708E-15" drain_pass="1.8231E-15"/>
+		</size>
+		<size W="36.03" L="1">
+			<current leakage="8.4985E-09"/>
+			<capacitance gate_cmos="1.2586E-15" drain_cmos="2.6753E-15" gate_pass="1.4597E-15" source_pass="3.2280E-15" drain_pass="1.8574E-15"/>
+		</size>
+		<size W="36.75" L="1">
+			<current leakage="8.6694E-09"/>
+			<capacitance gate_cmos="1.2839E-15" drain_cmos="2.7267E-15" gate_pass="1.4890E-15" source_pass="3.2860E-15" drain_pass="1.8922E-15"/>
+		</size>
+		<size W="37.48" L="1">
+			<current leakage="8.8426E-09"/>
+			<capacitance gate_cmos="1.3095E-15" drain_cmos="2.7788E-15" gate_pass="1.5188E-15" source_pass="3.3448E-15" drain_pass="1.9275E-15"/>
+		</size>
+		<size W="38.23" L="1">
+			<current leakage="9.0206E-09"/>
+			<capacitance gate_cmos="1.3359E-15" drain_cmos="2.8324E-15" gate_pass="1.5493E-15" source_pass="3.4053E-15" drain_pass="1.9637E-15"/>
+		</size>
+		<size W="39.00" L="1">
+			<current leakage="9.2033E-09"/>
+			<capacitance gate_cmos="1.3629E-15" drain_cmos="2.8874E-15" gate_pass="1.5807E-15" source_pass="3.4673E-15" drain_pass="2.0009E-15"/>
+		</size>
+		<size W="39.78" L="1">
+			<current leakage="9.3885E-09"/>
+			<capacitance gate_cmos="1.3903E-15" drain_cmos="2.9431E-15" gate_pass="1.6125E-15" source_pass="3.5302E-15" drain_pass="2.0386E-15"/>
+		</size>
+		<size W="40.57" L="1">
+			<current leakage="9.5760E-09"/>
+			<capacitance gate_cmos="1.4181E-15" drain_cmos="2.9995E-15" gate_pass="1.6447E-15" source_pass="3.5938E-15" drain_pass="2.0768E-15"/>
+		</size>
+		<size W="41.38" L="1">
+			<current leakage="9.7682E-09"/>
+			<capacitance gate_cmos="1.4465E-15" drain_cmos="3.0574E-15" gate_pass="1.6777E-15" source_pass="3.6591E-15" drain_pass="2.1159E-15"/>
+		</size>
+		<size W="42.21" L="1">
+			<current leakage="9.9652E-09"/>
+			<capacitance gate_cmos="1.4757E-15" drain_cmos="3.1166E-15" gate_pass="1.7115E-15" source_pass="3.7260E-15" drain_pass="2.1560E-15"/>
+		</size>
+		<size W="43.06" L="1">
+			<current leakage="1.0167E-08"/>
+			<capacitance gate_cmos="1.5056E-15" drain_cmos="3.1773E-15" gate_pass="1.7461E-15" source_pass="3.7945E-15" drain_pass="2.1971E-15"/>
+		</size>
+		<size W="43.92" L="1">
+			<current leakage="1.0371E-08"/>
+			<capacitance gate_cmos="1.5358E-15" drain_cmos="3.2388E-15" gate_pass="1.7812E-15" source_pass="3.8638E-15" drain_pass="2.2386E-15"/>
+		</size>
+		<size W="44.80" L="1">
+			<current leakage="1.0580E-08"/>
+			<capacitance gate_cmos="1.5667E-15" drain_cmos="3.3016E-15" gate_pass="1.8170E-15" source_pass="3.9347E-15" drain_pass="2.2811E-15"/>
+		</size>
+		<size W="45.69" L="1">
+			<current leakage="1.0791E-08"/>
+			<capacitance gate_cmos="1.5980E-15" drain_cmos="3.3652E-15" gate_pass="1.8533E-15" source_pass="4.0064E-15" drain_pass="2.3241E-15"/>
+		</size>
+		<size W="46.61" L="1">
+			<current leakage="1.1009E-08"/>
+			<capacitance gate_cmos="1.6303E-15" drain_cmos="3.4309E-15" gate_pass="1.8908E-15" source_pass="4.0806E-15" drain_pass="2.3686E-15"/>
+		</size>
+		<size W="47.54" L="1">
+			<current leakage="1.1230E-08"/>
+			<capacitance gate_cmos="1.6630E-15" drain_cmos="3.4973E-15" gate_pass="1.9287E-15" source_pass="4.1555E-15" drain_pass="2.4135E-15"/>
+		</size>
+		<size W="48.49" L="1">
+			<current leakage="1.1456E-08"/>
+			<capacitance gate_cmos="1.6964E-15" drain_cmos="3.5651E-15" gate_pass="1.9674E-15" source_pass="4.2321E-15" drain_pass="2.4594E-15"/>
+		</size>
+		<size W="49.46" L="1">
+			<current leakage="1.1686E-08"/>
+			<capacitance gate_cmos="1.7304E-15" drain_cmos="3.6344E-15" gate_pass="2.0069E-15" source_pass="4.3102E-15" drain_pass="2.5062E-15"/>
+		</size>
+		<size W="50.45" L="1">
+			<current leakage="1.1921E-08"/>
+			<capacitance gate_cmos="1.7652E-15" drain_cmos="3.7051E-15" gate_pass="2.0473E-15" source_pass="4.3900E-15" drain_pass="2.5540E-15"/>
+		</size>
+		<size W="51.46" L="1">
+			<current leakage="1.2160E-08"/>
+			<capacitance gate_cmos="1.8007E-15" drain_cmos="3.7772E-15" gate_pass="2.0884E-15" source_pass="4.4714E-15" drain_pass="2.6028E-15"/>
+		</size>
+		<size W="52.48" L="1">
+			<current leakage="1.2403E-08"/>
+			<capacitance gate_cmos="1.8365E-15" drain_cmos="3.8501E-15" gate_pass="2.1300E-15" source_pass="4.5536E-15" drain_pass="2.6521E-15"/>
+		</size>
+		<size W="53.53" L="1">
+			<current leakage="1.2652E-08"/>
+			<capacitance gate_cmos="1.8734E-15" drain_cmos="3.9251E-15" gate_pass="2.1728E-15" source_pass="4.6382E-15" drain_pass="2.7028E-15"/>
+		</size>
+		<size W="54.61" L="1">
+			<current leakage="1.2908E-08"/>
+			<capacitance gate_cmos="1.9114E-15" drain_cmos="4.0022E-15" gate_pass="2.2168E-15" source_pass="4.7253E-15" drain_pass="2.7550E-15"/>
+		</size>
+		<size W="55.70" L="1">
+			<current leakage="1.3167E-08"/>
+			<capacitance gate_cmos="1.9497E-15" drain_cmos="4.0800E-15" gate_pass="2.2612E-15" source_pass="4.8131E-15" drain_pass="2.8076E-15"/>
+		</size>
+		<size W="56.81" L="1">
+			<current leakage="1.3430E-08"/>
+			<capacitance gate_cmos="1.9887E-15" drain_cmos="4.1593E-15" gate_pass="2.3064E-15" source_pass="4.9026E-15" drain_pass="2.8612E-15"/>
+		</size>
+		<size W="57.95" L="1">
+			<current leakage="1.3701E-08"/>
+			<capacitance gate_cmos="2.0287E-15" drain_cmos="4.2407E-15" gate_pass="2.3529E-15" source_pass="4.9944E-15" drain_pass="2.9163E-15"/>
+		</size>
+		<size W="59.11" L="1">
+			<current leakage="1.3976E-08"/>
+			<capacitance gate_cmos="2.0695E-15" drain_cmos="4.3236E-15" gate_pass="2.4001E-15" source_pass="5.0879E-15" drain_pass="2.9723E-15"/>
+		</size>
+		<size W="60.29" L="1">
+			<current leakage="1.4256E-08"/>
+			<capacitance gate_cmos="2.1109E-15" drain_cmos="4.4078E-15" gate_pass="2.4482E-15" source_pass="5.1830E-15" drain_pass="3.0293E-15"/>
+		</size>
+		<size W="61.49" L="1">
+			<current leakage="1.4541E-08"/>
+			<capacitance gate_cmos="2.1531E-15" drain_cmos="4.4935E-15" gate_pass="2.4971E-15" source_pass="5.2797E-15" drain_pass="3.0872E-15"/>
+		</size>
+		<size W="62.72" L="1">
+			<current leakage="1.4833E-08"/>
+			<capacitance gate_cmos="2.1963E-15" drain_cmos="4.5814E-15" gate_pass="2.5472E-15" source_pass="5.3788E-15" drain_pass="3.1466E-15"/>
+		</size>
+		<size W="63.98" L="1">
+			<current leakage="1.5132E-08"/>
+			<capacitance gate_cmos="2.2406E-15" drain_cmos="4.6714E-15" gate_pass="2.5986E-15" source_pass="5.4804E-15" drain_pass="3.2075E-15"/>
+		</size>
+		<size W="65.26" L="1">
+			<current leakage="1.5436E-08"/>
+			<capacitance gate_cmos="2.2856E-15" drain_cmos="4.7628E-15" gate_pass="2.6507E-15" source_pass="5.5835E-15" drain_pass="3.2693E-15"/>
+		</size>
+		<size W="66.56" L="1">
+			<current leakage="1.5744E-08"/>
+			<capacitance gate_cmos="2.3312E-15" drain_cmos="4.8556E-15" gate_pass="2.7037E-15" source_pass="5.6883E-15" drain_pass="3.3320E-15"/>
+		</size>
+		<size W="67.89" L="1">
+			<current leakage="1.6060E-08"/>
+			<capacitance gate_cmos="2.3780E-15" drain_cmos="4.9506E-15" gate_pass="2.7579E-15" source_pass="5.7955E-15" drain_pass="3.3963E-15"/>
+		</size>
+		<size W="69.25" L="1">
+			<current leakage="1.6382E-08"/>
+			<capacitance gate_cmos="2.4258E-15" drain_cmos="5.0477E-15" gate_pass="2.8133E-15" source_pass="5.9051E-15" drain_pass="3.4619E-15"/>
+		</size>
+		<size W="70.64" L="1">
+			<current leakage="1.6712E-08"/>
+			<capacitance gate_cmos="2.4746E-15" drain_cmos="5.1470E-15" gate_pass="2.8699E-15" source_pass="6.0171E-15" drain_pass="3.5290E-15"/>
+		</size>
+		<size W="72.05" L="1">
+			<current leakage="1.7047E-08"/>
+			<capacitance gate_cmos="2.5241E-15" drain_cmos="5.2477E-15" gate_pass="2.9274E-15" source_pass="6.1307E-15" drain_pass="3.5971E-15"/>
+		</size>
+		<size W="73.49" L="1">
+			<current leakage="1.7389E-08"/>
+			<capacitance gate_cmos="2.5747E-15" drain_cmos="5.3505E-15" gate_pass="2.9861E-15" source_pass="6.2467E-15" drain_pass="3.6666E-15"/>
+		</size>
+		<size W="74.96" L="1">
+			<current leakage="1.7738E-08"/>
+			<capacitance gate_cmos="2.6264E-15" drain_cmos="5.4555E-15" gate_pass="3.0459E-15" source_pass="6.3652E-15" drain_pass="3.7376E-15"/>
+		</size>
+		<size W="76.46" L="1">
+			<current leakage="1.8094E-08"/>
+			<capacitance gate_cmos="2.6791E-15" drain_cmos="5.5626E-15" gate_pass="3.1071E-15" source_pass="6.4861E-15" drain_pass="3.8100E-15"/>
+		</size>
+		<size W="77.99" L="1">
+			<current leakage="1.8457E-08"/>
+			<capacitance gate_cmos="2.7328E-15" drain_cmos="5.6719E-15" gate_pass="3.1694E-15" source_pass="6.6094E-15" drain_pass="3.8839E-15"/>
+		</size>
+		<size W="79.55" L="1">
+			<current leakage="1.8827E-08"/>
+			<capacitance gate_cmos="2.7877E-15" drain_cmos="5.7833E-15" gate_pass="3.2330E-15" source_pass="6.7351E-15" drain_pass="3.9592E-15"/>
+		</size>
+		<size W="81.14" L="1">
+			<current leakage="1.9204E-08"/>
+			<capacitance gate_cmos="2.8435E-15" drain_cmos="5.8968E-15" gate_pass="3.2978E-15" source_pass="6.8632E-15" drain_pass="4.0360E-15"/>
+		</size>
+		<size W="82.76" L="1">
+			<current leakage="1.9589E-08"/>
+			<capacitance gate_cmos="2.9004E-15" drain_cmos="6.0125E-15" gate_pass="3.3638E-15" source_pass="6.9938E-15" drain_pass="4.1142E-15"/>
+		</size>
+		<size W="84.42" L="1">
+			<current leakage="1.9983E-08"/>
+			<capacitance gate_cmos="2.9588E-15" drain_cmos="6.1311E-15" gate_pass="3.4314E-15" source_pass="7.1276E-15" drain_pass="4.1943E-15"/>
+		</size>
+		<size W="86.11" L="1">
+			<current leakage="2.0384E-08"/>
+			<capacitance gate_cmos="3.0181E-15" drain_cmos="6.2518E-15" gate_pass="3.5003E-15" source_pass="7.2637E-15" drain_pass="4.2759E-15"/>
+		</size>
+		<size W="87.83" L="1">
+			<current leakage="2.0792E-08"/>
+			<capacitance gate_cmos="3.0786E-15" drain_cmos="6.3746E-15" gate_pass="3.5703E-15" source_pass="7.4024E-15" drain_pass="4.3589E-15"/>
+		</size>
+		<size W="89.59" L="1">
+			<current leakage="2.1210E-08"/>
+			<capacitance gate_cmos="3.1404E-15" drain_cmos="6.5003E-15" gate_pass="3.6421E-15" source_pass="7.5442E-15" drain_pass="4.4439E-15"/>
+		</size>
+		<size W="91.38" L="1">
+			<current leakage="2.1635E-08"/>
+			<capacitance gate_cmos="3.2033E-15" drain_cmos="6.6281E-15" gate_pass="3.7150E-15" source_pass="7.6884E-15" drain_pass="4.5303E-15"/>
+		</size>
+		<size W="93.21" L="1">
+			<current leakage="2.2069E-08"/>
+			<capacitance gate_cmos="3.2676E-15" drain_cmos="6.7588E-15" gate_pass="3.7895E-15" source_pass="7.8359E-15" drain_pass="4.6186E-15"/>
+		</size>
+		<size W="95.07" L="1">
+			<current leakage="2.2510E-08"/>
+			<capacitance gate_cmos="3.3330E-15" drain_cmos="6.8917E-15" gate_pass="3.8653E-15" source_pass="7.9858E-15" drain_pass="4.7084E-15"/>
+		</size>
+		<size W="96.97" L="1">
+			<current leakage="2.2961E-08"/>
+			<capacitance gate_cmos="3.3997E-15" drain_cmos="7.0274E-15" gate_pass="3.9428E-15" source_pass="8.1389E-15" drain_pass="4.8001E-15"/>
+		</size>
+		<size W="98.91" L="1">
+			<current leakage="2.3422E-08"/>
+			<capacitance gate_cmos="3.4679E-15" drain_cmos="7.1659E-15" gate_pass="4.0218E-15" source_pass="8.2953E-15" drain_pass="4.8937E-15"/>
+		</size>
+		<size W="100.89" L="1">
+			<current leakage="2.3892E-08"/>
+			<capacitance gate_cmos="3.5374E-15" drain_cmos="7.3073E-15" gate_pass="4.1025E-15" source_pass="8.4548E-15" drain_pass="4.9893E-15"/>
+		</size>
+		<size W="102.91" L="1">
+			<current leakage="2.4371E-08"/>
+			<capacitance gate_cmos="3.6084E-15" drain_cmos="7.4516E-15" gate_pass="4.1848E-15" source_pass="8.6176E-15" drain_pass="5.0868E-15"/>
+		</size>
+		<size W="104.96" L="1">
+			<current leakage="2.4857E-08"/>
+			<capacitance gate_cmos="3.6804E-15" drain_cmos="7.5980E-15" gate_pass="4.2683E-15" source_pass="8.7828E-15" drain_pass="5.1857E-15"/>
+		</size>
+		<size W="107.06" L="1">
+			<current leakage="2.5356E-08"/>
+			<capacitance gate_cmos="3.7542E-15" drain_cmos="7.7479E-15" gate_pass="4.3539E-15" source_pass="8.9520E-15" drain_pass="5.2871E-15"/>
+		</size>
+		<size W="109.20" L="1">
+			<current leakage="2.5864E-08"/>
+			<capacitance gate_cmos="3.8294E-15" drain_cmos="7.9008E-15" gate_pass="4.4411E-15" source_pass="9.1245E-15" drain_pass="5.3904E-15"/>
+		</size>
+		<size W="111.39" L="1">
+			<current leakage="2.6383E-08"/>
+			<capacitance gate_cmos="3.9064E-15" drain_cmos="8.0572E-15" gate_pass="4.5303E-15" source_pass="9.3010E-15" drain_pass="5.4960E-15"/>
+		</size>
+		<size W="113.62" L="1">
+			<current leakage="2.6913E-08"/>
+			<capacitance gate_cmos="3.9847E-15" drain_cmos="8.2164E-15" gate_pass="4.6212E-15" source_pass="9.4807E-15" drain_pass="5.6037E-15"/>
+		</size>
+		<size W="115.89" L="1">
+			<current leakage="2.7451E-08"/>
+			<capacitance gate_cmos="4.0645E-15" drain_cmos="8.3785E-15" gate_pass="4.7136E-15" source_pass="9.6636E-15" drain_pass="5.7132E-15"/>
+		</size>
+		<size W="118.21" L="1">
+			<current leakage="2.8002E-08"/>
+			<capacitance gate_cmos="4.1460E-15" drain_cmos="8.5442E-15" gate_pass="4.8082E-15" source_pass="9.8506E-15" drain_pass="5.8252E-15"/>
+		</size>
+		<size W="120.57" L="1">
+			<current leakage="2.8562E-08"/>
+			<capacitance gate_cmos="4.2289E-15" drain_cmos="8.7128E-15" gate_pass="4.9043E-15" source_pass="1.0041E-14" drain_pass="5.9390E-15"/>
+		</size>
+		<size W="122.98" L="1">
+			<current leakage="2.9134E-08"/>
+			<capacitance gate_cmos="4.3136E-15" drain_cmos="8.8849E-15" gate_pass="5.0025E-15" source_pass="1.0235E-14" drain_pass="6.0553E-15"/>
+		</size>
+		<size W="125.44" L="1">
+			<current leakage="2.9718E-08"/>
+			<capacitance gate_cmos="4.4000E-15" drain_cmos="9.0606E-15" gate_pass="5.1028E-15" source_pass="1.0433E-14" drain_pass="6.1740E-15"/>
+		</size>
+		<size W="127.95" L="1">
+			<current leakage="3.0314E-08"/>
+			<capacitance gate_cmos="4.4882E-15" drain_cmos="9.2398E-15" gate_pass="5.2050E-15" source_pass="1.0635E-14" drain_pass="6.2951E-15"/>
+		</size>
+		<size W="130.51" L="1">
+			<current leakage="3.0921E-08"/>
+			<capacitance gate_cmos="4.5782E-15" drain_cmos="9.4226E-15" gate_pass="5.3093E-15" source_pass="1.0842E-14" drain_pass="6.4187E-15"/>
+		</size>
+		<size W="133.12" L="1">
+			<current leakage="3.1541E-08"/>
+			<capacitance gate_cmos="4.6699E-15" drain_cmos="9.6090E-15" gate_pass="5.4157E-15" source_pass="1.1052E-14" drain_pass="6.5446E-15"/>
+		</size>
+		<size W="135.78" L="1">
+			<current leakage="3.2172E-08"/>
+			<capacitance gate_cmos="4.7633E-15" drain_cmos="9.7990E-15" gate_pass="5.5240E-15" source_pass="1.1266E-14" drain_pass="6.6729E-15"/>
+		</size>
+		<size W="138.50" L="1">
+			<current leakage="3.2817E-08"/>
+			<capacitance gate_cmos="4.8589E-15" drain_cmos="9.9932E-15" gate_pass="5.6349E-15" source_pass="1.1486E-14" drain_pass="6.8042E-15"/>
+		</size>
+		<size W="141.27" L="1">
+			<current leakage="3.3475E-08"/>
+			<capacitance gate_cmos="4.9562E-15" drain_cmos="1.0191E-14" gate_pass="5.7477E-15" source_pass="1.1709E-14" drain_pass="6.9378E-15"/>
+		</size>
+		<size W="144.09" L="1">
+			<current leakage="3.4144E-08"/>
+			<capacitance gate_cmos="5.0553E-15" drain_cmos="1.0392E-14" gate_pass="5.8626E-15" source_pass="1.1936E-14" drain_pass="7.0738E-15"/>
+		</size>
+		<size W="146.97" L="1">
+			<current leakage="3.4828E-08"/>
+			<capacitance gate_cmos="5.1565E-15" drain_cmos="1.0598E-14" gate_pass="5.9800E-15" source_pass="1.2168E-14" drain_pass="7.2128E-15"/>
+		</size>
+		<size W="149.91" L="1">
+			<current leakage="3.5525E-08"/>
+			<capacitance gate_cmos="5.2598E-15" drain_cmos="1.0808E-14" gate_pass="6.0998E-15" source_pass="1.2405E-14" drain_pass="7.3546E-15"/>
+		</size>
+		<size W="152.91" L="1">
+			<current leakage="3.6237E-08"/>
+			<capacitance gate_cmos="5.3652E-15" drain_cmos="1.1022E-14" gate_pass="6.2220E-15" source_pass="1.2647E-14" drain_pass="7.4993E-15"/>
+		</size>
+		<size W="155.97" L="1">
+			<current leakage="3.6964E-08"/>
+			<capacitance gate_cmos="5.4727E-15" drain_cmos="1.1241E-14" gate_pass="6.3467E-15" source_pass="1.2894E-14" drain_pass="7.6470E-15"/>
+		</size>
+		<size W="159.09" L="1">
+			<current leakage="3.7704E-08"/>
+			<capacitance gate_cmos="5.5823E-15" drain_cmos="1.1464E-14" gate_pass="6.4738E-15" source_pass="1.3145E-14" drain_pass="7.7975E-15"/>
+		</size>
+		<size W="162.27" L="1">
+			<current leakage="3.8459E-08"/>
+			<capacitance gate_cmos="5.6941E-15" drain_cmos="1.1691E-14" gate_pass="6.6036E-15" source_pass="1.3401E-14" drain_pass="7.9509E-15"/>
+		</size>
+		<size W="165.52" L="1">
+			<current leakage="3.9230E-08"/>
+			<capacitance gate_cmos="5.8082E-15" drain_cmos="1.1923E-14" gate_pass="6.7360E-15" source_pass="1.3663E-14" drain_pass="8.1076E-15"/>
+		</size>
+		<size W="168.83" L="1">
+			<current leakage="4.0016E-08"/>
+			<capacitance gate_cmos="5.9245E-15" drain_cmos="1.2159E-14" gate_pass="6.8709E-15" source_pass="1.3930E-14" drain_pass="8.2673E-15"/>
+		</size>
+		<size W="172.20" L="1">
+			<current leakage="4.0815E-08"/>
+			<capacitance gate_cmos="6.0429E-15" drain_cmos="1.2400E-14" gate_pass="7.0082E-15" source_pass="1.4201E-14" drain_pass="8.4298E-15"/>
+		</size>
+		<size W="175.65" L="1">
+			<current leakage="4.1634E-08"/>
+			<capacitance gate_cmos="6.1642E-15" drain_cmos="1.2646E-14" gate_pass="7.1487E-15" source_pass="1.4479E-14" drain_pass="8.5963E-15"/>
+		</size>
+		<size W="179.16" L="1">
+			<current leakage="4.2467E-08"/>
+			<capacitance gate_cmos="6.2875E-15" drain_cmos="1.2897E-14" gate_pass="7.2918E-15" source_pass="1.4762E-14" drain_pass="8.7655E-15"/>
+		</size>
+		<size W="182.74" L="1">
+			<current leakage="4.3317E-08"/>
+			<capacitance gate_cmos="6.4133E-15" drain_cmos="1.3153E-14" gate_pass="7.4376E-15" source_pass="1.5051E-14" drain_pass="8.9382E-15"/>
+		</size>
+		<size W="186.40" L="1">
+			<current leakage="4.4186E-08"/>
+			<capacitance gate_cmos="6.5419E-15" drain_cmos="1.3414E-14" gate_pass="7.5867E-15" source_pass="1.5346E-14" drain_pass="9.1147E-15"/>
+		</size>
+		<size W="190.13" L="1">
+			<current leakage="4.5071E-08"/>
+			<capacitance gate_cmos="6.6729E-15" drain_cmos="1.3680E-14" gate_pass="7.7387E-15" source_pass="1.5646E-14" drain_pass="9.2946E-15"/>
+		</size>
+		<size W="193.93" L="1">
+			<current leakage="4.5973E-08"/>
+			<capacitance gate_cmos="6.8064E-15" drain_cmos="1.3952E-14" gate_pass="7.8935E-15" source_pass="1.5953E-14" drain_pass="9.4779E-15"/>
+		</size>
+		<size W="197.81" L="1">
+			<current leakage="4.6894E-08"/>
+			<capacitance gate_cmos="6.9428E-15" drain_cmos="1.4229E-14" gate_pass="8.0516E-15" source_pass="1.6265E-14" drain_pass="9.6650E-15"/>
+		</size>
+		<size W="201.77" L="1">
+			<current leakage="4.7833E-08"/>
+			<capacitance gate_cmos="7.0819E-15" drain_cmos="1.4512E-14" gate_pass="8.2130E-15" source_pass="1.6584E-14" drain_pass="9.8560E-15"/>
+		</size>
+		<size W="205.80" L="1">
+			<current leakage="4.8790E-08"/>
+			<capacitance gate_cmos="7.2235E-15" drain_cmos="1.4800E-14" gate_pass="8.3772E-15" source_pass="1.6909E-14" drain_pass="1.0050E-14"/>
+		</size>
+		<size W="209.92" L="1">
+			<current leakage="4.9768E-08"/>
+			<capacitance gate_cmos="7.3683E-15" drain_cmos="1.5094E-14" gate_pass="8.5450E-15" source_pass="1.7241E-14" drain_pass="1.0249E-14"/>
+		</size>
+		<size W="214.11" L="1">
+			<current leakage="5.0762E-08"/>
+			<capacitance gate_cmos="7.5155E-15" drain_cmos="1.5393E-14" gate_pass="8.7158E-15" source_pass="1.7579E-14" drain_pass="1.0451E-14"/>
+		</size>
+		<size W="218.40" L="1">
+			<current leakage="5.1780E-08"/>
+			<capacitance gate_cmos="7.6662E-15" drain_cmos="1.5699E-14" gate_pass="8.8905E-15" source_pass="1.7925E-14" drain_pass="1.0658E-14"/>
+		</size>
+		<size W="222.76" L="1">
+			<current leakage="5.2815E-08"/>
+			<capacitance gate_cmos="7.8194E-15" drain_cmos="1.6011E-14" gate_pass="9.0682E-15" source_pass="1.8276E-14" drain_pass="1.0868E-14"/>
+		</size>
+		<size W="227.22" L="1">
+			<current leakage="5.3873E-08"/>
+			<capacitance gate_cmos="7.9761E-15" drain_cmos="1.6329E-14" gate_pass="9.2499E-15" source_pass="1.8635E-14" drain_pass="1.1083E-14"/>
+		</size>
+		<size W="231.76" L="1">
+			<current leakage="5.4951E-08"/>
+			<capacitance gate_cmos="8.1356E-15" drain_cmos="1.6653E-14" gate_pass="9.4349E-15" source_pass="1.9001E-14" drain_pass="1.1302E-14"/>
+		</size>
+		<size W="236.40" L="1">
+			<current leakage="5.6052E-08"/>
+			<capacitance gate_cmos="8.2986E-15" drain_cmos="1.6985E-14" gate_pass="9.6239E-15" source_pass="1.9375E-14" drain_pass="1.1526E-14"/>
+		</size>
+		<size W="241.13" L="1">
+			<current leakage="5.7175E-08"/>
+			<capacitance gate_cmos="8.4648E-15" drain_cmos="1.7323E-14" gate_pass="9.8167E-15" source_pass="1.9756E-14" drain_pass="1.1754E-14"/>
+		</size>
+		<size W="245.95" L="1">
+			<current leakage="5.8319E-08"/>
+			<capacitance gate_cmos="8.6342E-15" drain_cmos="1.7667E-14" gate_pass="1.0013E-14" source_pass="2.0145E-14" drain_pass="1.1986E-14"/>
+		</size>
+		<size W="250.87" L="1">
+			<current leakage="5.9486E-08"/>
+			<capacitance gate_cmos="8.8070E-15" drain_cmos="1.8018E-14" gate_pass="1.0213E-14" source_pass="2.0541E-14" drain_pass="1.2224E-14"/>
+		</size>
+		<size W="255.89" L="1">
+			<current leakage="6.0678E-08"/>
+			<capacitance gate_cmos="8.9834E-15" drain_cmos="1.8377E-14" gate_pass="1.0418E-14" source_pass="2.0946E-14" drain_pass="1.2466E-14"/>
+		</size>
+		<size W="261.00" L="1">
+			<current leakage="6.1891E-08"/>
+			<capacitance gate_cmos="9.1630E-15" drain_cmos="1.8742E-14" gate_pass="1.0626E-14" source_pass="2.1358E-14" drain_pass="1.2712E-14"/>
+		</size>
+		<size W="266.22" L="1">
+			<current leakage="6.3130E-08"/>
+			<capacitance gate_cmos="9.3464E-15" drain_cmos="1.9114E-14" gate_pass="1.0839E-14" source_pass="2.1778E-14" drain_pass="1.2964E-14"/>
+		</size>
+		<size W="271.55" L="1">
+			<current leakage="6.4395E-08"/>
+			<capacitance gate_cmos="9.5336E-15" drain_cmos="1.9495E-14" gate_pass="1.1056E-14" source_pass="2.2208E-14" drain_pass="1.3221E-14"/>
+		</size>
+		<size W="276.98" L="1">
+			<current leakage="6.5683E-08"/>
+			<capacitance gate_cmos="9.7244E-15" drain_cmos="1.9883E-14" gate_pass="1.1277E-14" source_pass="2.2645E-14" drain_pass="1.3482E-14"/>
+		</size>
+		<size W="282.52" L="1">
+			<current leakage="6.6998E-08"/>
+			<capacitance gate_cmos="9.9191E-15" drain_cmos="2.0279E-14" gate_pass="1.1503E-14" source_pass="2.3092E-14" drain_pass="1.3749E-14"/>
+		</size>
+		<size W="288.17" L="1">
+			<current leakage="6.8339E-08"/>
+			<capacitance gate_cmos="1.0118E-14" drain_cmos="2.0682E-14" gate_pass="1.1733E-14" source_pass="2.3547E-14" drain_pass="1.4022E-14"/>
+		</size>
+		<size W="293.93" L="1">
+			<current leakage="6.9706E-08"/>
+			<capacitance gate_cmos="1.0320E-14" drain_cmos="2.1093E-14" gate_pass="1.1968E-14" source_pass="2.4011E-14" drain_pass="1.4299E-14"/>
+		</size>
+		<size W="299.81" L="1">
+			<current leakage="7.1102E-08"/>
+			<capacitance gate_cmos="1.0527E-14" drain_cmos="2.1513E-14" gate_pass="1.2207E-14" source_pass="2.4485E-14" drain_pass="1.4583E-14"/>
+		</size>
+		<size W="305.81" L="1">
+			<current leakage="7.2526E-08"/>
+			<capacitance gate_cmos="1.0737E-14" drain_cmos="2.1942E-14" gate_pass="1.2452E-14" source_pass="2.4969E-14" drain_pass="1.4872E-14"/>
+		</size>
+		<size W="311.92" L="1">
+			<current leakage="7.3976E-08"/>
+			<capacitance gate_cmos="1.0952E-14" drain_cmos="2.2378E-14" gate_pass="1.2701E-14" source_pass="2.5461E-14" drain_pass="1.5167E-14"/>
+		</size>
+		<size W="318.16" L="1">
+			<current leakage="7.5457E-08"/>
+			<capacitance gate_cmos="1.1171E-14" drain_cmos="2.2824E-14" gate_pass="1.2955E-14" source_pass="2.5964E-14" drain_pass="1.5467E-14"/>
+		</size>
+		<size W="324.53" L="1">
+			<current leakage="7.6969E-08"/>
+			<capacitance gate_cmos="1.1395E-14" drain_cmos="2.3279E-14" gate_pass="1.3215E-14" source_pass="2.6477E-14" drain_pass="1.5774E-14"/>
+		</size>
+		<size W="331.02" L="1">
+			<current leakage="7.8509E-08"/>
+			<capacitance gate_cmos="1.1623E-14" drain_cmos="2.3742E-14" gate_pass="1.3479E-14" source_pass="2.7000E-14" drain_pass="1.6087E-14"/>
+		</size>
+		<size W="337.64" L="1">
+			<current leakage="8.0080E-08"/>
+			<capacitance gate_cmos="1.1856E-14" drain_cmos="2.4215E-14" gate_pass="1.3749E-14" source_pass="2.7534E-14" drain_pass="1.6406E-14"/>
+		</size>
+		<size W="344.39" L="1">
+			<current leakage="8.1682E-08"/>
+			<capacitance gate_cmos="1.2093E-14" drain_cmos="2.4697E-14" gate_pass="1.4024E-14" source_pass="2.8078E-14" drain_pass="1.6732E-14"/>
+		</size>
+		<size W="351.28" L="1">
+			<current leakage="8.3318E-08"/>
+			<capacitance gate_cmos="1.2335E-14" drain_cmos="2.5189E-14" gate_pass="1.4304E-14" source_pass="2.8633E-14" drain_pass="1.7064E-14"/>
+		</size>
+		<size W="358.30" L="1">
+			<current leakage="8.4984E-08"/>
+			<capacitance gate_cmos="1.2582E-14" drain_cmos="2.5690E-14" gate_pass="1.4590E-14" source_pass="2.9199E-14" drain_pass="1.7402E-14"/>
+		</size>
+		<size W="365.47" L="1">
+			<current leakage="8.6686E-08"/>
+			<capacitance gate_cmos="1.2834E-14" drain_cmos="2.6202E-14" gate_pass="1.4883E-14" source_pass="2.9776E-14" drain_pass="1.7747E-14"/>
+		</size>
+		<size W="372.78" L="1">
+			<current leakage="8.8421E-08"/>
+			<capacitance gate_cmos="1.3090E-14" drain_cmos="2.6724E-14" gate_pass="1.5180E-14" source_pass="3.0365E-14" drain_pass="1.8100E-14"/>
+		</size>
+		<size W="380.23" L="1">
+			<current leakage="9.0189E-08"/>
+			<capacitance gate_cmos="1.3352E-14" drain_cmos="2.7257E-14" gate_pass="1.5484E-14" source_pass="3.0966E-14" drain_pass="1.8459E-14"/>
+		</size>
+		<size W="387.84" L="1">
+			<current leakage="9.1995E-08"/>
+			<capacitance gate_cmos="1.3620E-14" drain_cmos="2.7800E-14" gate_pass="1.5794E-14" source_pass="3.1579E-14" drain_pass="1.8825E-14"/>
+		</size>
+		<size W="395.60" L="1">
+			<current leakage="9.3837E-08"/>
+			<capacitance gate_cmos="1.3892E-14" drain_cmos="2.8354E-14" gate_pass="1.6110E-14" source_pass="3.2204E-14" drain_pass="1.9199E-14"/>
+		</size>
+		<size W="403.51" L="1">
+			<current leakage="9.5714E-08"/>
+			<capacitance gate_cmos="1.4170E-14" drain_cmos="2.8919E-14" gate_pass="1.6432E-14" source_pass="3.2842E-14" drain_pass="1.9581E-14"/>
+		</size>
+		<size W="411.58" L="1">
+			<current leakage="9.7630E-08"/>
+			<capacitance gate_cmos="1.4454E-14" drain_cmos="2.9495E-14" gate_pass="1.6761E-14" source_pass="3.3492E-14" drain_pass="1.9969E-14"/>
+		</size>
+		<size W="419.81" L="1">
+			<current leakage="9.9583E-08"/>
+			<capacitance gate_cmos="1.4743E-14" drain_cmos="3.0083E-14" gate_pass="1.7096E-14" source_pass="3.4155E-14" drain_pass="2.0366E-14"/>
+		</size>
+		<size W="428.21" L="1">
+			<current leakage="1.0158E-07"/>
+			<capacitance gate_cmos="1.5038E-14" drain_cmos="3.0683E-14" gate_pass="1.7439E-14" source_pass="3.4832E-14" drain_pass="2.0771E-14"/>
+		</size>
+		<size W="436.77" L="1">
+			<current leakage="1.0361E-07"/>
+			<capacitance gate_cmos="1.5339E-14" drain_cmos="3.1294E-14" gate_pass="1.7787E-14" source_pass="3.5522E-14" drain_pass="2.1183E-14"/>
+		</size>
+		<size W="445.51" L="1">
+			<current leakage="1.0568E-07"/>
+			<capacitance gate_cmos="1.5646E-14" drain_cmos="3.1919E-14" gate_pass="1.8143E-14" source_pass="3.6227E-14" drain_pass="2.1604E-14"/>
+		</size>
+		<size W="454.42" L="1">
+			<current leakage="1.0780E-07"/>
+			<capacitance gate_cmos="1.5959E-14" drain_cmos="3.2555E-14" gate_pass="1.8506E-14" source_pass="3.6945E-14" drain_pass="2.2034E-14"/>
+		</size>
+		<size W="463.50" L="1">
+			<current leakage="1.0995E-07"/>
+			<capacitance gate_cmos="1.6278E-14" drain_cmos="3.3203E-14" gate_pass="1.8876E-14" source_pass="3.7676E-14" drain_pass="2.2471E-14"/>
+		</size>
+		<size W="472.77" L="1">
+			<current leakage="1.1215E-07"/>
+			<capacitance gate_cmos="1.6604E-14" drain_cmos="3.3865E-14" gate_pass="1.9254E-14" source_pass="3.8423E-14" drain_pass="2.2918E-14"/>
+		</size>
+		<size W="482.23" L="1">
+			<current leakage="1.1440E-07"/>
+			<capacitance gate_cmos="1.6936E-14" drain_cmos="3.4541E-14" gate_pass="1.9639E-14" source_pass="3.9186E-14" drain_pass="2.3373E-14"/>
+		</size>
+		<size W="491.87" L="1">
+			<current leakage="1.1669E-07"/>
+			<capacitance gate_cmos="1.7275E-14" drain_cmos="3.5229E-14" gate_pass="2.0032E-14" source_pass="3.9963E-14" drain_pass="2.3838E-14"/>
+		</size>
+		<size W="501.71" L="1">
+			<current leakage="1.1902E-07"/>
+			<capacitance gate_cmos="1.7620E-14" drain_cmos="3.5932E-14" gate_pass="2.0433E-14" source_pass="4.0756E-14" drain_pass="2.4312E-14"/>
+		</size>
+		<size W="511.75" L="1">
+			<current leakage="1.2141E-07"/>
+			<capacitance gate_cmos="1.7973E-14" drain_cmos="3.6649E-14" gate_pass="2.0842E-14" source_pass="4.1565E-14" drain_pass="2.4796E-14"/>
+		</size>
+		<size W="521.98" L="1">
+			<current leakage="1.2383E-07"/>
+			<capacitance gate_cmos="1.8333E-14" drain_cmos="3.7380E-14" gate_pass="2.1259E-14" source_pass="4.2389E-14" drain_pass="2.5288E-14"/>
+		</size>
+		<size W="532.42" L="1">
+			<current leakage="1.2631E-07"/>
+			<capacitance gate_cmos="1.8699E-14" drain_cmos="3.8125E-14" gate_pass="2.1684E-14" source_pass="4.3230E-14" drain_pass="2.5791E-14"/>
+		</size>
+		<size W="543.07" L="1">
+			<current leakage="1.2884E-07"/>
+			<capacitance gate_cmos="1.9074E-14" drain_cmos="3.8886E-14" gate_pass="2.2118E-14" source_pass="4.4089E-14" drain_pass="2.6304E-14"/>
+		</size>
+		<size W="553.93" L="1">
+			<current leakage="1.3142E-07"/>
+			<capacitance gate_cmos="1.9455E-14" drain_cmos="3.9661E-14" gate_pass="2.2561E-14" source_pass="4.4964E-14" drain_pass="2.6827E-14"/>
+		</size>
+		<size W="565.01" L="1">
+			<current leakage="1.3405E-07"/>
+			<capacitance gate_cmos="1.9844E-14" drain_cmos="4.0453E-14" gate_pass="2.3012E-14" source_pass="4.5857E-14" drain_pass="2.7361E-14"/>
+		</size>
+		<size W="576.31" L="1">
+			<current leakage="1.3673E-07"/>
+			<capacitance gate_cmos="2.0242E-14" drain_cmos="4.1260E-14" gate_pass="2.3472E-14" source_pass="4.6767E-14" drain_pass="2.7905E-14"/>
+		</size>
+		<size W="587.83" L="1">
+			<current leakage="1.3946E-07"/>
+			<capacitance gate_cmos="2.0646E-14" drain_cmos="4.2082E-14" gate_pass="2.3942E-14" source_pass="4.7696E-14" drain_pass="2.8460E-14"/>
+		</size>
+		<size W="599.59" L="1">
+			<current leakage="1.4226E-07"/>
+			<capacitance gate_cmos="2.1059E-14" drain_cmos="4.2922E-14" gate_pass="2.4421E-14" source_pass="4.8643E-14" drain_pass="2.9027E-14"/>
+		</size>
+		<size W="611.58" L="1">
+			<current leakage="1.4510E-07"/>
+			<capacitance gate_cmos="2.1481E-14" drain_cmos="4.3778E-14" gate_pass="2.4909E-14" source_pass="4.9610E-14" drain_pass="2.9604E-14"/>
+		</size>
+		<size W="623.82" L="1">
+			<current leakage="1.4801E-07"/>
+			<capacitance gate_cmos="2.1911E-14" drain_cmos="4.4653E-14" gate_pass="2.5408E-14" source_pass="5.0596E-14" drain_pass="3.0194E-14"/>
+		</size>
+		<size W="636.29" L="1">
+			<current leakage="1.5097E-07"/>
+			<capacitance gate_cmos="2.2349E-14" drain_cmos="4.5543E-14" gate_pass="2.5916E-14" source_pass="5.1601E-14" drain_pass="3.0794E-14"/>
+		</size>
+		<size W="649.02" L="1">
+			<current leakage="1.5399E-07"/>
+			<capacitance gate_cmos="2.2796E-14" drain_cmos="4.6452E-14" gate_pass="2.6435E-14" source_pass="5.2627E-14" drain_pass="3.1407E-14"/>
+		</size>
+		<size W="662.00" L="1">
+			<current leakage="1.5707E-07"/>
+			<capacitance gate_cmos="2.3252E-14" drain_cmos="4.7379E-14" gate_pass="2.6963E-14" source_pass="5.3673E-14" drain_pass="3.2032E-14"/>
+		</size>
+		<size W="675.24" L="1">
+			<current leakage="1.6021E-07"/>
+			<capacitance gate_cmos="2.3717E-14" drain_cmos="4.8325E-14" gate_pass="2.7503E-14" source_pass="5.4740E-14" drain_pass="3.2670E-14"/>
+		</size>
+		<size W="688.74" L="1">
+			<current leakage="1.6342E-07"/>
+			<capacitance gate_cmos="2.4192E-14" drain_cmos="4.9289E-14" gate_pass="2.8053E-14" source_pass="5.5828E-14" drain_pass="3.3320E-14"/>
+		</size>
+		<size W="702.52" L="1">
+			<current leakage="1.6669E-07"/>
+			<capacitance gate_cmos="2.4676E-14" drain_cmos="5.0273E-14" gate_pass="2.8614E-14" source_pass="5.6938E-14" drain_pass="3.3984E-14"/>
+		</size>
+		<size W="716.57" L="1">
+			<current leakage="1.7002E-07"/>
+			<capacitance gate_cmos="2.5170E-14" drain_cmos="5.1276E-14" gate_pass="2.9186E-14" source_pass="5.8070E-14" drain_pass="3.4660E-14"/>
+		</size>
+		<size W="730.90" L="1">
+			<current leakage="1.7343E-07"/>
+			<capacitance gate_cmos="2.5673E-14" drain_cmos="5.2300E-14" gate_pass="2.9770E-14" source_pass="5.9225E-14" drain_pass="3.5350E-14"/>
+		</size>
+		<size W="745.52" L="1">
+			<current leakage="1.7690E-07"/>
+			<capacitance gate_cmos="2.6187E-14" drain_cmos="5.3344E-14" gate_pass="3.0366E-14" source_pass="6.0403E-14" drain_pass="3.6054E-14"/>
+		</size>
+		<size W="760.43" L="1">
+			<current leakage="1.8044E-07"/>
+			<capacitance gate_cmos="2.6711E-14" drain_cmos="5.4409E-14" gate_pass="3.0973E-14" source_pass="6.1605E-14" drain_pass="3.6772E-14"/>
+		</size>
+		<size W="775.64" L="1">
+			<current leakage="1.8405E-07"/>
+			<capacitance gate_cmos="2.7245E-14" drain_cmos="5.5495E-14" gate_pass="3.1593E-14" source_pass="6.2831E-14" drain_pass="3.7505E-14"/>
+		</size>
+		<size W="791.15" L="1">
+			<current leakage="1.8773E-07"/>
+			<capacitance gate_cmos="2.7790E-14" drain_cmos="5.6602E-14" gate_pass="3.2225E-14" source_pass="6.4081E-14" drain_pass="3.8252E-14"/>
+		</size>
+		<size W="806.97" L="1">
+			<current leakage="1.9149E-07"/>
+			<capacitance gate_cmos="2.8346E-14" drain_cmos="5.7732E-14" gate_pass="3.2869E-14" source_pass="6.5355E-14" drain_pass="3.9013E-14"/>
+		</size>
+		<size W="823.11" L="1">
+			<current leakage="1.9532E-07"/>
+			<capacitance gate_cmos="2.8913E-14" drain_cmos="5.8885E-14" gate_pass="3.3527E-14" source_pass="6.6656E-14" drain_pass="3.9790E-14"/>
+		</size>
+		<size W="839.57" L="1">
+			<current leakage="1.9923E-07"/>
+			<capacitance gate_cmos="2.9491E-14" drain_cmos="6.0060E-14" gate_pass="3.4197E-14" source_pass="6.7983E-14" drain_pass="4.0583E-14"/>
+		</size>
+		<size W="856.36" L="1">
+			<current leakage="2.0321E-07"/>
+			<capacitance gate_cmos="3.0081E-14" drain_cmos="6.1259E-14" gate_pass="3.4881E-14" source_pass="6.9336E-14" drain_pass="4.1391E-14"/>
+		</size>
+		<size W="873.49" L="1">
+			<current leakage="2.0728E-07"/>
+			<capacitance gate_cmos="3.0683E-14" drain_cmos="6.2483E-14" gate_pass="3.5579E-14" source_pass="7.0716E-14" drain_pass="4.2216E-14"/>
+		</size>
+		<size W="890.96" L="1">
+			<current leakage="2.1143E-07"/>
+			<capacitance gate_cmos="3.1297E-14" drain_cmos="6.3730E-14" gate_pass="3.6291E-14" source_pass="7.2124E-14" drain_pass="4.3057E-14"/>
+		</size>
+		<size W="908.78" L="1">
+			<current leakage="2.1566E-07"/>
+			<capacitance gate_cmos="3.1923E-14" drain_cmos="6.5003E-14" gate_pass="3.7017E-14" source_pass="7.3560E-14" drain_pass="4.3915E-14"/>
+		</size>
+		<size W="926.96" L="1">
+			<current leakage="2.1997E-07"/>
+			<capacitance gate_cmos="3.2562E-14" drain_cmos="6.6301E-14" gate_pass="3.7757E-14" source_pass="7.5025E-14" drain_pass="4.4790E-14"/>
+		</size>
+		<size W="945.50" L="1">
+			<current leakage="2.2438E-07"/>
+			<capacitance gate_cmos="3.3213E-14" drain_cmos="6.7625E-14" gate_pass="3.8512E-14" source_pass="7.6519E-14" drain_pass="4.5683E-14"/>
+		</size>
+		<size W="964.41" L="1">
+			<current leakage="2.2887E-07"/>
+			<capacitance gate_cmos="3.3877E-14" drain_cmos="6.8976E-14" gate_pass="3.9283E-14" source_pass="7.8043E-14" drain_pass="4.6593E-14"/>
+		</size>
+		<size W="983.69" L="1">
+			<current leakage="2.3345E-07"/>
+			<capacitance gate_cmos="3.4555E-14" drain_cmos="7.0353E-14" gate_pass="4.0067E-14" source_pass="7.9596E-14" drain_pass="4.7521E-14"/>
+		</size>
+	</transistor>
+</technology>
