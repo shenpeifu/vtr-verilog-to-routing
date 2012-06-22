@@ -31,11 +31,6 @@ use Cwd;
 use File::Spec;
 use IPC::Open2;
 use POSIX qw(strftime);
-if ($threaded) {
-
-	#use threads;
-	#use Thread::Queue;
-}
 
 # Function Prototypes
 sub trim;

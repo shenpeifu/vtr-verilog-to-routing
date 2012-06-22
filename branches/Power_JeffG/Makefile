@@ -2,7 +2,7 @@
 # Makefile to build CAD tools in Verilog-to-Routing (VTR) Framework #
 #####################################################################
 
-all: notifications libvpr/libvpr_6.a ODIN_II/odin_II.exe abc_with_bb_support/abc vpr/vpr
+all: notifications libvpr/libvpr_6.a ODIN_II/odin_II.exe abc_with_bb_support/abc vpr/vpr ACE3/ace
 	
 notifications: 
 	@ # checks if required packages are installed, and notifies the user if not
@@ -33,9 +33,13 @@ abc_with_bb_support/abc:
 libvpr/libvpr_6.a:
 	@ cd libvpr && make
 
+ACE3/ace:
+	@ cd ACE3 && make
+	
 clean:
 	@ cd ODIN_II && make clean
 	@ cd abc_with_bb_support && make clean
 	@ cd vpr && make clean
 	@ cd libvpr && make clean
+	@ cd ACE3 && make clean
 

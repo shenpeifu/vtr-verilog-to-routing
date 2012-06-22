@@ -131,12 +131,19 @@ sub parse_single_task {
 	else {
 		die "Parse file does not exist ($parse_file)";
 	}
-
+	
+	# Get Max Run #
+	opendir(DIR, $task_path);
+	my @folders = readdir(DIR);
+	closedir(DIR);
 	my $exp_num = 1;
-	while ( -e "$task_path/${run_prefix}${exp_num}" ) {
-		++$exp_num;
+	foreach my $folder_name (@folders) {
+		$folder_name =~ /${run_prefix}(\d+)/;
+		if (int($1) > $exp_num) {
+			$exp_num = int($1);
+		}
 	}
-	--$exp_num;
+	
 	my $run_path = "$task_path/${run_prefix}${exp_num}";
 
 	my $first = 1;

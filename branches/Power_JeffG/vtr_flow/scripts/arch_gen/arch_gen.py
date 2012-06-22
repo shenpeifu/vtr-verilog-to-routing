@@ -34,28 +34,29 @@ T_setup = 2.448e-10
 T_clock_to_Q = 7.732e-11
 
 def C_wire_glb(tech):
-    if (tech == 45):
-        return 252e-12
-    elif (tech == 130):
-        return 258e-12
+    if (tech == 130):
+        return 190e-12
+    elif (tech == 45):
+        return 170e-12    
+    elif (tech == 22):
+        return 145e-12
     else:
         assert(0)
 
 def C_wire_local(tech):
-    if (tech == 45):
-        return 153e-12
-    elif (tech == 130):
-        return 252e-12
+    return C_wire_glb(tech)
+
+    if (tech == 130):
+        return 230e-12
+    elif (tech == 45):
+        return 190e-12
+    elif (tech == 22):
+        return 170e-12
     else:
         assert(0)
         
 def C_wire_clk(tech):
-    if (tech == 45):
-        return 252e-12
-    elif (tech == 130):
-        return 258e-12
-    else:
-        assert(0)
+    return C_wire_glb(tech)
 
 def xprint(s, newline=False):
     for i in range(tabs):
@@ -645,39 +646,53 @@ def gen_arch(dir, k_LUT, N_BLE, I_CLB, I_BLE, fracture_level, num_FF, seg_length
 arches = []
 #              k    N       I_CLB   I_BLE   frac    num_FF  seg_length
 
-# Base Arch
-arches.append([6, 10, 33, 6, 0, 1, 4, 45])
+sweep = 1
 
-# Fracturable LUT
-arches.append([6, 10, 33, 6, 1, 1, 4, 45])
-arches.append([6, 10, 33, 6, 1, 2, 4, 45])
-arches.append([6, 10, 39, 7, 0, 1, 4, 45])
-arches.append([6, 10, 39, 7, 1, 1, 4, 45])
-arches.append([6, 10, 39, 7, 1, 2, 4, 45])
-arches.append([6, 10, 44, 8, 0, 1, 4, 45])
-arches.append([6, 10, 44, 8, 1, 1, 4, 45])
-arches.append([6, 10, 44, 8, 1, 2, 4, 45])
+if (sweep):
+    dir = "C:/Users/Jeff/Dropbox/linux_home/vtr/vtr_flow/arch/power/sweep"
+    a_k = [4,6]
+    a_N = [6,8,10]
+    a_seg = [1,2,3,4]
+    a_CLB_frac = [0.6, 0.8]
+    
+    
+    for l_k in (a_k):
+        for l_N in (a_N):
+            for l_I_BLE in range(l_k, l_k + 3):
+                for l_CLB_frac in (a_CLB_frac): 
+                    for l_frac in range(0, 2):
+                        for l_num_FF in range(1, l_frac+2):
+                            for l_seg_length in a_seg:
+                                arches.append([l_k, l_N, int(l_N * l_I_BLE * l_CLB_frac), l_I_BLE, l_frac, l_num_FF, l_seg_length, 45])
+    
+else:
 
-#Segment Variation
-arches.append([6, 10, 33, 6, 0, 1, 1, 45])
-arches.append([6, 10, 33, 6, 0, 1, 2, 45])
-arches.append([6, 10, 33, 6, 0, 1, 3, 45])
-arches.append([6, 10, 33, 6, 0, 1, 5, 45])
-arches.append([6, 10, 33, 6, 0, 1, 6, 45])
-
-arches.append([6, 10, 33, 6, 0, 1, 4, 130])
-
-
-
-
-
-
-
-
-
-
-dir = "C:/Users/Jeff/Dropbox/linux_home/vtr/vtr_flow/arch/timing_gen"
-
+    # Base Arch
+    arches.append([6, 10, 33, 6, 0, 1, 4, 45])
+    
+    # Fracturable LUT
+    arches.append([6, 10, 33, 6, 1, 1, 4, 45])
+    arches.append([6, 10, 33, 6, 1, 2, 4, 45])
+    arches.append([6, 10, 39, 7, 0, 1, 4, 45])
+    arches.append([6, 10, 39, 7, 1, 1, 4, 45])
+    arches.append([6, 10, 39, 7, 1, 2, 4, 45])
+    arches.append([6, 10, 44, 8, 0, 1, 4, 45])
+    arches.append([6, 10, 44, 8, 1, 1, 4, 45])
+    arches.append([6, 10, 44, 8, 1, 2, 4, 45])
+    
+    #Segment Variation
+    arches.append([6, 10, 33, 6, 0, 1, 1, 45])
+    arches.append([6, 10, 33, 6, 0, 1, 2, 45])
+    arches.append([6, 10, 33, 6, 0, 1, 3, 45])
+    arches.append([6, 10, 33, 6, 0, 1, 5, 45])
+    arches.append([6, 10, 33, 6, 0, 1, 6, 45])
+    
+    arches.append([6, 10, 33, 6, 0, 1, 4, 130])
+    
+    arches.append([6, 10, 33, 6, 0, 1, 4, 22])
+    
+    dir = "C:/Users/Jeff/Dropbox/linux_home/vtr/vtr_flow/arch/power"
+    
 for arch in arches:
     gen_arch(dir, arch[0], arch[1], arch[2], arch[3], arch[4], arch[5], arch[6], arch[7])
 print "Done\n"

@@ -26,7 +26,9 @@
 
 /* Immediate */
 /* TODO_POWER - LUT driver autosize */
-/* TODO_POWEr - LUT fracture input sharing fix */
+/* TODO_POWER - LUT fracture input sharing fix */
+/* TODO_POWER - Clock buffer instead of INV */
+/* TODO_POWER - Buffer sense stage Y/N parameter */
 
 /************************* Defines **********************************/
 #define POWER_LUT_SLOW
@@ -3020,12 +3022,19 @@ char binary_not(char c) {
 void power_print_spice_comparison(void) {
 	float leakage;
 	t_power_usage sub_power_usage;
-	float inv_sizes[5] = { 1, 8, 16, 32, 64 };
-	float buffer_sizes[4] = { 4, 9, 16, 64 };
-	unsigned int i;
+
+	float inv_sizes[3] = { 1, 16, 64 };
+
+	float buffer_sizes[3] = { 4, 16, 64 };
+
+	int LUT_sizes[3] = { 2, 4, 6 };
+
+	float sb_buffer_sizes[5] = { 9, 9, 16, 64, 64 };
+	int sb_mux_sizes[5] = { 4, 7, 12, 16, 20 };
+
+	unsigned int i, j;
 	float * dens = NULL;
 	float * prob = NULL;
-	float size;
 	char * SRAM_bits = NULL;
 	int sram_idx;
 
@@ -3053,25 +3062,29 @@ void power_print_spice_comparison(void) {
 	}
 
 	fprintf(g_power_output->out, "Energy of LUT\n");
-	for (i = 1; i <= 6; i++) {
-		SRAM_bits = my_realloc(SRAM_bits, ((1 << i) + 1) * sizeof(char));
-		if (i == 1) {
-			SRAM_bits[0] = '1';
-			SRAM_bits[1] = '0';
-		} else {
-			for (sram_idx = 0; sram_idx < (1 << (i - 1)); sram_idx++) {
-				SRAM_bits[sram_idx + (1 << (i - 1))] = binary_not(
-						SRAM_bits[sram_idx]);
+	for (i = 0; i < (sizeof(LUT_sizes) / sizeof(int)); i++) {
+		for (j = 1; j <= LUT_sizes[i]; j++) {
+			SRAM_bits = my_realloc(SRAM_bits, ((1 << j) + 1) * sizeof(char));
+			if (j == 1) {
+				SRAM_bits[0] = '1';
+				SRAM_bits[1] = '0';
+			} else {
+				for (sram_idx = 0; sram_idx < (1 << (j - 1)); sram_idx++) {
+					SRAM_bits[sram_idx + (1 << (j - 1))] = binary_not(
+							SRAM_bits[sram_idx]);
+				}
 			}
+			SRAM_bits[1 << j] = '\0';
 		}
-		SRAM_bits[1 << i] = '\0';
 
-		dens = my_realloc(dens, i * sizeof(float));
-		prob = my_realloc(prob, i * sizeof(float));
-		dens[i - 1] = 1;
-		prob[i - 1] = 0.5;
-		power_calc_LUT(&sub_power_usage, i, SRAM_bits, dens, prob);
-		fprintf(g_power_output->out, "%d\t%g\n", i,
+		dens = my_realloc(dens, LUT_sizes[i] * sizeof(float));
+		prob = my_realloc(prob, LUT_sizes[i] * sizeof(float));
+		for (j = 0; j < LUT_sizes[i]; j++) {
+			dens[j] = 1;
+			prob[j] = 0.5;
+		}
+		power_calc_LUT(&sub_power_usage, LUT_sizes[i], SRAM_bits, dens, prob);
+		fprintf(g_power_output->out, "%d\t%g\n", LUT_sizes[i],
 				(sub_power_usage.dynamic + sub_power_usage.leakage)
 						* g_solution_inf->T_crit * 2);
 	}
@@ -3083,7 +3096,7 @@ void power_print_spice_comparison(void) {
 					* g_solution_inf->T_crit * 2);
 
 	fprintf(g_power_output->out, "Energy of Mux\n");
-	for (i = 1; i <= 10; i++) {
+	for (i = 1; i <= 0; i++) {
 		t_power_usage mux_power_usage;
 
 		power_zero_usage(&mux_power_usage);
@@ -3101,33 +3114,27 @@ void power_print_spice_comparison(void) {
 	}
 
 	fprintf(g_power_output->out, "Energy of SB\n");
-	for (i = 2; i <= 20; i += 2) {
-		int buffer_size;
+	for (i = 0; i < (sizeof(sb_buffer_sizes) / sizeof(float)); i++) {
 		t_power_usage sb_power_usage;
 
 		power_zero_usage(&sb_power_usage);
-		if (i <= 8) {
-			buffer_size = 9;
-		} else if (i <= 14) {
-			buffer_size = 16;
-		} else {
-			buffer_size = 64;
+
+		dens = my_realloc(dens, sb_mux_sizes[i] * sizeof(float));
+		prob = my_realloc(prob, sb_mux_sizes[i] * sizeof(float));
+		for (j = 0; j < sb_mux_sizes[i]; j++) {
+			dens[j] = 2;
+			prob[j] = 0.5;
 		}
 
-		dens = my_realloc(dens, i * sizeof(float));
-		prob = my_realloc(prob, i * sizeof(float));
-		dens[i - 1] = 2;
-		prob[i - 1] = 0.5;
-		dens[i - 2] = 2;
-		prob[i - 2] = 0.5;
-		power_calc_MUX(&sub_power_usage, &g_power_common->mux_arch[i], dens,
-				prob, 0);
+		power_calc_MUX(&sub_power_usage,
+				&g_power_common->mux_arch[sb_mux_sizes[i]], dens, prob, 0);
 		power_add_usage(&sb_power_usage, &sub_power_usage);
 
-		power_calc_buffer(&sub_power_usage, buffer_size, 2, 0.5);
+		power_calc_buffer(&sub_power_usage, sb_buffer_sizes[i], 2, 0.5);
 		power_add_usage(&sb_power_usage, &sub_power_usage);
 
-		fprintf(g_power_output->out, "%d\t%d\t%g\n", i, buffer_size,
+		fprintf(g_power_output->out, "%d\t%.0f\t%g\n", sb_mux_sizes[i],
+				sb_buffer_sizes[i],
 				(sb_power_usage.dynamic + sb_power_usage.leakage)
 						* g_solution_inf->T_crit);
 	}
@@ -3226,11 +3233,17 @@ e_power_ret_code power_total(void) {
 	fprintf(g_power_output->out, "Average SB Buffer Size: %.1f\n",
 			g_power_common->total_sb_buffer_size
 					/ (float) g_power_common->num_sb_buffers);
+	fprintf(g_power_output->out, "SB Buffer Transistors: %g\n",
+			power_count_transistors_buffer(
+					g_power_common->total_sb_buffer_size
+							/ (float) g_power_common->num_sb_buffers));
 	fprintf(g_power_output->out, "Average CB Buffer Size: %.1f\n",
 			g_power_common->total_cb_buffer_size
 					/ (float) g_power_common->num_cb_buffers);
 	fprintf(g_power_output->out, "Tile length (um): %.2f\n",
 			g_power_common->tile_length * CONVERT_UM_PER_M);
+	fprintf(g_power_output->out, "1X Inverter C_in: %g\n",
+			g_power_common->INV_1X_C_in);
 
 	/* Print Error & Warning Logs */
 	output_logs(g_power_output->logs, g_power_output->num_logs,
@@ -3512,7 +3525,7 @@ static void power_calc_FF(t_power_usage * power_usage, float D_dens,
 	mux_in_prob[0] = D_prob;
 	mux_in_prob[1] = D_prob;
 	power_calc_MUX2_transmission(&sub_power_usage, mux_in_dens, mux_in_prob,
-			clk_dens, clk_prob, Q_dens);
+			clk_dens, clk_prob, (1 - clk_prob) * D_dens);
 	power_add_usage(power_usage, &sub_power_usage);
 
 	power_calc_INV1(&sub_power_usage, (1 - clk_prob) * D_dens, D_prob);
@@ -3546,11 +3559,11 @@ static void power_calc_MUX2_transmission(t_power_usage * power_usage,
 	power_zero_usage(power_usage);
 
 	/* A transmission gate leaks if the selected input = 1 and other input = 0 */
-	power_usage->leakage +=
-			((1 - sel_prob) * in_prob[0] * (1 - in_prob[1])
-					+ sel_prob * (1 - in_prob[0]) * in_prob[1])
-					* (g_power_common->NMOS_1X_leakage
-							+ g_power_common->PMOS_1X_leakage);
+	/*power_usage->leakage +=
+	 ((1 - sel_prob) * in_prob[0] * (1 - in_prob[1])
+	 + sel_prob * (1 - in_prob[0]) * in_prob[1])
+	 * (g_power_common->NMOS_1X_leakage
+	 + g_power_common->PMOS_1X_leakage);*/
 
 	/* Gate switching */
 	power_usage->dynamic += 2

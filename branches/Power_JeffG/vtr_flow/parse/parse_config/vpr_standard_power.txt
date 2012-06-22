@@ -33,5 +33,6 @@ lut_power_perc;*.power;<LUT.*?P_total="(.*?)"
 route_dyn_perc;*.power;<Routing.*?P_dyn="(.*?)"
 tile_dyn_perc;*.power;<Tiles.*?P_dyn="(.*?)"
 clock_dyn_perc;*.power;<Clock.*?P_dyn="(.*?)"
+sb_buffer_size;*.power;Average SB Buffer Size: (.*)
 error;output.txt;error=(.*)
 
