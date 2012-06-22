@@ -1,0 +1,38 @@
+vpr_status;output.txt;vpr_status=(.*)
+min_chan_width;vpr.out;Best routing used a channel width factor of (\d+)
+critical_path_delay;vpr.crit_path.out;Critical Path: (.*) [(]s[)]
+pack_time;vpr.out;Packing took (.*) seconds
+place_time;vpr.out;Placement took (.*) seconds
+min_chan_width_route_time;vpr.out;Routing took (.*) seconds
+crit_path_route_time;vpr.crit_path.out;Routing took (.*) seconds
+num_pre_packed_nets;vpr.out;Total Nets: (\d+)
+num_pre_packed_blocks;vpr.out;Total Blocks: (\d+)
+num_post_packed_nets;vpr.out;Netlist num_nets:\s*(\d+)
+num_clb;vpr.out;Netlist clb blocks:\s*(\d+)
+num_io;vpr.out;Netlist inputs pins:\s*(\d+)
+num_outputs;vpr.out;Netlist output pins:\s*(\d+)
+unabsorb_ff;vpr.out;(\d+) FFs in input netlist not absorbable
+num_memories;vpr.out;Netlist memory blocks:\s*(\d+)
+num_mult;vpr.out;Netlist mult_36 blocks:\s*(\d+)
+total_power;*.power;<Total.*?P="(.*?)"
+routing_power_perc;*.power;<Routing.*?P_total="(.*?)"
+clock_power_perc;*.power;<Clock.*?P_total="(.*?)"
+tile_power_perc;*.power;<Tiles.*?P_total="(.*?)"
+power_dyn_perc;*.power;<Total.*?P_dyn="(.*?)"
+clb_array_size;vpr.out;The circuit will be mapped into a (\d+) x \d+ array of clbs.
+chan_width;vpr.crit_path.out;--route_chan_width (\d+)
+sb_power_perc;*.power;<Switchbox.*?P_total="(.*?)"
+cb_power_perc;*.power;<Connectionbox.*?P_total="(.*?)"
+glb_wire_power_perc;*.power;<GlobalWires.*?P_total="(.*?)"
+clkbuffer_power_perc;*.power;<ClockBuffer.*?P_total="(.*?)"
+clkwire_power_perc;*.power;<ClockWire.*?P_total="(.*?)"
+interc_power_perc;*.power;<Interc.*?P_total="(.*?)"
+local_wire_power_perc;*.power;<LocalWire.*?P_total="(.*?)"
+ff_power_perc;*.power;<FF.*?P_total="(.*?)"
+lut_power_perc;*.power;<LUT.*?P_total="(.*?)"
+route_dyn_perc;*.power;<Routing.*?P_dyn="(.*?)"
+tile_dyn_perc;*.power;<Tiles.*?P_dyn="(.*?)"
+clock_dyn_perc;*.power;<Clock.*?P_dyn="(.*?)"
+sb_buffer_size;*.power;Average SB Buffer Size: (.*)
+error;output.txt;error=(.*)
+

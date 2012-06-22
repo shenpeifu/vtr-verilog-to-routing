@@ -1,30 +1,23 @@
 /* 
  Global variables 
 
- Key global variables that are used everywhere in VPR: 
+ Key global variables that are used everywhere are: 
  clb_net, vpack_net, block, and logical_block
-
- These variables represent the user netlist in various stages of the CAD flow:
-  vpack_net and logical_block for the unclustered netlist pre packing
-  clb_net and block for the clustered netlist post packing
+ These variables represent the user netlist in various stages of the CAD flow
  */
 
 #ifndef GLOBALS_H
 #define GLOBALS_H
 
-/********************************************************************
-Checking OS System
-********************************************************************/
-/*#if defined(__WIN32__) || defined(__WIN32) || defined(_WIN32) || defined(WIN32) || defined(__TOS_WIN__) || defined(__WINDOWS__)
-  #ifndef __WIN32__
-    #define __WIN32__
-  #endif
-#else
-    #ifndef __UNIX__
-      #define __UNIX__
-    #endif
-	#include <sys/time.h>
-#endif*/
+/* Arhitecture Parameters */
+extern t_arch * g_arch;
+extern t_det_routing_arch * g_routing_arch;
+
+/* Options */
+extern t_router_opts * g_routing_opts;
+
+/* Solution Information */
+extern t_solution_inf * g_solution_inf;
 
 /********************************************************************
  User Netlist Globals
@@ -77,10 +70,11 @@ extern float ipin_mux_trans_size;
 /* Netlist description data structures. */
 
 /* User netlist information */
-extern int num_logical_nets, num_logical_blocks;
+extern int num_logical_nets, num_logical_blocks, num_saved_logical_blocks,
+		num_saved_logical_nets;
 extern int num_p_inputs, num_p_outputs;
-extern struct s_net *vpack_net;
-extern struct s_logical_block *logical_block;
+extern struct s_net *vpack_net, *saved_logical_nets;
+extern struct s_logical_block *logical_block, *saved_logical_blocks;
 extern struct s_subckt *subckt;
 
 /* primiary inputs removed from circuit */
@@ -112,11 +106,6 @@ extern t_ivec ***rr_node_indices;
 extern int **net_rr_terminals; /* [0..num_nets-1][0..num_pins-1] */
 extern struct s_switch_inf *switch_inf; /* [0..det_routing_arch.num_switch-1] */
 extern int **rr_blk_source; /* [0..num_blocks-1][0..num_class-1] */
-
-/* the head pointers of structures that are "freed" and used constantly */
-/*struct s_heap *g_heap_free_head;
-struct s_trace *g_trace_free_head;
-struct s_linked_f_pointer *g_linked_f_pointer_free_head;*/
 
 /*******************************************************************
  Timing related globals

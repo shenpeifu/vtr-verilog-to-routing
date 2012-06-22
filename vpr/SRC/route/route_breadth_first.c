@@ -123,8 +123,6 @@ static boolean breadth_first_route_net(int inet, float bend_cost) {
 		current = get_heap_head();
 
 		if (current == NULL) { /* Infeasible routing.  No possible path for net. */
-			printf ("Cannot route net #%d (%s) to sink #%d -- no possible path.\n",
-				   inet, clb_net[inet].name, i);
 			reset_path_costs(); /* Clean up before leaving. */
 			return (FALSE);
 		}
@@ -151,8 +149,6 @@ static boolean breadth_first_route_net(int inet, float bend_cost) {
 			current = get_heap_head();
 
 			if (current == NULL) { /* Impossible routing. No path for net. */
-				printf ("Cannot route net #%d (%s) to sink #%d -- no possible path.\n",
-				   inet, clb_net[inet].name, i);
 				reset_path_costs();
 				return (FALSE);
 			}

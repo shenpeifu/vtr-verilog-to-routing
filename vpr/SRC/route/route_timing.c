@@ -197,11 +197,7 @@ boolean try_timing_driven_route(struct s_router_opts router_opts,
 		 * Timing_driven_route_net updated the net delay values.                 */
 
 		load_timing_graph_net_delays(net_delay);
-#ifdef HACK_LUT_PIN_SWAPPING
-		T_crit = load_net_slack(net_slack, TRUE);
-#else
-		T_crit = load_net_slack(net_slack, FALSE);
-#endif
+		T_crit = load_net_slack(net_slack, 0);
 		printf("T_crit: %g.\n", T_crit);
 		fflush(stdout);
 	}
@@ -326,8 +322,6 @@ boolean timing_driven_route_net(int inet, float pres_fac, float max_criticality,
 		current = get_heap_head();
 
 		if (current == NULL) { /* Infeasible routing.  No possible path for net. */
-			printf ("Cannot route net #%d (%s) to sink #%d -- no possible path.\n",
-				   inet, clb_net[inet].name, itarget);
 			reset_path_costs();
 			free_route_tree(rt_root);
 			return (FALSE);
@@ -372,8 +366,6 @@ boolean timing_driven_route_net(int inet, float pres_fac, float max_criticality,
 			current = get_heap_head();
 
 			if (current == NULL) { /* Impossible routing.  No path for net. */
-				printf ("Cannot route net #%d (%s) to sink #%d -- no possible path.\n",
-					 inet, clb_net[inet].name, itarget);
 				reset_path_costs();
 				free_route_tree(rt_root);
 				return (FALSE);
@@ -801,12 +793,9 @@ static void timing_driven_check_net_delays(float **net_delay) {
 
 	int inet, ipin;
 	float **net_delay_check;
+	struct s_linked_vptr *ch_list_head_net_delay_check;
 
-	t_chunk list_head_net_delay_check_ch = {NULL, 0, NULL};
-
-	/*struct s_linked_vptr *ch_list_head_net_delay_check;*/
-
-	net_delay_check = alloc_net_delay(&list_head_net_delay_check_ch, clb_net,
+	net_delay_check = alloc_net_delay(&ch_list_head_net_delay_check, clb_net,
 			num_nets);
 	load_net_delay_from_routing(net_delay_check, clb_net, num_nets);
 
@@ -837,6 +826,6 @@ static void timing_driven_check_net_delays(float **net_delay) {
 		}
 	}
 
-	free_net_delay(net_delay_check, &list_head_net_delay_check_ch);
+	free_net_delay(net_delay_check, &ch_list_head_net_delay_check);
 	printf("Completed net delay value cross check successfully.\n");
 }

@@ -1,16 +1,3 @@
-/**
- VPR is a CAD tool used to conduct FPGA architecture exploration.  It takes, as input, a technology-mapped netlist and a description of the FPGA architecture being investigated.  
- VPR then generates a packed, placed, and routed FPGA (in .net, .place, and .route files respectively) that implements the input netlist.
- 
- This file is where VPR starts execution.
-
- Key files in VPR:
- 1.  libvpr/physical_types.h - Data structures that define the properties of the FPGA architecture
- 2.  vpr_types.h - Very major file that defines the core data structures used in VPR.  This includes detailed architecture information, user netlist data structures, and data structures that describe the mapping between those two.
- 3.  globals.h - Defines the global variables used by VPR.
- */
-
-
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
@@ -23,7 +10,6 @@
 #include "read_netlist.h"
 #include "check_netlist.h"
 #include "print_netlist.h"
-#include "read_blif.h"
 #include "draw.h"
 #include "place_and_route.h"
 #include "pack.h"
@@ -37,6 +23,7 @@
 #include "rr_graph.h"
 #include "pb_type_graph.h"
 #include "ReadOptions.h"
+#include "power.h"
 
 /******** Global variables ********/
 int Fs_seed = -1;
@@ -95,6 +82,11 @@ int *chan_width_x = NULL; /* [0..ny] */
 int *chan_width_y = NULL; /* [0..nx] */
 
 struct s_grid_tile **grid = NULL; /* [0..(nx+1)][0..(ny+1)] Physical block list */
+
+t_arch * g_arch;
+t_det_routing_arch * g_routing_arch;
+t_router_opts * g_routing_opts;
+t_solution_inf * g_solution_inf;
 
 /******** Structures defining the routing ********/
 
@@ -160,6 +152,7 @@ int main(int argc, char **argv) {
 	t_options Options;
 	t_arch Arch;
 	t_model *user_models, *library_models;
+	t_solution_inf solution_inf;
 
 	enum e_operation Operation;
 	struct s_file_name_opts FileNameOpts;
@@ -168,33 +161,29 @@ int main(int argc, char **argv) {
 	struct s_annealing_sched AnnealSched;
 	struct s_router_opts RouterOpts;
 	struct s_det_routing_arch RoutingArch;
+	t_power_opts PowerOpts;
 	t_segment_inf *Segments;
 	t_timing_inf Timing;
 	boolean ShowGraphics;
 	boolean TimingEnabled;
 	boolean echo_enabled;
 	int GraphPause;
-	clock_t entire_flow_begin,entire_flow_end;
 	clock_t begin, end;
-
-	/*#ifdef __WIN32__
-	time_t begin, end;
-	#endif
-
-	#ifdef __UNIX__
-		struct timeval begin, end;
-	#endif*/
-	
-	entire_flow_begin = clock();
 
 	/* Print title message */
 	PrintTitle();
 
 	/* Print usage message if no args */
-	if (argc < 3) {
+	if (argc < 2) {
 		PrintUsage();
 		exit(1);
 	}
+
+	/* Setup global variables */
+	g_arch = &Arch;
+	g_routing_arch = &RoutingArch;
+	g_routing_opts = &RouterOpts;
+	g_solution_inf = &solution_inf;
 
 	/* Read in available inputs  */
 	ReadOptions(argc, argv, &Options);
@@ -208,10 +197,10 @@ int main(int argc, char **argv) {
 
 	/* Use inputs to configure VPR */
 	memset(&Arch, 0, sizeof(t_arch));
-	SetupVPR(&Options, TimingEnabled, &FileNameOpts, &Arch, &Operation,
+	SetupVPR(Options, TimingEnabled, &FileNameOpts, &Arch, &Operation,
 			&user_models, &library_models, &PackerOpts, &PlacerOpts,
 			&AnnealSched, &RouterOpts, &RoutingArch, &Segments, &Timing,
-			&ShowGraphics, &GraphPause);
+			&ShowGraphics, &GraphPause, &PowerOpts);
 
 	/* Check inputs are reasonable */
 	CheckOptions(Options, TimingEnabled);
@@ -222,48 +211,25 @@ int main(int argc, char **argv) {
 			Segments, Timing, Arch.Chans);
 	fflush(stdout);
 
-	/* Read blif file and sweep unused components */
-	read_and_process_blif(PackerOpts.blif_file_name, PackerOpts.sweep_hanging_nets_and_inputs, user_models,	library_models);
-
 	/* Packing stage */
 	if (PackerOpts.doPacking) {
 		begin = clock();
-
-		/*#ifdef __WIN32__
-			begin = time (NULL);
-		#endif
-
-		#ifdef __UNIX__
-			gettimeofday(&begin, NULL);
-		#endif*/
-
-		try_pack(&PackerOpts, &Arch, user_models, library_models, Timing);
-
+		PowerOpts.activity_file = FileNameOpts.ActFile;
+		try_pack(&PackerOpts, &Arch, user_models, library_models, &PowerOpts);
 		end = clock();
 #ifdef CLOCKS_PER_SEC
 		printf("Packing took %g seconds\n",
 				(float) (end - begin) / CLOCKS_PER_SEC);
 #else
-		printf("Packing took %g seconds\n", (float)(end - begin) / CLK_PER_SEC);
+		printf("Packing took %g seconds\n", (float) (end - begin) / CLK_PER_SEC);
 #endif
 
-		/*#ifdef __WIN32__
-			end = time (NULL);
-			printf("Packing took %g seconds\n", (float)(end - begin));
-		#endif
-
-		#ifdef __UNIX__
-			gettimeofday(&end, NULL);
-			printf("Packing took %g seconds\n", ((float)(end.tv_sec - begin.tv_sec) + (float)(end.tv_usec -begin.tv_usec)/1000000));
-		#endif*/
-
-
+		/* Free logical blocks and nets */
+		if (logical_block != NULL) {
+			free_logical_blocks();
+			free_logical_nets();
+		}
 		if (!PlacerOpts.doPlacement && !RouterOpts.doRouting) {
-			/* Free logical blocks and nets */
-			if (logical_block != NULL) {
-				free_logical_blocks();
-				free_logical_nets();
-			}
 			return 0;
 		}
 	}
@@ -298,12 +264,55 @@ int main(int argc, char **argv) {
 		alloc_draw_structs();
 	}
 
-	/* Do placement and routing */
+	/* Do the actual operation */
+	/* Do clustering placement and routing */
 	place_and_route(Operation, PlacerOpts, FileNameOpts.PlaceFile,
 			FileNameOpts.NetFile, FileNameOpts.ArchFile, FileNameOpts.RouteFile,
 			AnnealSched, RouterOpts, RoutingArch, Segments, Timing, Arch.Chans,
 			Arch.models);
 
+	if (PowerOpts.do_power) {
+		e_power_ret_code power_ret_code;
+		boolean power_error;
+
+		printf("\n\nPower Estimation:\n");
+		printf("-----------------\n");
+
+		assert(FileNameOpts.PowerFile);
+		PowerOpts.power_output_file = FileNameOpts.PowerFile;
+		assert(g_solution_inf->T_crit > 0);
+
+		printf("\tInitializing power module...");
+		power_error = power_init(&PowerOpts, Arch.power);
+		if (power_error) {
+			printf("Failed.\n");
+		} else {
+			printf("OK.\n");
+		}
+
+		if (!power_error) {
+			printf("\tRunning power estimation...");
+			power_ret_code = power_total();
+			if (power_ret_code == POWER_RET_CODE_ERRORS) {
+				printf("failed. (See power output for error details).\n");
+			} else if (power_ret_code == POWER_RET_CODE_WARNINGS) {
+				printf(
+						"OK. (Warnings exist. See power output for more details).\n");
+			} else if (power_ret_code == POWER_RET_CODE_SUCCESS) {
+				printf("OK.\n");
+			}
+		}
+
+		if (!power_error) {
+			printf("\tUninitializing power module...");
+			power_error = power_uninit();
+			if (power_error) {
+				printf("Failed.\n");
+			} else {
+				printf("OK.\n");
+			}
+		}
+	}
 	fflush(stdout);
 
 	/* Close down X Display */
@@ -322,15 +331,7 @@ int main(int argc, char **argv) {
 	freeArch(&Arch);
 	free_complex_block_types();
 
-	entire_flow_end = clock();
-	
-	#ifdef CLOCKS_PER_SEC
-		printf("The entire flow of VPR took %g seconds.\n", (float)(entire_flow_end - entire_flow_begin) / CLOCKS_PER_SEC);
-	#else
-		printf("The entire flow of VPR took %g seconds.\n", (float)(entire_flow_end - entire_flow_begin) / CLK_PER_SEC);
-	#endif
-	
-	/* Return 0 to single success to scripts */
+	/* Return 0 to signal success to scripts */
 	return 0;
 }
 
@@ -353,20 +354,23 @@ static void PrintUsage(void) {
 	 puts("\t[-sweep_hanging_nets_and_inputs on|off]"); */
 	puts("\t[--timing_driven_clustering on|off]");
 	puts(
-			"\t[--cluster_seed_type timing] [--alpha_clustering <float>] [--beta_clustering <float>]");
+			"\t[--cluster_seed_type timing|max_inputs] [--alpha_clustering <float>] [--beta_clustering <float>]");
 	/*    puts("\t[-recompute_timing_after <int>] [-cluster_block_delay <float>]"); */
 	puts("\t[--allow_unrelated_clustering on|off]");
 	/*    puts("\t[-allow_early_exit on|off]"); 
 	 puts("\t[-intra_cluster_net_delay <float>] ");
 	 puts("\t[-inter_cluster_net_delay <float>] "); */
 	puts("\t[--connection_driven_clustering on|off] ");
+	/*	puts("\t[-packer_algorithm greedy|brute_force]");
+	 puts("\t[-hack_no_legal_frac_lut]");
+	 puts("\t[-hack_safe_latch]"); */
 	puts("");
 	puts("Placer Options:");
 	puts(
 			"\t[--place_algorithm bounding_box | net_timing_driven | path_timing_driven]");
 	puts("\t[--init_t <float>] [--exit_t <float>]");
 	puts("\t[--alpha_t <float>] [--inner_num <float>] [--seed <int>]");
-	puts("\t[--place_cost_exp <float>]");
+	puts("\t[--place_cost_exp <float>] [--place_cost_type linear | nonlinear]");
 	puts("\t[--place_chan_width <int>] [--num_regions <int>] ");
 	puts("\t[--fix_pins random | <file.pads>]");
 	puts("\t[--enable_timing_computations on | off]");
@@ -392,6 +396,9 @@ static void PrintUsage(void) {
 	puts("Routing options valid only for timing-driven routing:");
 	puts("\t[--astar_fac <float>] [--max_criticality <float>]");
 	puts("\t[--criticality_exp <float>]");
+	puts("");
+	puts("Power options:");
+	puts("\t[--activity_file <string>]");
 	puts("");
 }
 
@@ -596,6 +603,7 @@ static void free_pb_type(t_pb_type *pb_type) {
 		free(pb_type->annotations);
 	}
 
+
 	for (i = 0; i < pb_type->num_ports; i++) {
 		free(pb_type->ports[i].name);
 		if (pb_type->ports[i].port_class) {
@@ -619,8 +627,8 @@ static void InitArch(INP t_arch Arch) {
 	low = 1;
 	high = -1;
 
-	num_instances_type = (int*) my_calloc(num_types, sizeof(int));
-	num_blocks_type = (int*) my_calloc(num_types, sizeof(int));
+	num_instances_type = my_calloc(num_types, sizeof(int));
+	num_blocks_type = my_calloc(num_types, sizeof(int));
 
 	for (i = 0; i < num_blocks; i++) {
 		num_blocks_type[block[i].type->index]++;
@@ -740,3 +748,4 @@ static void freeOptions(t_options *options) {
 	if (options->PinFile)
 		free(options->PinFile);
 }
+

@@ -1,13 +1,11 @@
 #include <string.h>
 #include <stdio.h>
-#include "assert.h"
+#include <assert.h>
 #include "util.h"
 #include "vpr_types.h"
 #include "globals.h"
 #include "read_blif.h"
 #include "arch_types.h"
-#include "ReadOptions.h"
-
 
 /* PRINT_PIN_NETS */
 
@@ -43,7 +41,7 @@ static FILE *blif;
 
 static int add_vpack_net(char *ptr, int type, int bnum, int bport, int bpin,
 		boolean is_global, int doall);
-static void get_blif_tok(char *buffer, int pass, int doall, boolean *done,
+static void get_tok(char *buffer, int pass, int doall, boolean *done,
 		boolean *add_truth_table, INP t_model* inpad_model,
 		INP t_model* outpad_model, INP t_model* logic_model,
 		INP t_model* latch_model, INP t_model* user_models);
@@ -54,23 +52,20 @@ static void io_line(int in_or_out, int doall, t_model *io_model);
 static boolean add_lut(int doall, t_model *logic_model);
 static void add_latch(int doall, INP t_model *latch_model);
 static void add_subckt(int doall, INP t_model *user_models);
+static void dum_parse(char *buf);
 static int hash_value(char *name);
 static void check_and_count_models(int doall, const char* model_name,
 		t_model* user_models);
 static void load_default_models(INP t_model *library_models,
 		OUTP t_model** inpad_model, OUTP t_model** outpad_model,
 		OUTP t_model** logic_model, OUTP t_model** latch_model);
+static void read_activity(char * activity_file);
+static int add_activity_to_net(char * net_name, float probability,
+		float density);
 
-static void read_blif(char *blif_file, boolean sweep_hanging_nets_and_inputs,
-		t_model *user_models, t_model *library_models);
-
-static void absorb_buffer_luts(void);
-static void compress_netlist(void);
-
-
-
-static void read_blif(char *blif_file, boolean sweep_hanging_nets_and_inputs,
-		t_model *user_models, t_model *library_models) {
+void read_blif(char *blif_file, boolean sweep_hanging_nets_and_inputs,
+		t_model *user_models, t_model *library_models,
+		t_power_opts * power_opts) {
 	char buffer[BUFSIZE];
 	int pass, doall;
 	boolean done;
@@ -98,7 +93,7 @@ static void read_blif(char *blif_file, boolean sweep_hanging_nets_and_inputs,
 			add_truth_table = FALSE;
 			model_lines = 0;
 			while (my_fgets(buffer, BUFSIZE, blif) != NULL) {
-				get_blif_tok(buffer, pass, doall, &done, &add_truth_table,
+				get_tok(buffer, pass, doall, &done, &add_truth_table,
 						inpad_model, outpad_model, logic_model, latch_model,
 						user_models);
 			}
@@ -107,6 +102,11 @@ static void read_blif(char *blif_file, boolean sweep_hanging_nets_and_inputs,
 	}
 	fclose(blif);
 	check_net(sweep_hanging_nets_and_inputs);
+
+	if (power_opts->do_power) {
+		read_activity(power_opts->activity_file);
+	}
+
 	free_parse();
 }
 
@@ -132,8 +132,8 @@ static void init_parse(int doall) {
 		num_driver = (int *) my_malloc(num_logical_nets * sizeof(int));
 		temp_num_pins = (int *) my_malloc(num_logical_nets * sizeof(int));
 
-		logical_block_input_count = (int *) my_calloc(num_logical_blocks, sizeof(int));
-		logical_block_output_count = (int *) my_calloc(num_logical_blocks, sizeof(int));
+		logical_block_input_count = my_calloc(num_logical_blocks, sizeof(int));
+		logical_block_output_count = my_calloc(num_logical_blocks, sizeof(int));
 
 		for (i = 0; i < num_logical_nets; i++) {
 			num_driver[i] = 0;
@@ -189,7 +189,7 @@ static void init_parse(int doall) {
 	num_subckts = 0;
 }
 
-static void get_blif_tok(char *buffer, int pass, int doall, boolean *done,
+static void get_tok(char *buffer, int pass, int doall, boolean *done,
 		boolean *add_truth_table, INP t_model* inpad_model,
 		INP t_model* outpad_model, INP t_model* logic_model,
 		INP t_model* latch_model, INP t_model* user_models) {
@@ -197,7 +197,7 @@ static void get_blif_tok(char *buffer, int pass, int doall, boolean *done,
 	/* Figures out which, if any token is at the start of this line and *
 	 * takes the appropriate action.                                    */
 
-#define BLIF_TOKENS " \t\n"
+#define TOKENS " \t\n"
 	char *ptr;
 	char *fn;
 	struct s_linked_vptr *data;
@@ -210,7 +210,7 @@ static void get_blif_tok(char *buffer, int pass, int doall, boolean *done,
 		if (ptr[0] == '0' || ptr[0] == '1' || ptr[0] == '-') {
 			data = my_malloc(sizeof(struct s_linked_vptr));
 			fn = ptr;
-			ptr = my_strtok(NULL, BLIF_TOKENS, blif, buffer);
+			ptr = my_strtok(NULL, TOKENS, blif, buffer);
 			if (!ptr || strlen(ptr) != 1) {
 				if (strlen(fn) == 1) {
 					/* constant generator */
@@ -325,7 +325,7 @@ static void get_blif_tok(char *buffer, int pass, int doall, boolean *done,
 
 }
 
-void dum_parse(char *buf) {
+static void dum_parse(char *buf) {
 
 	/* Continue parsing to the end of this (possibly continued) line. */
 
@@ -351,10 +351,6 @@ static boolean add_lut(int doall, t_model *logic_model) {
 	/* Count # nets connecting */
 	i = 0;
 	while ((ptr = my_strtok(NULL, TOKENS, blif, buf)) != NULL) {
-		if(i > logic_model->inputs->size) {
-			printf(ERRTAG "[LINE %d] .names %s ... %s has a LUT size that exceeds the maximum LUT size (%d) of the architecture\n", file_line_number, saved_names[0], ptr, logic_model->inputs->size);
-			exit(1);
-		}
 		strcpy(saved_names[i], ptr);
 		i++;
 	}
@@ -1458,293 +1454,82 @@ static void free_parse(void) {
 	free((void *) temp_num_pins);
 }
 
+static void read_activity(char * activity_file) {
+	int net_idx;
+	boolean fail;
+	char buf[BUFSIZE];
+	char * ptr;
+	char * word1;
+	char * word2;
+	char * word3;
 
-static void absorb_buffer_luts(void) {
-	/* This routine uses a simple pattern matching algorithm to remove buffer LUTs where possible (single-input LUTs that are programmed to be a wire) */
+	FILE * act_file_hdl;
 
-	int bnum, in_blk, out_blk, ipin, out_net, in_net;
-	int removed = 0;
+	if (num_logical_nets == 0) {
+		printf("Error reading activity file.  Must read netlist first\n");
+		exit(-1);
+	}
 
-	/* Pin ordering for the clb blocks (1 VPACK_LUT + 1 FF in each logical_block) is      *
-	 * output, n VPACK_LUT inputs, clock input.                                   */
+	for (net_idx = 0; net_idx < num_logical_nets; net_idx++) {
+		vpack_net[net_idx].probability = -1.0;
+		vpack_net[net_idx].density = -1.0;
+	}
 
-	for (bnum = 0; bnum < num_logical_blocks; bnum++) {
-		if (strcmp(logical_block[bnum].model->name, "names") == 0) {
-			if (logical_block[bnum].truth_table != NULL
-					&& logical_block[bnum].truth_table->data_vptr) {
-				if (strcmp("0 0",
-						(char*) logical_block[bnum].truth_table->data_vptr) == 0
-						|| strcmp("1 1",
-								(char*) logical_block[bnum].truth_table->data_vptr)
-								== 0) {
-					for (ipin = 0;
-							ipin < logical_block[bnum].model->inputs->size;
-							ipin++) {
-						if (logical_block[bnum].input_nets[0][ipin] == OPEN)
-							break;
-					}
-					assert(ipin == 1);
+	act_file_hdl = my_fopen(activity_file, "r", FALSE);
+	if (act_file_hdl == NULL) {
+		printf("Error: could not open activity file: %s\n", activity_file);
+		exit(-1);
+	}
 
-					assert(logical_block[bnum].clock_net == OPEN);
-					assert(logical_block[bnum].model->inputs->next == NULL);
-					assert(logical_block[bnum].model->outputs->size == 1);
-					assert(logical_block[bnum].model->outputs->next == NULL);
+	fail = FALSE;
+	ptr = my_fgets(buf, BUFSIZE, act_file_hdl);
+	while (ptr != NULL) {
+		word1 = strtok(buf, TOKENS);
+		word2 = strtok(NULL, TOKENS);
+		word3 = strtok(NULL, TOKENS);
+		printf("word1:%s|word2:%s|word3:%s\n", word1, word2, word3);
+		fail |= add_activity_to_net(word1, atof(word2), atof(word3));
 
-					in_net = logical_block[bnum].input_nets[0][0]; /* Net driving the buffer */
-					out_net = logical_block[bnum].output_nets[0][0]; /* Net the buffer us driving */
-					out_blk = vpack_net[out_net].node_block[1];
-					in_blk = vpack_net[in_net].node_block[0];
+		ptr = my_fgets(buf, BUFSIZE, act_file_hdl);
+	}
+	fclose(act_file_hdl);
 
-					assert(in_net != OPEN);
-					assert(out_net != OPEN);
-					assert(out_blk != OPEN);
-					assert(in_blk != OPEN);
-
-					/* TODO: Make this handle general cases, due to time reasons I can only handle buffers with single outputs */
-					if (vpack_net[out_net].num_sinks == 1) {
-						for (ipin = 1; ipin <= vpack_net[in_net].num_sinks;
-								ipin++) {
-							if (vpack_net[in_net].node_block[ipin] == bnum) {
-								break;
-							}
-						}
-						assert(ipin <= vpack_net[in_net].num_sinks);
-
-						vpack_net[in_net].node_block[ipin] =
-								vpack_net[out_net].node_block[1]; /* New output */
-						vpack_net[in_net].node_block_port[ipin] =
-								vpack_net[out_net].node_block_port[1];
-						vpack_net[in_net].node_block_pin[ipin] =
-								vpack_net[out_net].node_block_pin[1];
-
-						assert(
-								logical_block[out_blk].input_nets[vpack_net[out_net].node_block_port[1]][vpack_net[out_net].node_block_pin[1]] == out_net);
-						logical_block[out_blk].input_nets[vpack_net[out_net].node_block_port[1]][vpack_net[out_net].node_block_pin[1]] =
-								in_net;
-
-						vpack_net[out_net].node_block[0] = OPEN; /* This vpack_net disappears; mark. */
-						vpack_net[out_net].node_block_pin[0] = OPEN; /* This vpack_net disappears; mark. */
-						vpack_net[out_net].node_block_port[0] = OPEN; /* This vpack_net disappears; mark. */
-						vpack_net[out_net].num_sinks = 0; /* This vpack_net disappears; mark. */
-
-						logical_block[bnum].type = VPACK_EMPTY; /* Mark logical_block that had LUT */
-
-						/* error checking */
-						for (ipin = 0; ipin <= vpack_net[out_net].num_sinks;
-								ipin++) {
-							assert(vpack_net[out_net].node_block[ipin] != bnum);
-						}
-						removed++;
-					}
-				}
-			}
+	/* Make sure all nets have an activity value */
+	for (net_idx = 0; net_idx < num_logical_nets; net_idx++) {
+		if (vpack_net[net_idx].probability < 0.0
+				|| vpack_net[net_idx].density < 0.0) {
+			printf("Error: Activity file does not contain signal %s\n",
+					vpack_net[net_idx].name);
+			fail = TRUE;
 		}
 	}
-	printf("Removed %d LUT buffers \n", removed);
+
+	if (fail) {
+		exit(-1);
+	}
 }
 
-static void compress_netlist(void) {
+static int add_activity_to_net(char * net_name, float probability,
+		float density) {
+	int hash_idx, net_idx;
+	struct hash_logical_nets * h_ptr;
 
-	/* This routine removes all the VPACK_EMPTY blocks and OPEN nets that *
-	 * may have been left behind post synthesis.  After this    *
-	 * routine, all the VPACK blocks that exist in the netlist     *
-	 * are in a contiguous list with no unused spots.  The same     *
-	 * goes for the list of nets.  This means that blocks and nets  *
-	 * have to be renumbered somewhat.                              */
+	hash_idx = hash_value(net_name);
+	h_ptr = hash[hash_idx];
 
-	int inet, iblk, index, ipin, new_num_nets, new_num_blocks, i;
-	int *net_remap, *block_remap;
-	int L_num_nets;
-	t_model_ports *port;
-	struct s_linked_vptr *tvptr, *next;
-
-	new_num_nets = 0;
-	new_num_blocks = 0;
-	net_remap = (int *) my_malloc(num_logical_nets * sizeof(int));
-	block_remap = (int *) my_malloc(num_logical_blocks * sizeof(int));
-
-	for (inet = 0; inet < num_logical_nets; inet++) {
-		if (vpack_net[inet].node_block[0] != OPEN) {
-			net_remap[inet] = new_num_nets;
-			new_num_nets++;
-		} else {
-			net_remap[inet] = OPEN;
+	while (h_ptr != NULL) {
+		if (strcmp(h_ptr->name, net_name) == 0) {
+			net_idx = h_ptr->index;
+			vpack_net[net_idx].probability = probability;
+			vpack_net[net_idx].density = density;
+			return 0;
 		}
+		h_ptr = h_ptr->next;
 	}
 
-	for (iblk = 0; iblk < num_logical_blocks; iblk++) {
-		if (logical_block[iblk].type != VPACK_EMPTY) {
-			block_remap[iblk] = new_num_blocks;
-			new_num_blocks++;
-		} else {
-			block_remap[iblk] = OPEN;
-		}
-	}
-
-	if (new_num_nets != num_logical_nets
-			|| new_num_blocks != num_logical_blocks) {
-
-		for (inet = 0; inet < num_logical_nets; inet++) {
-			if (vpack_net[inet].node_block[0] != OPEN) {
-				index = net_remap[inet];
-				vpack_net[index] = vpack_net[inet];
-				for (ipin = 0; ipin <= vpack_net[index].num_sinks; ipin++) {
-					vpack_net[index].node_block[ipin] =
-							block_remap[vpack_net[index].node_block[ipin]];
-				}
-			} else {
-				free(vpack_net[inet].name);
-				free(vpack_net[inet].node_block);
-				free(vpack_net[inet].node_block_port);
-				free(vpack_net[inet].node_block_pin);
-			}
-		}
-
-		num_logical_nets = new_num_nets;
-		vpack_net = (struct s_net *) my_realloc(vpack_net,
-				num_logical_nets * sizeof(struct s_net));
-
-		for (iblk = 0; iblk < num_logical_blocks; iblk++) {
-			if (logical_block[iblk].type != VPACK_EMPTY) {
-				index = block_remap[iblk];
-				if (index != iblk) {
-					logical_block[index] = logical_block[iblk];
-					logical_block[index].index = index; /* array index moved */
-				}
-
-				L_num_nets = 0;
-				port = logical_block[index].model->inputs;
-				while (port) {
-					for (ipin = 0; ipin < port->size; ipin++) {
-						if (port->is_clock) {
-							assert(
-									port->size == 1 && port->index == 0 && ipin == 0);
-							if (logical_block[index].clock_net == OPEN)
-								continue;
-							logical_block[index].clock_net =
-									net_remap[logical_block[index].clock_net];
-						} else {
-							if (logical_block[index].input_nets[port->index][ipin]
-									== OPEN)
-								continue;
-							logical_block[index].input_nets[port->index][ipin] =
-									net_remap[logical_block[index].input_nets[port->index][ipin]];
-						}
-						L_num_nets++;
-					}
-					port = port->next;
-				}
-
-				port = logical_block[index].model->outputs;
-				while (port) {
-					for (ipin = 0; ipin < port->size; ipin++) {
-						if (logical_block[index].output_nets[port->index][ipin]
-								== OPEN)
-							continue;
-						logical_block[index].output_nets[port->index][ipin] =
-								net_remap[logical_block[index].output_nets[port->index][ipin]];
-						L_num_nets++;
-					}
-					port = port->next;
-				}
-			}
-
-			else {
-				free(logical_block[iblk].name);
-				port = logical_block[iblk].model->inputs;
-				i = 0;
-				while (port) {
-					if (!port->is_clock) {
-						if (logical_block[iblk].input_nets) {
-							if (logical_block[iblk].input_nets[i]) {
-								free(logical_block[iblk].input_nets[i]);
-								logical_block[iblk].input_nets[i] = NULL;
-							}
-						}
-						i++;
-					}
-					port = port->next;
-				}
-				if (logical_block[iblk].input_nets)
-					free(logical_block[iblk].input_nets);
-				port = logical_block[iblk].model->outputs;
-				i = 0;
-				while (port) {
-					if (logical_block[iblk].output_nets) {
-						if (logical_block[iblk].output_nets[i]) {
-							free(logical_block[iblk].output_nets[i]);
-							logical_block[iblk].output_nets[i] = NULL;
-						}
-					}
-					i++;
-					port = port->next;
-				}
-				if (logical_block[iblk].output_nets)
-					free(logical_block[iblk].output_nets);
-				tvptr = logical_block[iblk].truth_table;
-				while (tvptr != NULL) {
-					if (tvptr->data_vptr)
-						free(tvptr->data_vptr);
-					next = tvptr->next;
-					free(tvptr);
-					tvptr = next;
-				}
-			}
-		}
-
-		printf("Sweeped away %d nodes\n", num_logical_blocks - new_num_blocks);
-
-		num_logical_blocks = new_num_blocks;
-		logical_block = (struct s_logical_block *) my_realloc(logical_block,
-				num_logical_blocks * sizeof(struct s_logical_block));
-	}
-
-	/* Now I have to recompute the number of primary inputs and outputs, since *
-	 * some inputs may have been unused and been removed.  No real need to     *
-	 * recount primary outputs -- it's just done as defensive coding.          */
-
-	num_p_inputs = 0;
-	num_p_outputs = 0;
-
-	for (iblk = 0; iblk < num_logical_blocks; iblk++) {
-		if (logical_block[iblk].type == VPACK_INPAD)
-			num_p_inputs++;
-		else if (logical_block[iblk].type == VPACK_OUTPAD)
-			num_p_outputs++;
-	}
-
-	free(net_remap);
-	free(block_remap);
+	printf(
+			"Error: net %s found in activity file, but it does not exist in the .blif file.\n",
+			net_name);
+	return 1;
 }
-
-/* Read blif file and perform basic sweep/accounting on it */
-void read_and_process_blif(char *blif_file, boolean sweep_hanging_nets_and_inputs,
-		t_model *user_models, t_model *library_models) {
-
-	/* begin parsing blif input file */
-	read_blif(blif_file, sweep_hanging_nets_and_inputs, user_models,	library_models);
-	
-	/* TODO: Do check blif here 
-	 eg. 
-	 for(i = 0; i < num_logical_blocks; i++) {
-	 if(logical_block[i].model->num_inputs > max_subblock_inputs) {
-	 printf(ERRTAG "logical_block %s of model %s has %d inputs but architecture only supports subblocks up to %d inputs\n",
-	 logical_block[i].name, logical_block[i].model->name, logical_block[i].model->num_inputs, max_subblock_inputs);
-	 exit(1);
-	 }
-	 }
-	 */
-
-	if (GetEchoOption()) {
-		echo_input(blif_file, "blif_input.echo", library_models);
-	} else
-		;
-
-	absorb_buffer_luts();
-	compress_netlist(); /* remove unused inputs */
-	/* NB:  It's important to mark clocks and such *after* compressing the   *
-	 * netlist because the vpack_net numbers, etc. may be changed by removing      *
-	 * unused inputs .  */
-}
-
 

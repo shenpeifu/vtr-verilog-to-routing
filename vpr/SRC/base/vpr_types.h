@@ -1,32 +1,11 @@
-/* This is a core file that defines the major data types used by VPR
+/* This file contains the major data types used by VPR
 
- This file is divided into generally 4 major sections:
+ This document is divided into generally 4 major sections:
 
  1.  Global data types and constants
  2.  Packing specific data types
  3.  Placement specific data types
  4.  Routing specific data types
-
- Key background file:
-
- An understanding of libvpr/physical_types.h is crucial to understanding this file.  physical_types.h contains information about the architecture described in the architecture description language
-
- Key data structures:
-
- logical_block - One node in the input technology-mapped netlist
- net - Connectivity data structure for the user netlist
- block - An already clustered logic block
- rr_node - The basic building block of the interconnect in the FPGA architecture
-  
- Cluster-specific main data structure:
-
- t_pb: Stores the mapping between the user netlist and the logic blocks on the FPGA achitecture.  For example, if a user design has 10 clusters of 5 LUTs each, you will have 10 t_pb instances of type cluster and within each of those clusters another 5 t_pb instances of type LUT.
- The t_pb hierarchy follows what is described by t_pb_graph_node
-
- Each top-level pb stores the entire routing resource graph (rr_graph).  The traceback information is included in this rr_graph so if you needed to determine connectivity down to the wire level, this is the data structure that you would traverse.
- The rr_graph is generated based on the pb_graph_node netlist of that pb.  Each pb_graph_node has a member variable called pin_count that serves as the index for the rr_node (in retrospect, I should have used rr_node_index instead of pin_count for the member variable to be more descriptive).  
- This makes it easy to identify which rr_node corresponds to which pb_graph_pin.  Additional sources and sinks are generated at the inputs and outputs of the complex logic block to match with what has already been packed into the cluster.
- 
 
  */
 
@@ -52,8 +31,7 @@
 /*#define PRINT_NET_DELAYS*//*prints out delays for all connections */
 /*#define PRINT_TIMING_GRAPH*//*prints out the timing graph */
 /*#define PRINT_REL_POS_DISTR *//*prints out the relative distribution graph for placements */
-/*#define DUMP_BLIF_ECHO*/ /*dump blif of internal representation of user circuit.  Useful for ensuring functional correctness via logical equivalence with input blif*/
-/*#define HACK_LUT_PIN_SWAPPING*/ /* Hack to enable LUT input pin swapping for delay purposes */
+#define DUMP_BLIF_ECHO /*dump blif of internal representation of user circuit.  Useful for ensuring functional correctness via logical equivalence with input blif*/
 
 #ifdef SPEC
 #define NO_GRAPHICS		/* Rips out graphics (for non-X11 systems)      */
@@ -103,7 +81,7 @@ enum logical_block_types {
 
 /* Selection algorithm for selecting next seed  */
 enum e_cluster_seed {
-	VPACK_TIMING
+	VPACK_TIMING, VPACK_MAX_INPUTS
 };
 
 /* Data structure to track nets during blif parsing */
@@ -125,7 +103,7 @@ struct s_pack_molecule;
 
 /* Stores statistical information for pb such as cost information */
 /* jedit TODO: Move to pb_graph_node to minimize memory allocation/deallocation */
-typedef struct s_pb_stats {
+struct s_pb_stats {
 	/* Packing statistics */
 	float *gain; /* Attraction (inverse of cost) function */
 
@@ -167,7 +145,8 @@ typedef struct s_pb_stats {
 	 */
 	struct s_pack_molecule **feasible_blocks;
 	int num_feasible_blocks; /* [0..num_marked_models-1] */
-} t_pb_stats;
+};
+typedef struct s_pb_stats t_pb_stats;
 
 /* An FPGA complex block is represented by a hierarchy of physical blocks.  
  These include leaf physical blocks that a netlist block can map to (such as LUTs, flip-flops, memory slices, etc),
@@ -176,7 +155,7 @@ typedef struct s_pb_stats {
 
  All physical blocks are represented by this s_pb data structure.
  */
-typedef struct s_pb {
+struct s_pb {
 	char *name; /* Name of this physical block */
 	t_pb_graph_node *pb_graph_node; /* pointer to pb_graph_node this pb corresponds to */
 	int logical_block; /* If this is a terminating pb, gives the logical (netlist) block that it contains */
@@ -187,23 +166,17 @@ typedef struct s_pb {
 	struct s_pb *parent_pb; /* pointer to parent node */
 
 	struct s_rr_node *rr_graph; /* pointer to rr_graph connecting pbs of cluster */
-	struct s_pb **rr_node_to_pb_mapping; /* [0..num_local_rr_nodes-1] pointer look-up of which pb this rr_node belongs based on index, NULL if pb does not exist  */
 	struct s_pb_stats pb_stats; /* statistics for current pb */
 
 	struct s_net *local_nets; /* Records post-packing connections, valid only for top-level */
 	int num_local_nets; /* Records post-packing connections, valid only for top-level */
-	
-	int clock_net; /* Records clock net driving a flip-flop, valid only for lowest-level, flip-flop PBs */
-	
-	int *lut_pin_remap; /* [0..num_lut_inputs-1] applies only to LUT primitives, stores how LUT inputs were swapped during CAD flow, 
-						   LUT inputs can be swapped by changing the logic in the LUT, this is useful because the fastest LUT input compared to the slowest is often significant (2-5x),
-						   so this optimization is crucial for handling LUT based FPGAs.
-						   */
-} t_pb;
+};
+typedef struct s_pb t_pb;
 
 struct s_tnode;
+
 /* Technology-mapped user netlist block */
-typedef struct s_logical_block {
+struct s_logical_block {
 	char *name; /* Taken from the first vpack_net which it drives. */
 	enum logical_block_types type; /* I/O, combinational logic, or latch */
 	t_model* model; /* Technology-mapped type (eg. LUT, Flip-flop, memory slice, inpad, etc) */
@@ -226,7 +199,8 @@ typedef struct s_logical_block {
 
 	struct s_linked_vptr *truth_table; /* If this is a LUT (.names), then this is the logic that the LUT implements */
 	struct s_linked_vptr *packed_molecules; /* List of t_pack_molecules that this logical block is a part of */
-} t_logical_block;
+};
+typedef struct s_logical_block t_logical_block;
 
 enum e_pack_pattern_molecule_type {
 	MOLECULE_SINGLE_ATOM, MOLECULE_FORCED_PACK, MOLECULE_CHAIN
@@ -298,7 +272,6 @@ typedef enum {
 	FF_OPIN,
 	FF_SINK,
 	FF_SOURCE,
-	FF_CLOCK,
 	CONSTANT_GEN_SOURCE
 } t_tnode_type;
 /* type:  What is this tnode? (Pad pin, clb pin, subblock pin, etc.)         *
@@ -319,16 +292,12 @@ typedef enum {
  * index: index of array this tnode belongs to
  * num_critical_input_paths, num_critical_output_paths: Count total number of near critical paths that go through this node *
  */
-typedef struct s_tnode {
+struct s_tnode {
 	t_tedge *out_edges;
 	int num_edges;
 	float T_arr;
 	float T_req;
 	int block;
-
-	/* For flipflops only. Clock_domain contains the index of the clock in clock_list; clock_skew is the time taken for a clock signal to get to the flip-flop. */
-	int clock_domain; 
-	float clock_skew;
 
 	/* post-packing timing graph */
 	t_tnode_type type;
@@ -342,20 +311,8 @@ typedef struct s_tnode {
 	float normalized_T_arr; /* arrival time (normalized with respect to max time) */
 
 	int index;
-} t_tnode;
-
-typedef struct s_clock {
-	char * name;
-	int fanout;
-} t_clock;
-/* Stores the name and fanout (number of flip-flops in clock domain) of each clock.  Used extensively in SDC parsing and timing analysis. */
-
-typedef struct s_sdc_clock {
-	float period;
-	float offset;
-} t_sdc_clock;
-/* Stores the period and offset constraints for each SDC file.  Only used
-   when parsing the SDC file. */
+};
+typedef struct s_tnode t_tnode;
 
 /***************************************************************************
  * Placement and routing data types
@@ -371,6 +328,12 @@ enum pic_type {
 	NO_PICTURE, PLACEMENT, ROUTING
 };
 /* What's on screen? */
+
+/* For the placer.  Different types of cost functions that can be used. */
+enum place_c_types {
+	LINEAR_CONG, NONLINEAR_CONG
+};
+/* Nonlinear placement is deprecated */
 
 /* Map netlist to FPGA or timing analyze only */
 enum e_operation {
@@ -406,6 +369,8 @@ struct s_net {
 	int *node_block_pin;
 	boolean is_global;
 	boolean is_const_gen;
+	float probability;
+	float density;
 };
 
 /* s_grid_tile is the minimum tile of the fpga                         
@@ -472,6 +437,8 @@ struct s_file_name_opts {
 	char *NetFile;
 	char *PlaceFile;
 	char *RouteFile;
+	char *ActFile;
+	char *PowerFile;
 	char *OutFilePrefix;
 };
 
@@ -483,7 +450,6 @@ enum e_packer_algorithm {
 
 struct s_packer_opts {
 	char *blif_file_name;
-	char *sdc_file_name;
 	char *output_file;
 	boolean global_clocks;
 	int clocks_per_cluster;
@@ -526,11 +492,13 @@ struct s_placer_opts {
 	enum e_place_algorithm place_algorithm;
 	float timing_tradeoff;
 	int block_dist;
+	enum place_c_types place_cost_type;
 	float place_cost_exp;
 	int place_chan_width;
 	enum e_pad_loc_type pad_loc_type;
 	char *pad_loc_file;
 	enum pfreq place_freq;
+	int num_regions;
 	int recompute_crit_iter;
 	boolean enable_timing_computations;
 	int inner_loop_recompute_divider;
@@ -543,18 +511,21 @@ struct s_placer_opts {
 /* Various options for the placer.                                           *
  * place_algorithm:  BOUNDING_BOX_PLACE or NET_TIMING_DRIVEN_PLACE, or       *
  *                   PATH_TIMING_DRIVEN_PLACE                                *
- * timing_tradeoff:  When TIMING_DRIVEN_PLACE mode, what is the tradeoff     *
+ * timing_tradeoff:  When TIMING_DRIVEN_PLACE mode, what is the tradeoff *
  *                   timing driven and BOUNDING_BOX_PLACE.                   *
  * block_dist:  Initial guess of how far apart blocks on the critical path   *
  *              This is used to compute the initial slacks and criticalities *
+ * place_cost_type:  LINEAR_CONG or NONLINEAR_CONG.                          *
  * place_cost_exp:  Power to which denominator is raised for linear_cong.    *
  * place_chan_width:  The channel width assumed if only one placement is     *
  *                    performed.                                             *
- * pad_loc_type:  Are pins FREE, fixed randomly, or fixed from a file.       *
- * pad_loc_file:  File to read pin locations form if pad_loc_type            *
+ * pad_loc_type:  Are pins FREE, fixed randomly, or fixed from a file.  *
+ * pad_loc_file:  File to read pin locations form if pad_loc_type  *
  *                     is USER.                                              *
  * place_freq:  Should the placement be skipped, done once, or done for each *
  *              channel width in the binary search.                          *
+ * num_regions:  Used only with NONLINEAR_CONG; in that case, congestion is  *
+ *               computed on an array of num_regions x num_regions basis.    *
  * recompute_crit_iter: how many temperature stages pass before we recompute *
  *               criticalities based on average point to point delay         *
  * enable_timing_computations: in bounding_box mode, normally, timing        *
@@ -568,6 +539,14 @@ struct s_placer_opts {
  * td_place_exp_last: value that the criticality exponent will be at the end *
  * doPlacement: TRUE if placement is supposed to be done in the CAD flow, FALSE otherwise */
 
+typedef struct s_power_opts t_power_opts;
+struct s_power_opts {
+	boolean do_power;
+	char * activity_file;
+	char * power_output_file;
+	char * cmos_tech_behavior_file;
+};
+
 enum e_route_type {
 	GLOBAL, DETAILED
 };
@@ -580,6 +559,7 @@ enum e_base_cost_type {
 
 #define NO_FIXED_CHANNEL_WIDTH -1
 
+typedef struct s_router_opts t_router_opts;
 struct s_router_opts {
 	float first_iter_pres_fac;
 	float initial_pres_fac;
@@ -641,6 +621,7 @@ struct s_router_opts {
  *                  criticality_exp (then clip to max_criticality).         
  * doRouting: True if routing is supposed to be done, FALSE otherwise */
 
+typedef struct s_det_routing_arch t_det_routing_arch;
 struct s_det_routing_arch {
 	enum e_directionality directionality; /* UDSD by AY */
 	int Fs;
@@ -708,6 +689,9 @@ typedef struct s_seg_details {
 	int group_start;
 	int group_size;
 	int index;
+
+	/* Power */
+	float Cmetal_per_m;
 } t_seg_details;
 
 /* Lists detailed information about segmentation.  [0 .. W-1].              *
@@ -801,6 +785,15 @@ typedef struct s_rr_node {
 	t_pb_graph_pin *pb_graph_pin;
 	t_tnode *tnode;
 	float pack_intrinsic_cost;
+
+	/* Used by power calculator */
+	boolean visited;
+	float * in_density;
+	float * in_prob;
+	short num_inputs;
+	short selected_input;
+	short driver_switch_type;
+	float C_tile_per_m;
 } t_rr_node;
 /* Main structure describing one routing resource node.  Everything in       *
  * this structure should describe the graph -- information needed only       *
@@ -895,6 +888,12 @@ enum e_cost_indices {
 struct s_TokenPair {
 	char *Str;
 	int Enum;
+};
+
+typedef struct s_solution_inf t_solution_inf;
+struct s_solution_inf {
+	float T_crit;
+	int channel_width;
 };
 
 #endif

@@ -11,7 +11,7 @@
 ENABLE_GRAPHICS = false
 # can be true or false
 
-export BUILD_TYPE = release
+export BUILD_TYPE = debug
 # can be debug or release - this option gets inherited by the library libvpr 
 # by default, though libvpr's build type can be set independently in libvpr's Makefile.
 
@@ -30,9 +30,9 @@ LIB_DIR = -L../libvpr
 LIB = -lm -lvpr_6
 SRC_DIR = SRC
 OBJ_DIR = OBJ
-OTHER_DIR = -ISRC/util -ISRC/timing -ISRC/pack -ISRC/place -ISRC/base -ISRC/route
+OTHER_DIR = -ISRC/util -ISRC/timing -ISRC/pack -ISRC/place -ISRC/base -ISRC/route -ISRC/power
 
-WARN_FLAGS = -Wall -Wpointer-arith -Wcast-qual -Wstrict-prototypes -D__USE_FIXED_PROTOTYPES__ -ansi -pedantic -Wmissing-prototypes -Wshadow -Wcast-align -D_POSIX_SOURCE -Wno-overlength-strings
+WARN_FLAGS = -Wall 
 
 DEBUG_FLAGS = -g
 OPT_FLAGS = $(OPTIMIZATION_LEVEL_FOR_RELEASE_BUILD)
@@ -67,13 +67,15 @@ OBJ = $(patsubst $(SRC_DIR)/%.c, $(OBJ_DIR)/%.o,$(wildcard $(SRC_DIR)/*.c $(SRC_
 OBJ_DIRS=$(sort $(dir $(OBJ)))
 DEP := $(OBJ:.o=.d)
 
-$(EXE): $(OBJ) Makefile ../libvpr/libvpr_6.a
+$(EXE): notify $(OBJ) Makefile ../libvpr/libvpr_6.a
 	$(CC) $(FLAGS) $(OBJ) -o $(EXE) $(LIB_DIR) $(LIB)
-#if graphics enabled but libx11-dev is not installed, notify the user
-	@ $(PACKAGENOTIFICATION) 
 
 ../libvpr/libvpr_6.a:
 	@ cd ../libvpr && make
+
+notify:
+#if graphics enabled but libx11-dev is not installed, notify the user
+	@ $(PACKAGENOTIFICATION) 
 
 packages: 
 #if graphics enabled but libx11-dev is not installed, install it

@@ -205,7 +205,7 @@ float print_critical_path_node(FILE * fp, t_linked_int * critical_path_node) {
 	static char *tnode_type_names[] = { "INPAD_SOURCE", "INPAD_OPIN",
 			"OUTPAD_IPIN", "OUTPAD_SINK", "CB_IPIN", "CB_OPIN",
 			"INTERMEDIATE_NODE", "PRIMITIVE_IPIN", "PRIMITIVE_OPIN", "FF_IPIN",
-			"FF_OPIN", "FF_SINK", "FF_SOURCE", "FF_CLOCK", "CONSTANT_GEN_SOURCE" };
+			"FF_OPIN", "FF_SINK", "FF_SOURCE", "CONSTANT_GEN_SOURCE" };
 
 	t_linked_int *next_crit_node;
 	float Tdel;
@@ -216,7 +216,7 @@ float print_critical_path_node(FILE * fp, t_linked_int * critical_path_node) {
 	pb_graph_pin = tnode[inode].pb_graph_pin;
 
 	fprintf(fp, "Node: %d  %s Block #%d (%s)\n", inode, tnode_type_names[type],
-		iblk, block[iblk].name);
+			iblk, block[iblk].name);
 
 	if (pb_graph_pin == NULL) {
 		assert(
@@ -224,8 +224,8 @@ float print_critical_path_node(FILE * fp, t_linked_int * critical_path_node) {
 	}
 
 	if (pb_graph_pin != NULL) {
-		fprintf(fp, "Pin: %s.%s[%d] pb (%s)", pb_graph_pin->parent_node->pb_type->name,
-			pb_graph_pin->port->name, pb_graph_pin->pin_number, block[iblk].pb->rr_node_to_pb_mapping[pb_graph_pin->pin_count_in_cluster]->name);
+		fprintf(fp, "Pin: %s.%s[%d] ", pb_graph_pin->parent_node->pb_type->name,
+				pb_graph_pin->port->name, pb_graph_pin->pin_number);
 	}
 	if (type != INPAD_SOURCE && type != OUTPAD_SINK) {
 		fprintf(fp, "\n");

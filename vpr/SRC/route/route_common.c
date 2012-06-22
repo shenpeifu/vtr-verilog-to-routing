@@ -34,13 +34,9 @@ static int heap_tail; /* Index of first unused slot in the heap array */
 
 /* For managing my own list of currently free heap data structures.     */
 static struct s_heap *heap_free_head = NULL;
-/* For keeping track of the sudo malloc memory for the heap*/
-static t_chunk heap_ch = {NULL, 0, NULL};
 
 /* For managing my own list of currently free trace data structures.    */
 static struct s_trace *trace_free_head = NULL;
-/* For keeping track of the sudo malloc memory for the trace*/
-static t_chunk trace_ch = {NULL, 0, NULL};
 
 #ifdef DEBUG
 static int num_trace_allocated = 0; /* To watch for memory leaks. */
@@ -51,36 +47,34 @@ static int num_linked_f_pointer_allocated = 0;
 static struct s_linked_f_pointer *rr_modified_head = NULL;
 static struct s_linked_f_pointer *linked_f_pointer_free_head = NULL;
 
-static t_chunk linked_f_pointer_ch = {NULL, 0, NULL};
-
-/*  The numbering relation between the channels and clbs is:				*
- *																	        *
- *  |    IO     | chan_   |   CLB     | chan_   |   CLB     |               *
- *  |grid[0][2] | y[0][2] |grid[1][2] | y[1][2] | grid[2][2]|               *
- *  +-----------+         +-----------+         +-----------+               *
- *                                                            } capacity in *
- *   No channel           chan_x[1][1]          chan_x[2][1]  } chan_width  *
- *                                                            } _x[1]       *
- *  +-----------+         +-----------+         +-----------+               *
- *  |           |  chan_  |           |  chan_  |           |               *
- *  |    IO     | y[0][1] |   CLB     | y[1][1] |   CLB     |               *
- *  |grid[0][1] |         |grid[1][1] |         |grid[2][1] |               *
- *  |           |         |           |         |           |               *
- *  +-----------+         +-----------+         +-----------+               *
- *                                                            } capacity in *
- *                        chan_x[1][0]          chan_x[2][0]  } chan_width  * 
- *                                                            } _x[0]       *
- *                        +-----------+         +-----------+               *
- *                 No     |           |	   No   |           |               *
- *               Channel  |    IO     | Channel |    IO     |               *
- *                        |grid[1][0] |         |grid[2][0] |               *
- *                        |           |         |           |               *
- *                        +-----------+         +-----------+               *
- *                                                                          *
- *               {=======}              {=======}                           *
- *              Capacity in            Capacity in                          *
- *            chan_width_y[0]        chan_width_y[1]                        *
- *                                                                          */
+/*  The numbering relation between the channels and clbs is:               *
+ *                                                                         *
+ *  |   IO    | chan_   |   CLB      | chan_   |   CLB     |               *
+ *  |grid[0][2]| y[0][2] | grid[1][2]  | y[1][2] |  grid[2][2]|               *
+ *  +-------- +         +------------+         +-----------+               *
+ *                                                           } capacity in *
+ *   No channel          chan_x[1][1]          chan_x[2][1]  } chan_width  *
+ *                                                           } _x[1]       *
+ *  +---------+         +------------+         +-----------+               *
+ *  |         | chan_   |            | chan_   |           |               *
+ *  |  IO     | y[0][1] |    CLB     | y[1][1] |   CLB     |               *
+ *  |grid[0][1]|         |  grid[1][1] |         | grid[2][1] |               *
+ *  |         |         |            |         |           |               *
+ *  +---------+         +------------+         +-----------+               *
+ *                                                           } capacity in *
+ *                      chan_x[1][0]           chan_x[2][0]  } chan_width  * 
+ *                                                           } _x[0]       *
+ *                      +------------+         +-----------+               *
+ *              No      |            | No      |           |               *
+ *            Channel   |    IO      | Channel |   IO      |               *
+ *                      |  grid[1][0] |         | grid[2][0] |               *
+ *                      |            |         |           |               *
+ *                      +------------+         +-----------+               *
+ *                                                                         *
+ *             {=======}              {=======}                            *
+ *            Capacity in            Capacity in                           *
+ *          chan_width_y[0]        chan_width_y[1]                         *
+ *                                                                         */
 
 /******************** Subroutines local to route_common.c *******************/
 
@@ -763,11 +757,9 @@ void free_route_structs(t_ivec ** clb_opins_used_locally) {
 		free(clb_opins_used_locally);
 	}
 
-	/*free the memory chunks that were used by heap and linked f pointer */
-	free_chunk_memory(&heap_ch);
-	free_chunk_memory(&linked_f_pointer_ch);
-	heap_free_head = NULL;
-	linked_f_pointer_free_head = NULL;
+	/* NB:  Should use my chunk_malloc for tptr, hptr, and mod_ptr structures. *
+	 * I could free everything except the tptrs at the end then.               */
+
 }
 
 void free_saved_routing(struct s_trace **best_routing,
@@ -797,7 +789,7 @@ void alloc_and_load_rr_node_route_structs(void) {
 		exit(1);
 	}
 
-	rr_node_route_inf = (t_rr_node_route_inf *) my_malloc(num_rr_nodes * sizeof(t_rr_node_route_inf));
+	rr_node_route_inf = my_malloc(num_rr_nodes * sizeof(t_rr_node_route_inf));
 
 	for (inode = 0; inode < num_rr_nodes; inode++) {
 		rr_node_route_inf[inode].prev_node = NO_PREVIOUS;
@@ -924,7 +916,7 @@ static void add_to_heap(struct s_heap *hptr) {
 
 	if (heap_tail > heap_size) { /* Heap is full */
 		heap_size *= 2;
-		heap = (struct s_heap **) my_realloc((void *) (heap + 1),
+		heap = my_realloc((void *) (heap + 1),
 				heap_size * sizeof(struct s_heap *));
 		heap--; /* heap goes from [1..heap_size] */
 	}
@@ -1002,14 +994,25 @@ void empty_heap(void) {
 	heap_tail = 1;
 }
 
+#define NCHUNK 200		/* # of various structs malloced at a time. */
+
 static struct s_heap *
 alloc_heap_data(void) {
 
+	int i;
 	struct s_heap *temp_ptr;
 
 	if (heap_free_head == NULL) { /* No elements on the free list */
-		heap_free_head = (struct s_heap *) my_chunk_malloc(sizeof(struct s_heap),&heap_ch);
-		heap_free_head->u.next = NULL;
+		heap_free_head = (struct s_heap *) my_malloc(
+				NCHUNK * sizeof(struct s_heap));
+
+		/* If I want to free this memory, I have to store the original pointer *
+		 * somewhere.  Not worthwhile right now -- if you need more memory     *
+		 * for post-routing stages, look into it.                              */
+
+		for (i = 0; i < NCHUNK - 1; i++)
+			(heap_free_head + i)->u.next = heap_free_head + i + 1;
+		(heap_free_head + NCHUNK - 1)->u.next = NULL;
 	}
 
 	temp_ptr = heap_free_head;
@@ -1046,11 +1049,20 @@ void invalidate_heap_entries(int sink_node, int ipin_node) {
 static struct s_trace *
 alloc_trace_data(void) {
 
+	int i;
 	struct s_trace *temp_ptr;
 
 	if (trace_free_head == NULL) { /* No elements on the free list */
-		trace_free_head = (struct s_trace *) my_chunk_malloc(sizeof(struct s_trace),&trace_ch);
-		trace_free_head->next = NULL;
+		trace_free_head = (struct s_trace *) my_malloc(
+				NCHUNK * sizeof(struct s_trace));
+
+		/* If I want to free this memory, I have to store the original pointer *
+		 * somewhere.  Not worthwhile right now -- if you need more memory     *
+		 * for post-routing stages, look into it.                              */
+
+		for (i = 0; i < NCHUNK - 1; i++)
+			(trace_free_head + i)->next = trace_free_head + i + 1;
+		(trace_free_head + NCHUNK - 1)->next = NULL;
 	}
 	temp_ptr = trace_free_head;
 	trace_free_head = trace_free_head->next;
@@ -1077,13 +1089,23 @@ alloc_linked_f_pointer(void) {
 	/* This routine returns a linked list element with a float pointer as *
 	 * the node data.                                                     */
 
-	/*int i;*/
+	int i;
 	struct s_linked_f_pointer *temp_ptr;
 
 	if (linked_f_pointer_free_head == NULL) {
-		/* No elements on the free list */	
-	linked_f_pointer_free_head = (struct s_linked_f_pointer *) my_chunk_malloc(sizeof(struct s_linked_f_pointer),&linked_f_pointer_ch);
-	linked_f_pointer_free_head->next = NULL;
+		/* No elements on the free list */
+		linked_f_pointer_free_head = (struct s_linked_f_pointer *) my_malloc(
+				NCHUNK * sizeof(struct s_linked_f_pointer));
+
+		/* If I want to free this memory, I have to store the original pointer *
+		 * somewhere.  Not worthwhile right now -- if you need more memory     * 
+		 * for post-routing stages, look into it.                              */
+
+		for (i = 0; i < NCHUNK - 1; i++) {
+			(linked_f_pointer_free_head + i)->next = linked_f_pointer_free_head
+					+ i + 1;
+		}
+		(linked_f_pointer_free_head + NCHUNK - 1)->next = NULL;
 	}
 
 	temp_ptr = linked_f_pointer_free_head;

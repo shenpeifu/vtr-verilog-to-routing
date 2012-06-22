@@ -37,7 +37,6 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "hard_blocks.h"
 #include "math.h"
 #include "memories.h"
-#include "adders.h"
 
 void depth_first_traversal_to_partial_map(short marker_value, netlist_t *netlist);
 void depth_first_traverse_parital_map(nnode_t *node, int traverse_mark_number, netlist_t *netlist);
@@ -88,7 +87,7 @@ void depth_first_traversal_to_partial_map(short marker_value, netlist_t *netlist
 			depth_first_traverse_parital_map(netlist->top_input_nodes[i], marker_value, netlist);
 		}
 	}
-	/* now traverse the ground and vcc pins  */
+	/* now traverse the ground and vcc pins */
 	depth_first_traverse_parital_map(netlist->gnd_node, marker_value, netlist);
 	depth_first_traverse_parital_map(netlist->vcc_node, marker_value, netlist);
 	depth_first_traverse_parital_map(netlist->pad_node, marker_value, netlist);
@@ -188,17 +187,7 @@ void partial_map_node(nnode_t *node, short traverse_number, netlist_t *netlist)
 			break;
 
 		case ADD:
-			#ifdef VPR6
-			if (hard_adders != NULL)
-			{
-				if ((node->input_port_sizes[0] + node->input_port_sizes[1]) > min_add)
-					//node->type = FULLADDER;
-					instantiate_hard_adder(node, traverse_number, netlist);
-			}
-			else
-			#endif
-				instantiate_add_w_carry(node, traverse_number, netlist);
-			//instantiate_add_w_carry instantiate_simple_soft_adder
+			instantiate_add_w_carry(node, traverse_number, netlist);
 			break;
 		case MINUS:
 			if (node->num_input_port_sizes == 2)
