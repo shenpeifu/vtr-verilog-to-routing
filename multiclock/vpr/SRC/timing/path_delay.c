@@ -1276,7 +1276,9 @@ t_timing_stats * do_timing_analysis(boolean do_lut_input_balancing, boolean is_f
 	int total;
 	t_tedge *tedge;
 	t_pb *pb;
+#ifdef FANCY_CRIT
 	long max_critical_output_paths = 0, max_critical_input_paths = 0;
+#endif
 	boolean found;
 	t_timing_stats * timing_stats = NULL;
 	
@@ -1352,17 +1354,17 @@ t_timing_stats * do_timing_analysis(boolean do_lut_input_balancing, boolean is_f
 					continue;	/* End this iteration of the num_at_level for loop since this node is not part of the clock domain we're analyzing. 
 								   (If it were, it would have received an arrival time already.) */
 				}
-
+#ifdef FANCY_CRIT
 				if (ilevel == 0) {
 					tnode[inode].num_critical_input_paths = 1;		/* Top-level tnodes have only one critical input path */
 				}
-
+#endif
 				num_edges = tnode[inode].num_edges;					/* Get the number of edges fanning out from the node we're visiting */
 				tedge = tnode[inode].out_edges;						/* Get the list of edges from the node we're visiting */
 				
 				for (iedge = 0; iedge < num_edges; iedge++) {		/* Now go through each edge coming out from this tnode */
 					to_node = tedge[iedge].to_node;					/* Get the index of the destination tnode of this edge. */
-					
+#ifdef FANCY_CRIT					
 					/* Update number of near critical paths entering tnode. */
 					/* Check for approximate equality. */
 					if (fabs(tnode[to_node].T_arr - (tnode[inode].T_arr + tedge[iedge].Tdel)) < EQUAL_DEF) {
@@ -1374,7 +1376,7 @@ t_timing_stats * do_timing_analysis(boolean do_lut_input_balancing, boolean is_f
 					if (tnode[to_node].num_critical_input_paths	> max_critical_input_paths) {
 						max_critical_input_paths = tnode[to_node].num_critical_input_paths;
 					}
-
+#endif
 					/* The arrival time T_arr at the destination node is set to the maximum of all the possible arrival times from all edges fanning in to the node. *
 					 * The arrival time represents the latest time that all inputs must arrive at a node. LUT input rebalancing also occurs at this step. */
 					set_and_balance_arrival_time(to_node, inode, tedge[iedge].Tdel, do_lut_input_balancing);	
@@ -1459,8 +1461,10 @@ t_timing_stats * do_timing_analysis(boolean do_lut_input_balancing, boolean is_f
 						T_req_max = max(T_req_max, tnode[inode].T_req);
 			
 					}
+#ifdef FANCY_CRIT
 					tnode[inode].num_critical_output_paths = 1; /* Bottom-level tnodes have only one critical output path */
-				} else { /* not a sink */
+#endif			
+					} else { /* not a sink */
 					assert(!(tnode[inode].type == OUTPAD_SINK || tnode[inode].type == FF_SINK || tnode[inode].type == FF_CLOCK));
 
 					/* We need to skip this node if it is not on a path from source_clock_domain to sink_clock_domain (let's call these paths "happy paths").  
@@ -1491,6 +1495,7 @@ t_timing_stats * do_timing_analysis(boolean do_lut_input_balancing, boolean is_f
 					/* Now we know this node is on a happy path, and needs to be analyzed. */
 
 					tnode[inode].used_on_this_traversal = TRUE;	/* Mark that we've changed this node on this traversal (signalling we should update its slack later). */
+#ifdef FANCY_CRIT
 /******************************* SEE IF THIS CODE IS NECESSARY OR IF WE CAN PUT IT INTO THE FOR LOOP DIRECTLY BELOW */
 					to_node = tedge[0].to_node;
 
@@ -1499,9 +1504,10 @@ t_timing_stats * do_timing_analysis(boolean do_lut_input_balancing, boolean is_f
 						max_critical_output_paths = tnode[to_node].num_critical_output_paths;
 					}
 /*********************************/
+#endif
 					for (iedge = 0; iedge < num_edges; iedge++) { 
 						to_node = tedge[iedge].to_node;
-
+#ifdef FANCY_CRIT
 						/* Update number of near critical paths affected by output of tnode. */
 						/* Check for approximate equality. */
 						if (fabs(tnode[to_node].T_req - tedge[iedge].Tdel - tnode[inode].T_req) < EQUAL_DEF) {
@@ -1513,7 +1519,7 @@ t_timing_stats * do_timing_analysis(boolean do_lut_input_balancing, boolean is_f
 						if (tnode[to_node].num_critical_output_paths > max_critical_output_paths) {
 							max_critical_output_paths = tnode[to_node].num_critical_output_paths;
 						}
-
+#endif
 						/* Opposite to T_arr, set T_req to the minimum of the required times of all edges fanning out from this node. */
 						tnode[inode].T_req = min(tnode[inode].T_req, tnode[to_node].T_req - tedge[iedge].Tdel);
 					}

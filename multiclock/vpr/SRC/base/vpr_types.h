@@ -321,6 +321,11 @@ typedef enum {
  * index: index of array this tnode belongs to
  * num_critical_input_paths, num_critical_output_paths: Count total number of near critical paths that go through this node *
  */
+
+//#define FANCY_CRIT
+/* If defined, uses different, normalized and directional criticalities in the clusterer.  
+	If not defined, uses the same slack ratio fpr the clusterer as for the placer/router. */
+
 typedef struct s_tnode {
 	t_tedge *out_edges;
 	int num_edges;
@@ -339,11 +344,12 @@ typedef struct s_tnode {
 
 	/* pre-packing timing graph */
 	int model_port, model_pin; /* technology mapped model port/pin */
+#ifdef FANCY_CRIT
 	long num_critical_input_paths, num_critical_output_paths; /* count of critical paths passing through this tnode */
 	float normalized_slack; /* slack (normalized with respect to max slack) */
 	float normalized_total_critical_paths; /* critical path count (normalized with respect to max count) */
 	float normalized_T_arr; /* arrival time (normalized with respect to max time) */
-
+#endif
 	int index;
 } t_tnode;
 
