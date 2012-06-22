@@ -17,6 +17,7 @@ ARRAY_REF	types.h	/^	ARRAY_REF, $/;"	e	enum:__anon17
 ASSIGN	types.h	/^	ASSIGN,$/;"	e	enum:__anon17
 AST_TYPES_H	types.h	167;"	d
 Arch	odin_ii.c	/^t_arch Arch;$/;"	v
+BEGIN	verilog_flex.c	125;"	d	file:
 BIN	types.h	/^	BIN,$/;"	e	enum:__anon15
 BINARY_OPERATION	types.h	/^	BINARY_OPERATION, $/;"	e	enum:__anon17
 BITWISE_AND	types.h	/^	BITWISE_AND, \/\/ & $/;"	e	enum:__anon16
@@ -58,6 +59,7 @@ CLOCK_NODE_string	node_creation_library.c	/^char *CLOCK_NODE_string = "CLOCK_NOD
 COMBINATIONAL	netlist_create_from_ast.c	52;"	d	file:
 COMBO_LOOP	types.h	73;"	d
 COMBO_LOOP_ERROR	types.h	74;"	d
+COMMENT	verilog_flex.c	668;"	d	file:
 CONCATENATE	types.h	/^	CONCATENATE,$/;"	e	enum:__anon17
 COUNT_NODES	types.h	72;"	d
 DEC	types.h	/^	DEC,$/;"	e	enum:__anon15
@@ -71,10 +73,17 @@ DRIVEN	read_netlist.c	/^enum pass { DRIVERS = 0, DRIVEN, STOP };$/;"	e	enum:pass
 DRIVERS	read_netlist.c	/^enum pass { DRIVERS = 0, DRIVEN, STOP };$/;"	e	enum:pass	file:
 DUAL_PORT_MEMORY_NAME	simulate_blif.h	59;"	d
 DefaultSize	verilog_preprocessor.h	4;"	d
+ECHO	verilog_flex.c	755;"	d	file:
+EOB_ACT_CONTINUE_SCAN	verilog_flex.c	160;"	d	file:
+EOB_ACT_END_OF_FILE	verilog_flex.c	161;"	d	file:
+EOB_ACT_LAST_MATCH	verilog_flex.c	162;"	d	file:
 FALSE	types.h	33;"	d
 FF_NODE	types.h	/^	FF_NODE,$/;"	e	enum:__anon16
 FF_NODE_string	node_creation_library.c	/^char *FF_NODE_string = "FF_NODE"; $/;"	v
 FILE_ITEMS	types.h	/^	FILE_ITEMS,$/;"	e	enum:__anon17
+FLEXINT_H	verilog_flex.c	30;"	d	file:
+FLEX_BETA	verilog_flex.c	14;"	d	file:
+FLEX_SCANNER	verilog_flex.c	9;"	d	file:
 GATE	types.h	/^	GATE,$/;"	e	enum:__anon17
 GATE_INSTANCE	types.h	/^	GATE_INSTANCE,$/;"	e	enum:__anon17
 GENERATE_VECTORS	types.h	/^	GENERATE_VECTORS,$/;"	e	enum:__anon14
@@ -101,6 +110,7 @@ HEX	types.h	/^	HEX,$/;"	e	enum:__anon15
 IDENTIFIERS	types.h	/^	IDENTIFIERS,$/;"	e	enum:__anon17
 IF	types.h	/^	IF,$/;"	e	enum:__anon17
 IF_Q	types.h	/^	IF_Q,$/;"	e	enum:__anon17
+INITIAL	verilog_flex.c	667;"	d	file:
 INOUT	types.h	/^	INOUT,$/;"	e	enum:__anon17
 INPAD	read_netlist.c	/^enum special_blk { NORMAL = 0, INPAD, OUTPAD };$/;"	e	enum:special_blk	file:
 INPUT	types.h	/^	INPUT, $/;"	e	enum:__anon17
@@ -108,6 +118,12 @@ INPUT_NODE	types.h	/^	INPUT_NODE,$/;"	e	enum:__anon16
 INPUT_NODE_string	node_creation_library.c	/^char *INPUT_NODE_string = "INPUT_NODE"; $/;"	v
 INPUT_VECTOR_FILE_NAME	simulate_blif.h	55;"	d
 INSTANTIATE_DRIVERS	netlist_create_from_ast.c	49;"	d	file:
+INT16_MAX	verilog_flex.c	73;"	d	file:
+INT16_MIN	verilog_flex.c	64;"	d	file:
+INT32_MAX	verilog_flex.c	76;"	d	file:
+INT32_MIN	verilog_flex.c	67;"	d	file:
+INT8_MAX	verilog_flex.c	70;"	d	file:
+INT8_MIN	verilog_flex.c	61;"	d	file:
 LEVELIZE	types.h	81;"	d
 LOGICAL_AND	types.h	/^	LOGICAL_AND, \/\/ &&$/;"	e	enum:__anon16
 LOGICAL_AND_string	node_creation_library.c	/^char *LOGICAL_AND_string = "LOGICAL_AND"; $/;"	v
@@ -126,6 +142,8 @@ LOGICAL_XNOR_string	node_creation_library.c	/^char *LOGICAL_XNOR_string = "LOGIC
 LOGICAL_XOR	types.h	/^	LOGICAL_XOR, \/\/ No Symbol$/;"	e	enum:__anon16
 LOGICAL_XOR_string	node_creation_library.c	/^char *LOGICAL_XOR_string = "LOGICAL_XOR"; $/;"	v
 LONG_LONG	types.h	/^	LONG_LONG,$/;"	e	enum:__anon15
+LOWER_THAN_ELSE	verilog_bison.c	/^     LOWER_THAN_ELSE = 313$/;"	e	enum:yytokentype	file:
+LOWER_THAN_ELSE	verilog_bison.h	/^     LOWER_THAN_ELSE = 313$/;"	e	enum:yytokentype
 LT	types.h	/^	LT, \/\/ <$/;"	e	enum:__anon16
 LTE	types.h	/^	LTE, \/\/ <=$/;"	e	enum:__anon16
 LTE_string	node_creation_library.c	/^char *LTE_string = "LTE"; $/;"	v
@@ -147,6 +165,7 @@ MODULE_PARAMETER	types.h	/^	MODULE_PARAMETER,$/;"	e	enum:__anon17
 MODULE_PARAMETER_LIST	types.h	/^	MODULE_PARAMETER_LIST,$/;"	e	enum:__anon17
 MODULO	types.h	/^	MODULO, \/\/ %$/;"	e	enum:__anon16
 MODULO_string	node_creation_library.c	/^char *MODULO_string = "MODULO"; $/;"	v
+MP	verilog_flex.c	662;"	d	file:
 MULTIPLIERS_H	multipliers.h	24;"	d
 MULTIPLY	types.h	/^	MULTIPLY, \/\/ * $/;"	e	enum:__anon16
 MULTIPLY_string	node_creation_library.c	/^char *MULTIPLY_string = "MULTIPLY"; $/;"	v
@@ -180,6 +199,7 @@ OUTPUT_TRAVERSE_VALUE	types.h	71;"	d
 OUTPUT_VECTOR_FILE_NAME	simulate_blif.h	56;"	d
 PAD_NODE	types.h	/^	PAD_NODE,$/;"	e	enum:__anon16
 PARAMETER	types.h	/^	PARAMETER,$/;"	e	enum:__anon17
+PARSE	verilog_bison.c	102;"	d	file:
 PARSE_ERROR	types.h	57;"	d
 PARTIAL_MAP_H	partial_map.h	27;"	d
 PARTIAL_MAP_TRAVERSE_VALUE	types.h	70;"	d
@@ -192,6 +212,7 @@ READ_BLIF_BUFFER	read_blif.c	44;"	d	file:
 READ_BLIF_H	read_blif.h	2;"	d
 READ_XML_CONFIG_FILE_H	read_xml_config_file.h	27;"	d
 REG	types.h	/^	REG,$/;"	e	enum:__anon17
+REJECT	verilog_flex.c	624;"	d	file:
 RESET	types.h	80;"	d
 SEQUENTIAL	netlist_create_from_ast.c	53;"	d	file:
 SEQUENTIAL_LEVELIZE	types.h	77;"	d
@@ -210,15 +231,174 @@ TEST_EXISTING_VECTORS	types.h	/^	TEST_EXISTING_VECTORS,$/;"	e	enum:__anon14
 TOKENS	read_blif.c	39;"	d	file:
 TRUE	types.h	30;"	d
 TYPES_H	types.h	37;"	d
+UADD	verilog_bison.c	/^     UADD = 311,$/;"	e	enum:yytokentype	file:
+UADD	verilog_bison.h	/^     UADD = 311,$/;"	e	enum:yytokentype
+UAND	verilog_bison.c	/^     UAND = 304,$/;"	e	enum:yytokentype	file:
+UAND	verilog_bison.h	/^     UAND = 304,$/;"	e	enum:yytokentype
+UINT16_MAX	verilog_flex.c	82;"	d	file:
+UINT32_MAX	verilog_flex.c	85;"	d	file:
+UINT8_MAX	verilog_flex.c	79;"	d	file:
+ULNOT	verilog_bison.c	/^     ULNOT = 310,$/;"	e	enum:yytokentype	file:
+ULNOT	verilog_bison.h	/^     ULNOT = 310,$/;"	e	enum:yytokentype
+UMINUS	verilog_bison.c	/^     UMINUS = 312,$/;"	e	enum:yytokentype	file:
+UMINUS	verilog_bison.h	/^     UMINUS = 312,$/;"	e	enum:yytokentype
+UNAND	verilog_bison.c	/^     UNAND = 306,$/;"	e	enum:yytokentype	file:
+UNAND	verilog_bison.h	/^     UNAND = 306,$/;"	e	enum:yytokentype
 UNARY_OPERATION	types.h	/^	UNARY_OPERATION,$/;"	e	enum:__anon17
+UNOR	verilog_bison.c	/^     UNOR = 307,$/;"	e	enum:yytokentype	file:
+UNOR	verilog_bison.h	/^     UNOR = 307,$/;"	e	enum:yytokentype
+UNOT	verilog_bison.c	/^     UNOT = 305,$/;"	e	enum:yytokentype	file:
+UNOT	verilog_bison.h	/^     UNOT = 305,$/;"	e	enum:yytokentype
+UOR	verilog_bison.c	/^     UOR = 303,$/;"	e	enum:yytokentype	file:
+UOR	verilog_bison.h	/^     UOR = 303,$/;"	e	enum:yytokentype
+UXNOR	verilog_bison.c	/^     UXNOR = 308,$/;"	e	enum:yytokentype	file:
+UXNOR	verilog_bison.h	/^     UXNOR = 308,$/;"	e	enum:yytokentype
+UXOR	verilog_bison.c	/^     UXOR = 309,$/;"	e	enum:yytokentype	file:
+UXOR	verilog_bison.h	/^     UXOR = 309,$/;"	e	enum:yytokentype
 VAR_DECLARE	types.h	/^	VAR_DECLARE,$/;"	e	enum:__anon17
 VAR_DECLARE_LIST	types.h	/^	VAR_DECLARE_LIST,$/;"	e	enum:__anon17
 VCC_NAME	read_blif.c	41;"	d	file:
 VCC_NODE	types.h	/^	VCC_NODE,$/;"	e	enum:__anon16
 VCC_NODE_string	node_creation_library.c	/^char *VCC_NODE_string = "VCC_NODE"; $/;"	v
 WIRE	types.h	/^	WIRE,$/;"	e	enum:__anon17
+YYABORT	verilog_bison.c	1121;"	d	file:
+YYACCEPT	verilog_bison.c	1120;"	d	file:
+YYBACKUP	verilog_bison.c	1142;"	d	file:
+YYBISON	verilog_bison.c	45;"	d	file:
+YYBISON_VERSION	verilog_bison.c	48;"	d	file:
+YYCOPY	verilog_bison.c	426;"	d	file:
+YYCOPY	verilog_bison.c	429;"	d	file:
+YYDEBUG	verilog_bison.c	136;"	d	file:
+YYDPRINTF	verilog_bison.c	1222;"	d	file:
+YYDPRINTF	verilog_bison.c	1371;"	d	file:
+YYEMPTY	verilog_bison.c	1117;"	d	file:
+YYEOF	verilog_bison.c	1118;"	d	file:
+YYERRCODE	verilog_bison.c	1161;"	d	file:
+YYERROR	verilog_bison.c	1122;"	d	file:
+YYERROR_VERBOSE	verilog_bison.c	141;"	d	file:
+YYERROR_VERBOSE	verilog_bison.c	142;"	d	file:
+YYERROR_VERBOSE	verilog_bison.c	144;"	d	file:
+YYFAIL	verilog_bison.c	1132;"	d	file:
+YYFINAL	verilog_bison.c	459;"	d	file:
+YYFPRINTF	verilog_bison.c	1219;"	d	file:
+YYFREE	verilog_bison.c	392;"	d	file:
+YYID	verilog_bison.c	/^YYID (int yyi)$/;"	f	file:
+YYID	verilog_bison.c	316;"	d	file:
+YYINITDEPTH	verilog_bison.c	1380;"	d	file:
+YYLAST	verilog_bison.c	461;"	d	file:
+YYLEX	verilog_bison.c	1209;"	d	file:
+YYLEX	verilog_bison.c	1211;"	d	file:
+YYLINENO	verilog_bison.c	106;"	d	file:
+YYLLOC_DEFAULT	verilog_bison.c	1170;"	d	file:
+YYLSP_NEEDED	verilog_bison.c	63;"	d	file:
+YYMALLOC	verilog_bison.c	385;"	d	file:
+YYMAXDEPTH	verilog_bison.c	1391;"	d	file:
+YYMAXUTOK	verilog_bison.c	474;"	d	file:
+YYNNTS	verilog_bison.c	466;"	d	file:
+YYNRULES	verilog_bison.c	468;"	d	file:
+YYNSTATES	verilog_bison.c	470;"	d	file:
+YYNTOKENS	verilog_bison.c	464;"	d	file:
+YYPACT_NINF	verilog_bison.c	750;"	d	file:
+YYPOPSTACK	verilog_bison.c	1731;"	d	file:
+YYPULL	verilog_bison.c	60;"	d	file:
+YYPURE	verilog_bison.c	54;"	d	file:
+YYPUSH	verilog_bison.c	57;"	d	file:
+YYRECOVERING	verilog_bison.c	1140;"	d	file:
+YYRHSLOC	verilog_bison.c	1168;"	d	file:
+YYSIZE_MAXIMUM	verilog_bison.c	293;"	d	file:
+YYSIZE_T	verilog_bison.c	281;"	d	file:
+YYSIZE_T	verilog_bison.c	283;"	d	file:
+YYSIZE_T	verilog_bison.c	287;"	d	file:
+YYSIZE_T	verilog_bison.c	289;"	d	file:
+YYSKELETON_NAME	verilog_bison.c	51;"	d	file:
+YYSTACK_ALLOC	verilog_bison.c	339;"	d	file:
+YYSTACK_ALLOC	verilog_bison.c	343;"	d	file:
+YYSTACK_ALLOC	verilog_bison.c	348;"	d	file:
+YYSTACK_ALLOC	verilog_bison.c	371;"	d	file:
+YYSTACK_ALLOC_MAXIMUM	verilog_bison.c	368;"	d	file:
+YYSTACK_ALLOC_MAXIMUM	verilog_bison.c	374;"	d	file:
+YYSTACK_BYTES	verilog_bison.c	418;"	d	file:
+YYSTACK_FREE	verilog_bison.c	362;"	d	file:
+YYSTACK_FREE	verilog_bison.c	372;"	d	file:
+YYSTACK_GAP_MAXIMUM	verilog_bison.c	414;"	d	file:
+YYSTACK_RELOCATE	verilog_bison.c	445;"	d	file:
+YYSTATE	verilog_flex.c	132;"	d	file:
+YYSTYPE	verilog_bison.c	/^typedef union YYSTYPE$/;"	u	file:
+YYSTYPE	verilog_bison.c	/^} YYSTYPE;$/;"	t	typeref:union:YYSTYPE	file:
+YYSTYPE	verilog_bison.h	/^typedef union YYSTYPE$/;"	u
+YYSTYPE	verilog_bison.h	/^} YYSTYPE;$/;"	t	typeref:union:YYSTYPE
+YYSTYPE_IS_DECLARED	verilog_bison.c	238;"	d	file:
+YYSTYPE_IS_DECLARED	verilog_bison.h	120;"	d
+YYSTYPE_IS_TRIVIAL	verilog_bison.c	236;"	d	file:
+YYSTYPE_IS_TRIVIAL	verilog_bison.h	118;"	d
+YYTABLES_NAME	verilog_flex.c	2328;"	d	file:
+YYTABLE_NINF	verilog_bison.c	800;"	d	file:
+YYTERROR	verilog_bison.c	1160;"	d	file:
+YYTOKENTYPE	verilog_bison.c	155;"	d	file:
+YYTOKENTYPE	verilog_bison.h	37;"	d
+YYTOKEN_TABLE	verilog_bison.c	149;"	d	file:
+YYTRANSLATE	verilog_bison.c	476;"	d	file:
+YYUNDEFTOK	verilog_bison.c	473;"	d	file:
+YYUSE	verilog_bison.c	309;"	d	file:
+YYUSE	verilog_bison.c	311;"	d	file:
+YY_	verilog_bison.c	299;"	d	file:
+YY_	verilog_bison.c	303;"	d	file:
+YY_AT_BOL	verilog_flex.c	331;"	d	file:
+YY_BREAK	verilog_flex.c	834;"	d	file:
+YY_BUFFER_EOF_PENDING	verilog_flex.c	247;"	d	file:
+YY_BUFFER_NEW	verilog_flex.c	235;"	d	file:
+YY_BUFFER_NORMAL	verilog_flex.c	236;"	d	file:
+YY_BUFFER_STATE	verilog_flex.c	/^typedef struct yy_buffer_state *YY_BUFFER_STATE;$/;"	t	typeref:struct:yy_buffer_state	file:
+YY_BUF_SIZE	verilog_flex.c	144;"	d	file:
+YY_CHAR	verilog_flex.c	/^typedef unsigned char YY_CHAR;$/;"	t	file:
+YY_CURRENT_BUFFER	verilog_flex.c	263;"	d	file:
+YY_CURRENT_BUFFER_LVALUE	verilog_flex.c	270;"	d	file:
+YY_DECL	verilog_flex.c	822;"	d	file:
+YY_DECL_IS_OURS	verilog_flex.c	818;"	d	file:
+YY_DO_BEFORE_ACTION	verilog_flex.c	356;"	d	file:
+YY_END_OF_BUFFER	verilog_flex.c	364;"	d	file:
+YY_END_OF_BUFFER_CHAR	verilog_flex.c	140;"	d	file:
+YY_EXIT_FAILURE	verilog_flex.c	2126;"	d	file:
+YY_EXTRA_TYPE	verilog_flex.c	679;"	d	file:
+YY_FATAL_ERROR	verilog_flex.c	809;"	d	file:
+YY_FLEX_MAJOR_VERSION	verilog_flex.c	10;"	d	file:
+YY_FLEX_MINOR_VERSION	verilog_flex.c	11;"	d	file:
+YY_FLEX_SUBMINOR_VERSION	verilog_flex.c	12;"	d	file:
+YY_FLUSH_BUFFER	verilog_flex.c	299;"	d	file:
+YY_INPUT	verilog_flex.c	762;"	d	file:
+YY_INT_ALIGNED	verilog_flex.c	5;"	d	file:
+YY_LESS_LINENO	verilog_flex.c	164;"	d	file:
+YY_LOCATION_PRINT	verilog_bison.c	1196;"	d	file:
+YY_LOCATION_PRINT	verilog_bison.c	1201;"	d	file:
+YY_MORE_ADJ	verilog_flex.c	626;"	d	file:
+YY_NEW_FILE	verilog_flex.c	138;"	d	file:
+YY_NULL	verilog_flex.c	112;"	d	file:
+YY_NUM_RULES	verilog_flex.c	363;"	d	file:
+YY_READ_BUF_SIZE	verilog_flex.c	747;"	d	file:
+YY_REDUCE_PRINT	verilog_bison.c	1361;"	d	file:
+YY_REDUCE_PRINT	verilog_bison.c	1374;"	d	file:
+YY_RESTORE_YY_MORE_OFFSET	verilog_flex.c	627;"	d	file:
+YY_RULE_SETUP	verilog_flex.c	837;"	d	file:
+YY_SC_TO_UI	verilog_flex.c	119;"	d	file:
+YY_STACK_PRINT	verilog_bison.c	1323;"	d	file:
+YY_STACK_PRINT	verilog_bison.c	1373;"	d	file:
+YY_START	verilog_flex.c	131;"	d	file:
+YY_START_STACK_INCR	verilog_flex.c	804;"	d	file:
+YY_STATE_BUF_SIZE	verilog_flex.c	149;"	d	file:
+YY_STATE_EOF	verilog_flex.c	135;"	d	file:
+YY_STRUCT_YY_BUFFER_STATE	verilog_flex.c	188;"	d	file:
+YY_SYMBOL_PRINT	verilog_bison.c	1228;"	d	file:
+YY_SYMBOL_PRINT	verilog_bison.c	1372;"	d	file:
+YY_TYPEDEF_YY_BUFFER_STATE	verilog_flex.c	152;"	d	file:
+YY_TYPEDEF_YY_SIZE_T	verilog_flex.c	183;"	d	file:
+YY_USER_ACTION	verilog_flex.c	829;"	d	file:
+YY_USE_CONST	verilog_flex.c	100;"	d	file:
+YY_USE_CONST	verilog_flex.c	93;"	d	file:
 _IMPLICIT_MEMORY_H_	implicit_memory.h	24;"	d
 _NETLIST_STATS_H	netlist_stats.h	24;"	d
+_STDLIB_H	verilog_bison.c	353;"	d	file:
+_STDLIB_H	verilog_bison.c	381;"	d	file:
+__STDC_LIMIT_MACROS	verilog_flex.c	40;"	d	file:
 __STRING_CACHE_H__	string_cache.h	2;"	d
 ___hashtable_add	hashtable.c	/^void  ___hashtable_add(hashtable_t *h, void *key, size_t key_length, void *item)$/;"	f
 ___hashtable_compare_keys	hashtable.c	/^int ___hashtable_compare_keys(void *key, size_t key_len, void* key1, size_t key_len1)$/;"	f
@@ -275,6 +455,7 @@ addr_width	implicit_memory.h	/^	int addr_width;$/;"	m	struct:__anon1
 alias_output_assign_pins_to_inputs	netlist_create_from_ast.c	/^int alias_output_assign_pins_to_inputs(char_list_t *output_list, signal_list_t *input_list, ast_node_t *node)$/;"	f
 all_file_items_list	parse_making_ast.c	/^ast_node_t **all_file_items_list;$/;"	v
 all_warnings	types.h	/^	int all_warnings;$/;"	m	struct:global_args_t_t
+alloca	verilog_bison.c	346;"	d	file:
 allocate_children_to_node	ast_util.c	/^void allocate_children_to_node(ast_node_t* node, int num_children, ...) $/;"	f
 allocate_more_input_pins	netlist_utils.c	/^void allocate_more_input_pins(nnode_t *node, int width)$/;"	f
 allocate_more_output_pins	netlist_utils.c	/^void allocate_more_output_pins(nnode_t *node, int width)$/;"	f
@@ -511,6 +692,18 @@ find_top_module	netlist_create_from_ast.c	/^ast_node_t *find_top_module()$/;"	f
 fixed_hard_multiplier	types.h	/^	int fixed_hard_multiplier;$/;"	m	struct:config_t_t
 flag	verilog_preprocessor.h	/^	int flag;$/;"	m	struct:veri_flag_node
 flag_undriven_input_pins	simulate_blif.c	/^void flag_undriven_input_pins(nnode_t *node)$/;"	f
+flex_int16_t	verilog_flex.c	/^typedef int16_t flex_int16_t;$/;"	t	file:
+flex_int16_t	verilog_flex.c	/^typedef short int flex_int16_t;$/;"	t	file:
+flex_int32_t	verilog_flex.c	/^typedef int flex_int32_t;$/;"	t	file:
+flex_int32_t	verilog_flex.c	/^typedef int32_t flex_int32_t;$/;"	t	file:
+flex_int8_t	verilog_flex.c	/^typedef int8_t flex_int8_t;$/;"	t	file:
+flex_int8_t	verilog_flex.c	/^typedef signed char flex_int8_t;$/;"	t	file:
+flex_uint16_t	verilog_flex.c	/^typedef uint16_t flex_uint16_t;$/;"	t	file:
+flex_uint16_t	verilog_flex.c	/^typedef unsigned short int flex_uint16_t;$/;"	t	file:
+flex_uint32_t	verilog_flex.c	/^typedef uint32_t flex_uint32_t;$/;"	t	file:
+flex_uint32_t	verilog_flex.c	/^typedef unsigned int flex_uint32_t;$/;"	t	file:
+flex_uint8_t	verilog_flex.c	/^typedef uint8_t flex_uint8_t;$/;"	t	file:
+flex_uint8_t	verilog_flex.c	/^typedef unsigned char flex_uint8_t; $/;"	t	file:
 forward_level	types.h	/^	int forward_level; \/\/ this is your logic level relative to PIs and FFs .. i.e farthest PI$/;"	m	struct:nnode_t_t
 forward_levels	types.h	/^	nnode_t ***forward_levels;$/;"	m	struct:netlist_t_t
 forward_traversal_net_graph_display	netlist_visualizer.c	/^void forward_traversal_net_graph_display(FILE *fp, short marker_value, nnode_t *node)$/;"	f
@@ -624,6 +817,8 @@ hook_up_node	read_blif.c	/^void hook_up_node(nnode_t *node, hashtable_t *output_
 hookup_hb_input_pins_from_signal_list	netlist_utils.c	/^void hookup_hb_input_pins_from_signal_list(nnode_t *node, int n_start_idx, signal_list_t* input_list, int il_start_idx, int width, netlist_t *netlist) $/;"	f
 hookup_input_pins_from_signal_list	netlist_utils.c	/^void hookup_input_pins_from_signal_list(nnode_t *node, int n_start_idx, signal_list_t* input_list, int il_start_idx, int width, netlist_t *netlist) $/;"	f
 hookup_output_pins_from_signal_list	netlist_utils.c	/^void hookup_output_pins_from_signal_list(nnode_t *node, int n_start_idx, signal_list_t* output_list, int ol_start_idx, int width) $/;"	f
+id_name	verilog_bison.c	/^	char *id_name;$/;"	m	union:YYSTYPE	file:
+id_name	verilog_bison.h	/^	char *id_name;$/;"	m	union:YYSTYPE
 identifier	types.h	/^		char *identifier;$/;"	m	union:ast_node_t_t::__anon18
 ids	types.h	/^} ids;$/;"	t	typeref:enum:__anon17
 implicit_memories	implicit_memory.h	/^hashtable_t *implicit_memories;$/;"	v
@@ -853,6 +1048,8 @@ nnode_t	types.h	/^typedef struct nnode_t_t nnode_t;$/;"	t	typeref:struct:nnode_t
 nnode_t_t	types.h	/^struct nnode_t_t$/;"	s
 node	implicit_memory.h	/^	nnode_t *node;$/;"	m	struct:__anon1
 node	types.h	/^	nnode_t *node;    \/\/ related node$/;"	m	struct:npin_t_t
+node	verilog_bison.c	/^	ast_node_t *node;$/;"	m	union:YYSTYPE	file:
+node	verilog_bison.h	/^	ast_node_t *node;$/;"	m	union:YYSTYPE
 node_data	types.h	/^	void *node_data; \/\/ this is a point where you can add additional data for your optimization or technique$/;"	m	struct:nnode_t_t
 node_name	node_creation_library.c	/^char *node_name(nnode_t *node, char *instance_name_prefix)$/;"	f
 node_name_based_on_op	node_creation_library.c	/^char *node_name_based_on_op(nnode_t *node)$/;"	f
@@ -900,6 +1097,8 @@ num_strings	types.h	/^	int num_strings;$/;"	m	struct:char_list_t_t
 num_top_input_nodes	types.h	/^	int num_top_input_nodes;$/;"	m	struct:netlist_t_t
 num_top_output_nodes	types.h	/^	int num_top_output_nodes;$/;"	m	struct:netlist_t_t
 num_undriven_pins	types.h	/^	int  num_undriven_pins;$/;"	m	struct:nnode_t_t
+num_value	verilog_bison.c	/^	char *num_value;$/;"	m	union:YYSTYPE	file:
+num_value	verilog_bison.h	/^	char *num_value;$/;"	m	union:YYSTYPE
 number	types.h	/^			char *number;$/;"	m	struct:ast_node_t_t::__anon18::__anon19
 number	types.h	/^		} number;$/;"	m	union:ast_node_t_t::__anon18	typeref:struct:ast_node_t_t::__anon18::__anon19
 number_of_pins	simulate_blif.h	/^	int number_of_pins;$/;"	m	struct:__anon9
@@ -1024,6 +1223,7 @@ sequential_times	simulate_blif.h	/^	double *sequential_times; \/\/ Sequential ex
 set_default_optimization_settings	read_xml_config_file.c	/^void set_default_optimization_settings(config_t *config)$/;"	f
 set_pin_cycle	simulate_blif.c	/^inline void set_pin_cycle(npin_t *pin, int cycle)$/;"	f
 shared_node	types.h	/^	short shared_node;$/;"	m	struct:ast_node_t_t
+short	verilog_bison.c	249;"	d	file:
 signal_list_t	types.h	/^typedef struct signal_list_t_t signal_list_t;$/;"	t	typeref:struct:signal_list_t_t
 signal_list_t_t	types.h	/^struct signal_list_t_t $/;"	s
 signature	read_blif.c	/^	char *signature;$/;"	m	struct:__anon5	file:
@@ -1128,10 +1328,75 @@ unique_label_count	parse_making_ast.c	/^int unique_label_count;$/;"	v
 unique_net_data_id	types.h	/^	short unique_net_data_id;$/;"	m	struct:nnet_t_t
 unique_node_data_id	types.h	/^	short unique_node_data_id;$/;"	m	struct:nnode_t_t
 unique_node_name_id	node_creation_library.c	/^long unique_node_name_id = 0;$/;"	v
+unput	verilog_flex.c	180;"	d	file:
 update_pin_value	simulate_blif.c	/^void update_pin_value(npin_t *pin, signed char value, int cycle)$/;"	f
 update_tag	high_level_data.c	/^void update_tag(ast_node_t *node, int tag, int line)$/;"	f
 update_tree	high_level_data.c	/^void update_tree(ast_node_t *node)$/;"	f
 update_undriven_input_pins	simulate_blif.c	/^void update_undriven_input_pins(nnode_t *node, int cycle)$/;"	f
+vALWAYS	verilog_bison.c	/^     vALWAYS = 261,$/;"	e	enum:yytokentype	file:
+vALWAYS	verilog_bison.h	/^     vALWAYS = 261,$/;"	e	enum:yytokentype
+vAND	verilog_bison.c	/^     vAND = 262,$/;"	e	enum:yytokentype	file:
+vAND	verilog_bison.h	/^     vAND = 262,$/;"	e	enum:yytokentype
+vASSIGN	verilog_bison.c	/^     vASSIGN = 263,$/;"	e	enum:yytokentype	file:
+vASSIGN	verilog_bison.h	/^     vASSIGN = 263,$/;"	e	enum:yytokentype
+vBEGIN	verilog_bison.c	/^     vBEGIN = 264,$/;"	e	enum:yytokentype	file:
+vBEGIN	verilog_bison.h	/^     vBEGIN = 264,$/;"	e	enum:yytokentype
+vCASE	verilog_bison.c	/^     vCASE = 265,$/;"	e	enum:yytokentype	file:
+vCASE	verilog_bison.h	/^     vCASE = 265,$/;"	e	enum:yytokentype
+vDEFAULT	verilog_bison.c	/^     vDEFAULT = 266,$/;"	e	enum:yytokentype	file:
+vDEFAULT	verilog_bison.h	/^     vDEFAULT = 266,$/;"	e	enum:yytokentype
+vDEFINE	verilog_bison.c	/^     vDEFINE = 267,$/;"	e	enum:yytokentype	file:
+vDEFINE	verilog_bison.h	/^     vDEFINE = 267,$/;"	e	enum:yytokentype
+vDEFPARAM	verilog_bison.c	/^     vDEFPARAM = 288,$/;"	e	enum:yytokentype	file:
+vDEFPARAM	verilog_bison.h	/^     vDEFPARAM = 288,$/;"	e	enum:yytokentype
+vDELAY_ID	verilog_bison.c	/^     vDELAY_ID = 260,$/;"	e	enum:yytokentype	file:
+vDELAY_ID	verilog_bison.h	/^     vDELAY_ID = 260,$/;"	e	enum:yytokentype
+vELSE	verilog_bison.c	/^     vELSE = 268,$/;"	e	enum:yytokentype	file:
+vELSE	verilog_bison.h	/^     vELSE = 268,$/;"	e	enum:yytokentype
+vEND	verilog_bison.c	/^     vEND = 269,$/;"	e	enum:yytokentype	file:
+vEND	verilog_bison.h	/^     vEND = 269,$/;"	e	enum:yytokentype
+vENDCASE	verilog_bison.c	/^     vENDCASE = 270,$/;"	e	enum:yytokentype	file:
+vENDCASE	verilog_bison.h	/^     vENDCASE = 270,$/;"	e	enum:yytokentype
+vENDMODULE	verilog_bison.c	/^     vENDMODULE = 271,$/;"	e	enum:yytokentype	file:
+vENDMODULE	verilog_bison.h	/^     vENDMODULE = 271,$/;"	e	enum:yytokentype
+vIF	verilog_bison.c	/^     vIF = 272,$/;"	e	enum:yytokentype	file:
+vIF	verilog_bison.h	/^     vIF = 272,$/;"	e	enum:yytokentype
+vINOUT	verilog_bison.c	/^     vINOUT = 273,$/;"	e	enum:yytokentype	file:
+vINOUT	verilog_bison.h	/^     vINOUT = 273,$/;"	e	enum:yytokentype
+vINPUT	verilog_bison.c	/^     vINPUT = 274,$/;"	e	enum:yytokentype	file:
+vINPUT	verilog_bison.h	/^     vINPUT = 274,$/;"	e	enum:yytokentype
+vMODULE	verilog_bison.c	/^     vMODULE = 275,$/;"	e	enum:yytokentype	file:
+vMODULE	verilog_bison.h	/^     vMODULE = 275,$/;"	e	enum:yytokentype
+vNAND	verilog_bison.c	/^     vNAND = 276,$/;"	e	enum:yytokentype	file:
+vNAND	verilog_bison.h	/^     vNAND = 276,$/;"	e	enum:yytokentype
+vNEGEDGE	verilog_bison.c	/^     vNEGEDGE = 277,$/;"	e	enum:yytokentype	file:
+vNEGEDGE	verilog_bison.h	/^     vNEGEDGE = 277,$/;"	e	enum:yytokentype
+vNOR	verilog_bison.c	/^     vNOR = 278,$/;"	e	enum:yytokentype	file:
+vNOR	verilog_bison.h	/^     vNOR = 278,$/;"	e	enum:yytokentype
+vNOT	verilog_bison.c	/^     vNOT = 279,$/;"	e	enum:yytokentype	file:
+vNOT	verilog_bison.h	/^     vNOT = 279,$/;"	e	enum:yytokentype
+vNOT_SUPPORT	verilog_bison.c	/^     vNOT_SUPPORT = 302,$/;"	e	enum:yytokentype	file:
+vNOT_SUPPORT	verilog_bison.h	/^     vNOT_SUPPORT = 302,$/;"	e	enum:yytokentype
+vNUMBER_ID	verilog_bison.c	/^     vNUMBER_ID = 259,$/;"	e	enum:yytokentype	file:
+vNUMBER_ID	verilog_bison.h	/^     vNUMBER_ID = 259,$/;"	e	enum:yytokentype
+vOR	verilog_bison.c	/^     vOR = 280,$/;"	e	enum:yytokentype	file:
+vOR	verilog_bison.h	/^     vOR = 280,$/;"	e	enum:yytokentype
+vOUTPUT	verilog_bison.c	/^     vOUTPUT = 281,$/;"	e	enum:yytokentype	file:
+vOUTPUT	verilog_bison.h	/^     vOUTPUT = 281,$/;"	e	enum:yytokentype
+vPARAMETER	verilog_bison.c	/^     vPARAMETER = 282,$/;"	e	enum:yytokentype	file:
+vPARAMETER	verilog_bison.h	/^     vPARAMETER = 282,$/;"	e	enum:yytokentype
+vPOSEDGE	verilog_bison.c	/^     vPOSEDGE = 283,$/;"	e	enum:yytokentype	file:
+vPOSEDGE	verilog_bison.h	/^     vPOSEDGE = 283,$/;"	e	enum:yytokentype
+vREG	verilog_bison.c	/^     vREG = 284,$/;"	e	enum:yytokentype	file:
+vREG	verilog_bison.h	/^     vREG = 284,$/;"	e	enum:yytokentype
+vSYMBOL_ID	verilog_bison.c	/^     vSYMBOL_ID = 258,$/;"	e	enum:yytokentype	file:
+vSYMBOL_ID	verilog_bison.h	/^     vSYMBOL_ID = 258,$/;"	e	enum:yytokentype
+vWIRE	verilog_bison.c	/^     vWIRE = 285,$/;"	e	enum:yytokentype	file:
+vWIRE	verilog_bison.h	/^     vWIRE = 285,$/;"	e	enum:yytokentype
+vXNOR	verilog_bison.c	/^     vXNOR = 286,$/;"	e	enum:yytokentype	file:
+vXNOR	verilog_bison.h	/^     vXNOR = 286,$/;"	e	enum:yytokentype
+vXOR	verilog_bison.c	/^     vXOR = 287,$/;"	e	enum:yytokentype	file:
+vXOR	verilog_bison.h	/^     vXOR = 287,$/;"	e	enum:yytokentype
 value	types.h	/^			long long value;$/;"	m	struct:ast_node_t_t::__anon18::__anon19
 value	types.h	/^	long long value;$/;"	m	struct:info_ast_visit_t_t
 value	verilog_preprocessor.h	/^	char *value;$/;"	m	struct:veri_define
@@ -1162,6 +1427,32 @@ verify_test_vector_headers	simulate_blif.c	/^int verify_test_vector_headers(FILE
 verilog_file	types.h	/^	char *verilog_file;$/;"	m	struct:global_args_t_t
 verilog_netlist	netlist_create_from_ast.c	/^netlist_t *verilog_netlist;$/;"	v
 verilog_preprocessor_h	verilog_preprocessor.h	2;"	d
+voANDAND	verilog_bison.c	/^     voANDAND = 289,$/;"	e	enum:yytokentype	file:
+voANDAND	verilog_bison.h	/^     voANDAND = 289,$/;"	e	enum:yytokentype
+voCASEEQUAL	verilog_bison.c	/^     voCASEEQUAL = 297,$/;"	e	enum:yytokentype	file:
+voCASEEQUAL	verilog_bison.h	/^     voCASEEQUAL = 297,$/;"	e	enum:yytokentype
+voCASENOTEQUAL	verilog_bison.c	/^     voCASENOTEQUAL = 298,$/;"	e	enum:yytokentype	file:
+voCASENOTEQUAL	verilog_bison.h	/^     voCASENOTEQUAL = 298,$/;"	e	enum:yytokentype
+voEQUAL	verilog_bison.c	/^     voEQUAL = 295,$/;"	e	enum:yytokentype	file:
+voEQUAL	verilog_bison.h	/^     voEQUAL = 295,$/;"	e	enum:yytokentype
+voGTE	verilog_bison.c	/^     voGTE = 292,$/;"	e	enum:yytokentype	file:
+voGTE	verilog_bison.h	/^     voGTE = 292,$/;"	e	enum:yytokentype
+voLTE	verilog_bison.c	/^     voLTE = 291,$/;"	e	enum:yytokentype	file:
+voLTE	verilog_bison.h	/^     voLTE = 291,$/;"	e	enum:yytokentype
+voNAND	verilog_bison.c	/^     voNAND = 300,$/;"	e	enum:yytokentype	file:
+voNAND	verilog_bison.h	/^     voNAND = 300,$/;"	e	enum:yytokentype
+voNOR	verilog_bison.c	/^     voNOR = 301,$/;"	e	enum:yytokentype	file:
+voNOR	verilog_bison.h	/^     voNOR = 301,$/;"	e	enum:yytokentype
+voNOTEQUAL	verilog_bison.c	/^     voNOTEQUAL = 296,$/;"	e	enum:yytokentype	file:
+voNOTEQUAL	verilog_bison.h	/^     voNOTEQUAL = 296,$/;"	e	enum:yytokentype
+voOROR	verilog_bison.c	/^     voOROR = 290,$/;"	e	enum:yytokentype	file:
+voOROR	verilog_bison.h	/^     voOROR = 290,$/;"	e	enum:yytokentype
+voSLEFT	verilog_bison.c	/^     voSLEFT = 293,$/;"	e	enum:yytokentype	file:
+voSLEFT	verilog_bison.h	/^     voSLEFT = 293,$/;"	e	enum:yytokentype
+voSRIGHT	verilog_bison.c	/^     voSRIGHT = 294,$/;"	e	enum:yytokentype	file:
+voSRIGHT	verilog_bison.h	/^     voSRIGHT = 294,$/;"	e	enum:yytokentype
+voXNOR	verilog_bison.c	/^     voXNOR = 299,$/;"	e	enum:yytokentype	file:
+voXNOR	verilog_bison.h	/^     voXNOR = 299,$/;"	e	enum:yytokentype
 wall_time	simulate_blif.c	/^inline double wall_time()$/;"	f
 warning_message	errors.c	/^void warning_message(short error_type, int line_number, int file, char *message, ...)$/;"	f
 we	memories.h	/^	npin_t *we;$/;"	m	struct:__anon2
@@ -1172,5 +1463,146 @@ write_vector_to_file	simulate_blif.c	/^void write_vector_to_file(lines_t *l, FIL
 write_vector_to_modelsim_file	simulate_blif.c	/^void write_vector_to_modelsim_file(lines_t *l, FILE *modelsim_out, int cycle)$/;"	f
 write_wave_to_file	simulate_blif.c	/^void write_wave_to_file(lines_t *l, FILE* file, int cycle_offset, int wave_length, int edge)$/;"	f
 write_wave_to_modelsim_file	simulate_blif.c	/^void write_wave_to_modelsim_file(netlist_t *netlist, lines_t *l, FILE* modelsim_out, int cycle_offset, int wave_length)$/;"	f
+yy_accept	verilog_flex.c	/^static yyconst flex_int16_t yy_accept[280] =$/;"	v	file:
+yy_at_bol	verilog_flex.c	/^	int yy_at_bol;$/;"	m	struct:yy_buffer_state	file:
+yy_base	verilog_flex.c	/^static yyconst flex_int16_t yy_base[288] =$/;"	v	file:
+yy_bs_column	verilog_flex.c	/^    int yy_bs_column; \/**< The column count. *\/$/;"	m	struct:yy_buffer_state	file:
+yy_bs_lineno	verilog_flex.c	/^    int yy_bs_lineno; \/**< The line count. *\/$/;"	m	struct:yy_buffer_state	file:
+yy_buf_pos	verilog_flex.c	/^	char *yy_buf_pos;		\/* current position in input buffer *\/$/;"	m	struct:yy_buffer_state	file:
+yy_buf_size	verilog_flex.c	/^	yy_size_t yy_buf_size;$/;"	m	struct:yy_buffer_state	file:
+yy_buffer_stack	verilog_flex.c	/^static YY_BUFFER_STATE * yy_buffer_stack = 0; \/**< Stack as an array. *\/$/;"	v	file:
+yy_buffer_stack_max	verilog_flex.c	/^static size_t yy_buffer_stack_max = 0; \/**< capacity of stack. *\/$/;"	v	file:
+yy_buffer_stack_top	verilog_flex.c	/^static size_t yy_buffer_stack_top = 0; \/**< index of top of stack. *\/$/;"	v	file:
+yy_buffer_state	verilog_flex.c	/^struct yy_buffer_state$/;"	s	file:
+yy_buffer_status	verilog_flex.c	/^	int yy_buffer_status;$/;"	m	struct:yy_buffer_state	file:
+yy_c_buf_p	verilog_flex.c	/^static char *yy_c_buf_p = (char *) 0;$/;"	v	file:
+yy_ch_buf	verilog_flex.c	/^	char *yy_ch_buf;		\/* input buffer *\/$/;"	m	struct:yy_buffer_state	file:
+yy_chk	verilog_flex.c	/^static yyconst flex_int16_t yy_chk[402] =$/;"	v	file:
+yy_create_buffer	verilog_flex.c	/^    YY_BUFFER_STATE yy_create_buffer  (FILE * file, int  size )$/;"	f
+yy_def	verilog_flex.c	/^static yyconst flex_int16_t yy_def[288] =$/;"	v	file:
+yy_delete_buffer	verilog_flex.c	/^    void yy_delete_buffer (YY_BUFFER_STATE  b )$/;"	f
+yy_did_buffer_switch_on_eof	verilog_flex.c	/^static int yy_did_buffer_switch_on_eof;$/;"	v	file:
+yy_ec	verilog_flex.c	/^static yyconst flex_int32_t yy_ec[256] =$/;"	v	file:
+yy_fatal_error	verilog_flex.c	/^static void yy_fatal_error (yyconst char* msg )$/;"	f	file:
+yy_fill_buffer	verilog_flex.c	/^	int yy_fill_buffer;$/;"	m	struct:yy_buffer_state	file:
+yy_flex_debug	verilog_flex.c	/^int yy_flex_debug = 0;$/;"	v
+yy_flex_strlen	verilog_flex.c	/^static int yy_flex_strlen (yyconst char * s )$/;"	f	file:
+yy_flex_strncpy	verilog_flex.c	/^static void yy_flex_strncpy (char* s1, yyconst char * s2, int n )$/;"	f	file:
+yy_flush_buffer	verilog_flex.c	/^    void yy_flush_buffer (YY_BUFFER_STATE  b )$/;"	f
+yy_get_next_buffer	verilog_flex.c	/^static int yy_get_next_buffer (void)$/;"	f	file:
+yy_get_previous_state	verilog_flex.c	/^    static yy_state_type yy_get_previous_state (void)$/;"	f	file:
+yy_hold_char	verilog_flex.c	/^static char yy_hold_char;$/;"	v	file:
+yy_init	verilog_flex.c	/^static int yy_init = 0;		\/* whether we need to initialize *\/$/;"	v	file:
+yy_init_buffer	verilog_flex.c	/^    static void yy_init_buffer  (YY_BUFFER_STATE  b, FILE * file )$/;"	f	file:
+yy_init_globals	verilog_flex.c	/^static int yy_init_globals (void)$/;"	f	file:
+yy_input_file	verilog_flex.c	/^	FILE *yy_input_file;$/;"	m	struct:yy_buffer_state	file:
+yy_is_interactive	verilog_flex.c	/^	int yy_is_interactive;$/;"	m	struct:yy_buffer_state	file:
+yy_is_our_buffer	verilog_flex.c	/^	int yy_is_our_buffer;$/;"	m	struct:yy_buffer_state	file:
+yy_last_accepting_cpos	verilog_flex.c	/^static char *yy_last_accepting_cpos;$/;"	v	file:
+yy_last_accepting_state	verilog_flex.c	/^static yy_state_type yy_last_accepting_state;$/;"	v	file:
+yy_load_buffer_state	verilog_flex.c	/^static void yy_load_buffer_state  (void)$/;"	f	file:
+yy_meta	verilog_flex.c	/^static yyconst flex_int32_t yy_meta[47] =$/;"	v	file:
+yy_n_chars	verilog_flex.c	/^	int yy_n_chars;$/;"	m	struct:yy_buffer_state	file:
+yy_n_chars	verilog_flex.c	/^static int yy_n_chars;		\/* number of characters read into yy_ch_buf *\/$/;"	v	file:
+yy_new_buffer	verilog_flex.c	309;"	d	file:
+yy_nxt	verilog_flex.c	/^	flex_int32_t yy_nxt;$/;"	m	struct:yy_trans_info	file:
+yy_nxt	verilog_flex.c	/^static yyconst flex_int16_t yy_nxt[402] =$/;"	v	file:
+yy_reduce_print	verilog_bison.c	/^yy_reduce_print (YYSTYPE *yyvsp, int yyrule)$/;"	f	file:
+yy_scan_buffer	verilog_flex.c	/^YY_BUFFER_STATE yy_scan_buffer  (char * base, yy_size_t  size )$/;"	f
+yy_scan_bytes	verilog_flex.c	/^YY_BUFFER_STATE yy_scan_bytes  (yyconst char * yybytes, int  _yybytes_len )$/;"	f
+yy_scan_string	verilog_flex.c	/^YY_BUFFER_STATE yy_scan_string (yyconst char * yystr )$/;"	f
+yy_set_bol	verilog_flex.c	321;"	d	file:
+yy_set_interactive	verilog_flex.c	311;"	d	file:
+yy_size_t	verilog_flex.c	/^typedef size_t yy_size_t;$/;"	t	file:
+yy_stack_print	verilog_bison.c	/^yy_stack_print (yytype_int16 *yybottom, yytype_int16 *yytop)$/;"	f	file:
+yy_start	verilog_flex.c	/^static int yy_start = 0;	\/* start state number *\/$/;"	v	file:
+yy_state_type	verilog_flex.c	/^typedef int yy_state_type;$/;"	t	file:
+yy_switch_to_buffer	verilog_flex.c	/^    void yy_switch_to_buffer  (YY_BUFFER_STATE  new_buffer )$/;"	f
+yy_symbol_print	verilog_bison.c	/^yy_symbol_print (FILE *yyoutput, int yytype, YYSTYPE const * const yyvaluep)$/;"	f	file:
+yy_symbol_value_print	verilog_bison.c	/^yy_symbol_value_print (FILE *yyoutput, int yytype, YYSTYPE const * const yyvaluep)$/;"	f	file:
+yy_trans_info	verilog_flex.c	/^struct yy_trans_info$/;"	s	file:
+yy_try_NUL_trans	verilog_flex.c	/^    static yy_state_type yy_try_NUL_trans  (yy_state_type yy_current_state )$/;"	f	file:
+yy_verify	verilog_flex.c	/^	flex_int32_t yy_verify;$/;"	m	struct:yy_trans_info	file:
+yyalloc	verilog_bison.c	/^union yyalloc$/;"	u	file:
+yyalloc	verilog_flex.c	/^void *yyalloc (yy_size_t  size )$/;"	f
+yychar	verilog_bison.c	/^int yychar;$/;"	v
+yycheck	verilog_bison.c	/^static const yytype_int16 yycheck[] =$/;"	v	file:
+yyclearin	verilog_bison.c	1116;"	d	file:
+yyconst	verilog_flex.c	106;"	d	file:
+yyconst	verilog_flex.c	108;"	d	file:
+yydebug	verilog_bison.c	/^int yydebug;$/;"	v
+yydefact	verilog_bison.c	/^static const yytype_uint8 yydefact[] =$/;"	v	file:
+yydefgoto	verilog_bison.c	/^static const yytype_int16 yydefgoto[] =$/;"	v	file:
+yydestruct	verilog_bison.c	/^yydestruct (const char *yymsg, int yytype, YYSTYPE *yyvaluep)$/;"	f	file:
+yyensure_buffer_stack	verilog_flex.c	/^static void yyensure_buffer_stack (void)$/;"	f	file:
+yyerrok	verilog_bison.c	1115;"	d	file:
+yyerror	verilog_bison.c	/^void yyerror(const char *str)$/;"	f
+yyfree	verilog_flex.c	/^void yyfree (void * ptr )$/;"	f
+yyget_debug	verilog_flex.c	/^int yyget_debug  (void)$/;"	f
+yyget_in	verilog_flex.c	/^FILE *yyget_in  (void)$/;"	f
+yyget_leng	verilog_flex.c	/^int yyget_leng  (void)$/;"	f
+yyget_lineno	verilog_flex.c	/^int yyget_lineno  (void)$/;"	f
+yyget_out	verilog_flex.c	/^FILE *yyget_out  (void)$/;"	f
+yyget_text	verilog_flex.c	/^char *yyget_text  (void)$/;"	f
+yyin	verilog_flex.c	/^FILE *yyin = (FILE *) 0, *yyout = (FILE *) 0;$/;"	v
+yyinput	verilog_flex.c	/^    static int yyinput (void)$/;"	f	file:
+yyleng	verilog_flex.c	/^int yyleng;$/;"	v
+yyless	verilog_flex.c	167;"	d	file:
+yyless	verilog_flex.c	2137;"	d	file:
+yyless	verilog_flex.c	2138;"	d	file:
+yylex_destroy	verilog_flex.c	/^int yylex_destroy  (void)$/;"	f
+yylineno	verilog_bison.c	/^int yylineno;$/;"	v
+yylineno	verilog_flex.c	/^int yylineno = 1;$/;"	v
+yylval	verilog_bison.c	/^YYSTYPE yylval;$/;"	v
+yymore	verilog_flex.c	625;"	d	file:
+yynerrs	verilog_bison.c	/^int yynerrs;$/;"	v
+yyout	verilog_flex.c	/^FILE *yyin = (FILE *) 0, *yyout = (FILE *) 0;$/;"	v
+yypact	verilog_bison.c	/^static const yytype_int16 yypact[] =$/;"	v	file:
+yyparse	verilog_bison.c	/^yyparse (void *YYPARSE_PARAM)$/;"	f
+yypgoto	verilog_bison.c	/^static const yytype_int16 yypgoto[] =$/;"	v	file:
+yypop_buffer_state	verilog_flex.c	/^void yypop_buffer_state (void)$/;"	f
+yyprhs	verilog_bison.c	/^static const yytype_uint16 yyprhs[] =$/;"	v	file:
+yypush_buffer_state	verilog_flex.c	/^void yypush_buffer_state (YY_BUFFER_STATE new_buffer )$/;"	f
+yyr1	verilog_bison.c	/^static const yytype_uint8 yyr1[] =$/;"	v	file:
+yyr2	verilog_bison.c	/^static const yytype_uint8 yyr2[] =$/;"	v	file:
+yyrealloc	verilog_flex.c	/^void *yyrealloc  (void * ptr, yy_size_t  size )$/;"	f
+yyrestart	verilog_flex.c	/^    void yyrestart  (FILE * input_file )$/;"	f
+yyrhs	verilog_bison.c	/^static const yytype_int8 yyrhs[] =$/;"	v	file:
+yyrline	verilog_bison.c	/^static const yytype_uint16 yyrline[] =$/;"	v	file:
+yyset_debug	verilog_flex.c	/^void yyset_debug (int  bdebug )$/;"	f
+yyset_in	verilog_flex.c	/^void yyset_in (FILE *  in_str )$/;"	f
+yyset_lineno	verilog_flex.c	/^void yyset_lineno (int  line_number )$/;"	f
+yyset_out	verilog_flex.c	/^void yyset_out (FILE *  out_str )$/;"	f
+yyss_alloc	verilog_bison.c	/^  yytype_int16 yyss_alloc;$/;"	m	union:yyalloc	file:
+yystos	verilog_bison.c	/^static const yytype_uint8 yystos[] =$/;"	v	file:
+yystpcpy	verilog_bison.c	/^yystpcpy (char *yydest, const char *yysrc)$/;"	f	file:
+yystpcpy	verilog_bison.c	1423;"	d	file:
+yystrlen	verilog_bison.c	/^yystrlen (const char *yystr)$/;"	f	file:
+yystrlen	verilog_bison.c	1400;"	d	file:
+yystype	verilog_bison.c	237;"	d	file:
+yystype	verilog_bison.h	119;"	d
+yysyntax_error	verilog_bison.c	/^yysyntax_error (char *yyresult, int yystate, int yychar)$/;"	f	file:
+yytable	verilog_bison.c	/^static const yytype_uint16 yytable[] =$/;"	v	file:
+yyterminate	verilog_flex.c	799;"	d	file:
+yytext	verilog_flex.c	/^char *yytext;$/;"	v
+yytext_ptr	verilog_flex.c	346;"	d	file:
+yytname	verilog_bison.c	/^static const char *const yytname[] =$/;"	v	file:
+yytnamerr	verilog_bison.c	/^yytnamerr (char *yyres, const char *yystr)$/;"	f	file:
+yytokentype	verilog_bison.c	/^   enum yytokentype {$/;"	g	file:
+yytokentype	verilog_bison.h	/^   enum yytokentype {$/;"	g
+yytoknum	verilog_bison.c	/^static const yytype_uint16 yytoknum[] =$/;"	v	file:
+yytranslate	verilog_bison.c	/^static const yytype_uint8 yytranslate[] =$/;"	v	file:
+yytype_int16	verilog_bison.c	/^typedef YYTYPE_INT16 yytype_int16;$/;"	t	file:
+yytype_int16	verilog_bison.c	/^typedef short int yytype_int16;$/;"	t	file:
+yytype_int8	verilog_bison.c	/^typedef YYTYPE_INT8 yytype_int8;$/;"	t	file:
+yytype_int8	verilog_bison.c	/^typedef short int yytype_int8;$/;"	t	file:
+yytype_int8	verilog_bison.c	/^typedef signed char yytype_int8;$/;"	t	file:
+yytype_uint16	verilog_bison.c	/^typedef YYTYPE_UINT16 yytype_uint16;$/;"	t	file:
+yytype_uint16	verilog_bison.c	/^typedef unsigned short int yytype_uint16;$/;"	t	file:
+yytype_uint8	verilog_bison.c	/^typedef YYTYPE_UINT8 yytype_uint8;$/;"	t	file:
+yytype_uint8	verilog_bison.c	/^typedef unsigned char yytype_uint8;$/;"	t	file:
+yyunput	verilog_flex.c	/^    static void yyunput (int c, register char * yy_bp )$/;"	f	file:
+yyvs_alloc	verilog_bison.c	/^  YYSTYPE yyvs_alloc;$/;"	m	union:yyalloc	file:
+yywrap	verilog_bison.c	/^int yywrap()$/;"	f
 zero_net	types.h	/^	nnet_t *zero_net;$/;"	m	struct:netlist_t_t
 zero_string	netlist_create_from_ast.c	/^char *zero_string = "ZERO_GND_ZERO";$/;"	v
