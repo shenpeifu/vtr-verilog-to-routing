@@ -274,7 +274,7 @@ typedef struct s_cluster_placement_stats {
 #define MODEL_OUTPUT "output"
 
 /******************************************************************
- * Timing data structures begin 
+ * Timing data types
  *******************************************************************/
 
 /* Timing graph information */
@@ -322,7 +322,7 @@ typedef enum {
  * num_critical_input_paths, num_critical_output_paths: Count total number of near critical paths that go through this node *
  */
 
-//#define FANCY_CRIT
+//#define FANCY_CRITICALITY
 /* If defined, uses different, normalized and directional criticalities in the clusterer.  
 	If not defined, uses the same slack ratio fpr the clusterer as for the placer/router. */
 
@@ -334,7 +334,7 @@ typedef struct s_tnode {
 	int block;
 	boolean used_on_this_traversal; /* Has this tnode been touched on this timing graph traversal? */
 
-	/* For flipflops only. Clock_domain contains the index of the clock in clock_list; clock_skew is the time taken for a clock signal to get to the flip-flop. */
+	/* For flipflops only. Clock_domain contains the index of the clock in netlist_clocks; clock_skew is the time taken for a clock signal to get to the flip-flop. */
 	int clock_domain; 
 	float clock_skew;
 
@@ -344,7 +344,7 @@ typedef struct s_tnode {
 
 	/* pre-packing timing graph */
 	int model_port, model_pin; /* technology mapped model port/pin */
-#ifdef FANCY_CRIT
+#ifdef FANCY_CRITICALITY
 	long num_critical_input_paths, num_critical_output_paths; /* count of critical paths passing through this tnode */
 	float normalized_slack; /* slack (normalized with respect to max slack) */
 	float normalized_total_critical_paths; /* critical path count (normalized with respect to max count) */
@@ -357,21 +357,41 @@ typedef struct s_clock {
 	char * name;
 	int fanout;
 } t_clock;
-/* Stores the name and fanout (number of flip-flops in clock domain) of each clock.  Used extensively in SDC parsing and timing analysis. */
+/* Stores the name and fanout (number of flip-flops in clock domain) of each clock.
+	Used extensively in SDC parsing and timing analysis. */
 
-typedef struct s_sdc_clock {
-	float period;
-	float offset;
-} t_sdc_clock;
-/* Stores the period and offset constraints for each SDC file.  Only used
-   when parsing the SDC file. */
+typedef struct s_io {
+	char * name;
+	char * virtual_clock_name;
+	float delay;
+} t_io;
+/* Associates each I/O port name with its corresponding virtual (external) clock, 
+	 and the delay through the I/O. Used extensively in SDC parsing and timing analysis. */
 
 typedef struct s_timing_stats {
 	float ** critical_path_delay; /* [0..num_netlist_clocks - 1 (source)][0..num_netlist_clocks - 1 (destination)] */
-	float * f_max; /* [0..num_netlist_clocks - 1] - only considers paths within each clock domain */
 	float * least_slack_in_domain; /* [0..num_netlist_clocks - 1] */
 } t_timing_stats;
 /* Timing statistics for final reporting. */
+
+/******************************************************************
+ * SDC parsing data types (exclusive to read_sdc.c)
+ *******************************************************************/
+
+typedef struct s_sdc_clock {
+	char * name;
+	float period;
+	float offset;
+} t_sdc_clock;
+/* Stores the name, period and offset of each constrained clock. */
+
+typedef struct s_sdc_special_case {
+	char * source_clock_domain;
+	char * sink_clock_domain;
+	float constraint;
+}
+/* A special-case constraint to override the default, calculated, timing constraint.
+Holds data from set_clock_groups, set_false_path, and set_max_delay commands. */
 
 /***************************************************************************
  * Placement and routing data types

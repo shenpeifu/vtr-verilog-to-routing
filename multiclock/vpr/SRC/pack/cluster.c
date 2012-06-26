@@ -100,7 +100,7 @@ static int indexofcrit; /* index of next most timing critical block */
 static int savedindexofcrit; /* index of next most timing critical block */
 
 /* Timing information for blocks */
-#ifdef FANCY_CRIT
+#ifdef FANCY_CRITICALITY
 static float *criticality = NULL;
 static int *critindexarray = NULL;
 static float **net_pin_backward_criticality = NULL;
@@ -248,7 +248,7 @@ void do_clustering(const t_arch *arch, t_pack_molecule *molecule_head,
 
 	t_pack_molecule *istart, *next_molecule, *prev_molecule, *cur_molecule;
 	int i, num_molecules;
-#ifdef FANCY_CRIT
+#ifdef FANCY_CRITICALITY
 	int j, iblk;
 #endif
 	int blocks_since_last_analysis;
@@ -273,7 +273,7 @@ void do_clustering(const t_arch *arch, t_pack_molecule *molecule_head,
 	enum e_block_pack_status block_pack_status;
 
 	int *num_used_instances_type, *num_instances_type; /* [0..num_types] Holds array for total number of each cluster_type available */
-#ifdef FANCY_CRIT
+#ifdef FANCY_CRITICALITY
 	float num_paths_scaling, distance_scaling;
 
 	float crit;
@@ -363,7 +363,7 @@ void do_clustering(const t_arch *arch, t_pack_molecule *molecule_head,
 				print_net_slack("pre_packing_net_slack.echo");
 				print_net_slack_ratio("pre_packing_net_slack_ratio.echo");
 		}
-#ifdef FANCY_CRIT
+#ifdef FANCY_CRITICALITY
 		criticality = (float*) my_calloc(num_logical_blocks, sizeof(float));
 
 		critindexarray = (int*) my_malloc(num_logical_blocks * sizeof(int));
@@ -1596,7 +1596,7 @@ static void update_length_gain_values(int inet, int clustered_block,
 		for (ipin = ifirst; ipin <= vpack_net[inet].num_sinks; ipin++) {
 			iblk = vpack_net[inet].node_block[ipin];
 			if (logical_block[iblk].clb_index == NO_CLUSTER) {
-#ifdef FANCY_CRIT
+#ifdef FANCY_CRITICALITY
 				lengain = net_pin_backward_criticality[inet][ipin];
 #else
 				lengain = 1 - net_slack_ratio[inet][ipin];
@@ -1614,7 +1614,7 @@ static void update_length_gain_values(int inet, int clustered_block,
 		newblk = vpack_net[inet].node_block[0];
 		if (logical_block[newblk].clb_index == NO_CLUSTER) {
 			for (ipin = 1; ipin <= vpack_net[inet].num_sinks; ipin++) {
-#ifdef FANCY_CRIT
+#ifdef FANCY_CRITICALITY
 				lengain = net_pin_forward_criticality[inet][ipin];
 #else
 				lengain = 1 - net_slack_ratio[inet][ipin];
@@ -2389,7 +2389,7 @@ static t_pack_molecule* get_most_critical_seed_molecule(void) {
 	struct s_linked_vptr *cur;
 
 	for (critidx = indexofcrit; critidx < num_logical_blocks; critidx++) {
-#ifdef FANCY_CRIT
+#ifdef FANCY_CRITICALITY
 		blkidx = critindexarray[critidx];
 #else
 		blkidx = critidx;

@@ -17,8 +17,8 @@
 
 #define SLACK_RATIO_DEFINITION 1
 /* Which definition of slack ratio (related to criticality) should VPR use?  In general, slack ratio is slack/maximum delay.  Possible values:
-   1: slack ratio = minimum over all traversals of (slack of edge for this traversal)/(maximum required time T_req_max for this traversal)
-   2: slack ratio = (slack of this edge)/(maximum required time T_req_max in design)
+   1: slack ratio = minimum over all traversals of (slack of edge for this traversal)/(maximum required time T_req_max_this_domain for this traversal)
+   2: slack ratio = (slack of this edge)/(maximum required time T_req_max_global in design)
    Note that if SLACK_DEFINITION = 4 above, T_req_max will be taken from normalized required times, not real required times.
 */
 
@@ -62,11 +62,13 @@ void print_timing_graph_as_blif(char *fname, t_model *models);
 
 /*************************** Variable declarations ********************************/
 
-extern int num_netlist_clocks; /* [0..num_netlist_clocks - 1] number of clocks in netlist */
+extern int num_constrained_clocks; /* number of clocks with timing constraints */
+extern t_clock * constrained_clocks; /* [0..num_constrained_clocks - 1] array of clocks with timing constraints */
 
-extern t_clock * clock_list; /* [0..num_netlist_clocks - 1] array of clocks in netlist */
+extern int num_constrained_ios; /* number of I/Os with timing constraints */
+extern t_io * constrained_ios; /* [0..num_constrained_ios - 1] array of I/Os with timing constraints */
 
-extern float ** timing_constraint; /* [0..num_netlist_clocks - 1 (source)][0..num_netlist_clocks - 1 (destination)] */
+extern float ** timing_constraint; /* [0..num_constrained_clocks - 1 (source)][0..num_constrained_clocks - 1 (destination)] */
 
 extern float ** net_slack, ** net_slack_ratio; /* [0..num_nets-1][1..num_pins] */
 

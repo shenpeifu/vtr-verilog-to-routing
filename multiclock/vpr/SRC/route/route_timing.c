@@ -205,14 +205,14 @@ boolean try_timing_driven_route(struct s_router_opts router_opts,
 #else
 		timing_stats = do_timing_analysis(FALSE, FALSE);
 #endif
-		if (num_netlist_clocks == 1) {
+		if (num_constrained_clocks == 1) {
 			printf("T_crit: %g\n", timing_stats->critical_path_delay[0][0]);
 		} else {
 			printf("T_crit per constraint:\n");
-			for (i = 0; i < num_netlist_clocks; i++) {
-				for (j = 0; j < num_netlist_clocks; j++) {
+			for (i = 0; i < num_constrained_clocks; i++) {
+				for (j = 0; j < num_constrained_clocks; j++) {
 					if (timing_constraint[i][j] > -0.01) { /* if timing constraint is not DO_NOT_ANALYSE */
-						printf("%s to %s: %g\n", clock_list[i].name, clock_list[j].name, timing_stats->critical_path_delay[i][j]);
+						printf("%s to %s: %g\n", constrained_clocks[i].name, constrained_clocks[j].name, timing_stats->critical_path_delay[i][j]);
 					}
 				}
 			}

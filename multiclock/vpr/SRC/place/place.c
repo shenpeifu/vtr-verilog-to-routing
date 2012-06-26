@@ -543,7 +543,7 @@ void try_place(struct s_placer_opts placer_opts,
 					placer_opts.num_regions);
 			if (fabs(new_bb_cost - bb_cost) > bb_cost * ERROR_TOL) {
 				printf(
-						"Error in try_place:  new_bb_cost = %g, old bb_cost = %g.\n",
+						"Error in try_place: overly-large fluctuation in bounding-box cost between iterations (new_bb_cost = %g, old bb_cost = %g).\n",
 						new_bb_cost, bb_cost);
 				exit(1);
 			}
@@ -766,14 +766,14 @@ void try_place(struct s_placer_opts placer_opts,
 			print_net_slack_ratio("placement_net_slack_ratio.echo");
 			/*print_critical_path("placement_crit_path.echo");*/
 		}
-		if (num_netlist_clocks == 1) {
+		if (num_constrained_clocks == 1) {
 			printf("Placement estimated critical path delay: %g\n\n", timing_stats->critical_path_delay[0][0]);
 		} else {
 			printf("Placement estimated critical path delay by constraint:\n");
-			for (i = 0; i < num_netlist_clocks; i++) {
-				for (j = 0; j < num_netlist_clocks; j++) {
+			for (i = 0; i < num_constrained_clocks; i++) {
+				for (j = 0; j < num_constrained_clocks; j++) {
 					if (timing_constraint[i][j] > -0.01) { /* if timing constraint is not DO_NOT_ANALYSE */
-						printf("%s to %s: %g\n", clock_list[i].name, clock_list[j].name, timing_stats->critical_path_delay[i][j]);
+						printf("%s to %s: %g\n", constrained_clocks[i].name, constrained_clocks[j].name, timing_stats->critical_path_delay[i][j]);
 					}
 				}
 			}
@@ -1913,7 +1913,7 @@ static void comp_td_costs(float *timing_cost, float *connection_delay_sum) {
 
 				temp_delay_cost = comp_td_point_to_point_delay(inet, ipin);
 				if (timing_place_crit[inet][ipin] < HUGE_NEGATIVE_FLOAT + 1)  {
-					/* We didn't analyze this connection (probably it was on an I/O), so it contributes no timing cost. */
+					/* We didn't analyze this connection, so it contributes no timing cost. */
 					temp_timing_cost = 0;
 				} else {
 					temp_timing_cost = temp_delay_cost * timing_place_crit[inet][ipin];
