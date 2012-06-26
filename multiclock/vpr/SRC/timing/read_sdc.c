@@ -9,19 +9,44 @@
 #include "read_blif.h"
 #include "path_delay.h"
 
+/****************** Types local to this module **************************/
+
+typedef struct s_sdc_clock {
+	char * name;
+	float period;
+	float offset;
+} t_sdc_clock;
+/* Stores the name, period and offset of each constrained clock. */
+
+typedef struct s_sdc_override_constraint {
+	char * source_clock_domain;
+	char * sink_clock_domain;
+	float constraint;
+} t_sdc_override_constraint;
+/* A special-case constraint to override the default, calculated, timing constraint.
+Holds data from set_clock_groups, set_false_path, and set_max_delay commands. */
+
+typedef struct s_sdc_exclusive_group {
+	char * name;
+	int group;
+} t_sdc_exclusive_group;
+/* Used to temporarily separate clock names into exclusive groups when parsing the 
+command set_clock_groups -exclusive. */
+
 /****************** Variables local to this module **************************/
 
 static FILE *sdc;
 t_sdc_clock * sdc_clocks = NULL; /* List of clock periods and offsets, read *
 								  * in directly from SDC file				*/
-int * exclusive_clock_groups = NULL; /* Temporary structure used to interpret   *
-									  * the command set_clock_groups -exclusive */
 
-int num_netlist_clocks; /* number of clocks in netlist */
+int num_netlist_clocks = 0; /* number of clocks in netlist */
 char ** netlist_clocks; /* [0..num_netlist_clocks - 1] array of names of clocks in netlist */
 
-int num_netlist_ios; /* number of clocks in netlist */
+int num_netlist_ios = 0; /* number of clocks in netlist */
 char ** netlist_ios; /* [0..num_netlist_clocks - 1] array of names of clocks in netlist */
+
+int num_override_constraints = 0; /* number of special-case constraint to override default, calculated, timing constraints */
+t_sdc_override_constraint * override_constraints; /*  [0..num_override_constraints - 1] array of such constraints */
 
 /***************** Subroutines local to this module *************************/
 
@@ -31,6 +56,7 @@ static void get_sdc_tok(char * buf, int num_lines);
 static boolean check_if_number(char * ptr);
 static int find_clock(char * ptr);
 static float calculate_constraint(t_sdc_clock source_domain, t_sdc_clock sink_domain);
+static int find_override_constraint(int source_clock_domain, int sink_clock_domain);
 
 /********************* Subroutine definitions *******************************/
 
@@ -41,8 +67,11 @@ void read_sdc(char * sdc_file) {
 
 	char buf[BUFSIZE];
 	int num_lines = 1; /* Line counter for SDC file, used to report errors */
-	int source_clock_domain, sink_clock_domain;
+	int source_clock_domain, sink_clock_domain, io_index, override_index;
 	
+	/* Make sure we haven't called this subroutine before. */
+	assert(!timing_constraint);
+
 	/* If no SDC file is included or specified, use default behaviour of cutting paths between domains and optimizing each clock separately */
 	if ((sdc = fopen(sdc_file, "r")) == NULL) {
 		printf("\nSDC file %s not found.\n", sdc_file);
@@ -74,8 +103,6 @@ void read_sdc(char * sdc_file) {
 	As a result, they will be freed after the SDC file is parsed. */
 	alloc_and_load_netlist_clocks_and_ios();
 
-
-
 	/* Parse the file line-by-line. */
 	while (my_fgets(buf, BUFSIZE, sdc) != NULL) { 
 		get_sdc_tok(buf, num_lines);
@@ -84,19 +111,34 @@ void read_sdc(char * sdc_file) {
 	
 	fclose(sdc);
 
+	/* Make sure that all virtual clocks referenced in set_input_delay and set_output_delay have been constrained. */
+	for (io_index = 0; io_index < num_constrained_ios; io_index++) {
+		if ((find_clock(constrained_ios[io_index].virtual_clock_name)) == -1) {
+			fprintf(stderr, "I/O %s is associated with an unconstrained clock %s in SDC file.\n", constrained_ios[io_index].name, constrained_ios[io_index].virtual_clock_name);
+			exit(1);
+		}
+	}
+
 	/* Allocate matrix of timing constraints [0..num_constrained_clocks-1][0..num_constrained_clocks-1] and initialize to 0 */
 	timing_constraint = (float **) alloc_matrix(0, num_constrained_clocks-1, 0, num_constrained_clocks-1, sizeof(float));
 	
-	/* Based on the information from sdc_clocks, calculate constraints for all paths not excluded by set_false_path or set_clock_groups -exclusive */
-		for(source_clock_domain=0; source_clock_domain<num_constrained_clocks; source_clock_domain++) {
-			for(sink_clock_domain=0; sink_clock_domain<num_constrained_clocks; sink_clock_domain++) {
-				if(timing_constraint[source_clock_domain][sink_clock_domain] != DO_NOT_ANALYSE)
+	/* Based on the information from sdc_clocks, calculate constraints for all paths except ones with an override constraint. */
+		for (source_clock_domain=0; source_clock_domain<num_constrained_clocks; source_clock_domain++) {
+			for (sink_clock_domain=0; sink_clock_domain<num_constrained_clocks; sink_clock_domain++) {
+				if ((override_index = find_override_constraint(source_clock_domain, sink_clock_domain)) != -1) {
+					/* There's a special constraint from set_false_path, set_clock_groups -exclusive or set_max_delay which overrides the default constraint. */
+					timing_constraint[source_clock_domain][sink_clock_domain] = override_constraints[override_index].constraint;
+				} else {
+					/* Calculate the constraint between clock domains by finding the smallest positive difference between a posedge in the source domain and one in the sink domain. */
 					timing_constraint[source_clock_domain][sink_clock_domain] = calculate_constraint(sdc_clocks[source_clock_domain], sdc_clocks[sink_clock_domain]);
+				}
 			}
 		}
 
-	/* Since all the information we need is stored in timing_constraint, free other data structures used in this routine */
+	/* Since all the information we need is stored in timing_constraint, constrained_clocks, and constrained_ios, free other data structures used in this routine */
 	free(sdc_clocks);
+	free(netlist_clocks);
+	free(netlist_ios);
 	return;
 }
 
@@ -108,9 +150,6 @@ static void alloc_and_load_netlist_clocks_and_ios(void) {
 	int iblock, i, net;
 	char * name;
 	boolean found;
-
-	num_netlist_clocks = 0;
-	num_netlist_ios = 0;
 
 	for (iblock = 0; iblock < num_logical_blocks; iblock++) {
 		if(logical_block[iblock].type == VPACK_LATCH) {
@@ -124,15 +163,14 @@ static void alloc_and_load_netlist_clocks_and_ios(void) {
 				}
 			}
 			if(!found) {
-			/* If we get here, the clock is new and so we add it to the netlist_clocks */
+			/* If we get here, the clock is new and so we add it to the array netlist_clocks */
 				num_netlist_clocks++;
-				/*dynamically grow the array to fit one new element */
+				/* dynamically grow the array to fit one new element */
 				netlist_clocks = (char **) my_realloc (netlist_clocks, num_netlist_clocks * sizeof(t_clock));
 				netlist_clocks[num_netlist_clocks - 1] = name;
 			}
 		} else if(logical_block[iblock].type == VPACK_INPAD || logical_block[iblock].type == VPACK_OUTPAD) {
-			net = logical_block[iblock].clock_net;
-			name = logical_block[net].name;
+			name = logical_block[iblock].name;
 			/* Now that we've found an I/O, let's see if we've counted it already */
 			found = FALSE;
 			for (i = 0; !found && i < num_netlist_ios; i++) {
@@ -141,9 +179,9 @@ static void alloc_and_load_netlist_clocks_and_ios(void) {
 				}
 			}
 			if(!found) {
-			/* If we get here, the clock is new and so we add it to the netlist_clocks */
+			/* If we get here, the I/O is new and so we add it to the array netlist_ios */
 				num_netlist_ios++;
-				/*dynamically grow the array to fit one new element */
+				/* dynamically grow the array to fit one new element */
 				netlist_ios = (char **) my_realloc (netlist_ios, num_netlist_ios * sizeof(t_io));
 				netlist_ios[num_netlist_ios - 1] = name;
 			}
@@ -186,9 +224,10 @@ static void get_sdc_tok(char * buf, int num_lines) {
 #define SDC_TOKENS " \t\n{}[]" 
 	/* We're using so little of the SDC syntax that we can ignore braces */
 
-	char * ptr;
-	float clock_period, rising_edge, falling_edge, max_io_delay;
-	int source_clock_domain, sink_clock_domain, index, from, to, num_exclusive_groups = 0;
+	char * ptr, * from, * to, * clock_name;
+	float clock_period, rising_edge, falling_edge, max_delay;
+	int source_clock_domain, sink_clock_domain, current_group_number = 0, num_exclusive_clocks = 0;
+	t_sdc_exclusive_group * exclusive_groups = NULL;
 
 	/* my_strtok splits the string into tokens - little character arrays separated by the SDC_TOKENS defined above.          *
 	 * Throughout this code, ptr refers to the tokens we fetch, one at a time.  The token changes at each call of my_strtok. */
@@ -264,17 +303,18 @@ static void get_sdc_tok(char * buf, int num_lines) {
 			ptr = my_strtok(NULL, SDC_TOKENS, sdc, buf);
 
 			/* Store the clock's name, period and offset in the local array sdc_clocks. */
-			sdc_clocks = (t_sdc_clock *) my_realloc(sdc_clocks, num_constrained_clocks);
+			sdc_clocks = (t_sdc_clock *) my_realloc(sdc_clocks, num_constrained_clocks * sizeof(t_sdc_clock));
 			sdc_clocks[num_constrained_clocks - 1].name = my_strdup(ptr);
 			sdc_clocks[num_constrained_clocks - 1].period = clock_period;
 			sdc_clocks[num_constrained_clocks - 1].offset = rising_edge; 
 
 			/* The next token should be NULL.  If so, return; if not, print an error message and exit. */
-			if (ptr = my_strtok(NULL, SDC_TOKENS, sdc, buf)) {
-				fprintf(stderr, "Only one virtual clock name can be specified after -name on line %d of SDC file.\n", ptr, num_lines);
-				exit(1);
+			ptr = my_strtok(NULL, SDC_TOKENS, sdc, buf);
+			if (!ptr) {
+				return;
 			}
-			return;
+			fprintf(stderr, "Only one virtual clock name can be specified after -name on line %d of SDC file.\n", ptr, num_lines);
+			exit(1);
 
 		} else {
 			/* Parse through to the end of the line.  All that should be left on this line are a bunch of 
@@ -297,12 +337,12 @@ static void get_sdc_tok(char * buf, int num_lines) {
 				/* We've found a new clock! */
 				num_constrained_clocks++;
 
-				sdc_clocks = (t_sdc_clock *) my_realloc(sdc_clocks, num_constrained_clocks);
+				sdc_clocks = (t_sdc_clock *) my_realloc(sdc_clocks, num_constrained_clocks * sizeof(t_sdc_clock));
 				sdc_clocks[num_constrained_clocks - 1].name = my_strdup(ptr);
 				sdc_clocks[num_constrained_clocks - 1].period = clock_period;
 				sdc_clocks[num_constrained_clocks - 1].offset = rising_edge; 
 
-				constrained_clocks = (t_clock *) my_realloc (constrained_clocks, num_constrained_clocks);
+				constrained_clocks = (t_clock *) my_realloc (constrained_clocks, num_constrained_clocks * sizeof(t_clock));
 				constrained_clocks[num_constrained_clocks - 1].name = my_strdup(ptr);
 				/* Fanout will be filled out once the timing graph has been constructed. */
 				
@@ -321,44 +361,45 @@ static void get_sdc_tok(char * buf, int num_lines) {
 		
 		/* Parse through to the end of the line.  All that should be left on this line are a bunch of 
 		 * -group commands, followed by lists of clocks in that group.  An array exclusive_clock_groups will
-		 * store the group number of each clock at the index location of that clock in netlist_clocks - i.e. if the clock
-		 * at index 5 in netlist_clocks appears after the second -group token, then exclusive_clock_groups[5] = 2. 
-		 * Finally, we set timing_constraint to not analyse between clock domains with different group numbers.  */
+		 * store the temporary "group number" of each clock along with its name.  We then add an entry to override_constraints for 
+		 * each pair of clocks with different group numbers, so we do not analyse between clock domains in different groups. */
+
 		for(;;) {
 			ptr = my_strtok(NULL, SDC_TOKENS, sdc, buf);
-			if(ptr == NULL) { /* end of line */
-				break; /* exit the infinite for loop - but don't return yet - we still have to populate timing_constraint!  */
+			if(!ptr) { /* end of line */
+				break; /* exit the infinite for loop - but don't return yet - we still have to populate override_constraints!  */
 			}
 			if(strcmp(ptr, "-group") == 0) {
 			/* add 1 to the group number we're assigning clocks to every time the token -group is hit */
-				num_exclusive_groups++;
+				current_group_number++;
 			} else { 
-				/* Presumptively, we have a clock. Calloc the array exclusive_clock_groups if not done already, then *
-				 * find the index of the clock named by ptr, and set exclusive_clock_groups[that clock's index] equal to the current group number */
-				if(!exclusive_clock_groups) {
-					exclusive_clock_groups = (int *) my_calloc(num_netlist_clocks, sizeof(int));
-				}
-				index = find_clock(ptr);
-				if (index == -1) {
+				/* We have a clock name */
+				if (find_clock(ptr) == -1) {
 					fprintf(stderr, "Clock name %s does not correspond to a net on line %d of SDC file.\n", ptr, num_lines);
 					exit(1);
 				}
-				exclusive_clock_groups[index] = num_exclusive_groups;
+				num_exclusive_clocks++;
+				exclusive_groups = (t_sdc_exclusive_group *) my_realloc(exclusive_groups, num_exclusive_clocks * sizeof(t_sdc_exclusive_group));
+				exclusive_groups[num_exclusive_clocks - 1].name = my_strdup(ptr);
+				exclusive_groups[num_exclusive_clocks - 1].group = current_group_number;
 			}
 		}
 
-		/* Finally, set every element of timing_constraint for which the two indices have different group numbers to DO_NOT_ANALYSE */
-		for(source_clock_domain=0; source_clock_domain<num_netlist_clocks; source_clock_domain++) {
-			for(sink_clock_domain=0; sink_clock_domain<num_netlist_clocks; sink_clock_domain++) {
-				/* if either source or sink domain is part of group 0 (i.e. not part of an exclusive group), don't touch it */
-				if(exclusive_clock_groups[source_clock_domain] != 0 && exclusive_clock_groups[sink_clock_domain] != 0) {
-					if(exclusive_clock_groups[source_clock_domain] != exclusive_clock_groups[sink_clock_domain]) {
-						timing_constraint[source_clock_domain][sink_clock_domain] = DO_NOT_ANALYSE;
-					}
+		/* Finally, create an override constraint for each pair of source and sink clock domains in exclusive_groups which have different group numbers,
+		so that we DO_NOT_ANALYSE them */
+		for(source_clock_domain=0; source_clock_domain<num_exclusive_clocks; source_clock_domain++) {
+			for(sink_clock_domain=0; sink_clock_domain<num_exclusive_clocks; sink_clock_domain++) {
+				if(exclusive_groups[source_clock_domain].group != exclusive_groups[sink_clock_domain].group) {
+					num_override_constraints++;
+					override_constraints = (t_sdc_override_constraint *) my_realloc(override_constraints, num_override_constraints * sizeof(t_sdc_override_constraint));
+					override_constraints[num_override_constraints - 1].source_clock_domain = my_strdup(exclusive_groups[source_clock_domain].name);
+					override_constraints[num_override_constraints - 1].sink_clock_domain = my_strdup(exclusive_groups[sink_clock_domain].name);
+					override_constraints[num_override_constraints - 1].constraint = DO_NOT_ANALYSE;
 				}
 			}
 		}
-		free(exclusive_clock_groups);
+
+		free(exclusive_groups);
 		return;
 
 	} else if (strcmp(ptr, "set_false_path") == 0) {
@@ -371,33 +412,86 @@ static void get_sdc_tok(char * buf, int num_lines) {
 		}
 
 		ptr = my_strtok(NULL, SDC_TOKENS, sdc, buf);
-		from = find_clock(ptr);
-		if (from == -1) {
+		if (find_clock(ptr) == -1) {
 			fprintf(stderr, "Clock name %s does not correspond to a net on line %d of SDC file.\n", ptr, num_lines);
 			exit(1);
 		}
+		from = ptr;
 
 		ptr = my_strtok(NULL, SDC_TOKENS, sdc, buf);
 		if(strcmp(ptr, "-to") != 0) {
 			fprintf(stderr, "Set_false_path must be followed by '-from <clock_name> -to <clock_name> on line %d of SDC file.\n", num_lines);
 			exit(1);
 		}
+
 		ptr = my_strtok(NULL, SDC_TOKENS, sdc, buf);
-		to = find_clock(ptr);
-		if (to == -1) {
+		if (find_clock(ptr) == -1) {
 			fprintf(stderr, "Clock name %s does not correspond to a net on line %d of SDC file.\n", ptr, num_lines);
 			exit(1);
 		}
+		to = ptr;
 
-		/* Set the path from 'from' to 'to' in timing_constraint to not be analysed */
-		timing_constraint[from][to] = DO_NOT_ANALYSE;
-		
+		/* Create an override constraint between from and to with value DO_NOT_ANALYSE. */
+		num_override_constraints++;
+		override_constraints = (t_sdc_override_constraint *) my_realloc(override_constraints, num_override_constraints * sizeof(t_sdc_override_constraint));
+		override_constraints[num_override_constraints - 1].source_clock_domain = my_strdup(from);
+		override_constraints[num_override_constraints - 1].sink_clock_domain = my_strdup(to);
+		override_constraints[num_override_constraints - 1].constraint = DO_NOT_ANALYSE;
+
+		return;
+
+	} else if (strcmp(ptr, "set_max_delay") == 0) {
+		/* Syntax: set_max_delay <delay> -from <clock name> to <clock name> */
+
+		/* Basically the same as set_false_path above, except we get a specific delay value for the override constraint. */
+
+		ptr = my_strtok(NULL, SDC_TOKENS, sdc, buf);
+		/* check if the token following set_max_delay is actually a number*/
+		if(!check_if_number(ptr)) {
+			fprintf(stderr, "Token following 'set_max_delay' is not a number on line %d of SDC file.\n", num_lines);
+			exit(1);
+		}
+		max_delay = (float) strtod(ptr, NULL);
+
+		ptr = my_strtok(NULL, SDC_TOKENS, sdc, buf);
+		if(strcmp(ptr, "-from") != 0) {
+			fprintf(stderr, "Set_false_path must be followed by '-from <clock_name>' on line %d of SDC file.\n", num_lines);
+			exit(1);
+		}
+
+		ptr = my_strtok(NULL, SDC_TOKENS, sdc, buf);
+		if (find_clock(ptr) == -1) {
+			fprintf(stderr, "Clock name %s does not correspond to a net on line %d of SDC file.\n", ptr, num_lines);
+			exit(1);
+		}
+		from = ptr;
+
+		ptr = my_strtok(NULL, SDC_TOKENS, sdc, buf);
+		if(strcmp(ptr, "-to") != 0) {
+			fprintf(stderr, "Set_false_path must be followed by '-from <clock_name> -to <clock_name> on line %d of SDC file.\n", num_lines);
+			exit(1);
+		}
+
+		ptr = my_strtok(NULL, SDC_TOKENS, sdc, buf);
+		if (find_clock(ptr) == -1) {
+			fprintf(stderr, "Clock name %s does not correspond to a net on line %d of SDC file.\n", ptr, num_lines);
+			exit(1);
+		}
+		to = ptr;
+
+		/* Create an override constraint between from and to with value max_delay. */
+		num_override_constraints++;
+		override_constraints = (t_sdc_override_constraint *) my_realloc(override_constraints, num_override_constraints * sizeof(t_sdc_override_constraint));
+		override_constraints[num_override_constraints - 1].source_clock_domain = my_strdup(from);
+		override_constraints[num_override_constraints - 1].sink_clock_domain = my_strdup(to);
+		override_constraints[num_override_constraints - 1].constraint = max_delay;
+
 		return;
 
 	} else if (strcmp(ptr, "set_input_delay") == 0) {
-		/* Syntax: set_input_delay -clock <virtual_clock> -max <max_io_delay> [get_ports {<port_list>}]
-		We want to assign virtual_clock to all ports in port_list, and set the delay from the input 
-		(between devices) to io_delay. */
+		/* Syntax: set_input_delay -clock <virtual or netlist clock> -max <max_delay> [get_ports {<port_list>}] */
+		
+		/* We want to assign virtual_clock to all input ports in port_list, and set the input delay (from the external device to the FPGA) to max_delay. */
 
 		ptr = my_strtok(NULL, SDC_TOKENS, sdc, buf);
 		if(strcmp(ptr, "-clock") != 0) {
@@ -406,21 +500,8 @@ static void get_sdc_tok(char * buf, int num_lines) {
 		}
 
 		ptr = my_strtok(NULL, SDC_TOKENS, sdc, buf);
-		index = find_clock(ptr);
-		if (index == -1) {
-			/* This set_input_delay command is above the corresponding create_clock command in the SDC file, so it's a new clock. 
-			Expand netlist_clocks and sdc_clocks to fit one new element.  We'll fill in the details of sdc_clocks when we find the create_clock command. */
-			num_constrained_clocks++;
-			index = num_constrained_clocks - 1;
-			netlist_clocks = (t_clock *) my_realloc (netlist_clocks, num_netlist_clocks * sizeof(t_clock));
-			netlist_clocks[index].name = my_strdup(ptr);
-			netlist_clocks[index].fanout = 0;
-			sdc_clocks = (t_sdc_clock *) my_realloc (sdc_clocks, num_netlist_clocks * sizeof(t_sdc_clock));
-		} else {
-			/* This set_input_delay command is below the corresponding create_clock command in the SDC file.
-				The variable index already stores the index of the virtual clock in both netlist_clocks and sdc_clocks. */
-		}
-
+		clock_name = ptr;
+	
 		ptr = my_strtok(NULL, SDC_TOKENS, sdc, buf);
 		if(strcmp(ptr, "-max") != 0) {
 			fprintf(stderr, "Set_input_delay must be followed by '-max <maximum_input_delay>' on line %d of SDC file.\n", num_lines);
@@ -433,7 +514,7 @@ static void get_sdc_tok(char * buf, int num_lines) {
 			fprintf(stderr, "Token following '-max' is not a number on line %d of SDC file.\n", num_lines);
 			exit(1);
 		}
-		max_io_delay = (float) strtod(ptr, NULL);
+		max_delay = (float) strtod(ptr, NULL);
 
 		ptr = my_strtok(NULL, SDC_TOKENS, sdc, buf);
 		if(strcmp(ptr, "get_ports") != 0) {
@@ -442,18 +523,70 @@ static void get_sdc_tok(char * buf, int num_lines) {
 		}
 
 		/* Parse through to the end of the line.  Add each name we find to the list of constrained I/Os
-			along with the virtual clock name and max_io_delay we've just parsed. */
+			and give each entry the virtual clock name and max_delay we've just parsed.  We have no way of 
+			error-checking whether these tokens correspond to actual I/O ports until later. */
 		
+		for(;;) {
+			ptr = my_strtok(NULL, SDC_TOKENS, sdc, buf);
+			if(!ptr) { /* end of line */
+				return; 
+			}
 
-
-		return;
+			constrained_ios = (t_io *) my_realloc (constrained_ios, num_constrained_ios * sizeof(t_io));
+			constrained_ios[num_constrained_ios - 1].name = my_strdup(ptr);
+			constrained_ios[num_constrained_ios - 1].virtual_clock_name = my_strdup(clock_name);
+			constrained_ios[num_constrained_ios - 1].delay = max_delay;
+		}
 
 	} else if (strcmp(ptr, "set_output_delay") == 0) {
-		/* Format: set_input_delay -clock <virtual_clock> -max <io_delay> [get_ports {<port_list>}]
-		We want to assign virtual_clock to all ports in port_list, and set the delay to the output 
-		(between devices) to io_delay */
+		/* Syntax: set_output_delay -clock <virtual or netlist clock> -max <max_delay> [get_ports {<port_list>}] */
+		
+		/* We want to assign virtual_clock to all output ports in port_list, and set the output delay (from the external device to the FPGA) to max_delay. */
 
-		return;
+		ptr = my_strtok(NULL, SDC_TOKENS, sdc, buf);
+		if(strcmp(ptr, "-clock") != 0) {
+			fprintf(stderr, "Set_output_delay must be followed by '-clock <virtual_clock_name>' on line %d of SDC file.\n", num_lines);
+			exit(1);
+		}
+
+		ptr = my_strtok(NULL, SDC_TOKENS, sdc, buf);
+		clock_name = ptr;
+	
+		ptr = my_strtok(NULL, SDC_TOKENS, sdc, buf);
+		if(strcmp(ptr, "-max") != 0) {
+			fprintf(stderr, "Set_output_delay must be followed by '-max <maximum_output_delay>' on line %d of SDC file.\n", num_lines);
+			exit(1);
+		}
+
+		ptr = my_strtok(NULL, SDC_TOKENS, sdc, buf);
+		/* check if the token following -max is actually a number*/
+		if(!check_if_number(ptr)) {
+			fprintf(stderr, "Token following '-max' is not a number on line %d of SDC file.\n", num_lines);
+			exit(1);
+		}
+		max_delay = (float) strtod(ptr, NULL);
+
+		ptr = my_strtok(NULL, SDC_TOKENS, sdc, buf);
+		if(strcmp(ptr, "get_ports") != 0) {
+			fprintf(stderr, "Set_output_delay requires a [get_ports {...}] command on line %d of SDC file.\n", num_lines);
+			exit(1);
+		}
+
+		/* Parse through to the end of the line.  Add each name we find to the list of constrained I/Os
+			and give each entry the virtual clock name and max_delay we've just parsed.  We have no way of 
+			error-checking whether these tokens correspond to actual I/O ports until later. */
+		
+		for(;;) {
+			ptr = my_strtok(NULL, SDC_TOKENS, sdc, buf);
+			if(!ptr) { /* end of line */
+				return; 
+			}
+
+			constrained_ios = (t_io *) my_realloc (constrained_ios, num_constrained_ios * sizeof(t_io));
+			constrained_ios[num_constrained_ios - 1].name = my_strdup(ptr);
+			constrained_ios[num_constrained_ios - 1].virtual_clock_name = my_strdup(clock_name);
+			constrained_ios[num_constrained_ios - 1].delay = max_delay;
+		}
 
 	} else {
 		fprintf(stderr, "Incorrect or unsupported syntax near start of line %d of SDC file.\n", num_lines);
@@ -485,8 +618,26 @@ static int find_clock(char * ptr) {
 /* Given a string clock_name, find whether it's the name of a clock in the array netlist_clocks.  *
  * if it is, return the clock's index in netlist_clocks; if it's not, return -1. */
 	int index;
-	for(index=0;index<num_netlist_clocks;index++) {
+	for(index=0; index<num_netlist_clocks; index++) {
 		if(strcmp(ptr, netlist_clocks[index]) == 0) {
+			return index;
+		}
+	}
+	return -1;
+}
+
+static int find_override_constraint(int source_clock_domain, int sink_clock_domain) {
+	/* Given a pair of source and sink clock domains, find out if there's an override constraint between them.
+	If there is, return the index in override_constraints; if there is not, return -1. */
+	int index;
+	char * source_clock_name, * sink_clock_name;
+
+	source_clock_name = constrained_clocks[source_clock_domain].name;
+	sink_clock_name = constrained_clocks[sink_clock_domain].name;
+
+	for(index=0; index<num_override_constraints; index++) {
+		if(strcmp(source_clock_name, override_constraints[index].source_clock_domain) == 0 
+			&& strcmp(sink_clock_name, override_constraints[index].sink_clock_domain) == 0) {
 			return index;
 		}
 	}

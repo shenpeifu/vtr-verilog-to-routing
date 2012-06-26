@@ -55,7 +55,7 @@ void try_pack(INP struct s_packer_opts *packer_opts, INP const t_arch * arch,
 	list_of_pack_molecules = alloc_and_load_pack_molecules(
 			list_of_packing_patterns, num_packing_patterns,
 			&num_pack_molecules);
-	printf("Finish prepacking\n");
+	printf("Finish prepacking\n\n");
 
 	/* Uncomment line below if you want a dump of compressed netlist. */
 	/* if (GetEchoOption()){

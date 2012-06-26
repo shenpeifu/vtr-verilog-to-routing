@@ -374,25 +374,6 @@ typedef struct s_timing_stats {
 } t_timing_stats;
 /* Timing statistics for final reporting. */
 
-/******************************************************************
- * SDC parsing data types (exclusive to read_sdc.c)
- *******************************************************************/
-
-typedef struct s_sdc_clock {
-	char * name;
-	float period;
-	float offset;
-} t_sdc_clock;
-/* Stores the name, period and offset of each constrained clock. */
-
-typedef struct s_sdc_special_case {
-	char * source_clock_domain;
-	char * sink_clock_domain;
-	float constraint;
-}
-/* A special-case constraint to override the default, calculated, timing constraint.
-Holds data from set_clock_groups, set_false_path, and set_max_delay commands. */
-
 /***************************************************************************
  * Placement and routing data types
  ****************************************************************************/

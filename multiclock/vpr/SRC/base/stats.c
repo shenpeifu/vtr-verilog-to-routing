@@ -477,6 +477,7 @@ static void get_timing_stats(t_timing_stats * timing_stats) {
 					if (timing_stats->critical_path_delay[source_clock_domain][sink_clock_domain] > HUGE_NEGATIVE_FLOAT + 1) { /* if there was at least one path analyzed */
 						printf("%s to %s: %g\n", constrained_clocks[source_clock_domain].name, constrained_clocks[sink_clock_domain].name, 
 						timing_stats->critical_path_delay[source_clock_domain][sink_clock_domain]);
+					}
 				}
 			}
 		}
@@ -512,5 +513,4 @@ static void get_timing_stats(t_timing_stats * timing_stats) {
 		}
 		printf("\n");
 	}
-
 }

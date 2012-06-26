@@ -291,7 +291,11 @@ void free_timing_graph(void) {
 }
 
 void free_timing_stats(t_timing_stats * timing_stats) {
-	free_matrix(timing_stats->critical_path_delay, 0, num_constrained_clocks - 1, 0, sizeof(float));
+	int i;
+
+	for(i = 0; i < num_constrained_clocks; i++) {
+		free(timing_stats->critical_path_delay[i]);
+	}
 	free(timing_stats->least_slack_in_domain);
 	free(timing_stats);
 }
@@ -1309,7 +1313,10 @@ t_timing_stats * do_timing_analysis(boolean do_lut_input_balancing, boolean is_f
 
 	/* Allocate timing_stats data structure and initialize critical_path_delay. */
 	timing_stats = (t_timing_stats *) my_malloc(sizeof(t_timing_stats));
-	timing_stats->critical_path_delay = (float **) alloc_matrix(0, num_constrained_clocks-1, 0, num_constrained_clocks-1, sizeof(float));
+	timing_stats->critical_path_delay = (float **) my_malloc(num_constrained_clocks * sizeof(float));
+	for (i = 0; i < num_constrained_clocks; i++) {
+		timing_stats->critical_path_delay[i] = (float *) my_malloc(num_constrained_clocks * sizeof(float));
+	}
 	timing_stats->least_slack_in_domain = (float *) my_malloc(num_constrained_clocks * sizeof(float));
 
 	for (i = 0; i < num_constrained_clocks; i++) {
@@ -2482,15 +2489,12 @@ static void load_clock_domain_and_skew(boolean is_prepacked) {
 				tnode[inode].clock_skew = 0.;
 				propagate_clock_domain_and_skew(inode); /* ...and propagate this information forward to connected nodes. */
 			
-			} else {/* it's an I/O - figure out if there's a timing constraint associated with it */
+			} else {/* it's an input - figure out if there's a timing constraint associated with it */
 				io_index = find_io(net_name);
 				if (io_index != -1) {
 					/* tnode belongs to a constrained input, now find its associated virtual clock */
 					clock_index = find_clock(constrained_ios[io_index].virtual_clock_name);
-					if (clock_index == -1) {
-						fprintf(stderr, "", constrained_ios[io_index].name);
-						exit(1);
-					}
+
 					assert(tnode[inode].num_edges == 1);
 
 					/* The clock domain for this input is that of its virtual clock */
@@ -2519,16 +2523,14 @@ static void load_clock_domain_and_skew(boolean is_prepacked) {
 			if (io_index != -1) {
 				/* tnode belongs to a constrained output, now find its associated virtual clock */
 				clock_index = find_clock(constrained_ios[io_index].virtual_clock_name);
-				if (clock_index == -1) {
-					exit(1);
-				}
+
 				assert(tnode[inode].num_edges == 1);
 				
-				/* The clock domain for this input is that of its virtual clock */
+				/* The clock domain for this output is that of its virtual clock */
 				tnode[inode].clock_domain = clock_index;
 				/* Mark ouput delay specified in SDC file on the timing graph edge leading into the OUTPAD_SINK node. 
 					However, this edge is part of the corresponding OUTPAD_IPIN node. However, we can exploit the fact
-					that this node will always be one prior in the tnode array. */
+					that the OUTPAD_IPIN node will always be one prior in the tnode array. */
 				assert(tnode[inode - 1].type == OUTPAD_IPIN);
 				tnode[inode - 1].out_edges[0].Tdel = constrained_ios[io_index].delay;
 
