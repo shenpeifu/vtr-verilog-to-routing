@@ -2499,8 +2499,11 @@ static void load_clock_domain_and_skew(boolean is_prepacked) {
 
 					/* The clock domain for this input is that of its virtual clock */
 					tnode[inode].clock_domain = clock_index;
+					/* Increment the fanout of this virtual clock domain. */
+					constrained_clocks[clock_index].fanout++;
 					/* Mark input delay specified in SDC file on the timing graph edge leading out from the INPAD_SOURCE node. */
 					tnode[inode].out_edges[0].Tdel = constrained_ios[io_index].delay;
+
 
 				} else { /* unconstrained input - mark with dummy clock domain and do not analyze */
 					tnode[inode].clock_domain = -1;
@@ -2515,8 +2518,11 @@ static void load_clock_domain_and_skew(boolean is_prepacked) {
 			if(is_prepacked) {
 				iblock = tnode[inode].block; /* Look up the logical block number associated with this tnode. */
 				net_name = logical_block[iblock].name; /* Find the net name associated with this logical block. */
-			} else { /* post-packed - Perform an equivalent, but more convoluted, procedure to see if this tnode is part of a clock net. */
-				net_name = block[tnode[inode].block].pb->rr_node_to_pb_mapping[tnode[inode].pb_graph_pin->pin_count_in_cluster]->name;
+			} else { /* post-packed - Perform an equivalent, but more convoluted, procedure to see if this tnode is part of a clock net. 
+					 Since the pb_graph_pin of OUTPAD_SINK tnodes points to NULL, we have to use the pb_graph_pin of the corresponding OUTPAD_IPIN node. 
+					 Exploit the fact that the OUTPAD_IPIN node will always be one prior in the tnode array. */
+				assert(tnode[inode - 1].type == OUTPAD_IPIN);
+				net_name = block[tnode[inode].block].pb->rr_node_to_pb_mapping[tnode[inode - 1].pb_graph_pin->pin_count_in_cluster]->name;
 			}
 
 			io_index = find_io(net_name);
@@ -2528,10 +2534,11 @@ static void load_clock_domain_and_skew(boolean is_prepacked) {
 				
 				/* The clock domain for this output is that of its virtual clock */
 				tnode[inode].clock_domain = clock_index;
-				/* Mark ouput delay specified in SDC file on the timing graph edge leading into the OUTPAD_SINK node. 
-					However, this edge is part of the corresponding OUTPAD_IPIN node. However, we can exploit the fact
-					that the OUTPAD_IPIN node will always be one prior in the tnode array. */
-				assert(tnode[inode - 1].type == OUTPAD_IPIN);
+				/* Increment the fanout of this virtual clock domain. */
+				constrained_clocks[clock_index].fanout++;
+				/* Mark output delay specified in SDC file on the timing graph edge leading into the OUTPAD_SINK node. 
+					However, this edge is part of the corresponding OUTPAD_IPIN node. 
+					Exploit the fact that the OUTPAD_IPIN node will always be one prior in the tnode array. */
 				tnode[inode - 1].out_edges[0].Tdel = constrained_ios[io_index].delay;
 
 			} else { /* unconstrained output - mark with dummy clock domain and do not analyze */

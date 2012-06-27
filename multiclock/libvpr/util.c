@@ -423,7 +423,7 @@ my_fgets(char *buf, int max_size, FILE * fp) {
 					file_line_number);
 			printf("All lines must be at most %d characters long.\n",
 					BUFSIZE - 2);
-			printf("The problem could also be caused by a missing newline.\n");
+			printf("The problem could also be caused by a missing newline at the end of the file.\n");
 			exit(1);
 		}
 	}

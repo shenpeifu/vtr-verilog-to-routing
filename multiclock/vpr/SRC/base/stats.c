@@ -472,12 +472,26 @@ static void get_timing_stats(t_timing_stats * timing_stats) {
 
 		printf("\nMinimum possible clock period to meet each constraint (including skew effects):\n");
 		for (source_clock_domain = 0; source_clock_domain < num_constrained_clocks; source_clock_domain++) {
+			
+			/* First, print the clock name and intra-domain constraint. */
+			printf("%s:\t", constrained_clocks[source_clock_domain].name);
+
+			if (timing_constraint[source_clock_domain][source_clock_domain] > -0.01 
+				&& timing_stats->critical_path_delay[source_clock_domain][source_clock_domain] > HUGE_NEGATIVE_FLOAT + 1) { 
+				/* if timing constraint is not DO_NOT_ANALYSE and if there was at least one path analyzed */
+				printf("to %s: %g\n", constrained_clocks[source_clock_domain].name, 
+				timing_stats->critical_path_delay[source_clock_domain][source_clock_domain]);
+			}
+
+			/* Then, print all other constraints on separate lines. */
 			for (sink_clock_domain = 0; sink_clock_domain < num_constrained_clocks; sink_clock_domain++) {
-				if (timing_constraint[source_clock_domain][sink_clock_domain] > -0.01) { /* if timing constraint is not DO_NOT_ANALYSE */
-					if (timing_stats->critical_path_delay[source_clock_domain][sink_clock_domain] > HUGE_NEGATIVE_FLOAT + 1) { /* if there was at least one path analyzed */
-						printf("%s to %s: %g\n", constrained_clocks[source_clock_domain].name, constrained_clocks[sink_clock_domain].name, 
-						timing_stats->critical_path_delay[source_clock_domain][sink_clock_domain]);
-					}
+				if (timing_constraint[source_clock_domain][sink_clock_domain] > -0.01 
+					&& timing_stats->critical_path_delay[source_clock_domain][sink_clock_domain] > HUGE_NEGATIVE_FLOAT + 1
+					&& source_clock_domain != sink_clock_domain) { 
+					/* if timing constraint is not DO_NOT_ANALYSE and if there was at least one path analyzed 
+					and the two clock domains are not the same. */
+					printf("to %s: %g\n", constrained_clocks[sink_clock_domain].name, 
+					timing_stats->critical_path_delay[source_clock_domain][sink_clock_domain]);
 				}
 			}
 		}

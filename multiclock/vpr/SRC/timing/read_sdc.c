@@ -8,6 +8,7 @@
 #include "read_sdc.h"
 #include "read_blif.h"
 #include "path_delay.h"
+#include "ReadOptions.h"
 
 /****************** Types local to this module **************************/
 
@@ -54,9 +55,13 @@ static void alloc_and_load_netlist_clocks_and_ios(void);
 static void count_netlist_clocks(void);
 static void get_sdc_tok(char * buf, int num_lines);
 static boolean check_if_number(char * ptr);
-static int find_clock(char * ptr);
+static int find_netlist_clock(char * ptr);
+static int find_constrained_clock(char * ptr);
+static int find_netlist_io(char * ptr);
 static float calculate_constraint(t_sdc_clock source_domain, t_sdc_clock sink_domain);
 static int find_override_constraint(int source_clock_domain, int sink_clock_domain);
+static void print_timing_constraint_info(char *fname);
+static void print_spaces(FILE * fp, int num_spaces);
 
 /********************* Subroutine definitions *******************************/
 
@@ -66,11 +71,13 @@ void read_sdc(char * sdc_file) {
  * specified, it leaves timing_constraint pointing to NULL.            */
 
 	char buf[BUFSIZE];
-	int num_lines = 1; /* Line counter for SDC file, used to report errors */
 	int source_clock_domain, sink_clock_domain, io_index, override_index;
 	
 	/* Make sure we haven't called this subroutine before. */
 	assert(!timing_constraint);
+
+	/* Reset file line number. */
+	file_line_number = 0;
 
 	/* If no SDC file is included or specified, use default behaviour of cutting paths between domains and optimizing each clock separately */
 	if ((sdc = fopen(sdc_file, "r")) == NULL) {
@@ -105,15 +112,14 @@ void read_sdc(char * sdc_file) {
 
 	/* Parse the file line-by-line. */
 	while (my_fgets(buf, BUFSIZE, sdc) != NULL) { 
-		get_sdc_tok(buf, num_lines);
-		num_lines++;
+		get_sdc_tok(buf, file_line_number);
 	}
 	
 	fclose(sdc);
 
 	/* Make sure that all virtual clocks referenced in set_input_delay and set_output_delay have been constrained. */
 	for (io_index = 0; io_index < num_constrained_ios; io_index++) {
-		if ((find_clock(constrained_ios[io_index].virtual_clock_name)) == -1) {
+		if ((find_constrained_clock(constrained_ios[io_index].virtual_clock_name)) == -1) {
 			fprintf(stderr, "I/O %s is associated with an unconstrained clock %s in SDC file.\n", constrained_ios[io_index].name, constrained_ios[io_index].virtual_clock_name);
 			exit(1);
 		}
@@ -134,6 +140,10 @@ void read_sdc(char * sdc_file) {
 				}
 			}
 		}
+
+	if (GetEchoOption()) {
+		print_timing_constraint_info("timing_constraints.echo");
+	}
 
 	/* Since all the information we need is stored in timing_constraint, constrained_clocks, and constrained_ios, free other data structures used in this routine */
 	free(sdc_clocks);
@@ -167,7 +177,7 @@ static void alloc_and_load_netlist_clocks_and_ios(void) {
 				num_netlist_clocks++;
 				/* dynamically grow the array to fit one new element */
 				netlist_clocks = (char **) my_realloc (netlist_clocks, num_netlist_clocks * sizeof(t_clock));
-				netlist_clocks[num_netlist_clocks - 1] = name;
+				netlist_clocks[num_netlist_clocks - 1] = my_strdup(name);
 			}
 		} else if(logical_block[iblock].type == VPACK_INPAD || logical_block[iblock].type == VPACK_OUTPAD) {
 			name = logical_block[iblock].name;
@@ -183,7 +193,12 @@ static void alloc_and_load_netlist_clocks_and_ios(void) {
 				num_netlist_ios++;
 				/* dynamically grow the array to fit one new element */
 				netlist_ios = (char **) my_realloc (netlist_ios, num_netlist_ios * sizeof(t_io));
-				netlist_ios[num_netlist_ios - 1] = name;
+				if (logical_block[iblock].type == VPACK_OUTPAD) {
+					netlist_ios[num_netlist_ios - 1] = my_strdup(name + 4); 
+					/* the + 4 removes the prefix "out:" automatically prepended to outputs */
+				} else {
+					netlist_ios[num_netlist_ios - 1] = my_strdup(name);
+				}
 			}
 		}
 	}
@@ -302,18 +317,26 @@ static void get_sdc_tok(char * buf, int num_lines) {
 			/* Get the virtual clock name */
 			ptr = my_strtok(NULL, SDC_TOKENS, sdc, buf);
 
+			/* We've found a new clock! */
+			num_constrained_clocks++;
+
 			/* Store the clock's name, period and offset in the local array sdc_clocks. */
 			sdc_clocks = (t_sdc_clock *) my_realloc(sdc_clocks, num_constrained_clocks * sizeof(t_sdc_clock));
 			sdc_clocks[num_constrained_clocks - 1].name = my_strdup(ptr);
 			sdc_clocks[num_constrained_clocks - 1].period = clock_period;
 			sdc_clocks[num_constrained_clocks - 1].offset = rising_edge; 
+			
+			/* Also store the clock's name in constrained_clocks */
+			constrained_clocks = (t_clock *) my_realloc (constrained_clocks, num_constrained_clocks * sizeof(t_clock));
+			constrained_clocks[num_constrained_clocks - 1].name = my_strdup(ptr);
+			/* Fanout will be filled out once the timing graph has been constructed. */
 
 			/* The next token should be NULL.  If so, return; if not, print an error message and exit. */
 			ptr = my_strtok(NULL, SDC_TOKENS, sdc, buf);
 			if (!ptr) {
 				return;
 			}
-			fprintf(stderr, "Only one virtual clock name can be specified after -name on line %d of SDC file.\n", ptr, num_lines);
+			fprintf(stderr, "More than one virtual clock name is specified after -name on line %d of SDC file.\n", ptr, num_lines);
 			exit(1);
 
 		} else {
@@ -328,7 +351,7 @@ static void get_sdc_tok(char * buf, int num_lines) {
 					return; 
 				}
 
-				if (find_clock(ptr) == -1) {
+				if (find_netlist_clock(ptr) == -1) {
 					fprintf(stderr, "Clock name %s does not correspond to a net on line %d of SDC file.\n" 
 						"If you'd like to create a virtual clock, use the -name keyword.\n", ptr, num_lines);
 					exit(1);
@@ -337,11 +360,13 @@ static void get_sdc_tok(char * buf, int num_lines) {
 				/* We've found a new clock! */
 				num_constrained_clocks++;
 
+				/* Store the clock's name, period and offset in the local array sdc_clocks. */
 				sdc_clocks = (t_sdc_clock *) my_realloc(sdc_clocks, num_constrained_clocks * sizeof(t_sdc_clock));
 				sdc_clocks[num_constrained_clocks - 1].name = my_strdup(ptr);
 				sdc_clocks[num_constrained_clocks - 1].period = clock_period;
 				sdc_clocks[num_constrained_clocks - 1].offset = rising_edge; 
 
+				/* Also store the clock's name in constrained_clocks */
 				constrained_clocks = (t_clock *) my_realloc (constrained_clocks, num_constrained_clocks * sizeof(t_clock));
 				constrained_clocks[num_constrained_clocks - 1].name = my_strdup(ptr);
 				/* Fanout will be filled out once the timing graph has been constructed. */
@@ -374,10 +399,6 @@ static void get_sdc_tok(char * buf, int num_lines) {
 				current_group_number++;
 			} else { 
 				/* We have a clock name */
-				if (find_clock(ptr) == -1) {
-					fprintf(stderr, "Clock name %s does not correspond to a net on line %d of SDC file.\n", ptr, num_lines);
-					exit(1);
-				}
 				num_exclusive_clocks++;
 				exclusive_groups = (t_sdc_exclusive_group *) my_realloc(exclusive_groups, num_exclusive_clocks * sizeof(t_sdc_exclusive_group));
 				exclusive_groups[num_exclusive_clocks - 1].name = my_strdup(ptr);
@@ -412,7 +433,7 @@ static void get_sdc_tok(char * buf, int num_lines) {
 		}
 
 		ptr = my_strtok(NULL, SDC_TOKENS, sdc, buf);
-		if (find_clock(ptr) == -1) {
+		if (find_netlist_clock(ptr) == -1) {
 			fprintf(stderr, "Clock name %s does not correspond to a net on line %d of SDC file.\n", ptr, num_lines);
 			exit(1);
 		}
@@ -425,7 +446,7 @@ static void get_sdc_tok(char * buf, int num_lines) {
 		}
 
 		ptr = my_strtok(NULL, SDC_TOKENS, sdc, buf);
-		if (find_clock(ptr) == -1) {
+		if (find_netlist_clock(ptr) == -1) {
 			fprintf(stderr, "Clock name %s does not correspond to a net on line %d of SDC file.\n", ptr, num_lines);
 			exit(1);
 		}
@@ -460,7 +481,7 @@ static void get_sdc_tok(char * buf, int num_lines) {
 		}
 
 		ptr = my_strtok(NULL, SDC_TOKENS, sdc, buf);
-		if (find_clock(ptr) == -1) {
+		if (find_netlist_clock(ptr) == -1) {
 			fprintf(stderr, "Clock name %s does not correspond to a net on line %d of SDC file.\n", ptr, num_lines);
 			exit(1);
 		}
@@ -473,7 +494,7 @@ static void get_sdc_tok(char * buf, int num_lines) {
 		}
 
 		ptr = my_strtok(NULL, SDC_TOKENS, sdc, buf);
-		if (find_clock(ptr) == -1) {
+		if (find_netlist_clock(ptr) == -1) {
 			fprintf(stderr, "Clock name %s does not correspond to a net on line %d of SDC file.\n", ptr, num_lines);
 			exit(1);
 		}
@@ -531,7 +552,11 @@ static void get_sdc_tok(char * buf, int num_lines) {
 			if(!ptr) { /* end of line */
 				return; 
 			}
-
+			if (find_netlist_io(ptr) == -1) {
+				fprintf(stderr, "I/O name %s does not correspond to a port on line %d of SDC file.\n", ptr, num_lines);
+				exit(1);
+			}
+			num_constrained_ios++;
 			constrained_ios = (t_io *) my_realloc (constrained_ios, num_constrained_ios * sizeof(t_io));
 			constrained_ios[num_constrained_ios - 1].name = my_strdup(ptr);
 			constrained_ios[num_constrained_ios - 1].virtual_clock_name = my_strdup(clock_name);
@@ -581,7 +606,11 @@ static void get_sdc_tok(char * buf, int num_lines) {
 			if(!ptr) { /* end of line */
 				return; 
 			}
-
+			if (find_netlist_io(ptr) == -1) {
+				fprintf(stderr, "I/O name %s does not correspond to a port on line %d of SDC file.\n", ptr, num_lines);
+				exit(1);
+			}
+			num_constrained_ios++;
 			constrained_ios = (t_io *) my_realloc (constrained_ios, num_constrained_ios * sizeof(t_io));
 			constrained_ios[num_constrained_ios - 1].name = my_strdup(ptr);
 			constrained_ios[num_constrained_ios - 1].virtual_clock_name = my_strdup(clock_name);
@@ -614,12 +643,36 @@ static boolean check_if_number(char * ptr) {
 	return TRUE;
 }
 
-static int find_clock(char * ptr) {
-/* Given a string clock_name, find whether it's the name of a clock in the array netlist_clocks.  *
+static int find_netlist_clock(char * ptr) {
+/* Given a string ptr, find whether it's the name of a clock in the array netlist_clocks.  *
  * if it is, return the clock's index in netlist_clocks; if it's not, return -1. */
 	int index;
 	for(index=0; index<num_netlist_clocks; index++) {
 		if(strcmp(ptr, netlist_clocks[index]) == 0) {
+			return index;
+		}
+	}
+	return -1;
+}
+
+static int find_constrained_clock(char * ptr) {
+/* Given a string ptr, find whether it's the name of a clock in the array constrained_clocks.  *
+ * if it is, return the clock's index in constrained_clocks; if it's not, return -1. */
+	int index;
+	for(index=0; index<num_constrained_clocks; index++) {
+		if(strcmp(ptr, constrained_clocks[index].name) == 0) {
+			return index;
+		}
+	}
+	return -1;
+}
+
+static int find_netlist_io(char * ptr) {
+/* Given a string ptr, find whether it's the name of an I/O in the array netlist_ios.  *
+ * if it is, return the I/O's index in netlist_ios; if it's not, return -1. */
+	int index;
+	for(index=0; index<num_netlist_ios; index++) {
+		if(strcmp(ptr, netlist_ios[index]) == 0) {
 			return index;
 		}
 	}
@@ -715,4 +768,68 @@ static float calculate_constraint(t_sdc_clock source_domain, t_sdc_clock sink_do
 	free(sink_edges);
 
 	return constraint;
+}
+
+static void print_timing_constraint_info(char *fname) {
+	/* Prints the contents of timing_constraint, constrained_clocks, and constrained_ios to a file. */
+	
+	FILE * fp;
+	int source_clock_domain, sink_clock_domain, i;
+	int * clock_name_length = (int *) my_malloc(num_constrained_clocks * sizeof(int)); /* Array of clock name lengths */
+	int max_clock_name_length = INT_MIN;
+	char * clock_name;
+
+	fp = my_fopen(fname, "w", 0);
+
+	/* Get lengths of each clock name and max length so we can space the columns properly. */
+	for (sink_clock_domain = 0; sink_clock_domain < num_constrained_clocks; sink_clock_domain++) {
+		clock_name = constrained_clocks[sink_clock_domain].name;
+		clock_name_length[sink_clock_domain] = strlen(clock_name);
+		if (clock_name_length[sink_clock_domain] > max_clock_name_length) {
+			max_clock_name_length = clock_name_length[sink_clock_domain];	
+		}
+	}
+
+	/* First, combine info from timing_constraint and constrained_clocks into a matrix 
+	(they're indexed the same as each other). */
+
+	fprintf(fp, "Timing constraints in ns (source clock domains down left side, sink along top).\n");
+	fprintf(fp, "A value of -1.00 means the pair of source and sink domains will not be analysed.\n\n");
+
+	print_spaces(fp, max_clock_name_length + 4); 
+
+	for (sink_clock_domain = 0; sink_clock_domain < num_constrained_clocks; sink_clock_domain++) {
+		fprintf(fp, "%s", constrained_clocks[sink_clock_domain].name);
+		/* Minimum column width of 8 */
+		print_spaces(fp, max(8 - clock_name_length[sink_clock_domain], 4));
+	}
+	fprintf(fp, "\n");
+
+	for (source_clock_domain = 0; source_clock_domain < num_constrained_clocks; source_clock_domain++) {
+		fprintf(fp, "%s", constrained_clocks[source_clock_domain].name);
+		print_spaces(fp, max_clock_name_length + 4 - clock_name_length[source_clock_domain]);
+		for (sink_clock_domain = 0; sink_clock_domain < num_constrained_clocks; sink_clock_domain++) {
+			fprintf(fp, "%5.2f", timing_constraint[source_clock_domain][sink_clock_domain]);
+			/* Minimum column width of 8 */
+			print_spaces(fp, max(clock_name_length[sink_clock_domain] - 1, 3));
+		}
+		fprintf(fp, "\n");
+	}
+
+	/* Second, print I/O constraints. */
+	fprintf(fp, "\nConstrained I/Os:\n");
+	for(i = 0; i < num_constrained_ios; i++) {
+		fprintf(fp, "I/O name %s on clock %s with input/output delay %5.2f ns\n", 
+			constrained_ios[i].name, constrained_ios[i].virtual_clock_name, constrained_ios[i].delay);
+	}
+
+	fclose(fp);
+	free(clock_name_length);
+}
+
+static void print_spaces(FILE * fp, int num_spaces) {
+	/* Prints num_spaces spaces to file pointed to by fp. */
+	for( ; num_spaces > 0; num_spaces--) {
+		fprintf(fp, " ");
+	}
 }
