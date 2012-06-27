@@ -406,7 +406,9 @@ boolean power_find_transistor_info(t_transistor_size_inf ** lower,
 		*upper = found;
 	} else if (size > max_size) {
 		assert(
-				found == &trans_info->size_inf[trans_info->num_size_entries - 1]);
+				found
+						== &trans_info->size_inf[trans_info->num_size_entries
+								- 1]);
 		sprintf(msg,
 				"Using %s transistor of size '%f', which is larger than the largest modeled transistor (%f) in the technology behavior file.",
 				transistor_type_name(type), size, max_size);
@@ -469,81 +471,6 @@ void power_calc_MUX(t_power_usage * power_usage, t_mux_arch * mux_arch,
 
 	free(selector_values);
 }
-
-#if 0
-void calc_power_driving_pin(
-		t_power_usage * pin_power,
-		t_pb_graph_pin * pin,
-		t_rr_node * rr_graph,
-		int rr_graph_size
-)
-{
-	int rr_node_idx;
-	int pin_idx;
-	int edge_idx;
-	int num_fanin;
-	t_rr_node * clb_rr_node;
-	float mux_leakage;
-	float mux_capacitance;
-	float mux_capacitance_input;
-	float density;
-
-	pin_power->dynamic = 0.;
-	pin_power->leakage = 0.;
-
-	rr_node_idx = pin->pin_count_in_cluster;
-	clb_rr_node = &rr_graph[rr_node_idx];
-
-	num_fanin = rr_graph[rr_node_idx].physical_fan_in;
-
-	if (num_fanin == 1 || num_fanin == 0)
-	{
-		return;
-	}
-
-	calc_MUX_leakage_and_capacitance(&mux_leakage, &mux_capacitance, &mux_capacitance_input, num_fanin);
-
-	if (clb_rr_node->net_num == OPEN)
-	{
-		density = 0.;
-	}
-	else
-	{
-		density = vpack_net[clb_rr_node->net_num].density;
-	}
-
-	pin_power->dynamic += power_calc_dynamic(mux_capacitance, density);
-	pin_power->leakage += mux_leakage;
-
-	for (pin_idx = 0; pin_idx < rr_graph_size; pin_idx++)
-	{
-
-		if (rr_graph[pin_idx].net_num == OPEN)
-		{
-			continue;
-		}
-
-		if (pin_idx == pin->pin_count_in_cluster)
-		{
-			continue;
-		}
-
-		if (rr_graph[pin_idx].net_num == clb_rr_node->net_num)
-		{
-			continue;
-		}
-
-		for (edge_idx = 0; edge_idx < rr_graph[pin_idx].num_edges; edge_idx++)
-		{
-			if (rr_graph[pin_idx].edges[edge_idx] == rr_node_idx)
-			{
-				pin_power->dynamic += power_calc_dynamic(mux_capacitance_input, vpack_net[rr_graph[pin_idx].net_num].density);
-				break;
-			}
-		}
-	}
-}
-#endif
 
 void integer_to_SRAMvalues(int SRAM_num, int input_integer, char SRAM_values[]) {
 	char binary_str[20];
@@ -2414,7 +2341,8 @@ boolean power_init(t_power_opts * power_opts, t_power_arch * power_arch) {
 							node->switches[edge_idx];
 				} else {
 					assert(
-							rr_node[node->edges[edge_idx]].driver_switch_type == node->switches[edge_idx]);
+							rr_node[node->edges[edge_idx]].driver_switch_type
+									== node->switches[edge_idx]);
 				}
 			}
 		}
@@ -3461,14 +3389,17 @@ void power_calc_MUX_node(t_power_usage * power_usage, float * out_dens,
 		power_usage->dynamic += power_calc_dynamic_v(C_drain, in_density, Vin);
 	}
 
-	/* Leakage occurs when output = 1 and isolated input = 0 */
+	/* Calculate leakage for all input transistors */
 	for (input_idx = 0; input_idx < mux_node->num_inputs; input_idx++) {
+
 		/* The selected input will never leak */
 		if (input_idx == selector_values[mux_node->level]) {
 			continue;
 		}
-		power_usage->leakage += (1 - in_prob[input_idx]) * output_prob
-				* leakage;
+
+		/* Leakage occurs when output != input */
+		power_usage->leakage += ((1 - in_prob[input_idx]) * output_prob
+				+ in_prob[input_idx] * (1 - output_prob)) * leakage;
 	}
 
 	/* Dynamic Power at Output */
@@ -3558,12 +3489,11 @@ static void power_calc_MUX2_transmission(t_power_usage * power_usage,
 
 	power_zero_usage(power_usage);
 
-	/* A transmission gate leaks if the selected input = 1 and other input = 0 */
-	/*power_usage->leakage +=
-	 ((1 - sel_prob) * in_prob[0] * (1 - in_prob[1])
-	 + sel_prob * (1 - in_prob[0]) * in_prob[1])
-	 * (g_power_common->NMOS_1X_leakage
-	 + g_power_common->PMOS_1X_leakage);*/
+	/* A transmission gate leaks if the selected input != other input  */
+	power_usage->leakage +=
+			(in_prob[0] * (1 - in_prob[1]) + (1 - in_prob[0]) * in_prob[1])
+					* (g_power_common->NMOS_1X_leakage
+							+ g_power_common->PMOS_1X_leakage);
 
 	/* Gate switching */
 	power_usage->dynamic += 2
@@ -3592,10 +3522,9 @@ static void power_calc_MUX2(t_power_usage * power_usage, float Vin, float Vout,
 
 	power_zero_usage(power_usage);
 
-	/* A transistor leaks if the selected input = 1 and other input = 0 */
-	power_usage->leakage += ((1 - sel_prob) * in_prob[0] * (1 - in_prob[1])
-			+ sel_prob * (1 - in_prob[0]) * in_prob[1])
-			* g_power_common->NMOS_1X_leakage;
+	/* A transistor leaks if the selected input != other input */
+	power_usage->leakage += (in_prob[0] * (1 - in_prob[1])
+			+ (1 - in_prob[0]) * in_prob[1]) * g_power_common->NMOS_1X_leakage;
 
 	/* Gate switching */
 	power_usage->dynamic += 2
@@ -3633,7 +3562,8 @@ void power_calc_transistor_capacitance(float *C_drain, float *C_source,
 	boolean error;
 
 	assert(
-			circuit_type == POWER_CIRCUIT_TYPE_CMOS || circuit_type == POWER_CIRCUIT_TYPE_PASS);
+			circuit_type == POWER_CIRCUIT_TYPE_CMOS
+					|| circuit_type == POWER_CIRCUIT_TYPE_PASS);
 
 	/* Initialize to 0 */
 	*C_drain = 0.;
