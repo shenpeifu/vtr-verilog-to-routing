@@ -479,9 +479,11 @@ static void get_timing_stats(t_timing_stats * timing_stats) {
 			if (timing_constraint[source_clock_domain][source_clock_domain] > -0.01 
 				&& timing_stats->critical_path_delay[source_clock_domain][source_clock_domain] > HUGE_NEGATIVE_FLOAT + 1) { 
 				/* if timing constraint is not DO_NOT_ANALYSE and if there was at least one path analyzed */
-				printf("to %s: %g\n", constrained_clocks[source_clock_domain].name, 
+				printf("to %s: %g", constrained_clocks[source_clock_domain].name, 
 				timing_stats->critical_path_delay[source_clock_domain][source_clock_domain]);
 			}
+
+			printf("\n");
 
 			/* Then, print all other constraints on separate lines. */
 			for (sink_clock_domain = 0; sink_clock_domain < num_constrained_clocks; sink_clock_domain++) {
@@ -490,7 +492,7 @@ static void get_timing_stats(t_timing_stats * timing_stats) {
 					&& source_clock_domain != sink_clock_domain) { 
 					/* if timing constraint is not DO_NOT_ANALYSE and if there was at least one path analyzed 
 					and the two clock domains are not the same. */
-					printf("to %s: %g\n", constrained_clocks[sink_clock_domain].name, 
+					printf("\tto %s: %g\n", constrained_clocks[sink_clock_domain].name, 
 					timing_stats->critical_path_delay[source_clock_domain][sink_clock_domain]);
 				}
 			}
@@ -522,7 +524,7 @@ static void get_timing_stats(t_timing_stats * timing_stats) {
 			if (timing_stats->least_slack_in_domain[clock_domain] < HUGE_POSITIVE_FLOAT - 1) {
 				printf("%s: %g\n", constrained_clocks[clock_domain].name, timing_stats->least_slack_in_domain[clock_domain]);
 			} else { /* No valid path was analyzed. */
-				printf("%s: --", constrained_clocks[clock_domain].name);
+				printf("%s: --\n", constrained_clocks[clock_domain].name);
 			}
 		}
 		printf("\n");

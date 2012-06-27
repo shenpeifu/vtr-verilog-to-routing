@@ -304,7 +304,7 @@ void print_net_slack(char *fname) {
 
 	/* Prints the net slacks into a file. */
 
-	int inet, iedge, ibucket, driver_tnode, num_edges;
+	int inet, iedge, ibucket, driver_tnode, num_edges, num_unused_slacks = 0;
 	t_tedge * tedge;
 	FILE *fp;
 	float max_slack = HUGE_NEGATIVE_FLOAT, min_slack = HUGE_POSITIVE_FLOAT, total_negative_slack = 0, bucket_size, slack;
@@ -320,12 +320,14 @@ void print_net_slack(char *fname) {
 		tedge = tnode[driver_tnode].out_edges;
 		for (iedge = 0; iedge < num_edges; iedge++) { 
 			slack = net_slack[inet][iedge + 1];
-			if (slack < HUGE_POSITIVE_FLOAT - 1) {
+			if (slack < HUGE_POSITIVE_FLOAT - 1) { /* if slack was analysed */
 				max_slack = max(max_slack, slack);
 				min_slack = min(min_slack, slack);
 				if (slack < -1e-15) { /* if slack is negative */
 					total_negative_slack -= slack; /* By convention, we'll have total_negative_slack be a positive number. */
 				}
+			} else { /* slack was never analysed */
+				num_unused_slacks++;
 			}
 		}
 	}
@@ -365,10 +367,12 @@ void print_net_slack(char *fname) {
 			min_slack += bucket_size;
 			fprintf(fp, "%.1e\t", min_slack);
 		}
+		fprintf(fp, "Not analysed");
 		fprintf(fp, "\nSlacks in range\t\t");
 		for (ibucket = 0; ibucket < NUM_BUCKETS; ibucket++) {
 			fprintf(fp, "%d\t\t\t", slacks_in_bucket[ibucket]);
 		}
+		fprintf(fp, "%d", num_unused_slacks);
 	}
 
 	/* Finally, print all the slacks, organized by net. */
@@ -1445,6 +1449,10 @@ t_timing_stats * do_timing_analysis(boolean do_lut_input_balancing, boolean is_f
 					 * However, if the timing constraint is DO_NOT_ANALYSE, T_req remains HUGE_POSITIVE_FLOAT, flagging that we should not propagate this tnode backward. */ 
 
 					sink_clock_domain = tnode[inode].clock_domain;
+					if (sink_clock_domain == -1) { /* dummy clock domain from unconstrained I/O - don't analyse! */
+						continue;
+					}
+
 					constraint = timing_constraint[source_clock_domain][sink_clock_domain];
 					if(constraint > -1e-15) { /* This means the constraint is not set to DO_NOT_ANALYSE (-1), and therefore we need to analyze this node. */
 						tnode[inode].used_on_this_traversal = TRUE;	/* Mark that we've changed this node on this traversal (signalling we should update its slack later). */

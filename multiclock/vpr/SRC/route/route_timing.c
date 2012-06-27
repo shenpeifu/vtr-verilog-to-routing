@@ -208,10 +208,11 @@ boolean try_timing_driven_route(struct s_router_opts router_opts,
 		if (num_constrained_clocks == 1) {
 			printf("T_crit: %g\n", timing_stats->critical_path_delay[0][0]);
 		} else {
-			printf("T_crit per constraint:\n");
+			printf("\nMinimum possible clock period to meet each constraint (including skew effects):\n");
 			for (i = 0; i < num_constrained_clocks; i++) {
 				for (j = 0; j < num_constrained_clocks; j++) {
-					if (timing_constraint[i][j] > -0.01) { /* if timing constraint is not DO_NOT_ANALYSE */
+					if (timing_constraint[i][j] > -0.01 && timing_stats->critical_path_delay[i][j] > HUGE_NEGATIVE_FLOAT + 1) { 
+						/* if timing constraint is not DO_NOT_ANALYSE and if there was at least one path analyzed */
 						printf("%s to %s: %g\n", constrained_clocks[i].name, constrained_clocks[j].name, timing_stats->critical_path_delay[i][j]);
 					}
 				}
