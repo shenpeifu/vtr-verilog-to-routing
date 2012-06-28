@@ -355,9 +355,11 @@ typedef struct s_tnode {
 
 typedef struct s_clock {
 	char * name;
+	boolean is_netlist_clock;
 	int fanout;
 } t_clock;
-/* Stores the name and fanout (number of flip-flops in clock domain) of each clock.
+/* Stores the name and fanout (number of flip-flops in clock domain) of each clock,
+	and whether it is a netlist or virtual clock.
 	Used extensively in SDC parsing and timing analysis. */
 
 typedef struct s_io {

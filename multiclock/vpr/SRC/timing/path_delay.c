@@ -110,7 +110,7 @@ static int num_timing_nets = 0;
 
 static void alloc_net_slack_and_slack_ratio(void);
 
-static float update_slacks(float T_req_max_this_domain);
+static float update_slacks(float T_req_max_this_domain, boolean is_final_analysis);
 
 static void alloc_and_load_tnodes(t_timing_inf timing_inf);
 
@@ -317,7 +317,6 @@ void print_net_slack(char *fname) {
 	for (inet = 0; inet < num_timing_nets; inet++) {
 		driver_tnode = net_to_driver_tnode[inet];
 		num_edges = tnode[driver_tnode].num_edges;
-		tedge = tnode[driver_tnode].out_edges;
 		for (iedge = 0; iedge < num_edges; iedge++) { 
 			slack = net_slack[inet][iedge + 1];
 			if (slack < HUGE_POSITIVE_FLOAT - 1) { /* if slack was analysed */
@@ -332,7 +331,17 @@ void print_net_slack(char *fname) {
 		}
 	}
 
-	fprintf(fp, "Largest slack in design: %g\nSmallest slack in design: %g", max_slack, min_slack);
+	if (max_slack > HUGE_NEGATIVE_FLOAT + 1) {
+		fprintf(fp, "Largest slack in design: %g\n", max_slack);
+	} else {
+		fprintf(fp, "Largest slack in design: --\n");
+	}
+	
+	if (min_slack < HUGE_POSITIVE_FLOAT - 1) {
+		fprintf(fp, "Smallest slack in design: %g\n", min_slack);
+	} else {
+		fprintf(fp, "Smallest slack in design: --\n");
+	}
 
 	if (max_slack - min_slack > 1e-15) { /* Only sort the slacks into buckets if not all slacks are the same (if they are identical, no need to sort). */
 		/* Initialize slacks_in_bucket, an array counting how many slacks are within certain linearly-spaced ranges (buckets). */
@@ -349,7 +358,6 @@ void print_net_slack(char *fname) {
 		for (inet = 0; inet < num_timing_nets; inet++) {
 			driver_tnode = net_to_driver_tnode[inet];
 			num_edges = tnode[driver_tnode].num_edges;
-			tedge = tnode[driver_tnode].out_edges;
 			for (iedge = 0; iedge < num_edges; iedge++) { 
 				slack = net_slack[inet][iedge + 1];
 				if (slack < HUGE_POSITIVE_FLOAT - 1) {
@@ -401,12 +409,11 @@ void print_net_slack(char *fname) {
 	fclose(fp);
 }
 
+/* Note: this is an exact clone of print_net_slack, with all occurrences of "slack" replaced by "slack_ratio". 
+Make sure you port all changes made in one function to the other. */
 void print_net_slack_ratio(char *fname) {
 
 	/* Prints the net slack_ratios into a file. */
-
-	/* Note: this is an exact clone of print_net_slack_ratio, with all occurrences of "slack" replaced by "slack_ratio_ratio". 
-	Make sure you port all changes made in one function to the other. */
 
 	int inet, iedge, ibucket, driver_tnode, num_edges;
 	t_tedge * tedge;
@@ -421,7 +428,6 @@ void print_net_slack_ratio(char *fname) {
 	for (inet = 0; inet < num_timing_nets; inet++) {
 		driver_tnode = net_to_driver_tnode[inet];
 		num_edges = tnode[driver_tnode].num_edges;
-		tedge = tnode[driver_tnode].out_edges;
 		for (iedge = 0; iedge < num_edges; iedge++) { 
 			slack_ratio = net_slack_ratio[inet][iedge + 1];
 			if (slack_ratio < HUGE_POSITIVE_FLOAT - 1) {
@@ -434,7 +440,17 @@ void print_net_slack_ratio(char *fname) {
 		}
 	}
 
-	fprintf(fp, "Largest slack_ratio in design: %g\nSmallest slack_ratio in design: %g", max_slack_ratio, min_slack_ratio);
+	if (max_slack_ratio > HUGE_NEGATIVE_FLOAT + 1) {
+		fprintf(fp, "Largest slack_ratio in design: %g\n", max_slack_ratio);
+	} else {
+		fprintf(fp, "Largest slack_ratio in design: --\n");
+	}
+	
+	if (min_slack_ratio < HUGE_POSITIVE_FLOAT - 1) {
+		fprintf(fp, "Smallest slack_ratio in design: %g\n", min_slack_ratio);
+	} else {
+		fprintf(fp, "Smallest slack_ratio in design: --\n");
+	}
 
 	if (max_slack_ratio - min_slack_ratio > 1e-15) { /* Only sort the slack_ratios into buckets if not all slack_ratios are the same (if they are identical, no need to sort). */
 		/* Initialize slack_ratios_in_bucket, an array counting how many slack_ratios are within certain linearly-spaced ranges (buckets). */
@@ -451,7 +467,6 @@ void print_net_slack_ratio(char *fname) {
 		for (inet = 0; inet < num_timing_nets; inet++) {
 			driver_tnode = net_to_driver_tnode[inet];
 			num_edges = tnode[driver_tnode].num_edges;
-			tedge = tnode[driver_tnode].out_edges;
 			for (iedge = 0; iedge < num_edges; iedge++) { 
 				slack_ratio = net_slack_ratio[inet][iedge + 1];
 				if (slack_ratio < HUGE_POSITIVE_FLOAT - 1) {
@@ -1261,12 +1276,25 @@ char *tnode_type_names[] = { "INPAD_SOURCE", "INPAD_OPIN", "OUTPAD_IPIN",
 	for (i = 0; i < num_nets; i++)
 		fprintf(fp, "%4d\t%6d\n", i, net_to_driver_tnode[i]);
 
-	fprintf(fp, "\n\nNode #\t\tT_arr\t\tT_req\n\n");
+	if (num_constrained_clocks == 1) {
+		/* Arrival and required times will be meaningless for multiclock designs,
+		since the T_arr and T_req currently on the graph will only correspond to the most recent traversal. */
+		fprintf(fp, "\n\nNode #\t\tT_arr\t\tT_req\n\n");
 
-	for (inode = 0; inode < num_tnodes; inode++) {
-		fprintf(fp, "%d\t%12g\t%12g\n", inode, tnode[inode].T_arr,
-				tnode[inode].T_req);
+		for (inode = 0; inode < num_tnodes; inode++) {
+			fprintf(fp, "%d\t%12g\t%12g\n", inode, tnode[inode].T_arr,
+					tnode[inode].T_req);
+		}
 	}
+
+#ifdef FANCY_CRITICALITY
+	/* Print num_critical_input_paths and num_critical_output_paths for each tnode. */
+	fprintf(fp, "\ninode  Critical input paths  Critical output paths\n");
+	for (inode = 0; inode < num_tnodes; inode++) {
+		fprintf(fp, "%d\t%ld\t\t\t%ld\n", inode, tnode[inode].num_critical_input_paths, 
+			tnode[inode].num_critical_output_paths);
+	}
+#endif
 
 	fclose(fp);
 }
@@ -1281,7 +1309,7 @@ t_timing_stats * do_timing_analysis(boolean do_lut_input_balancing, boolean is_f
 	into the routing stage of the flow. 
 	
 	Is_final_analysis flags whether this is the final, analysis pass.  If it is, the analyser will 
-	compute actual slacks instead of normalized ones, and will populate output statistics data strucutres. 
+	compute actual slacks instead of normalized ones. 
 	
 	Please see path_delay.h for definition of SLACK_DEFINITION and SLACK_RATIO_DEFINITION.
 	Please see vpr_types.h for definition of FANCY_CRITICALITY. */
@@ -1305,7 +1333,7 @@ t_timing_stats * do_timing_analysis(boolean do_lut_input_balancing, boolean is_f
 #if defined FANCY_CRITICALITY || SLACK_RATIO_DEFINITION == 1
 	float T_req_max_this_domain; 
 	/* Maximum T_req in this clock domain - used to calculate denominator of clusterer criticalities 
-	(if defined FANCY_CRIT) and slack ratio (if SLACK_RATIO_DEFINITION == 1) */
+	(if defined FANCY_CRIT) and/or slack ratio (if SLACK_RATIO_DEFINITION == 1) */
 #endif
 
 #if SLACK_RATIO_DEFINITION == 2
@@ -1352,7 +1380,8 @@ t_timing_stats * do_timing_analysis(boolean do_lut_input_balancing, boolean is_f
 		T_req_max_this_domain = HUGE_NEGATIVE_FLOAT; /* Reset before each pair of traversals. */
 #endif
 
-		/* Reset all used_on_this_traversal flags to FALSE.  Also, reset all arrival times to a very large negative number, and all required times to a very large positive number. */
+		/* Reset all used_on_this_traversal flags to FALSE.  Also, reset all arrival times to a
+		very large negative number, and all required times to a very large positive number. */
 		for(inode = 0; inode < num_tnodes; inode++) {
 			tnode[inode].used_on_this_traversal = FALSE;
 			tnode[inode].T_arr = HUGE_NEGATIVE_FLOAT; 
@@ -1363,9 +1392,12 @@ t_timing_stats * do_timing_analysis(boolean do_lut_input_balancing, boolean is_f
 				
 		for (i = 0; i < num_at_level; i++) {
 			inode = tnodes_at_level[0].list[i];		/* Go through the list of each tnode at level 0. */
+
 			if (tnode[inode].clock_domain == source_clock_domain && tnode[inode].type == FF_SOURCE) { 
-				tnode[inode].T_arr = tnode[inode].clock_skew;	/* If the tnode is in the source clock domain we're analyzing (iclock), 
-																set the arrival time of that tnode to its clock skew. */
+				/* If the tnode is in the source clock domain we're analyzing (iclock), 
+				set the arrival time of that tnode to its clock skew. */
+				tnode[inode].T_arr = tnode[inode].clock_skew;	
+
 			} else if (tnode[inode].clock_domain == source_clock_domain && tnode[inode].type == INPAD_SOURCE) { 
 				/* There's no such thing as clock skew for external clocks. The closest equivalent, 
 				input delay, is already marked on the edge coming out from this node. 
@@ -1383,8 +1415,9 @@ t_timing_stats * do_timing_analysis(boolean do_lut_input_balancing, boolean is_f
 			for (i = 0; i < num_at_level; i++) {					
 				inode = tnodes_at_level[ilevel].list[i];			/* Go through each of the tnodes at the level we're on. */
 				if (tnode[inode].T_arr < 0) { /* If the arrival time for this tnode is less than 0 (it must be HUGE_NEGATIVE_FLOAT)... */
-					continue;	/* End this iteration of the num_at_level for loop since this node is not part of the clock domain we're analyzing. 
-								   (If it were, it would have received an arrival time already.) */
+					continue;	/* End this iteration of the num_at_level for loop since 
+								this node is not part of the clock domain we're analyzing. 
+								(If it were, it would have received an arrival time already.) */
 				}
 #ifdef FANCY_CRITICALITY
 				if (ilevel == 0) {
@@ -1434,6 +1467,9 @@ t_timing_stats * do_timing_analysis(boolean do_lut_input_balancing, boolean is_f
 				}
 
 				if (num_edges == 0) { /* sink */
+
+					/* Test this tnode against several conditions to make sure we should analyse it. */
+
 					if (tnode[inode].type == FF_CLOCK) {
 						continue; /* Skip nodes on the clock net itself. */
 					}
@@ -1449,53 +1485,67 @@ t_timing_stats * do_timing_analysis(boolean do_lut_input_balancing, boolean is_f
 					 * However, if the timing constraint is DO_NOT_ANALYSE, T_req remains HUGE_POSITIVE_FLOAT, flagging that we should not propagate this tnode backward. */ 
 
 					sink_clock_domain = tnode[inode].clock_domain;
-					if (sink_clock_domain == -1) { /* dummy clock domain from unconstrained I/O - don't analyse! */
+					constraint = timing_constraint[source_clock_domain][sink_clock_domain];
+
+					if(constraint < -1e-15) { 
+						/* Constraint is DO_NOT_ANALYSE (-1). */
 						continue;
 					}
 
-					constraint = timing_constraint[source_clock_domain][sink_clock_domain];
-					if(constraint > -1e-15) { /* This means the constraint is not set to DO_NOT_ANALYSE (-1), and therefore we need to analyze this node. */
-						tnode[inode].used_on_this_traversal = TRUE;	/* Mark that we've changed this node on this traversal (signalling we should update its slack later). */
+					if (sink_clock_domain == -1) { /* dummy clock domain from unconstrained I/O - don't analyse! */
+						continue;
+					}
+					
+					/* Now we know we should analyse this tnode. Flip-flop sinks on this clock domain which come from 
+					unconstrained I/Os will be erroneously analyzed here, but this will not affect slack calculations. 
+					I'm not sure what effect this will have on runtime, however. */
+
+					tnode[inode].used_on_this_traversal = TRUE;	/* Mark that we've changed this node on this traversal (signalling we should update its slack later). */
 
 #if SLACK_DEFINITION == 4	
-						/* Normalize the required time at the sink node to be >=0 by taking the max of the "real" 
-							required time (constraint + tnode[inode].clock_skew) and the arrival time, except for the
-							final analysis pass.  E.g. if we have a 10 ns constraint and it takes 14 ns to get here, 
-							we'll have a slack of at most -4 ns for any edge along the path that got us here.  If we 
-							say the required time is 14 ns (no less than the arrival time), we don't have a negative 
-							slack anymore.  However, in the final timing analysis, the real slacks are computed 
-							(that's what human designers care about), not the normalized ones. */	
+					/* Normalize the required time at the sink node to be >=0 by taking the max of the "real" 
+						required time (constraint + tnode[inode].clock_skew) and the arrival time, except for the
+						final analysis pass.  E.g. if we have a 10 ns constraint and it takes 14 ns to get here, 
+						we'll have a slack of at most -4 ns for any edge along the path that got us here.  If we 
+						say the required time is 14 ns (no less than the arrival time), we don't have a negative 
+						slack anymore.  However, in the final timing analysis, the real slacks are computed 
+						(that's what human designers care about), not the normalized ones. */	
 
-						if(!is_final_analysis) {
-							tnode[inode].T_req = max(constraint + tnode[inode].clock_skew, tnode[inode].T_arr);
-						} else {
-							tnode[inode].T_req = constraint + tnode[inode].clock_skew;
-						}
+					if(!is_final_analysis) {
+						tnode[inode].T_req = max(constraint + tnode[inode].clock_skew, tnode[inode].T_arr);
+					} else {
+						tnode[inode].T_req = constraint + tnode[inode].clock_skew;
+					}
 
 #else					
-						/* Don't do the normalization and always set T_req equal to the "real" required time. */
-						tnode[inode].T_req = constraint + tnode[inode].clock_skew;
+					/* Don't do the normalization and always set T_req equal to the "real" required time. */
+					tnode[inode].T_req = constraint + tnode[inode].clock_skew;
 #endif				 
 						
-						/* Store the largest critical path delay for this constraint (source domain AND sink domain) in the matrix critical_path_delay.
-						   The critical path delay is equal to the arrival time at this node minus the clock skew at the sink node. */
+					/* Store the largest critical path delay for this constraint (source domain AND sink domain) in the matrix critical_path_delay.
+					T_crit = T_arr at destination - clock skew at destination = (datapath delay + clock delay to source) - clock delay to destination.
+					Critical path delay is somewhat of a misnomer: this is really telling us how fast we can run the clock before we can no longer
+					meet this constraint.  e.g. If the datapath delay is 10 ns, the clock delay at source is 2 ns and the clock delay at destination
+					is 5 ns, then T_crit is 7 ns by the above formula. We can run the clock at 7 ns because the clock skew gives us 3 ns extra to meet the 
+					10 ns datapath delay. */
 
-						timing_stats->critical_path_delay[source_clock_domain][sink_clock_domain] = max(timing_stats->critical_path_delay[source_clock_domain][sink_clock_domain], tnode[inode].T_arr - tnode[inode].clock_skew);
+					timing_stats->critical_path_delay[source_clock_domain][sink_clock_domain] = max(timing_stats->critical_path_delay[source_clock_domain][sink_clock_domain], tnode[inode].T_arr - tnode[inode].clock_skew);
 
-						/* We want to find the greatest T_req (either in the design or for this traversal), 
-						   so update either or both T_req_max if this tnode's required time is greater than them. */
+					/* We want to find the greatest T_req (either in the design or for this traversal), 
+					so update T_req_max_this_domain and/or T_req_max_global if this tnode's required time is greater than them. */
+
 #if defined FANCY_CRITICALITY || SLACK_RATIO_DEFINITION == 1
-						T_req_max_this_domain = max(T_req_max_this_domain, tnode[inode].T_req);
+					T_req_max_this_domain = max(T_req_max_this_domain, tnode[inode].T_req);
 #endif
 						
 #if SLACK_RATIO_DEFINITION == 2
-						T_req_max_global = max(T_req_max_global, tnode[inode].T_req);
+					T_req_max_global = max(T_req_max_global, tnode[inode].T_req);
 #endif		
-					}
+			
 #ifdef FANCY_CRITICALITY
 					tnode[inode].num_critical_output_paths = 1; /* Bottom-level tnodes have only one critical output path */
 #endif			
-					} else { /* not a sink */
+				} else { /* not a sink */
 					assert(!(tnode[inode].type == OUTPAD_SINK || tnode[inode].type == FF_SINK || tnode[inode].type == FF_CLOCK));
 
 					/* We need to skip this node if it is not on a path from source_clock_domain to sink_clock_domain (let's call these paths "happy paths").  
@@ -1527,16 +1577,14 @@ t_timing_stats * do_timing_analysis(boolean do_lut_input_balancing, boolean is_f
 
 					tnode[inode].used_on_this_traversal = TRUE;	/* Mark that we've changed this node on this traversal (signalling we should update its slack later). */
 #ifdef FANCY_CRITICALITY
-/******************************* SEE IF THIS CODE IS NECESSARY OR IF WE CAN PUT IT INTO THE FOR LOOP DIRECTLY BELOW */
 					to_node = tedge[0].to_node;
 
 					tnode[inode].num_critical_output_paths = tnode[to_node].num_critical_output_paths;
 					if (tnode[to_node].num_critical_output_paths > max_critical_output_paths) {
 						max_critical_output_paths = tnode[to_node].num_critical_output_paths;
 					}
-/*********************************/
 #endif
-					for (iedge = 0; iedge < num_edges; iedge++) { 
+					for (iedge = 1; iedge < num_edges; iedge++) { 
 						to_node = tedge[iedge].to_node;
 #ifdef FANCY_CRITICALITY
 						/* Update number of near critical paths affected by output of tnode. */
@@ -1560,9 +1608,9 @@ t_timing_stats * do_timing_analysis(boolean do_lut_input_balancing, boolean is_f
 		/* After each iteration of the iclock loop, update the slack if it has a newer, lower value.  Also update the normalized costs for clusterer (ifdef FANCY_CRITICALITY). */
 		
 #if SLACK_RATIO_DEFINITION == 1
-		timing_stats->least_slack_in_domain[source_clock_domain] = update_slacks(T_req_max_this_domain);
+		timing_stats->least_slack_in_domain[source_clock_domain] = update_slacks(T_req_max_this_domain, is_final_analysis);
 #else	/* T_req_max_this_domain is not used in update_slacks so doesn't matter what we pass in. */
-		timing_stats->least_slack_in_domain[source_clock_domain] = update_slacks(0);
+		timing_stats->least_slack_in_domain[source_clock_domain] = update_slacks(0, is_final_analysis);
 #endif
 
 #ifdef FANCY_CRITICALITY
@@ -1571,16 +1619,18 @@ t_timing_stats * do_timing_analysis(boolean do_lut_input_balancing, boolean is_f
 	} /* end of source_clock_domain loop */
 	
 #if SLACK_DEFINITION == 3 
-	/* Increase all slacks by the value of the smallest slack in the design, if it's negative. */
-	if(smallest_slack_in_design < 0) {
-		for (inet = 0; inet < num_timing_nets; inet++) {
-			inode = net_to_driver_tnode[inet];
-			num_edges = tnode[inode].num_edges;
-			for (iedge = 0; iedge < num_edges; iedge++) {
-				net_slack[inet][iedge + 1] -= smallest_slack_in_design; 
-				/* Remember, smallest_slack_in_design is negative, so we're INCREASING all the slacks. */
-				/* Note that if net_slack was equal to HUGE_POSITIVE_FLOAT, it will still be equal to more than this, 
-				so we can ignore it properly when calculating slack ratios directly below. */
+	if (!is_final_analysis) {
+		/* Increase all slacks by the value of the smallest slack in the design, if it's negative. */
+		if(smallest_slack_in_design < 0) {
+			for (inet = 0; inet < num_timing_nets; inet++) {
+				inode = net_to_driver_tnode[inet];
+				num_edges = tnode[inode].num_edges;
+				for (iedge = 0; iedge < num_edges; iedge++) {
+					net_slack[inet][iedge + 1] -= smallest_slack_in_design; 
+					/* Remember, smallest_slack_in_design is negative, so we're INCREASING all the slacks. */
+					/* Note that if net_slack was equal to HUGE_POSITIVE_FLOAT, it will still be equal to more than this, 
+					so we can ignore it properly when calculating slack ratios directly below. */
+				}
 			}
 		}
 	}
@@ -1624,7 +1674,7 @@ t_timing_stats * do_timing_analysis(boolean do_lut_input_balancing, boolean is_f
 	return timing_stats;
 }
 
-static float update_slacks(float T_req_max_this_domain) {
+static float update_slacks(float T_req_max_this_domain, boolean is_final_analysis) {
 	/* Updates the slack of each source-sink pair of block pins in net_slack. 
 	 * For n clock domains, this function will be called n^2 times for each iteration of the timing analyser.
 	 * At each iteration, slacks and slack ratios of each edge will be updated if they are less than the previous lowest values. 
@@ -1661,9 +1711,14 @@ static float update_slacks(float T_req_max_this_domain) {
 			if(slack < net_slack[inet][iedge + 1]) { /* Only update on this traversal if this edge would have lower slack from this traversal than its current value. */
 
 #if SLACK_DEFINITION == 2 
-				/* Update the slack for this edge.  If any slack would become negative in this process, set it to 0. */
-				net_slack[inet][iedge + 1] = max(slack_from_this_traversal, 0);
-#else			/* Update the slack for this edge. */
+				if (!is_final_analysis) {
+					/* Update the slack for this edge.  If any slack would become negative in this process, set it to 0. */
+					net_slack[inet][iedge + 1] = max(slack, 0);
+				} else { /* Update the slack for this edge. */
+					net_slack[inet][iedge + 1] = slack;
+				}
+#else			
+				/* Update the slack for this edge. */
 				net_slack[inet][iedge + 1] = slack;
 #endif
 			}
@@ -2496,7 +2551,11 @@ static void load_clock_domain_and_skew(boolean is_prepacked) {
 				tnode[inode].clock_domain = clock_index; 
 				tnode[inode].clock_skew = 0.;
 				propagate_clock_domain_and_skew(inode); /* ...and propagate this information forward to connected nodes. */
-			
+				/* Now that the clock domain is on the flip-flops using this clock net, we set the clock domain of this clock
+				INPAD_SOURCE tnode to -1, so that we do not analyse it.  If we did not do this, the clock net would be analysed
+				on the same iteration of the timing analyzer as the flip-flops it drives! */
+				tnode[inode].clock_domain = -1;
+
 			} else {/* it's an input - figure out if there's a timing constraint associated with it */
 				io_index = find_io(net_name);
 				if (io_index != -1) {

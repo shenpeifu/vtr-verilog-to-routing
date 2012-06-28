@@ -465,9 +465,13 @@ static void get_timing_stats(t_timing_stats * timing_stats) {
 
 	if (num_constrained_clocks == 1) {
 		printf("\nCritical path delay/f_max (including skew effects): %g ns (%g MHz)", timing_stats->critical_path_delay[0][0]*1e9, 1e-9/timing_stats->critical_path_delay[0][0]);
-		printf("\nLeast slack in design: %g ns\n\n", timing_stats->least_slack_in_domain[0]*1e9);
+		if (timing_stats->least_slack_in_domain[0] < HUGE_POSITIVE_FLOAT - 1) {
+			printf("\nLeast slack in design: %g ns\n\n", timing_stats->least_slack_in_domain[0] * 1e9);
+		} else {
+			printf("\nLeast slack in design: --\n\n");
+		}
 	} else {
-		int source_clock_domain, sink_clock_domain, clock_domain, fanout, total_fanout = 0;
+		int source_clock_domain, sink_clock_domain, clock_domain, fanout, total_fanout = 0, num_netlist_clocks_with_intra_domain_paths = 0;
 		float geomean_f_max = 1, fanout_weighted_geomean_f_max = 1;
 
 		printf("\nMinimum possible clock period to meet each constraint (including skew effects):\n");
@@ -478,9 +482,11 @@ static void get_timing_stats(t_timing_stats * timing_stats) {
 
 			if (timing_constraint[source_clock_domain][source_clock_domain] > -0.01 
 				&& timing_stats->critical_path_delay[source_clock_domain][source_clock_domain] > HUGE_NEGATIVE_FLOAT + 1) { 
-				/* if timing constraint is not DO_NOT_ANALYSE and if there was at least one path analyzed */
-				printf("to %s: %g", constrained_clocks[source_clock_domain].name, 
-				timing_stats->critical_path_delay[source_clock_domain][source_clock_domain]);
+			/* if timing constraint is not DO_NOT_ANALYSE and if there was at least one path analyzed */
+				/* convert to nanoseconds / megahertz */
+				printf("to %s: %g ns (%g MHz)", constrained_clocks[source_clock_domain].name, 
+					1e9 * timing_stats->critical_path_delay[source_clock_domain][source_clock_domain],
+					1e-6 / timing_stats->critical_path_delay[source_clock_domain][source_clock_domain]);
 			}
 
 			printf("\n");
@@ -492,37 +498,44 @@ static void get_timing_stats(t_timing_stats * timing_stats) {
 					&& source_clock_domain != sink_clock_domain) { 
 					/* if timing constraint is not DO_NOT_ANALYSE and if there was at least one path analyzed 
 					and the two clock domains are not the same. */
-					printf("\tto %s: %g\n", constrained_clocks[sink_clock_domain].name, 
-					timing_stats->critical_path_delay[source_clock_domain][sink_clock_domain]);
+					/* Convert to nanoseconds and megahertz */
+					printf("\tto %s: %g ns (%g MHz)\n", constrained_clocks[sink_clock_domain].name, 
+					1e9 * timing_stats->critical_path_delay[source_clock_domain][sink_clock_domain],
+					1e-6 / timing_stats->critical_path_delay[source_clock_domain][sink_clock_domain]);
 				}
 			}
 		}
 	
 		/* Calculate geometric mean f_max (fanout-weighted and unweighted) from the diagonal (intra-domain) 
 		entries of critical_path_delay, excluding all clocks without intra-domain paths	
-		(where critical_path_delay = HUGE_NEGATIVE_FLOAT). */
+		(where critical_path_delay = HUGE_NEGATIVE_FLOAT) and all virtual clocks. */
 		for (clock_domain = 0; clock_domain < num_constrained_clocks; clock_domain++) {
-			if (timing_stats->critical_path_delay[clock_domain][clock_domain] > HUGE_NEGATIVE_FLOAT + 1) {
+			if (timing_stats->critical_path_delay[clock_domain][clock_domain] > HUGE_NEGATIVE_FLOAT + 1 
+				&& constrained_clocks[clock_domain].is_netlist_clock) {
 				geomean_f_max /= timing_stats->critical_path_delay[clock_domain][clock_domain]; /* Dividing by period = multiplying by frequency */
 				fanout = constrained_clocks[clock_domain].fanout;
 				fanout_weighted_geomean_f_max /= pow(timing_stats->critical_path_delay[clock_domain][clock_domain], fanout);
 				total_fanout += fanout;
+				num_netlist_clocks_with_intra_domain_paths++;
 			}
 		}
-		geomean_f_max = pow(geomean_f_max, (float) 1/num_constrained_clocks);
+		geomean_f_max = pow(geomean_f_max, (float) 1/num_netlist_clocks_with_intra_domain_paths);
 		fanout_weighted_geomean_f_max = pow(fanout_weighted_geomean_f_max, (float) 1/total_fanout);
 		if (geomean_f_max < 1 - 1e-15 || geomean_f_max > 1 + 1e-15) { 
 			/* If geometric mean is 1, it probably means we never found any actual f_max. */
-			printf("\nGeometric mean intra-domain f_max: %g\n", geomean_f_max);
+			/* Convert to MHz */
+			printf("\nGeometric mean intra-domain f_max: %g MHz\n", geomean_f_max * 1e-6);
 		}
 		if (fanout_weighted_geomean_f_max < 1 - 1e-15 || fanout_weighted_geomean_f_max > 1 + 1e-15) { 
-			printf("Fanout-weighted geomean intra-domain f_max: %g\n", fanout_weighted_geomean_f_max);
+			/* Convert to MHz */
+			printf("Fanout-weighted geomean intra-domain f_max: %g MHz\n", fanout_weighted_geomean_f_max * 1e-6);
 		}
 
 		printf("\nLeast slack in each domain:\n");
 		for (clock_domain = 0; clock_domain < num_constrained_clocks; clock_domain++) {
 			if (timing_stats->least_slack_in_domain[clock_domain] < HUGE_POSITIVE_FLOAT - 1) {
-				printf("%s: %g\n", constrained_clocks[clock_domain].name, timing_stats->least_slack_in_domain[clock_domain]);
+				/* Convert to nanoseconds */
+				printf("%s: %g ns\n", constrained_clocks[clock_domain].name, timing_stats->least_slack_in_domain[clock_domain]*1e9);
 			} else { /* No valid path was analyzed. */
 				printf("%s: --\n", constrained_clocks[clock_domain].name);
 			}

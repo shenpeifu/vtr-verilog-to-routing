@@ -54,7 +54,7 @@ t_sdc_override_constraint * override_constraints; /*  [0..num_override_constrain
 /***************** Subroutines local to this module *************************/
 
 static void alloc_and_load_netlist_clocks_and_ios(void);
-static void count_netlist_clocks(void);
+static void count_netlist_clocks_as_constrained_clocks(void);
 static void get_sdc_tok(char * buf, int num_lines);
 static boolean check_if_number(char * ptr);
 static int find_netlist_clock(char * ptr);
@@ -84,17 +84,17 @@ void read_sdc(char * sdc_file) {
 
 	/* If no SDC file is included or specified, use default behaviour of cutting paths between domains and optimizing each clock separately */
 	if ((sdc = fopen(sdc_file, "r")) == NULL) {
-		printf("\nSDC file %s not found.\n", sdc_file);
+		printf("SDC file %s not found.\n", sdc_file);
 		printf("All clocks will be optimized to run as fast as possible.\n");
 		printf("Paths between clock domains will be cut.\n\n");
 
-		/* Find the number of clocks with constraints from the netlist. */
-		count_netlist_clocks();
+		/* Find all netlist clocks and add them as constrained clocks. */
+		count_netlist_clocks_as_constrained_clocks();
 
-		/* Allocate matrix of timing constraints [0..num_netlist_clocks-1][0..num_netlist_clocks-1] */
-		timing_constraint = (float **) alloc_matrix(0, num_netlist_clocks-1, 0, num_netlist_clocks-1, sizeof(float));
-		for(source_clock_domain=0; source_clock_domain<num_netlist_clocks; source_clock_domain++) {
-			for(sink_clock_domain=0; sink_clock_domain<num_netlist_clocks; sink_clock_domain++) {
+		/* Allocate matrix of timing constraints [0..num_constrained_clocks-1][0..num_constrained_clocks-1] */
+		timing_constraint = (float **) alloc_matrix(0, num_constrained_clocks-1, 0, num_constrained_clocks-1, sizeof(float));
+		for(source_clock_domain=0; source_clock_domain<num_constrained_clocks; source_clock_domain++) {
+			for(sink_clock_domain=0; sink_clock_domain<num_constrained_clocks; sink_clock_domain++) {
 				if(source_clock_domain == sink_clock_domain) {
 					timing_constraint[source_clock_domain][sink_clock_domain] = 0.;
 				} else {
@@ -102,9 +102,20 @@ void read_sdc(char * sdc_file) {
 				}
 			}
 		}
-		/* Num_constrained_clocks (the only variable accessible from now on) is the same as num_netlist_clocks, 
-		since all netlist clocks are constrained and no virtual clocks exist. */
-		num_constrained_clocks = num_netlist_clocks;
+
+		if (GetEchoOption()) {
+			print_timing_constraint_info("timing_constraints.echo");
+		}
+
+		/* Now normalize timing_constraint and constrained_ios to be in seconds, not nanoseconds. */
+		for (source_clock_domain=0; source_clock_domain<num_constrained_clocks; source_clock_domain++) {
+			for (sink_clock_domain=0; sink_clock_domain<num_constrained_clocks; sink_clock_domain++) {
+				constraint = timing_constraint[source_clock_domain][sink_clock_domain];
+				if (constraint > -0.01) { /* if constraint does not equal DO_NOT_ANALYSE */
+					timing_constraint[source_clock_domain][sink_clock_domain] = constraint/1e9;
+				}
+			}
+		}
 
 		return;
 	}
@@ -243,15 +254,15 @@ static void alloc_and_load_netlist_clocks_and_ios(void) {
 	}
 }
 
-static void count_netlist_clocks(void) {
-	/* Count how many clocks are in the netlist. */
+static void count_netlist_clocks_as_constrained_clocks(void) {
+	/* Count how many clocks are in the netlist, and adds them to the array constrained_clocks. */
 
 	int iblock, i, net;
 	char * name;
 	boolean found;
 
-	num_netlist_clocks = 0;
-	num_netlist_ios = 0;
+	num_constrained_clocks = 0;
+	num_constrained_ios = 0;
 
 	for (iblock = 0; iblock < num_logical_blocks; iblock++) {
 		if(logical_block[iblock].type == VPACK_LATCH) {
@@ -259,14 +270,19 @@ static void count_netlist_clocks(void) {
 			name = logical_block[net].name;
 			/* Now that we've found a clock, let's see if we've counted it already */
 			found = FALSE;
-			for (i = 0; !found && i < num_netlist_clocks; i++) {
-				if (strcmp(netlist_clocks[i], name) == 0) {
+			for (i = 0; !found && i < num_constrained_clocks; i++) {
+				if (strcmp(constrained_clocks[i].name, name) == 0) {
 					found = TRUE;
 				}
 			}
 			if(!found) {
-			/* If we get here, the clock is new and so we add it to the netlist_clocks */
-				num_netlist_clocks++;
+			/* If we get here, the clock is new and so we add it to the array constrained_clocks */
+				num_constrained_clocks++;
+				/* dynamically grow the array to fit one new element */
+				constrained_clocks = (t_clock *) my_realloc (constrained_clocks, num_constrained_clocks * sizeof(t_clock));
+				constrained_clocks[num_constrained_clocks - 1].name = my_strdup(name);
+				constrained_clocks[num_constrained_clocks - 1].is_netlist_clock = TRUE;
+				/* Fanout will be filled out once the timing graph has been constructed. */
 			}
 		}
 	}
@@ -283,8 +299,9 @@ static void get_sdc_tok(char * buf, int num_lines) {
 	int source_clock_domain, sink_clock_domain, current_group_number = 0, num_exclusive_clocks = 0, num_multicycles;
 	t_sdc_exclusive_group * exclusive_groups = NULL;
 
-	/* my_strtok splits the string into tokens - little character arrays separated by the SDC_TOKENS defined above.          *
-	 * Throughout this code, ptr refers to the tokens we fetch, one at a time.  The token changes at each call of my_strtok. */
+	/* my_strtok splits the string into tokens - little character arrays separated by the SDC_TOKENS defined above.					   *
+	 * Throughout this code, ptr refers to the tokens we fetch, one at a time.  The token changes at each call of my_strtok.		   *
+	 * We call my_strtok with NULL as the first argument every time AFTER the first, since this picks up tokenizing where we left off. */
 	ptr = my_strtok(buf, SDC_TOKENS, sdc, buf);
 
 	if (!ptr) { /* blank line */
@@ -299,15 +316,14 @@ static void get_sdc_tok(char * buf, int num_lines) {
 		/* Syntax: create_clock -period <float> [-waveform {rising_edge falling_edge}] <clock names> */
 
 		/* make sure clock has -period specified */
-		/* Note: we call my_strtok with NULL as the first argument every time AFTER the first, since this picks up tokenizing where we left off */
+		
 		ptr = my_strtok(NULL, SDC_TOKENS, sdc, buf);
-
 		if(strcmp(ptr, "-period") != 0) {
 			fprintf(stderr, "Create_clock must be followed by '-period' on line %d of SDC file.\n", num_lines);
 			exit(1);
 		}
-		ptr = my_strtok(NULL, SDC_TOKENS, sdc, buf);
 
+		ptr = my_strtok(NULL, SDC_TOKENS, sdc, buf);
 		/* Check if the token following -period is actually a number. */
 		if(!check_if_number(ptr)) {
 			fprintf(stderr, "Token following '-period' is not a number on line %d of SDC file.\n", num_lines);
@@ -365,9 +381,10 @@ static void get_sdc_tok(char * buf, int num_lines) {
 			sdc_clocks[num_constrained_clocks - 1].period = clock_period;
 			sdc_clocks[num_constrained_clocks - 1].offset = rising_edge; 
 			
-			/* Also store the clock's name in constrained_clocks */
+			/* Also store the clock's name, and the fact that it is not a netlist clock, in constrained_clocks. */
 			constrained_clocks = (t_clock *) my_realloc (constrained_clocks, num_constrained_clocks * sizeof(t_clock));
 			constrained_clocks[num_constrained_clocks - 1].name = my_strdup(ptr);
+			constrained_clocks[num_constrained_clocks - 1].is_netlist_clock = FALSE;
 			/* Fanout will be filled out once the timing graph has been constructed. */
 
 			/* The next token should be NULL.  If so, return; if not, print an error message and exit. */
@@ -375,7 +392,7 @@ static void get_sdc_tok(char * buf, int num_lines) {
 			if (!ptr) {
 				return;
 			}
-			fprintf(stderr, "More than one virtual clock name is specified after -name on line %d of SDC file.\n", ptr, num_lines);
+			fprintf(stderr, "More than one virtual clock name is specified after -name on line %d of SDC file.\n", num_lines);
 			exit(1);
 
 		} else {
@@ -405,9 +422,10 @@ static void get_sdc_tok(char * buf, int num_lines) {
 				sdc_clocks[num_constrained_clocks - 1].period = clock_period;
 				sdc_clocks[num_constrained_clocks - 1].offset = rising_edge; 
 
-				/* Also store the clock's name in constrained_clocks */
+				/* Also store the clock's name, and the fact that it is a netlist clock, in constrained_clocks. */
 				constrained_clocks = (t_clock *) my_realloc (constrained_clocks, num_constrained_clocks * sizeof(t_clock));
 				constrained_clocks[num_constrained_clocks - 1].name = my_strdup(ptr);
+				constrained_clocks[num_constrained_clocks - 1].is_netlist_clock = TRUE;
 				/* Fanout will be filled out once the timing graph has been constructed. */
 				
 				/* Advance to the next token (or the end of the line). */

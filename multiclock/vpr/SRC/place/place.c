@@ -774,7 +774,9 @@ void try_place(struct s_placer_opts placer_opts,
 				for (j = 0; j < num_constrained_clocks; j++) {
 					if (timing_constraint[i][j] > -0.01 && timing_stats->critical_path_delay[i][j] > HUGE_NEGATIVE_FLOAT + 1) { 
 					/* if timing constraint is not DO_NOT_ANALYSE and if there was at least one path analyzed */
-						printf("%s to %s: %g\n", constrained_clocks[i].name, constrained_clocks[j].name, timing_stats->critical_path_delay[i][j]);
+						/* convert to nanoseconds */
+						printf("%s to %s: %g ns\n", constrained_clocks[i].name, 
+							constrained_clocks[j].name, timing_stats->critical_path_delay[i][j] * 1e9);
 					}
 				}
 			}

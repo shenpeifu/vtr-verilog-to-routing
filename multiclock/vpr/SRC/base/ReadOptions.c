@@ -12,7 +12,6 @@ static boolean EchoEnabled;
 
 static char **ReadBaseToken(INP char **Args, OUTP enum e_OptionBaseToken *Token);
 static void Error(INP const char *Token);
-static void ErrorOption(INP const char *Option);
 static char **ProcessOption(INP char **Args, INOUTP t_options * Options);
 static char **ReadFloat(INP char **Args, OUTP float *Val);
 static char **ReadInt(INP char **Args, OUTP int *Val);
@@ -93,9 +92,7 @@ void ReadOptions(INP int argc, INP char **argv, OUTP t_options * Options) {
 static char **
 ProcessOption(INP char **Args, INOUTP t_options * Options) {
 	enum e_OptionBaseToken Token;
-	char **PrevArgs;
 
-	PrevArgs = Args;
 	Args = ReadBaseToken(Args, &Token);
 
 	if (Token < OT_BASE_UNKNOWN) {
@@ -241,7 +238,6 @@ ProcessOption(INP char **Args, INOUTP t_options * Options) {
 	case OT_CRITICALITY_EXP:
 		return ReadFloat(Args, &Options->criticality_exp);
 	default:
-		ErrorOption(*PrevArgs);
 		return NULL;
 	}
 }
@@ -297,11 +293,6 @@ static void Error(INP const char *Token) {
 	} else {
 		printf(ERRTAG "Missing token at end of command line\n");
 	}
-	exit(1);
-}
-
-static void ErrorOption(INP const char *Option) {
-	printf(ERRTAG "Unexpected option '%s' on command line\n", Option);
 	exit(1);
 }
 
