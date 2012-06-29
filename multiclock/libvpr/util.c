@@ -409,8 +409,8 @@ my_fgets(char *buf, int max_size, FILE * fp) {
 	cont = 0;
 	val = fgets(buf, max_size, fp);
 	file_line_number++;
-	if (val == NULL)
-		return (val);
+	if (val == NULL || feof(fp)) /* end of line or end of file */
+		return NULL;
 
 	/* Check that line completely fit into buffer.  (Flags long line   *
 	 * truncation).                                                    */

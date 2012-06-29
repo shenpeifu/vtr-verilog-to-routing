@@ -308,10 +308,6 @@ static void get_sdc_tok(char * buf, int num_lines) {
 		return;
 	}
 
-	if (ptr[0] == '#') { /* line starts with a comment */
-		return; 
-	}
-
 	if (strcmp(ptr, "create_clock") == 0) {
 		/* Syntax: create_clock -period <float> [-waveform {rising_edge falling_edge}] <clock names> */
 
