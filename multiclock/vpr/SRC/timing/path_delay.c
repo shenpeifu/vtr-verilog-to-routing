@@ -1566,7 +1566,7 @@ t_timing_stats * do_timing_analysis(boolean do_lut_input_balancing, boolean is_f
 					tedge = tnode[inode].out_edges;
 					for (iedge = 0; iedge < num_edges && !found; iedge++) { 
 						to_node = tedge[iedge].to_node;
-						if (tnode[to_node].T_req < HUGE_POSITIVE_FLOAT) { /* If T_req = HUGE_POSITIVE_FLOAT... */
+						if (tnode[to_node].T_req < HUGE_POSITIVE_FLOAT) { /* If T_req != HUGE_POSITIVE_FLOAT... */
 							found = TRUE;
 						}
 					}
@@ -1599,9 +1599,10 @@ t_timing_stats * do_timing_analysis(boolean do_lut_input_balancing, boolean is_f
 							max_critical_output_paths = tnode[to_node].num_critical_output_paths;
 						}
 #endif
-						/* Opposite to T_arr, set T_req to the minimum of the required times of all edges fanning out from this node. */
-						tnode[inode].T_req = min(tnode[inode].T_req, tnode[to_node].T_req - tedge[iedge].Tdel);
 					}
+
+					/* Opposite to T_arr, set T_req to the minimum of the required times of all edges fanning out from this node. */
+					tnode[inode].T_req = min(tnode[inode].T_req, tnode[to_node].T_req - tedge[iedge].Tdel);
 				}
 			}
 		}
@@ -1666,7 +1667,7 @@ t_timing_stats * do_timing_analysis(boolean do_lut_input_balancing, boolean is_f
 		}
 	}
 	if(!found) {
-		printf("\nWarning: No flipflop-to-flipflop paths with valid timing constraints were found on this traversal.  "  
+		printf("\nWarning: No flipflop-to-flipflop paths with valid timing constraints were found on this traversal.\n"  
 			"Consider changing (or creating) the SDC file associated with the design.\n");
 	}
 #endif
