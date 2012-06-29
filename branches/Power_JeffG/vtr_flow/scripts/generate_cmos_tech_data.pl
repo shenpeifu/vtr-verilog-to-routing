@@ -341,7 +341,9 @@ sub get_trans_properties
 		
 	if ($type eq "nmos")
 	{	
-		$spice_string = $spice_string . ".measure tran leakage_current avg I(Vdrain) FROM = t1s TO = t2e\n";
+		$spice_string = $spice_string . ".measure tran leakage_current1 avg I(Vsource) FROM = t1s TO = t1e\n";
+		$spice_string = $spice_string . ".measure tran leakage_current2 avg I(Vdrain) FROM = t2s TO = t2e\n";
+		$spice_string = $spice_string . ".measure tran leakage_current Param=('(leakage_current1 + leakage_current2)/2')\n";
 		$spice_string = $spice_string . ".measure tran c_gate_cmos avg cap(gate) FROM = t4s TO = t4e\n";
 		$spice_string = $spice_string . ".measure tran c_drain_cmos avg cap(drain) FROM = t2s TO = t2e\n";
 		$spice_string = $spice_string . ".measure tran c_gate_pass avg cap(gate) FROM = t4s TO = t5e\n";		
@@ -353,7 +355,9 @@ sub get_trans_properties
 		$spice_string = $spice_string . ".measure tran c_source_pass2 avg cap(drain) FROM = t5s TO = t5e\n";
 		$spice_string = $spice_string . ".measure tran c_source_pass Param=('(c_drain_pass1 + c_drain_pass2 + c_drain_pass3)/3')\n";
 	} else {		
-		$spice_string = $spice_string . ".measure tran leakage_current avg I(Vdrain) FROM = t3s TO = t4e\n";
+		$spice_string = $spice_string . ".measure tran leakage_current1 avg I(Vsource) FROM = t3s TO = t3e\n";
+		$spice_string = $spice_string . ".measure tran leakage_current2 avg I(Vdrain) FROM = t4s TO = t4e\n";
+		$spice_string = $spice_string . ".measure tran leakage_current Param=('(leakage_current1 + leakage_current2)/2')\n";
 		$spice_string = $spice_string . ".measure tran c_gate_cmos avg cap(gate) FROM = t3s TO = t3e\n";
 		$spice_string = $spice_string . ".measure tran c_drain_cmos avg cap(drain) FROM = t1s TO = t1e\n";
 		$spice_string = $spice_string . ".measure tran c_gate_pass avg cap(gate) FROM = t2s TO = t5e\n";		
