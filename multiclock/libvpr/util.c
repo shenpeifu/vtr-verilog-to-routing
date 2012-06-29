@@ -416,7 +416,11 @@ my_fgets(char *buf, int max_size, FILE * fp) {
 	 * truncation).                                                    */
 
 	for (i = 0; i < max_size; i++) {
-		if (buf[i] == '\n'|| buf[i] == '\r')
+		if (buf[i] == '\r') { /* part of Windows newline \r\n */
+			buf[i] = '\n';
+			break;
+		}
+		if (buf[i] == '\n')
 			break;
 		if (buf[i] == '\0') {
 			printf("Error on line %d -- line is too long for input buffer.\n",
