@@ -316,14 +316,13 @@ sub get_trans_properties
 	
 	if ($type eq "nmos")
 	{	
-		$spice_string = $spice_string . "Vgate gate 0 PWL(0 Vol '1*simt/6' Vol '1*simt/6+rise' 0 '3*simt/6' 0 '3*simt/6+rise' Vol '4*simt/6' Vol '4*simt/6+rise' 0)\n";
-		$spice_string = $spice_string . "Vsource source 0 PWL(0 0 '3*simt/6' 0 '3*simt/6+rise' Vol)\n";
-		$spice_string = $spice_string . "Vdrain drain 0 PWL(0 0 '1*simt/6' 0 '1*simt/6+rise' Vol '2*simt/6' Vol '2*simt/6+rise' 0 '3*simt/6' 0 '3*simt/6+rise' Vol '5*simt/6' Vol '5*simt/6+rise' 0)\n";
-
+		$spice_string = $spice_string . "Vgate gate 0 PWL(0 0 '4*simt/6' 0 '4*simt/6+rise' Vol)\n";
+		$spice_string = $spice_string . "Vdrain drain 0 PWL(0 0 '2*simt/6' 0 '2*simt/6+rise' Vol '4*simt/6' Vol '4*simt/6+rise' 0 '5*simt/6' 0 '5*simt/6+rise' Vol)\n";
+		$spice_string = $spice_string . "Vsource source 0 PWL(0 0 '1*simt/6' 0 '1*simt/6+rise' Vol '2*simt/6' Vol '2*simt/6+rise' 0 '3*simt/6' 0 '3*simt/6+rise' Vol '4*simt/6' Vol '4*simt/6+rise' 0 '5*simt/6' 0 '3*simt/6+rise' Vol)\n";
 	} else {		
-		$spice_string = $spice_string . "Vgate gate 0 PWL(0 0 '1*simt/6' 0 '1*simt/6+rise' Vol '3*simt/6' Vol '3*simt/6+rise' 0 '4*simt/6' 0 '4*simt/6+rise' Vol)\n";
-		$spice_string = $spice_string . "Vsource source 0 PWL(0 Vol '3*simt/6' Vol '3*simt/6+rise' 0)\n";
-		$spice_string = $spice_string . "Vdrain drain 0 PWL(0 Vol '1*simt/6' Vol '1*simt/6+rise' 0 '2*simt/6' 0 '2*simt/6+rise' Vol '3*simt/6' Vol '3*simt/6+rise' 0 '5*simt/6' 0 '5*simt/6+rise' Vol)\n";
+		$spice_string = $spice_string . "Vgate gate 0 PWL(0 0 '2*simt/6' 0 '2*simt/6+rise' Vol)\n";
+		$spice_string = $spice_string . "Vdrain drain 0 PWL(0 0 '1*simt/6' 0 '1*simt/6+rise' Vol '2*simt/6' Vol '2*simt/6+rise' 0 '4*simt/6' 0 '4*simt/6+rise' Vol)\n";
+		$spice_string = $spice_string . "Vsource source 0 PWL(0 0 '1*simt/6' 0 '1*simt/6+rise' Vol '2*simt/6' Vol '2*simt/6+rise' 0 '3*simt/6' 0 '3*simt/6+rise' Vol '4*simt/6' Vol '4*simt/6+rise' 0 '5*simt/6' 0 '3*simt/6+rise' Vol)\n";
 	}	
 	
 	# Transistor
@@ -339,32 +338,32 @@ sub get_trans_properties
 	$spice_string = $spice_string . ".print tran cap(gate)\n";
 	$spice_string = $spice_string . ".print tran cap(drain)\n";
 	$spice_string = $spice_string . ".print tran cap(source)\n";
-	
-	$spice_string = $spice_string . ".measure tran leakage_current avg I(Vdrain) FROM = t1s TO = t1e\n";
-	
+		
 	if ($type eq "nmos")
 	{	
-		$spice_string = $spice_string . ".measure tran c_gate_cmos avg cap(gate) FROM = t0s TO = t0e\n";
-		$spice_string = $spice_string . ".measure tran c_drain_cmos avg cap(drain) FROM = t1s TO = t1e\n";
-		$spice_string = $spice_string . ".measure tran c_gate_pass1 avg cap(gate) FROM = t0s TO = t0e\n";
-		$spice_string = $spice_string . ".measure tran c_gate_pass2 avg cap(gate) FROM = t3s TO = t3e\n";
-		$spice_string = $spice_string . ".measure tran c_gate_pass Param=('(c_gate_pass1 + c_gate_pass2)/2')\n";
-		$spice_string = $spice_string . ".measure tran c_source_pass avg cap(source) FROM = t3s TO = t5e\n";
-		$spice_string = $spice_string . ".measure tran c_drain_pass1 avg cap(drain) FROM = t1s TO = t1e\n";
-		$spice_string = $spice_string . ".measure tran c_drain_pass2 avg cap(drain) FROM = t3s TO = t4e\n";
-		$spice_string = $spice_string . ".measure tran c_drain_pass Param=('(c_drain_pass1 + 2*c_drain_pass2)/3')\n";
-
+		$spice_string = $spice_string . ".measure tran leakage_current avg I(Vdrain) FROM = t1s TO = t2e\n";
+		$spice_string = $spice_string . ".measure tran c_gate_cmos avg cap(gate) FROM = t4s TO = t4e\n";
+		$spice_string = $spice_string . ".measure tran c_drain_cmos avg cap(drain) FROM = t2s TO = t2e\n";
+		$spice_string = $spice_string . ".measure tran c_gate_pass avg cap(gate) FROM = t4s TO = t5e\n";		
+		$spice_string = $spice_string . ".measure tran c_drain_pass1 avg cap(drain) FROM = t2s TO = t3e\n";
+		$spice_string = $spice_string . ".measure tran c_drain_pass2 avg cap(drain) FROM = t5s TO = t5e\n";
+		$spice_string = $spice_string . ".measure tran c_drain_pass Param=('(2*c_drain_pass1 + c_drain_pass2)/3')\n";
+		$spice_string = $spice_string . ".measure tran c_source_pass1 avg cap(drain) FROM = t1s TO = t1e\n";
+		$spice_string = $spice_string . ".measure tran c_source_pass2 avg cap(drain) FROM = t3s TO = t3e\n";
+		$spice_string = $spice_string . ".measure tran c_source_pass2 avg cap(drain) FROM = t5s TO = t5e\n";
+		$spice_string = $spice_string . ".measure tran c_source_pass Param=('(c_drain_pass1 + c_drain_pass2 + c_drain_pass3)/3')\n";
 	} else {		
-		$spice_string = $spice_string . ".measure tran c_gate_cmos avg cap(gate) FROM = t1s TO = t1e\n";
-		$spice_string = $spice_string . ".measure tran c_drain_cmos avg cap(drain) FROM = t0s TO = t0e\n";
-		$spice_string = $spice_string . ".measure tran c_gate_pass1 avg cap(gate) FROM = t1s TO = t2e\n";
-		$spice_string = $spice_string . ".measure tran c_gate_pass2 avg cap(gate) FROM = t4s TO = t5e\n";
-		$spice_string = $spice_string . ".measure tran c_gate_pass Param=('(c_gate_pass1 + c_gate_pass2)/2')\n";
-		$spice_string = $spice_string . ".measure tran c_source_pass avg cap(source) FROM = t0s TO = t2e\n";
-		$spice_string = $spice_string . ".measure tran c_drain_pass1 avg cap(drain) FROM = t0s TO = t1e\n";
-		$spice_string = $spice_string . ".measure tran c_drain_pass2 avg cap(drain) FROM = t2s TO = t2e\n";
-		$spice_string = $spice_string . ".measure tran c_drain_pass3 avg cap(drain) FROM = t5s TO = t5e\n";
-		$spice_string = $spice_string . ".measure tran c_drain_pass Param=('(c_drain_pass1 + c_drain_pass2 + c_drain_pass3)/3')\n";
+		$spice_string = $spice_string . ".measure tran leakage_current avg I(Vdrain) FROM = t3s TO = t4e\n";
+		$spice_string = $spice_string . ".measure tran c_gate_cmos avg cap(gate) FROM = t3s TO = t3e\n";
+		$spice_string = $spice_string . ".measure tran c_drain_cmos avg cap(drain) FROM = t1s TO = t1e\n";
+		$spice_string = $spice_string . ".measure tran c_gate_pass avg cap(gate) FROM = t2s TO = t5e\n";		
+		$spice_string = $spice_string . ".measure tran c_drain_pass1 avg cap(drain) FROM = t1s TO = t1e\n";
+		$spice_string = $spice_string . ".measure tran c_drain_pass2 avg cap(drain) FROM = t4s TO = t5e\n";
+		$spice_string = $spice_string . ".measure tran c_drain_pass Param=('(c_drain_pass1 + 2*c_drain_pass2)/3')\n";
+		$spice_string = $spice_string . ".measure tran c_source_pass1 avg cap(drain) FROM = t1s TO = t1e\n";
+		$spice_string = $spice_string . ".measure tran c_source_pass2 avg cap(drain) FROM = t3s TO = t3e\n";
+		$spice_string = $spice_string . ".measure tran c_source_pass2 avg cap(drain) FROM = t5s TO = t5e\n";
+		$spice_string = $spice_string . ".measure tran c_source_pass Param=('(c_drain_pass1 + c_drain_pass2 + c_drain_pass3)/3')\n";
 	}
 	
 	#$spice_string = $spice_string . ".measure tran c_gate_cmos avg cap(gate) FROM = cmosstart TO = cmosend\n";
