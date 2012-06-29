@@ -207,7 +207,7 @@ boolean try_timing_driven_route(struct s_router_opts router_opts,
 #endif
 		if (num_constrained_clocks == 1) {
 			printf("T_crit: %g\n", timing_stats->critical_path_delay[0][0]);
-		} else {
+		} else if (num_constrained_clocks > 1) {
 			printf("\nMinimum possible clock period to meet each constraint (including skew effects):\n");
 			for (i = 0; i < num_constrained_clocks; i++) {
 				for (j = 0; j < num_constrained_clocks; j++) {

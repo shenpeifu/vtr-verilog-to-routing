@@ -464,13 +464,14 @@ static void get_timing_stats(t_timing_stats * timing_stats) {
 	of the edge with this worst slack).*/
 
 	if (num_constrained_clocks == 1) {
-		printf("\nCritical path delay/f_max (including skew effects): %g ns (%g MHz)", timing_stats->critical_path_delay[0][0]*1e9, 1e-9/timing_stats->critical_path_delay[0][0]);
+		printf("\nCritical Path: %g ns", timing_stats->critical_path_delay[0][0] * 1e9);
+		printf("\nf_max: %g MHz", 1e-9 / timing_stats->critical_path_delay[0][0]);
 		if (timing_stats->least_slack_in_domain[0] < HUGE_POSITIVE_FLOAT - 1) {
 			printf("\nLeast slack in design: %g ns\n\n", timing_stats->least_slack_in_domain[0] * 1e9);
 		} else {
 			printf("\nLeast slack in design: --\n\n");
 		}
-	} else {
+	} else if (num_constrained_clocks > 1) {
 		int source_clock_domain, sink_clock_domain, clock_domain, fanout, total_fanout = 0, num_netlist_clocks_with_intra_domain_paths = 0;
 		float geomean_f_max = 1, fanout_weighted_geomean_f_max = 1;
 

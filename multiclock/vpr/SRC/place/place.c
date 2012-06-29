@@ -768,7 +768,7 @@ void try_place(struct s_placer_opts placer_opts,
 		}
 		if (num_constrained_clocks == 1) {
 			printf("Placement estimated critical path delay: %g\n\n", timing_stats->critical_path_delay[0][0]);
-		} else {
+		} else if (num_constrained_clocks > 1) {
 			printf("Placement estimated minimum possible clock period to meet each constraint (including skew effects):\n");
 			for (i = 0; i < num_constrained_clocks; i++) {
 				for (j = 0; j < num_constrained_clocks; j++) {

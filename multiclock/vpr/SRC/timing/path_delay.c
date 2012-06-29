@@ -1276,7 +1276,7 @@ char *tnode_type_names[] = { "INPAD_SOURCE", "INPAD_OPIN", "OUTPAD_IPIN",
 	for (i = 0; i < num_nets; i++)
 		fprintf(fp, "%4d\t%6d\n", i, net_to_driver_tnode[i]);
 
-	if (num_constrained_clocks == 1) {
+	if (num_constrained_clocks > 1) {
 		/* Arrival and required times will be meaningless for multiclock designs,
 		since the T_arr and T_req currently on the graph will only correspond to the most recent traversal. */
 		fprintf(fp, "\n\nNode #\t\tT_arr\t\tT_req\n\n");
