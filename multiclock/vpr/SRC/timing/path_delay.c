@@ -1928,7 +1928,9 @@ void do_constant_net_delay_timing_analysis(t_timing_inf timing_inf,
 	timing_stats = do_timing_analysis(FALSE, TRUE);
 
 	if (GetEchoOption()) {
-		/*print_critical_path("critical_path.echo");*/
+		if (num_constrained_clocks == 1) {
+			print_critical_path("critical_path.echo");
+		}
 		print_timing_graph("timing_graph.echo");
 		print_net_slack("net_slack.echo");
 		print_net_slack_ratio("net_slack_ratio.echo");

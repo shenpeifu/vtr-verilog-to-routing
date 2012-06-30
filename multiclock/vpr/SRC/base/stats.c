@@ -96,7 +96,9 @@ void routing_stats(boolean full_stats, enum e_route_type route_type,
 				print_timing_graph("timing_graph.echo");
 				print_net_slack("net_slack.echo");
 				print_net_slack_ratio("net_slack_ratio.echo");
-				/*print_critical_path("critical_path.echo");*/
+				if (num_constrained_clocks == 1) {
+					print_critical_path("critical_path.echo");
+				}
 			}
 
 			get_timing_stats(timing_stats);

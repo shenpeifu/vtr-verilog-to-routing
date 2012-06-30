@@ -9,6 +9,7 @@
 #include "read_blif.h"
 #include "path_delay.h"
 #include "ReadOptions.h"
+#include "regex.h"
 
 /****************** Types local to this module **************************/
 
@@ -55,15 +56,14 @@ t_sdc_override_constraint * override_constraints; /*  [0..num_override_constrain
 
 static void alloc_and_load_netlist_clocks_and_ios(void);
 static void count_netlist_clocks_as_constrained_clocks(void);
-static void get_sdc_tok(char * buf, int num_lines);
+static void get_sdc_tok(char * buf);
 static boolean check_if_number(char * ptr);
-static int find_netlist_clock(char * ptr);
 static int find_constrained_clock(char * ptr);
-static int find_netlist_io(char * ptr);
 static float calculate_constraint(t_sdc_clock source_domain, t_sdc_clock sink_domain);
 static int find_override_constraint(int source_clock_domain, int sink_clock_domain);
 static void print_timing_constraint_info(char *fname);
 static void print_spaces(FILE * fp, int num_spaces);
+static boolean regex_match (char *string, char *pattern);
 
 /********************* Subroutine definitions *******************************/
 
@@ -130,7 +130,7 @@ void read_sdc(char * sdc_file) {
 
 	/* Parse the file line-by-line. */
 	while (my_fgets(buf, BUFSIZE, sdc) != NULL) { 
-		get_sdc_tok(buf, file_line_number);
+		get_sdc_tok(buf);
 	}
 	
 	fclose(sdc);
@@ -288,16 +288,17 @@ static void count_netlist_clocks_as_constrained_clocks(void) {
 	}
 }
 
-static void get_sdc_tok(char * buf, int num_lines) {
-/* Figures out which, if any, token is at the start of this line and takes the appropriate action. */
+static void get_sdc_tok(char * buf) {
+/* Figures out which tokens are on this line and takes the appropriate actions. */
 
 #define SDC_TOKENS " \t\n{}[]" 
 	/* We're using so little of the SDC syntax that we can ignore braces */
 
 	char * ptr, * from, * to, * clock_name;
 	float clock_period, rising_edge, falling_edge, max_delay;
-	int source_clock_domain, sink_clock_domain, current_group_number = 0, num_exclusive_clocks = 0, num_multicycles;
+	int source_clock_domain, sink_clock_domain, iclock, iio, current_group_number = 0, num_exclusive_clocks = 0, num_multicycles;
 	t_sdc_exclusive_group * exclusive_groups = NULL;
+	boolean found;
 
 	/* my_strtok splits the string into tokens - little character arrays separated by the SDC_TOKENS defined above.					   *
 	 * Throughout this code, ptr refers to the tokens we fetch, one at a time.  The token changes at each call of my_strtok.		   *
@@ -315,14 +316,14 @@ static void get_sdc_tok(char * buf, int num_lines) {
 		
 		ptr = my_strtok(NULL, SDC_TOKENS, sdc, buf);
 		if(strcmp(ptr, "-period") != 0) {
-			fprintf(stderr, "Create_clock must be followed by '-period' on line %d of SDC file.\n", num_lines);
+			fprintf(stderr, "Create_clock must be followed by '-period' on line %d of SDC file.\n", file_line_number);
 			exit(1);
 		}
 
 		ptr = my_strtok(NULL, SDC_TOKENS, sdc, buf);
 		/* Check if the token following -period is actually a number. */
 		if(!check_if_number(ptr)) {
-			fprintf(stderr, "Token following '-period' is not a number on line %d of SDC file.\n", num_lines);
+			fprintf(stderr, "Token following '-period' is not a number on line %d of SDC file.\n", file_line_number);
 			exit(1);
 		}
 		
@@ -330,7 +331,7 @@ static void get_sdc_tok(char * buf, int num_lines) {
 
 		ptr = my_strtok(NULL, SDC_TOKENS, sdc, buf);
 		if(!ptr) {
-			fprintf(stderr, "Clock net(s) not specified at end of line %d of SDC file.\n", num_lines);
+			fprintf(stderr, "Clock net(s) not specified at end of line %d of SDC file.\n", file_line_number);
 			exit(1);
 		}
 		
@@ -338,19 +339,19 @@ static void get_sdc_tok(char * buf, int num_lines) {
 			/* Get the first float, which is the rising edge, and the second, which is the falling edge. */
 			ptr = my_strtok(NULL, SDC_TOKENS, sdc, buf);
 			if(!check_if_number(ptr)) {
-				fprintf(stderr, "First token following '-waveform' is not a number on line %d of SDC file.\n", num_lines);
+				fprintf(stderr, "First token following '-waveform' is not a number on line %d of SDC file.\n", file_line_number);
 				exit(1);
 			}
 			rising_edge = (float) strtod(ptr, NULL);
 			ptr = my_strtok(NULL, SDC_TOKENS, sdc, buf);
 			if(!check_if_number(ptr)) {
-				fprintf(stderr, "Second token following '-waveform' is not a number on line %d of SDC file.\n", num_lines);
+				fprintf(stderr, "Second token following '-waveform' is not a number on line %d of SDC file.\n", file_line_number);
 				exit(1);
 			}
 			falling_edge = (float) strtod(ptr, NULL);
 			/* Check that the falling edge is one half period away from the rising edge, excluding rounding error. */
 			if(abs(rising_edge - falling_edge) - clock_period/2.0 > EQUAL_DEF) {
-				fprintf(stderr, "Clock does not have 50%% duty cycle on line %d of SDC file.\n", num_lines);
+				fprintf(stderr, "Clock does not have 50%% duty cycle on line %d of SDC file.\n", file_line_number);
 				exit(1);
 			}
 			ptr = my_strtok(NULL, SDC_TOKENS, sdc, buf); /* We need this extra one to advance the ptr to the right spot. */
@@ -388,14 +389,14 @@ static void get_sdc_tok(char * buf, int num_lines) {
 			if (!ptr) {
 				return;
 			}
-			fprintf(stderr, "More than one virtual clock name is specified after -name on line %d of SDC file.\n", num_lines);
+			fprintf(stderr, "More than one virtual clock name is specified after -name on line %d of SDC file.\n", file_line_number);
 			exit(1);
 
 		} else {
-			/* Parse through to the end of the line.  All that should be left on this line are a bunch of 
-			 * clock nets to be associated with this clock period.  An array sdc_clocks will
-			 * store the period and offset of each clock at the same index which that clock has in netlist_clocks.
-			 * After everything has been parsed, we take the information from this array to calculate the actual timing constraints
+			/* Parse through to the end of the line.  All that should be left on this line are one or more
+			 * regular expressions denoting netlist clocks to be associated with this clock period.  An array sdc_clocks will
+			 * store the period and offset of each clock at the same index which that clock has in netlist_clocks.  Later,
+			 * after everything has been parsed, we take the information from this array to calculate the actual timing constraints
 			 * which these periods and offsets imply, and put them in the matrix timing_constraint. */
 
 			for(;;) {
@@ -403,27 +404,36 @@ static void get_sdc_tok(char * buf, int num_lines) {
 					return; 
 				}
 
-				if (find_netlist_clock(ptr) == -1) {
-					fprintf(stderr, "Clock name %s does not correspond to a net on line %d of SDC file.\n" 
-						"If you'd like to create a virtual clock, use the -name keyword.\n", ptr, num_lines);
+				found = FALSE;
+
+				for (iclock = 0; iclock < num_netlist_clocks; iclock++) {
+					/* See if the regular expression stored in ptr is legal and matches at least one clock net. 
+					If it is not legal, it will fail during regex_match.  We check for a match using boolean found. */
+					if (regex_match(netlist_clocks[iclock], ptr)) {
+						/* We've found a new clock! */
+						num_constrained_clocks++;
+						found = TRUE;
+
+						/* Store the clock's name, period and offset in the local array sdc_clocks. */
+						sdc_clocks = (t_sdc_clock *) my_realloc(sdc_clocks, num_constrained_clocks * sizeof(t_sdc_clock));
+						sdc_clocks[num_constrained_clocks - 1].name = my_strdup(netlist_clocks[iclock]);
+						sdc_clocks[num_constrained_clocks - 1].period = clock_period;
+						sdc_clocks[num_constrained_clocks - 1].offset = rising_edge; 
+
+						/* Also store the clock's name, and the fact that it is a netlist clock, in constrained_clocks. */
+						constrained_clocks = (t_clock *) my_realloc (constrained_clocks, num_constrained_clocks * sizeof(t_clock));
+						constrained_clocks[num_constrained_clocks - 1].name = my_strdup(netlist_clocks[iclock]);
+						constrained_clocks[num_constrained_clocks - 1].is_netlist_clock = TRUE;
+						/* Fanout will be filled out once the timing graph has been constructed. */
+					}
+				}
+
+				if (!found) {
+					fprintf(stderr, "Clock name or regular expression %s on line %d of SDC file does not correspond to any nets.\n" 
+						"If you'd like to create a virtual clock, use the -name keyword.\n", ptr, file_line_number);
 					exit(1);
 				}
 
-				/* We've found a new clock! */
-				num_constrained_clocks++;
-
-				/* Store the clock's name, period and offset in the local array sdc_clocks. */
-				sdc_clocks = (t_sdc_clock *) my_realloc(sdc_clocks, num_constrained_clocks * sizeof(t_sdc_clock));
-				sdc_clocks[num_constrained_clocks - 1].name = my_strdup(ptr);
-				sdc_clocks[num_constrained_clocks - 1].period = clock_period;
-				sdc_clocks[num_constrained_clocks - 1].offset = rising_edge; 
-
-				/* Also store the clock's name, and the fact that it is a netlist clock, in constrained_clocks. */
-				constrained_clocks = (t_clock *) my_realloc (constrained_clocks, num_constrained_clocks * sizeof(t_clock));
-				constrained_clocks[num_constrained_clocks - 1].name = my_strdup(ptr);
-				constrained_clocks[num_constrained_clocks - 1].is_netlist_clock = TRUE;
-				/* Fanout will be filled out once the timing graph has been constructed. */
-				
 				/* Advance to the next token (or the end of the line). */
 				ptr = my_strtok(NULL, SDC_TOKENS, sdc, buf);
 			}	
@@ -433,7 +443,7 @@ static void get_sdc_tok(char * buf, int num_lines) {
 
 		ptr = my_strtok(NULL, SDC_TOKENS, sdc, buf);
 		if(strcmp(ptr, "-exclusive") != 0) {
-			fprintf(stderr, "Set_clock_groups must be followed by '-exclusive' on line %d of SDC file.\n", num_lines);
+			fprintf(stderr, "Set_clock_groups must be followed by '-exclusive' on line %d of SDC file.\n", file_line_number);
 			exit(1);
 		}
 		
@@ -482,7 +492,7 @@ static void get_sdc_tok(char * buf, int num_lines) {
 
 		ptr = my_strtok(NULL, SDC_TOKENS, sdc, buf);
 		if(strcmp(ptr, "-from") != 0) {
-			fprintf(stderr, "Set_false_path must be followed by '-from <clock_name>' on line %d of SDC file.\n", num_lines);
+			fprintf(stderr, "Set_false_path must be followed by '-from <clock_name>' on line %d of SDC file.\n", file_line_number);
 			exit(1);
 		}
 
@@ -491,7 +501,7 @@ static void get_sdc_tok(char * buf, int num_lines) {
 
 		ptr = my_strtok(NULL, SDC_TOKENS, sdc, buf);
 		if(strcmp(ptr, "-to") != 0) {
-			fprintf(stderr, "Set_false_path must be followed by '-from <clock_name> -to <clock_name> on line %d of SDC file.\n", num_lines);
+			fprintf(stderr, "Set_false_path must be followed by '-from <clock_name> -to <clock_name> on line %d of SDC file.\n", file_line_number);
 			exit(1);
 		}
 
@@ -516,14 +526,14 @@ static void get_sdc_tok(char * buf, int num_lines) {
 		ptr = my_strtok(NULL, SDC_TOKENS, sdc, buf);
 		/* check if the token following set_max_delay is actually a number*/
 		if(!check_if_number(ptr)) {
-			fprintf(stderr, "Token following 'set_max_delay' is not a number on line %d of SDC file.\n", num_lines);
+			fprintf(stderr, "Token following 'set_max_delay' is not a number on line %d of SDC file.\n", file_line_number);
 			exit(1);
 		}
 		max_delay = (float) strtod(ptr, NULL);
 
 		ptr = my_strtok(NULL, SDC_TOKENS, sdc, buf);
 		if(strcmp(ptr, "-from") != 0) {
-			fprintf(stderr, "Set_false_path must be followed by '-from <clock_name>' on line %d of SDC file.\n", num_lines);
+			fprintf(stderr, "Set_false_path must be followed by '-from <clock_name>' on line %d of SDC file.\n", file_line_number);
 			exit(1);
 		}
 
@@ -532,7 +542,7 @@ static void get_sdc_tok(char * buf, int num_lines) {
 
 		ptr = my_strtok(NULL, SDC_TOKENS, sdc, buf);
 		if(strcmp(ptr, "-to") != 0) {
-			fprintf(stderr, "Set_false_path must be followed by '-from <clock_name> -to <clock_name> on line %d of SDC file.\n", num_lines);
+			fprintf(stderr, "Set_false_path must be followed by '-from <clock_name> -to <clock_name> on line %d of SDC file.\n", file_line_number);
 			exit(1);
 		}
 
@@ -558,13 +568,13 @@ static void get_sdc_tok(char * buf, int num_lines) {
 		ptr = my_strtok(NULL, SDC_TOKENS, sdc, buf);
 		/* check if the token following set_max_delay is actually a number*/
 		if(strcmp(ptr, "-setup") !=0) {
-			fprintf(stderr, "Set_multicycle_path must be followed by '-setup' on line %d of SDC file.\n", num_lines);
+			fprintf(stderr, "Set_multicycle_path must be followed by '-setup' on line %d of SDC file.\n", file_line_number);
 			exit(1);
 		}
 
 		ptr = my_strtok(NULL, SDC_TOKENS, sdc, buf);
 		if(strcmp(ptr, "-from") != 0) {
-			fprintf(stderr, "Set_multicycle_path must be followed by '-from <clock_name>' on line %d of SDC file.\n", num_lines);
+			fprintf(stderr, "Set_multicycle_path must be followed by '-from <clock_name>' on line %d of SDC file.\n", file_line_number);
 			exit(1);
 		}
 
@@ -573,7 +583,7 @@ static void get_sdc_tok(char * buf, int num_lines) {
 
 		ptr = my_strtok(NULL, SDC_TOKENS, sdc, buf);
 		if(strcmp(ptr, "-to") != 0) {
-			fprintf(stderr, "Set_multicycle_path must be followed by '-from <clock_name> -to <clock_name> on line %d of SDC file.\n", num_lines);
+			fprintf(stderr, "Set_multicycle_path must be followed by '-from <clock_name> -to <clock_name> on line %d of SDC file.\n", file_line_number);
 			exit(1);
 		}
 
@@ -583,7 +593,7 @@ static void get_sdc_tok(char * buf, int num_lines) {
 		ptr = my_strtok(NULL, SDC_TOKENS, sdc, buf);
 		/* check if the token following set_max_delay is actually a number*/
 		if(!check_if_number(ptr)) {
-			fprintf(stderr, "Token following '-to <clock_name>' is not a number on line %d of SDC file.\n", num_lines);
+			fprintf(stderr, "Token following '-to <clock_name>' is not a number on line %d of SDC file.\n", file_line_number);
 			exit(1);
 		}
 		num_multicycles = (float) strtod(ptr, NULL);
@@ -605,7 +615,7 @@ static void get_sdc_tok(char * buf, int num_lines) {
 
 		ptr = my_strtok(NULL, SDC_TOKENS, sdc, buf);
 		if(strcmp(ptr, "-clock") != 0) {
-			fprintf(stderr, "Set_input_delay must be followed by '-clock <virtual or netlist clock name>' on line %d of SDC file.\n", num_lines);
+			fprintf(stderr, "Set_input_delay must be followed by '-clock <virtual or netlist clock name>' on line %d of SDC file.\n", file_line_number);
 			exit(1);
 		}
 
@@ -614,42 +624,57 @@ static void get_sdc_tok(char * buf, int num_lines) {
 	
 		ptr = my_strtok(NULL, SDC_TOKENS, sdc, buf);
 		if(strcmp(ptr, "-max") != 0) {
-			fprintf(stderr, "Set_input_delay -clock <virtual or netlist clock name> must be followed by '-max <maximum_input_delay>' on line %d of SDC file.\n", num_lines);
+			fprintf(stderr, "Set_input_delay -clock <virtual or netlist clock name> must be followed by '-max <maximum_input_delay>' on line %d of SDC file.\n", file_line_number);
 			exit(1);
 		}
 
 		ptr = my_strtok(NULL, SDC_TOKENS, sdc, buf);
 		/* check if the token following -max is actually a number*/
 		if(!check_if_number(ptr)) {
-			fprintf(stderr, "Token following '-max' is not a number on line %d of SDC file.\n", num_lines);
+			fprintf(stderr, "Token following '-max' is not a number on line %d of SDC file.\n", file_line_number);
 			exit(1);
 		}
 		max_delay = (float) strtod(ptr, NULL);
 
 		ptr = my_strtok(NULL, SDC_TOKENS, sdc, buf);
 		if(strcmp(ptr, "get_ports") != 0) {
-			fprintf(stderr, "Set_input_delay requires a [get_ports {...}] command following '-max <max_input_delay>' on line %d of SDC file.\n", num_lines);
+			fprintf(stderr, "Set_input_delay requires a [get_ports {...}] command following '-max <max_input_delay>' on line %d of SDC file.\n", file_line_number);
 			exit(1);
 		}
 
-		/* Parse through to the end of the line.  Add each name we find to the list of constrained I/Os
-			and give each entry the virtual clock name and max_delay we've just parsed.  We have no way of 
-			error-checking whether these tokens correspond to actual I/O ports until later. */
+		/* Parse through to the end of the line.  Add each regular expression match we find to the list of 
+			constrained I/Os and give each entry the virtual clock name and max_delay we've just parsed.  
+			We have no way of error-checking whether these tokens correspond to actual I/O ports until later. */
 		
 		for(;;) {
 			ptr = my_strtok(NULL, SDC_TOKENS, sdc, buf);
 			if(!ptr) { /* end of line */
 				return; 
 			}
-			if (find_netlist_io(ptr) == -1) {
-				fprintf(stderr, "I/O name %s does not correspond to a port on line %d of SDC file.\n", ptr, num_lines);
+
+			found = FALSE;
+
+			for (iio = 0; iio < num_netlist_ios; iio++) {
+				/* See if the regular expression stored in ptr is legal and matches at least one I/O port. 
+				If it is not legal, it will fail during regex_match.  We check for a match using boolean found. */
+				if (regex_match(netlist_ios[iio], ptr)) {
+					/* We've found a new I/O! */
+					num_constrained_ios++;
+					found = TRUE;
+
+					/* Fill in I/O information in the permanent array constrained_ios. */
+					constrained_ios = (t_io *) my_realloc (constrained_ios, num_constrained_ios * sizeof(t_io));
+					constrained_ios[num_constrained_ios - 1].name = my_strdup(ptr);
+					constrained_ios[num_constrained_ios - 1].virtual_clock_name = my_strdup(clock_name);
+					constrained_ios[num_constrained_ios - 1].delay = max_delay;
+				}
+			}
+
+			if (!found) {
+				fprintf(stderr, "I/O name or regular expression %s on" 
+					"line %d of SDC file does not correspond to any nets.\n", ptr, file_line_number);
 				exit(1);
 			}
-			num_constrained_ios++;
-			constrained_ios = (t_io *) my_realloc (constrained_ios, num_constrained_ios * sizeof(t_io));
-			constrained_ios[num_constrained_ios - 1].name = my_strdup(ptr);
-			constrained_ios[num_constrained_ios - 1].virtual_clock_name = my_strdup(clock_name);
-			constrained_ios[num_constrained_ios - 1].delay = max_delay;
 		}
 
 	} else if (strcmp(ptr, "set_output_delay") == 0) {
@@ -659,55 +684,71 @@ static void get_sdc_tok(char * buf, int num_lines) {
 
 		ptr = my_strtok(NULL, SDC_TOKENS, sdc, buf);
 		if(strcmp(ptr, "-clock") != 0) {
-			fprintf(stderr, "Set_output_delay must be followed by '-clock <virtual_clock_name>' on line %d of SDC file.\n", num_lines);
+			fprintf(stderr, "Set_output_delay must be followed by '-clock <virtual_clock_name>' on line %d of SDC file.\n", file_line_number);
 			exit(1);
 		}
 
 		ptr = my_strtok(NULL, SDC_TOKENS, sdc, buf);
 		clock_name = ptr;
-	
+		/* We have no way of error-checking whether this is an actual virtual clock until we finish parsing. */
+
 		ptr = my_strtok(NULL, SDC_TOKENS, sdc, buf);
 		if(strcmp(ptr, "-max") != 0) {
-			fprintf(stderr, "Set_output_delay -clock <virtual or netlist clock name> must be followed by '-max <maximum_output_delay>' on line %d of SDC file.\n", num_lines);
+			fprintf(stderr, "Set_output_delay -clock <virtual or netlist clock name> must be followed by '-max <maximum_output_delay>' on line %d of SDC file.\n", file_line_number);
 			exit(1);
 		}
 
 		ptr = my_strtok(NULL, SDC_TOKENS, sdc, buf);
 		/* check if the token following -max is actually a number*/
 		if(!check_if_number(ptr)) {
-			fprintf(stderr, "Token following '-max' is not a number on line %d of SDC file.\n", num_lines);
+			fprintf(stderr, "Token following '-max' is not a number on line %d of SDC file.\n", file_line_number);
 			exit(1);
 		}
 		max_delay = (float) strtod(ptr, NULL);
 
 		ptr = my_strtok(NULL, SDC_TOKENS, sdc, buf);
 		if(strcmp(ptr, "get_ports") != 0) {
-			fprintf(stderr, "Set_output_delay requires a [get_ports {...}] command following '-max <max_output_delay>' on line %d of SDC file.\n", num_lines);
+			fprintf(stderr, "Set_output_delay requires a [get_ports {...}] command following '-max <max_output_delay>' on line %d of SDC file.\n", file_line_number);
 			exit(1);
 		}
 
-		/* Parse through to the end of the line.  Add each name we find to the list of constrained I/Os
-			and give each entry the virtual clock name and max_delay we've just parsed.  We have no way of 
-			error-checking whether these tokens correspond to actual I/O ports until later. */
+		/* Parse through to the end of the line.  Add each regular expression match we find to the list of 
+			constrained I/Os and give each entry the virtual clock name and max_delay we've just parsed.  
+			We have no way of error-checking whether these tokens correspond to actual I/O ports until later. */
 		
 		for(;;) {
 			ptr = my_strtok(NULL, SDC_TOKENS, sdc, buf);
 			if(!ptr) { /* end of line */
 				return; 
 			}
-			if (find_netlist_io(ptr) == -1) {
-				fprintf(stderr, "I/O name %s does not correspond to a port on line %d of SDC file.\n", ptr, num_lines);
+
+			found = FALSE;
+
+			for (iio = 0; iio < num_netlist_ios; iio++) {
+				/* See if the regular expression stored in ptr is legal and matches at least one I/O port. 
+				If it is not legal, it will fail during regex_match.  We check for a match using boolean found. */
+				if (regex_match(netlist_ios[iio], ptr)) {
+					/* We've found a new I/O! */
+					num_constrained_ios++;
+					found = TRUE;
+
+					/* Fill in I/O information in the permanent array constrained_ios. */
+					constrained_ios = (t_io *) my_realloc (constrained_ios, num_constrained_ios * sizeof(t_io));
+					constrained_ios[num_constrained_ios - 1].name = my_strdup(ptr);
+					constrained_ios[num_constrained_ios - 1].virtual_clock_name = my_strdup(clock_name);
+					constrained_ios[num_constrained_ios - 1].delay = max_delay;
+				}
+			}
+
+			if (!found) {
+				fprintf(stderr, "I/O name or regular expression %s on" 
+					"line %d of SDC file does not correspond to any nets.\n", ptr, file_line_number);
 				exit(1);
 			}
-			num_constrained_ios++;
-			constrained_ios = (t_io *) my_realloc (constrained_ios, num_constrained_ios * sizeof(t_io));
-			constrained_ios[num_constrained_ios - 1].name = my_strdup(ptr);
-			constrained_ios[num_constrained_ios - 1].virtual_clock_name = my_strdup(clock_name);
-			constrained_ios[num_constrained_ios - 1].delay = max_delay;
 		}
 
 	} else {
-		fprintf(stderr, "Incorrect or unsupported syntax near start of line %d of SDC file.\n", num_lines);
+		fprintf(stderr, "Incorrect or unsupported syntax near start of line %d of SDC file.\n", file_line_number);
 		exit(1);
 	}
 }
@@ -732,36 +773,12 @@ static boolean check_if_number(char * ptr) {
 	return TRUE;
 }
 
-static int find_netlist_clock(char * ptr) {
-/* Given a string ptr, find whether it's the name of a clock in the array netlist_clocks.  *
- * if it is, return the clock's index in netlist_clocks; if it's not, return -1. */
-	int index;
-	for(index=0; index<num_netlist_clocks; index++) {
-		if(strcmp(ptr, netlist_clocks[index]) == 0) {
-			return index;
-		}
-	}
-	return -1;
-}
-
 static int find_constrained_clock(char * ptr) {
 /* Given a string ptr, find whether it's the name of a clock in the array constrained_clocks.  *
  * if it is, return the clock's index in constrained_clocks; if it's not, return -1. */
 	int index;
 	for(index=0; index<num_constrained_clocks; index++) {
 		if(strcmp(ptr, constrained_clocks[index].name) == 0) {
-			return index;
-		}
-	}
-	return -1;
-}
-
-static int find_netlist_io(char * ptr) {
-/* Given a string ptr, find whether it's the name of an I/O in the array netlist_ios.  *
- * if it is, return the I/O's index in netlist_ios; if it's not, return -1. */
-	int index;
-	for(index=0; index<num_netlist_ios; index++) {
-		if(strcmp(ptr, netlist_ios[index]) == 0) {
 			return index;
 		}
 	}
@@ -932,5 +949,51 @@ static void print_spaces(FILE * fp, int num_spaces) {
 	/* Prints num_spaces spaces to file pointed to by fp. */
 	for( ; num_spaces > 0; num_spaces--) {
 		fprintf(fp, " ");
+	}
+}
+
+static boolean regex_match (char *string, char *pattern) {
+	/* Given a string and a regular expression pattern, 
+	return TRUE if there's a match, FALSE if not. Print
+	an error and exit if something is wrong with pattern. */
+
+    int status, rc;
+    regex_t regex; /* The "compiled" regular expression. */
+	char buffer[100];
+	
+	/* Special case for SDC compatibility: if pattern is "*", always match. */
+	if (strcmp(pattern, "*") == 0) {
+		return TRUE;
+	}
+
+	/* Otherwise, compile a regular expression from pattern.  If it's valid, we should get rc = 0. */
+	rc = regcomp(&regex, pattern, 0); 
+    if (rc != 0) { 
+		/* Put the error code rc and the address &regex of the compiled regex into regerror. 
+		Regerror spits out the appropriate error message into a buffer of size 100. */
+        regerror(rc, &regex, buffer, 100);
+		/* Now print the error message stored in buffer. */
+		fprintf(stderr, "Regular expression %s on line %d could not be compiled because of: %s", string, file_line_number, buffer);
+		exit(1);
+    }
+
+	/* Execute the regular expression comparison between the compiled regex and string. */
+    status = regexec(&regex, string, 0, NULL, 0);
+
+	/* Free up regex_t regex. */
+    regfree(&regex);
+
+	/* Based on status, either return TRUE (if a match), FALSE (if not), or an error. */
+    if (status == 0) {
+        return TRUE;      
+    } else if (status == REG_NOMATCH) {
+		return FALSE;
+	} else {
+		/* Put the error code status and the address &regex of the compiled regex into regerror. 
+		Regerror spits out the appropriate error message into a buffer of size 100. */
+        regerror(status, &regex, buffer, 100);
+		/* Now print the error message stored in buffer. */
+		fprintf(stderr, "Regular expression %s on line %d could not be executed because of: %s", string, file_line_number, buffer);
+		exit(1);
 	}
 }
