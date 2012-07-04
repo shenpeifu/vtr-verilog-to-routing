@@ -9,7 +9,7 @@
 #include "read_blif.h"
 #include "path_delay.h"
 #include "ReadOptions.h"
-#include "regex.h"
+#include "slre.h"
 
 /****************** Types local to this module **************************/
 
@@ -63,7 +63,7 @@ static float calculate_constraint(t_sdc_clock source_domain, t_sdc_clock sink_do
 static int find_override_constraint(int source_clock_domain, int sink_clock_domain);
 static void print_timing_constraint_info(char *fname);
 static void print_spaces(FILE * fp, int num_spaces);
-static boolean regex_match (char *string, char *pattern);
+static boolean regex_match (char * string, char * regular_expression);
 
 /********************* Subroutine definitions *******************************/
 
@@ -812,14 +812,19 @@ static float calculate_constraint(t_sdc_clock source_domain, t_sdc_clock sink_do
 	float constraint;
 
 	/* If the source and sink domains are the same, the constraint is just the clock period. */
-	if((source_domain.period == sink_domain.period) && (source_domain.offset == sink_domain.offset)) {
+	if((source_domain.period - sink_domain.period < 1e-15) && (source_domain.offset - sink_domain.offset < 1e-15)) {
 		constraint = source_domain.period; /* or, equivalently, sink_domain.period */
 		return constraint;
 	}
 	
-	/* If we get here, the two constraints are not the same, and so we have to use edge counting. *
-	 * Multiply periods and offsets by 1000 and round down to the nearest integer,				  *
-	 * to avoid messy decimals. */
+	/* If either of the two domains has period 0, the constraint is 0. (This avoids division by zero later.) */
+	if ((source_domain.period == 0) || sink_domain.period == 0) {
+		return 0.;
+	}
+
+	/* If we get here, the two constraints are not the same and both non-zero, and so we have to  *
+	 * use edge counting.  Multiply periods and offsets by 1000 and round down to the nearest 
+	 * integer,	to avoid messy decimals. */
 
 	source_period = (int) source_domain.period * 1000;
 	sink_period = (int) sink_domain.period * 1000;
@@ -952,48 +957,28 @@ static void print_spaces(FILE * fp, int num_spaces) {
 	}
 }
 
-static boolean regex_match (char *string, char *pattern) {
-	/* Given a string and a regular expression pattern, 
-	return TRUE if there's a match, FALSE if not. Print
-	an error and exit if something is wrong with pattern. */
+static boolean regex_match (char * string, char * regular_expression) {
+	/* Given a string and a regular expression, return TRUE if there's a match, 
+	FALSE if not. Print an error and exit if regular_expression is invalid. */
 
-    int status, rc;
-    regex_t regex; /* The "compiled" regular expression. */
-	char buffer[100];
+	const char * error;
 	
-	/* Special case for SDC compatibility: if pattern is "*", always match. */
-	if (strcmp(pattern, "*") == 0) {
-		return TRUE;
-	}
-
-	/* Otherwise, compile a regular expression from pattern.  If it's valid, we should get rc = 0. */
-	rc = regcomp(&regex, pattern, 0); 
-    if (rc != 0) { 
-		/* Put the error code rc and the address &regex of the compiled regex into regerror. 
-		Regerror spits out the appropriate error message into a buffer of size 100. */
-        regerror(rc, &regex, buffer, 100);
-		/* Now print the error message stored in buffer. */
-		fprintf(stderr, "Regular expression %s on line %d could not be compiled because of: %s", string, file_line_number, buffer);
-		exit(1);
-    }
-
-	/* Execute the regular expression comparison between the compiled regex and string. */
-    status = regexec(&regex, string, 0, NULL, 0);
-
-	/* Free up regex_t regex. */
-    regfree(&regex);
-
-	/* Based on status, either return TRUE (if a match), FALSE (if not), or an error. */
-    if (status == 0) {
-        return TRUE;      
-    } else if (status == REG_NOMATCH) {
+	/* The regex library reports a match if regular_expression is a substring of string
+	AND not equal to string. This is not appropriate for our purposes. For example, 
+	we'd get both "clock" and "clock2" matching the regular expression "clock".  
+	We have to manually return that there's no match in this special case. */
+	if (strstr(string, regular_expression) && strcmp(string, regular_expression) != 0)
 		return FALSE;
-	} else {
-		/* Put the error code status and the address &regex of the compiled regex into regerror. 
-		Regerror spits out the appropriate error message into a buffer of size 100. */
-        regerror(status, &regex, buffer, 100);
-		/* Now print the error message stored in buffer. */
-		fprintf(stderr, "Regular expression %s on line %d could not be executed because of: %s", string, file_line_number, buffer);
+
+	error = slre_match(0, regular_expression, string, strlen(string));
+
+	if (!error) 
+		return TRUE;
+	else if (strcmp(error, "No match") == 0) 
+		return FALSE;
+	else {
+		fprintf(stderr, "Error matching regular expression %s: %s", 
+			regular_expression, error);
 		exit(1);
 	}
 }

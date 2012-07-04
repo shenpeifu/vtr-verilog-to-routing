@@ -420,12 +420,17 @@ my_fgets(char *buf, int max_size, FILE * fp) {
 	 * truncation).                                                    */
 
 	for (i = 0; i < max_size; i++) {
+		/* Eliminate Windows \r\n newlines by replacing each \r by an \n. *
+		 * This must also be done for Windows, surprisingly.			  */
 		if (buf[i] == '\r') { 
 			buf[i] = '\n';
+			buf[i+1] = '\0';
 			break;
 		}
-		if (buf[i] == '\n')
-			break;
+
+		if (buf[i] == '\n') 
+			break; /* end of line */
+		
 		if (buf[i] == '\0') {
 
 			if (feof(fp)) { 
