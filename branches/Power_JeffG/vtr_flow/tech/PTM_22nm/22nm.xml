@@ -1,7 +1,7 @@
 <technology file="22nm.pm" size="22e-9">
 	<operating_point temperature="27" Vdd="0.8"/>
 	<p_to_n ratio="1.45"/>
-	<transistor type="nmos" pass_Vdrop="5.6244E-02">
+	<transistor type="nmos" Vth="5.6244E-02">
 		<long_size W="1" L="2">
 			<current leakage="7.4234E-12"/>
 			<capacitance gate_cmos="2.4338E-17" drain_cmos="5.7554E-17" gate_pass="1.7952E-17" source_pass="5.4482E-17" drain_pass="5.8106E-17"/>

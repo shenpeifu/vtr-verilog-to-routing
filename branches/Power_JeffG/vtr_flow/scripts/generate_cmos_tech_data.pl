@@ -149,7 +149,7 @@ sub add_subckts {
 }
 
 	
-sub get_nmos_pass_Vdrop {		
+sub get_Vth {		
 	my $spice_string = "";
 	my $Vth;
 	
