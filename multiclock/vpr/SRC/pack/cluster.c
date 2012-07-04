@@ -411,6 +411,9 @@ void do_clustering(const t_arch *arch, t_pack_molecule *molecule_head,
 
 		heapsort(critindexarray, criticality, num_logical_blocks, 1);
 #endif
+		if (GetEchoOption() && num_constrained_clocks == 1) {
+			print_critical_path("clustering_critical_path.echo");
+		}
 
 		if (cluster_seed_type == VPACK_TIMING) {
 			istart = get_most_critical_seed_molecule();

@@ -1,0 +1,8 @@
+regex.h
+libregex.dll.a
+libregex.la
+regex-bcc.lib
+regex.lib
+regex2.def
+regex-2.7-lib.mft
+regex-2.7-lib.ver
