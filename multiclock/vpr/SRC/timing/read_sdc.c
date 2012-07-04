@@ -144,7 +144,7 @@ void read_sdc(char * sdc_file) {
 	}
 
 	/* Make sure that all clocks referenced in override_constraints have been constrained. */
-	for (override_index = 0; override_index < num_constrained_ios; override_index++) {
+	for (override_index = 0; override_index < num_override_constraints; override_index++) {
 		if ((find_constrained_clock(override_constraints[override_index].source_clock_domain)) == -1) {
 			fprintf(stderr, "Token %s is not a clock constrained in the SDC file.\n", override_constraints[override_index].source_clock_domain);
 			exit(1);
