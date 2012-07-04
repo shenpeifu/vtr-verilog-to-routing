@@ -970,6 +970,9 @@ static boolean regex_match (char * string, char * regular_expression) {
 	if (strstr(string, regular_expression) && strcmp(string, regular_expression) != 0)
 		return FALSE;
 
+	if (strcmp(regular_expression, "*") == 0)
+		return TRUE; /* The regex library hangs if it is fed "*" as a regular expression. */
+
 	error = slre_match(0, regular_expression, string, strlen(string));
 
 	if (!error) 
