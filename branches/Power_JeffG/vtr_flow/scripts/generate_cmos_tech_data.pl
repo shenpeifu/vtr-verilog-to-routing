@@ -7,7 +7,8 @@ use File::Basename;
 sub get_trans_properties;
 sub get_optimal_sizing;
 sub get_riset_fallt_diff;
-sub get_Vth;
+sub get_nmos_pass_Vdrop;
+sub add_subckts;
 
 my $hspice = "hspice";
 
@@ -48,9 +49,6 @@ if (! $full) {
 	my @transistor_types = ("pmos");
 }
 
-
-
-
 my $optimal_p_to_n;
 if ($full) {
 	$optimal_p_to_n =  get_optimal_sizing();
@@ -77,8 +75,13 @@ print "\t<operating_point temperature=\"$temp\" Vdd=\"$Vdd\"/>\n";
 print "\t<p_to_n ratio=\"" . $optimal_p_to_n . "\"/>\n"; 
 
 foreach my $type (@transistor_types) {
-	my $Vth = get_Vth($type);
-	print "\t<transistor type=\"$type\" Vth=\"$Vth\">\n";
+	my $nmos_pass_Vdrop = get_nmos_pass_Vdrop();
+	
+	print "\t<transistor type=\"$type\"";
+	if ($type eq "nmos") {
+		print " pass_Vdrop=\"$nmos_pass_Vdrop\"";
+	}
+	print ">\n";
 		
 	($leakage, $C_gate_cmos, $C_drain_cmos, $C_gate_pass, $C_source_pass, $C_drain_pass) = get_trans_properties($type, $long_size[0], $long_size[1]);
 	print "\t\t<long_size W=\"". $long_size[0] . "\" L=\"" . $long_size[1] . "\">\n";
@@ -120,27 +123,52 @@ sub get_optimal_sizing {
 	return $opt_size;
 }
 
-sub get_Vth {
-	my $type = shift(@_);
+sub add_subckts {
+	my $spice_string = shift(@_);
 	
+	$spice_string = $spice_string . "\n";
+	$spice_string = $spice_string . ".subckt nfet drain gate source body size=1\n";
+	$spice_string = $spice_string . "M1 drain gate source body nmos L='tech' W='size*tech' AS='size*tech*2.5*tech' PS='2*2.5*tech+size*tech' AD='size*tech*2.5*tech' PD='2*2.5*tech+size*tech'\n";
+	$spice_string = $spice_string . ".ends\n";
+	$spice_string = $spice_string . ".subckt pfet drain gate source body size=1\n";
+	$spice_string = $spice_string . "M1 drain gate source body pmos L='tech' W='size*tech' AS='size*tech*2.5*tech' PS='2*2.5*tech+size*tech' AD='size*tech*2.5*tech' PD='2*2.5*tech+size*tech'\n";
+	$spice_string = $spice_string . ".ends\n";
+	$spice_string = $spice_string . ".subckt pfetz drain gate source body wsize=1 lsize=1\n";
+	$spice_string = $spice_string . "M1 drain gate source body pmos L='lsize*tech' W='wsize*tech' AS='wsize*tech*2.5*lsize*tech' PS='2*2.5*lsize*tech+wsize*tech' AD='wsize*tech*2.5*lsize*tech' PD='2*2.5*lsize*tech+wsize*tech'\n";
+	$spice_string = $spice_string . ".ends\n";
+	$spice_string = $spice_string . ".subckt inv in out Vdd Gnd nsize=1 psize=2\n";
+	$spice_string = $spice_string . "X0 out in Gnd Gnd nfet size='nsize'\n";
+	$spice_string = $spice_string . "X1 out in Vdd Vdd pfet size='psize'\n";
+	$spice_string = $spice_string . ".ends\n";
+	$spice_string = $spice_string . ".subckt levr in out Vdd Gnd\n";
+	$spice_string = $spice_string . "X0 in out Vdd Gnd inv nsize=2 psize=1\n";
+	$spice_string = $spice_string . "X1 in out Vdd Vdd pfetz wsize=1 lsize=2\n";
+	$spice_string = $spice_string . ".ends\n";
+	$spice_string = $spice_string . "\n";	
+	
+	return $spice_string;
+}
+
+	
+sub get_nmos_pass_Vdrop {		
 	my $spice_string = "";
 	my $Vth;
 	
-	$spice_string = $spice_string . "HSpice Simulation of an $type transistor.\n";
+	$spice_string = $spice_string . "HSpice Simulation of an NMOS transistor.\n";
 	$spice_string = $spice_string . ".include \"$tech_file\"\n";
 	$spice_string = $spice_string . ".param tech = $tech_size\n";
 	$spice_string = $spice_string . ".param Vol = $Vdd\n";	
 	$spice_string = $spice_string . ".param size = 1.0\n";	
 	
+	$spice_string = add_subckts($spice_string);
+	
 	# Add voltage source
 	$spice_string = $spice_string . "Vdd Vdd 0 Vol\n";
 	
 	# Transistors
-	if ($type eq "nmos") {
-	$spice_string = $spice_string . "M0 Vdd 0 0 0 nmos L='tech' W='size*tech' AS='size*tech*2.5*tech' PS='2*2.5*tech+size*tech' AD='size*tech*2.5*tech' PD='2*2.5*tech+size*tech'\n";
-	} else {
-	$spice_string = $spice_string . "M0 0 Vdd Vdd Vdd pmos L='tech' W='size*tech' AS='size*tech*2.5*tech' PS='2*2.5*tech+size*tech' AD='size*tech*2.5*tech' PD='2*2.5*tech+size*tech'\n";
-	}
+	$spice_string = $spice_string . "X0 Vdd Vdd mid 0 nfet size='size'\n";
+	$spice_string = $spice_string . "X1 mid Vdd mid2 0 nfet size='size'\n";
+	$spice_string = $spice_string . "X2 mid2 out Vdd 0 levr\n";		
 		
 	$spice_string = $spice_string . ".TEMP $temp\n";
 	$spice_string = $spice_string . ".OP\n";
@@ -148,8 +176,10 @@ sub get_Vth {
 	
 	$spice_string = $spice_string . ".tran 1p 50n\n";
 	
+	$spice_string = $spice_string . ".measure tran avg_mid avg V(mid)\n";
 	
-	$spice_string = $spice_string . ".measure tran vth avg vth(M0)\n";
+	
+	$spice_string = $spice_string . ".measure tran vth Param('Vol - avg_mid')\n";	
 	$spice_string = $spice_string . ".end\n\n";
 	
 	open (SP_FILE, "> $spice_file");
@@ -352,12 +382,6 @@ sub get_trans_properties
 		$spice_string = $spice_string . ".measure tran c_source_pass Param=('(c_source_pass1 + c_source_pass2 + c_source_pass3)/3')\n";
 	}
 	
-	#$spice_string = $spice_string . ".measure tran c_gate_cmos avg cap(gate) FROM = cmosstart TO = cmosend\n";
-	#$spice_string = $spice_string . ".measure tran c_source_cmos avg cap(source) FROM = cmosstart TO = cmosend\n";
-	#$spice_string = $spice_string . ".measure tran c_drain_cmos avg cap(drain) FROM = cmosstart TO = cmosend\n";
-	#$spice_string = $spice_string . ".measure tran c_gate_pass avg cap(gate) FROM = passstart TO = passend\n";
-	#$spice_string = $spice_string . ".measure tran c_source_pass avg cap(source) FROM = passstart TO = passend\n";
-	#$spice_string = $spice_string . ".measure tran c_drain_pass avg cap(drain) FROM = passstart TO = passend\n";
 	$spice_string = $spice_string . ".end\n\n";
 	
 	open (SP_FILE, "> $spice_file");

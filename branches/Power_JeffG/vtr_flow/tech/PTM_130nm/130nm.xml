@@ -1,7 +1,7 @@
 <technology file="130nm.pm" size="130e-9">
 	<operating_point temperature="27" Vdd="1.3"/>
 	<p_to_n ratio="2.05"/>
-	<transistor type="nmos" Vth="2.8791E-01">
+	<transistor type="nmos" pass_Vdrop="7.5113E-02">
 		<long_size W="1" L="2">
 			<current leakage="2.4901E-10"/>
 			<capacitance gate_cmos="5.4149E-16" drain_cmos="3.5545E-16" gate_pass="3.6271E-16" source_pass="3.4160E-16" drain_pass="3.6135E-16"/>
@@ -1403,7 +1403,7 @@
 			<capacitance gate_cmos="2.7141E-13" drain_cmos="1.1073E-13" gate_pass="2.1066E-13" source_pass="9.7595E-14" drain_pass="1.1702E-13"/>
 		</size>
 	</transistor>
-	<transistor type="pmos" Vth="2.1271E-01">
+	<transistor type="pmos">
 		<long_size W="1" L="2">
 			<current leakage="1.5293E-10"/>
 			<capacitance gate_cmos="2.0465E-16" drain_cmos="7.5583E-16" gate_pass="2.7143E-16" source_pass="4.9823E-16" drain_pass="5.7078E-16"/>
