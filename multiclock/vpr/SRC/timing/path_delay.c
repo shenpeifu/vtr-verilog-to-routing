@@ -135,6 +135,10 @@ static int find_io(char * net_name);
 
 static void propagate_clock_domain_and_skew(int inode);
 
+#ifdef FANCY_CRITICALITY
+static void print_clustering_timing_info(char *fname, long max_critical_input_paths, long max_critical_output_paths, float T_req_max_global);
+#endif
+
 /********************* Subroutine definitions *******************************/
 
 void alloc_and_load_timing_graph(t_timing_inf timing_inf) {
@@ -540,6 +544,37 @@ void print_net_delay(float **net_delay, char *fname) {
 
 	fclose(fp);
 }
+
+#ifdef FANCY_CRITICALITY
+static void print_clustering_timing_info(char *fname, long max_critical_input_paths, long max_critical_output_paths, float T_req_max_global) {
+	/* Print all information from tnodes which is used by the clusterer. */
+	int inode;
+	FILE *fp;
+
+	fp = my_fopen(fname, "w", 0);
+
+	fprintf(fp, "Max critical input paths: %ld\nMax critical output paths: %ld\n", max_critical_input_paths, max_critical_output_paths);
+
+	if (num_constrained_clocks == 1) {
+		/* T_req_max_global (what we have) is the same as T_req_max_this_domain (what the clusterer used). */
+		fprintf(fp, "Maximum required time: %f\n", T_req_max_global);
+	}
+	
+	fprintf(fp, "\ninode  Critical input paths  Critical output paths  Normalized slack  Normalized Tarr  Normalized total crit paths\n");
+	for (inode = 0; inode < num_tnodes; inode++) {
+		fprintf(fp, "%d\t%ld\t\t\t%ld\t\t\t", inode, tnode[inode].num_critical_input_paths, tnode[inode].num_critical_output_paths); 
+		
+		/* Only print normalized values for tnodes which have valid arrival and required times. */
+		if (tnode[inode].T_arr > HUGE_NEGATIVE_FLOAT + 1 && tnode[inode].T_req < HUGE_POSITIVE_FLOAT - 1) {
+			fprintf(fp, "%f\t%f\t%f\n", tnode[inode].normalized_slack, tnode[inode].normalized_T_arr, tnode[inode].normalized_total_critical_paths);
+		} else {
+			fprintf(fp, "--\t\t--\t\t--\n");
+		}
+	}
+
+	fclose(fp);
+}
+#endif
 
 /* Count # of tnodes, allocates space, and loads the tnodes and its associated edges */
 static void alloc_and_load_tnodes(t_timing_inf timing_inf) {
@@ -1287,15 +1322,6 @@ char *tnode_type_names[] = { "INPAD_SOURCE", "INPAD_OPIN", "OUTPAD_IPIN",
 		}
 	}
 
-#ifdef FANCY_CRITICALITY
-	/* Print num_critical_input_paths and num_critical_output_paths for each tnode. */
-	fprintf(fp, "\ninode  Critical input paths  Critical output paths\n");
-	for (inode = 0; inode < num_tnodes; inode++) {
-		fprintf(fp, "%d\t%ld\t\t\t%ld\n", inode, tnode[inode].num_critical_input_paths, 
-			tnode[inode].num_critical_output_paths);
-	}
-#endif
-
 	fclose(fp);
 }
 
@@ -1336,10 +1362,13 @@ t_timing_stats * do_timing_analysis(boolean do_lut_input_balancing, boolean is_f
 	(if defined FANCY_CRIT) and/or slack ratio (if SLACK_RATIO_DEFINITION == 1) */
 #endif
 
-#if SLACK_RATIO_DEFINITION == 2
+#if SLACK_RATIO_DEFINITION == 2 || defined FANCY_CRITICALITY
 	float T_req_max_global = HUGE_NEGATIVE_FLOAT;
 	/* Maximum T_req in the entire design - used to calculate denominator of 
 	slack ratio (if SLACK_RATIO_DEFINITION == 2) */
+#endif
+
+#if SLACK_RATIO_DEFINITION == 2
 	float slack;
 #endif
 
@@ -1386,6 +1415,12 @@ t_timing_stats * do_timing_analysis(boolean do_lut_input_balancing, boolean is_f
 			tnode[inode].used_on_this_traversal = FALSE;
 			tnode[inode].T_arr = HUGE_NEGATIVE_FLOAT; 
 			tnode[inode].T_req = HUGE_POSITIVE_FLOAT;
+#ifdef FANCY_CRITICALITY
+			/* Also reset all normalized values to a very large positive number. */
+			tnode[inode].normalized_slack = HUGE_POSITIVE_FLOAT;
+			tnode[inode].normalized_T_arr = HUGE_POSITIVE_FLOAT;
+			tnode[inode].normalized_total_critical_paths = HUGE_POSITIVE_FLOAT;
+#endif
 		}
 
 		num_at_level = tnodes_at_level[0].nelem;	/* There are num_at_level top-level tnodes. */
@@ -1538,7 +1573,7 @@ t_timing_stats * do_timing_analysis(boolean do_lut_input_balancing, boolean is_f
 					T_req_max_this_domain = max(T_req_max_this_domain, tnode[inode].T_req);
 #endif
 						
-#if SLACK_RATIO_DEFINITION == 2
+#if SLACK_RATIO_DEFINITION == 2 || defined FANCY_CRITICALITY
 					T_req_max_global = max(T_req_max_global, tnode[inode].T_req);
 #endif		
 			
@@ -1583,10 +1618,10 @@ t_timing_stats * do_timing_analysis(boolean do_lut_input_balancing, boolean is_f
 					if (tnode[to_node].num_critical_output_paths > max_critical_output_paths) {
 						max_critical_output_paths = tnode[to_node].num_critical_output_paths;
 					}
-#endif
+
 					for (iedge = 1; iedge < num_edges; iedge++) { 
 						to_node = tedge[iedge].to_node;
-#ifdef FANCY_CRITICALITY
+
 						/* Update number of near critical paths affected by output of tnode. */
 						/* Check for approximate equality. */
 						if (fabs(tnode[to_node].T_req - tedge[iedge].Tdel - tnode[inode].T_req) < EQUAL_DEF) {
@@ -1600,9 +1635,10 @@ t_timing_stats * do_timing_analysis(boolean do_lut_input_balancing, boolean is_f
 						}
 #endif
 					}
-
-					/* Opposite to T_arr, set T_req to the minimum of the required times of all edges fanning out from this node. */
-					tnode[inode].T_req = min(tnode[inode].T_req, tnode[to_node].T_req - tedge[iedge].Tdel);
+					for (iedge = 0; iedge < num_edges; iedge++) {
+						/* Opposite to T_arr, set T_req to the minimum of the required times of all edges fanning out from this node. */
+						tnode[inode].T_req = min(tnode[inode].T_req, tnode[to_node].T_req - tedge[iedge].Tdel);
+					}
 				}
 			}
 		}
@@ -1618,6 +1654,12 @@ t_timing_stats * do_timing_analysis(boolean do_lut_input_balancing, boolean is_f
 		normalize_costs(T_req_max_this_domain, max_critical_input_paths, max_critical_output_paths);
 #endif
 	} /* end of source_clock_domain loop */
+
+#ifdef FANCY_CRITICALITY
+	if (GetEchoOption()) {
+		print_clustering_timing_info("clustering_timing_info.echo", max_critical_input_paths, max_critical_output_paths, T_req_max_global);
+	}
+#endif
 	
 #if SLACK_DEFINITION == 3 
 	if (!is_final_analysis) {
@@ -1944,13 +1986,16 @@ void do_constant_net_delay_timing_analysis(t_timing_inf timing_inf,
 #ifdef FANCY_CRITICALITY
 static void normalize_costs(float T_req_max, long max_critical_input_paths,
 		long max_critical_output_paths) {
-	int i;
-	for (i = 0; i < num_tnodes; i++) {
-		tnode[i].normalized_slack = min(tnode[i].normalized_slack, (tnode[i].T_req - tnode[i].T_arr)/T_req_max);
-		tnode[i].normalized_T_arr = min(tnode[i].normalized_T_arr, tnode[i].T_arr/T_req_max);
-		tnode[i].normalized_total_critical_paths = min(tnode[i].normalized_total_critical_paths, 
-				((float) tnode[i].num_critical_input_paths + tnode[i].num_critical_output_paths) /
-						 ((float) max_critical_input_paths + max_critical_output_paths));
+	int inode;
+	for (inode = 0; inode < num_tnodes; inode++) {
+		/* Only calculate for tnodes which have valid arrival and required times. */
+		if(tnode[inode].T_arr > HUGE_NEGATIVE_FLOAT + 1 && tnode[inode].T_req < HUGE_POSITIVE_FLOAT - 1) {
+			tnode[inode].normalized_slack = min(tnode[inode].normalized_slack, (tnode[inode].T_req - tnode[inode].T_arr)/T_req_max);
+			tnode[inode].normalized_T_arr = min(tnode[inode].normalized_T_arr, tnode[inode].T_arr/T_req_max);
+			tnode[inode].normalized_total_critical_paths = min(tnode[inode].normalized_total_critical_paths, 
+					((float) tnode[inode].num_critical_input_paths + tnode[inode].num_critical_output_paths) /
+							 ((float) max_critical_input_paths + max_critical_output_paths));
+		}
 	}
 }
 #endif

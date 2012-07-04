@@ -664,7 +664,7 @@ static void get_sdc_tok(char * buf) {
 
 					/* Fill in I/O information in the permanent array constrained_ios. */
 					constrained_ios = (t_io *) my_realloc (constrained_ios, num_constrained_ios * sizeof(t_io));
-					constrained_ios[num_constrained_ios - 1].name = my_strdup(ptr);
+					constrained_ios[num_constrained_ios - 1].name = my_strdup(netlist_ios[iio]);
 					constrained_ios[num_constrained_ios - 1].virtual_clock_name = my_strdup(clock_name);
 					constrained_ios[num_constrained_ios - 1].delay = max_delay;
 				}
