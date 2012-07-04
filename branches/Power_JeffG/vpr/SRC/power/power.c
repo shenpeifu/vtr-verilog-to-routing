@@ -406,9 +406,7 @@ boolean power_find_transistor_info(t_transistor_size_inf ** lower,
 		*upper = found;
 	} else if (size > max_size) {
 		assert(
-				found
-						== &trans_info->size_inf[trans_info->num_size_entries
-								- 1]);
+				found == &trans_info->size_inf[trans_info->num_size_entries - 1]);
 		sprintf(msg,
 				"Using %s transistor of size '%f', which is larger than the largest modeled transistor (%f) in the technology behavior file.",
 				transistor_type_name(type), size, max_size);
@@ -2020,7 +2018,7 @@ void process_transistor_info(ezxml_t parent) {
 	}
 	ezxml_set_attr(parent, "type", NULL);
 
-	trans_inf->Vth = GetFloatProperty(parent, "Vth", TRUE, 0.);
+	trans_inf->Vth = GetFloatProperty(parent, "Vth", FALSE, 0.);
 
 	trans_inf->long_trans_inf = my_malloc(sizeof(t_transistor_size_inf));
 
@@ -2341,8 +2339,7 @@ boolean power_init(t_power_opts * power_opts, t_power_arch * power_arch) {
 							node->switches[edge_idx];
 				} else {
 					assert(
-							rr_node[node->edges[edge_idx]].driver_switch_type
-									== node->switches[edge_idx]);
+							rr_node[node->edges[edge_idx]].driver_switch_type == node->switches[edge_idx]);
 				}
 			}
 		}
@@ -3562,8 +3559,7 @@ void power_calc_transistor_capacitance(float *C_drain, float *C_source,
 	boolean error;
 
 	assert(
-			circuit_type == POWER_CIRCUIT_TYPE_CMOS
-					|| circuit_type == POWER_CIRCUIT_TYPE_PASS);
+			circuit_type == POWER_CIRCUIT_TYPE_CMOS || circuit_type == POWER_CIRCUIT_TYPE_PASS);
 
 	/* Initialize to 0 */
 	*C_drain = 0.;
@@ -3623,13 +3619,13 @@ void power_calc_transistor_capacitance(float *C_drain, float *C_source,
 }
 
 float power_calc_dynamic(float capacitance, float density) {
-	return 0.5 * pow(g_power_arch->Vdd, 2)
+	return 0.5 * g_power_arch->Vdd * g_power_arch->Vdd
 			* (1 + g_power_arch->short_circuit_power_percentage) * capacitance
 			* density / g_solution_inf->T_crit;
 }
 
 float power_calc_dynamic_v(float capacitance, float density, float voltage) {
-	return 0.5 * pow(voltage, 2)
+	return 0.5 * voltage * g_power_arch->Vdd
 			* (1 + g_power_arch->short_circuit_power_percentage) * capacitance
 			* density / g_solution_inf->T_crit;
 }
