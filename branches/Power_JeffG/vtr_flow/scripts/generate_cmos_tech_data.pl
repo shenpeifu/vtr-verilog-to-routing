@@ -7,7 +7,7 @@ use File::Basename;
 sub get_trans_properties;
 sub get_optimal_sizing;
 sub get_riset_fallt_diff;
-sub get_nmos_pass_Vdrop;
+sub get_Vth;
 sub add_subckts;
 
 my $hspice = "hspice";
@@ -75,11 +75,10 @@ print "\t<operating_point temperature=\"$temp\" Vdd=\"$Vdd\"/>\n";
 print "\t<p_to_n ratio=\"" . $optimal_p_to_n . "\"/>\n"; 
 
 foreach my $type (@transistor_types) {
-	my $nmos_pass_Vdrop = get_nmos_pass_Vdrop();
-	
 	print "\t<transistor type=\"$type\"";
 	if ($type eq "nmos") {
-		print " pass_Vdrop=\"$nmos_pass_Vdrop\"";
+		my $Vth = get_Vth();
+		print " Vth=\"" . get_Vth() . "\"";
 	}
 	print ">\n";
 		
