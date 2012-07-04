@@ -167,7 +167,7 @@ sub get_Vth {
 	# Transistors
 	$spice_string = $spice_string . "X0 Vdd Vdd mid 0 nfet size='size'\n";
 	$spice_string = $spice_string . "X1 mid Vdd mid2 0 nfet size='size'\n";
-	$spice_string = $spice_string . "X2 mid2 out Vdd 0 levr\n";		
+	$spice_string = $spice_string . "X2 mid2 out Vdd 0 inv nsize='1' psize='2'\n";		
 		
 	$spice_string = $spice_string . ".TEMP $temp\n";
 	$spice_string = $spice_string . ".OP\n";
