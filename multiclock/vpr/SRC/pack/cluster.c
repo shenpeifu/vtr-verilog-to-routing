@@ -360,8 +360,12 @@ void do_clustering(const t_arch *arch, t_pack_molecule *molecule_head,
 		free_timing_stats(timing_stats);
 
 		if (GetEchoOption()) {
-				print_net_slack("pre_packing_net_slack.echo");
-				print_net_slack_ratio("pre_packing_net_slack_ratio.echo");
+			print_net_slack("pre_packing_net_slack.echo");
+			print_net_slack_ratio("pre_packing_net_slack_ratio.echo");
+			print_timing_graph("pre_packing_timing_graph.echo");
+#ifdef FANCY_CRITICALITY
+			print_clustering_timing_info("clustering_timing_info.echo");
+#endif
 		}
 #ifdef FANCY_CRITICALITY
 		criticality = (float*) my_calloc(num_logical_blocks, sizeof(float));

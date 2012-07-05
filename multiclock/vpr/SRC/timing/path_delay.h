@@ -49,6 +49,10 @@ void print_net_slack_ratio(char *fname);
 
 void print_net_delay(float **net_delay, char *fname);
 
+#ifdef FANCY_CRITICALITY
+void print_clustering_timing_info(char *fname);
+#endif
+
 void print_lut_remapping(char *fname);
 
 void print_critical_path(char *fname);

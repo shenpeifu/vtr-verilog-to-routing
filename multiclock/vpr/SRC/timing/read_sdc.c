@@ -620,7 +620,13 @@ static void get_sdc_tok(char * buf) {
 		}
 
 		ptr = my_strtok(NULL, SDC_TOKENS, sdc, buf);
-		clock_name = ptr;
+		if (num_netlist_clocks == 1 && strcmp(ptr, "*") == 0) {
+			/* Allow the user to wildcard the clock name if there's only one clock (not standard SDC but very convenient). */
+			clock_name = my_strdup(netlist_clocks[0]);
+		} else {
+			/* We have no way of error-checking whether this is an actual virtual clock until we finish parsing. */
+			clock_name = ptr;
+		}
 	
 		ptr = my_strtok(NULL, SDC_TOKENS, sdc, buf);
 		if(strcmp(ptr, "-max") != 0) {
@@ -689,8 +695,13 @@ static void get_sdc_tok(char * buf) {
 		}
 
 		ptr = my_strtok(NULL, SDC_TOKENS, sdc, buf);
-		clock_name = ptr;
-		/* We have no way of error-checking whether this is an actual virtual clock until we finish parsing. */
+		if (num_netlist_clocks == 1 && strcmp(ptr, "*") == 0) {
+			/* Allow the user to wildcard the clock name if there's only one clock (not standard SDC but very convenient). */
+			clock_name = my_strdup(netlist_clocks[0]);
+		} else {
+			/* We have no way of error-checking whether this is an actual virtual clock until we finish parsing. */
+			clock_name = ptr;
+		}
 
 		ptr = my_strtok(NULL, SDC_TOKENS, sdc, buf);
 		if(strcmp(ptr, "-max") != 0) {
@@ -734,7 +745,7 @@ static void get_sdc_tok(char * buf) {
 
 					/* Fill in I/O information in the permanent array constrained_ios. */
 					constrained_ios = (t_io *) my_realloc (constrained_ios, num_constrained_ios * sizeof(t_io));
-					constrained_ios[num_constrained_ios - 1].name = my_strdup(ptr);
+					constrained_ios[num_constrained_ios - 1].name = my_strdup(netlist_ios[iio]);
 					constrained_ios[num_constrained_ios - 1].virtual_clock_name = my_strdup(clock_name);
 					constrained_ios[num_constrained_ios - 1].delay = max_delay;
 				}

@@ -135,10 +135,6 @@ static int find_io(char * net_name);
 
 static void propagate_clock_domain_and_skew(int inode);
 
-#ifdef FANCY_CRITICALITY
-static void print_clustering_timing_info(char *fname, long max_critical_input_paths, long max_critical_output_paths, float T_req_max_global);
-#endif
-
 /********************* Subroutine definitions *******************************/
 
 void alloc_and_load_timing_graph(t_timing_inf timing_inf) {
@@ -224,9 +220,7 @@ void alloc_and_load_pre_packing_timing_graph(float block_delay,
 	alloc_net_slack_and_slack_ratio();
 
 	if (GetEchoOption()) {
-		print_timing_graph("pre_packing_timing_graph.echo");
-		print_timing_graph_as_blif("pre_packing_timing_graph_as_blif.blif",
-				models);
+		print_timing_graph_as_blif("pre_packing_timing_graph_as_blif.blif",	models);
 	}
 	check_timing_graph(num_sinks);
 }
@@ -546,21 +540,14 @@ void print_net_delay(float **net_delay, char *fname) {
 }
 
 #ifdef FANCY_CRITICALITY
-static void print_clustering_timing_info(char *fname, long max_critical_input_paths, long max_critical_output_paths, float T_req_max_global) {
+void print_clustering_timing_info(char *fname) {
 	/* Print all information from tnodes which is used by the clusterer. */
 	int inode;
 	FILE *fp;
 
 	fp = my_fopen(fname, "w", 0);
 
-	fprintf(fp, "Max critical input paths: %ld\nMax critical output paths: %ld\n", max_critical_input_paths, max_critical_output_paths);
-
-	if (num_constrained_clocks == 1) {
-		/* T_req_max_global (what we have) is the same as T_req_max_this_domain (what the clusterer used). */
-		fprintf(fp, "Maximum required time: %f\n", T_req_max_global);
-	}
-	
-	fprintf(fp, "\ninode  Critical input paths  Critical output paths  Normalized slack  Normalized Tarr  Normalized total crit paths\n");
+	fprintf(fp, "inode  Critical input paths  Critical output paths  Normalized slack  Normalized Tarr  Normalized total crit paths\n");
 	for (inode = 0; inode < num_tnodes; inode++) {
 		fprintf(fp, "%d\t%ld\t\t\t%ld\t\t\t", inode, tnode[inode].num_critical_input_paths, tnode[inode].num_critical_output_paths); 
 		
@@ -1311,14 +1298,22 @@ char *tnode_type_names[] = { "INPAD_SOURCE", "INPAD_OPIN", "OUTPAD_IPIN",
 	for (i = 0; i < num_nets; i++)
 		fprintf(fp, "%4d\t%6d\n", i, net_to_driver_tnode[i]);
 
-	if (num_constrained_clocks > 1) {
+	if (num_constrained_clocks == 1) {
 		/* Arrival and required times will be meaningless for multiclock designs,
 		since the T_arr and T_req currently on the graph will only correspond to the most recent traversal. */
 		fprintf(fp, "\n\nNode #\t\tT_arr\t\tT_req\n\n");
 
 		for (inode = 0; inode < num_tnodes; inode++) {
-			fprintf(fp, "%d\t%12g\t%12g\n", inode, tnode[inode].T_arr,
-					tnode[inode].T_req);
+			if (tnode[inode].T_arr > HUGE_NEGATIVE_FLOAT + 1) {
+				fprintf(fp, "%d\t%12g", inode, tnode[inode].T_arr);
+			} else {
+				fprintf(fp, "%d\t\t   -", inode, tnode[inode].T_arr);
+			}
+			if (tnode[inode].T_req < HUGE_POSITIVE_FLOAT - 1) {
+				fprintf(fp, "\t%12g\n", tnode[inode].T_req);
+			} else {
+				fprintf(fp, "\t\t   -\n");
+			}
 		}
 	}
 
@@ -1428,16 +1423,16 @@ t_timing_stats * do_timing_analysis(boolean do_lut_input_balancing, boolean is_f
 		for (i = 0; i < num_at_level; i++) {
 			inode = tnodes_at_level[0].list[i];		/* Go through the list of each tnode at level 0. */
 
-			if (tnode[inode].clock_domain == source_clock_domain && tnode[inode].type == FF_SOURCE) { 
-				/* If the tnode is in the source clock domain we're analyzing (iclock), 
-				set the arrival time of that tnode to its clock skew. */
-				tnode[inode].T_arr = tnode[inode].clock_skew;	
-
-			} else if (tnode[inode].clock_domain == source_clock_domain && tnode[inode].type == INPAD_SOURCE) { 
-				/* There's no such thing as clock skew for external clocks. The closest equivalent, 
-				input delay, is already marked on the edge coming out from this node. 
-				As a result, the signal can be said to arrive at t = 0. */
-				tnode[inode].T_arr = 0.;
+			if (tnode[inode].clock_domain == source_clock_domain) {
+				if (tnode[inode].type == FF_SOURCE) { 
+					/* Set the arrival time of this flip-flop tnode to its clock skew. */
+					tnode[inode].T_arr = tnode[inode].clock_skew;
+				} else if (tnode[inode].type == INPAD_SOURCE) { 
+					/* There's no such thing as clock skew for external clocks. The closest equivalent, 
+					input delay, is already marked on the edge coming out from this node. 
+					As a result, the signal can be said to arrive at t = 0. */
+					tnode[inode].T_arr = 0.;
+				}
 			}
 		}
 
@@ -1520,17 +1515,17 @@ t_timing_stats * do_timing_analysis(boolean do_lut_input_balancing, boolean is_f
 					 * However, if the timing constraint is DO_NOT_ANALYSE, T_req remains HUGE_POSITIVE_FLOAT, flagging that we should not propagate this tnode backward. */ 
 
 					sink_clock_domain = tnode[inode].clock_domain;
+					if (sink_clock_domain == -1) { /* dummy clock domain from unconstrained I/O - don't analyse! */
+						continue;
+					}
+
 					constraint = timing_constraint[source_clock_domain][sink_clock_domain];
 
 					if(constraint < -1e-15) { 
 						/* Constraint is DO_NOT_ANALYSE (-1). */
 						continue;
 					}
-
-					if (sink_clock_domain == -1) { /* dummy clock domain from unconstrained I/O - don't analyse! */
-						continue;
-					}
-					
+		
 					/* Now we know we should analyse this tnode. Flip-flop sinks on this clock domain which come from 
 					unconstrained I/Os will be erroneously analyzed here, but this will not affect slack calculations. 
 					I'm not sure what effect this will have on runtime, however. */
@@ -1611,6 +1606,13 @@ t_timing_stats * do_timing_analysis(boolean do_lut_input_balancing, boolean is_f
 					/* Now we know this node is on a happy path, and needs to be analyzed. */
 
 					tnode[inode].used_on_this_traversal = TRUE;	/* Mark that we've changed this node on this traversal (signalling we should update its slack later). */
+					
+					for (iedge = 0; iedge < num_edges; iedge++) {
+						/* Opposite to T_arr, set T_req to the minimum of the required times of all edges fanning out from this node. */
+						to_node = tedge[iedge].to_node;
+						tnode[inode].T_req = min(tnode[inode].T_req, tnode[to_node].T_req - tedge[iedge].Tdel);
+					}
+
 #ifdef FANCY_CRITICALITY
 					to_node = tedge[0].to_node;
 
@@ -1635,10 +1637,6 @@ t_timing_stats * do_timing_analysis(boolean do_lut_input_balancing, boolean is_f
 						}
 #endif
 					}
-					for (iedge = 0; iedge < num_edges; iedge++) {
-						/* Opposite to T_arr, set T_req to the minimum of the required times of all edges fanning out from this node. */
-						tnode[inode].T_req = min(tnode[inode].T_req, tnode[to_node].T_req - tedge[iedge].Tdel);
-					}
 				}
 			}
 		}
@@ -1655,12 +1653,6 @@ t_timing_stats * do_timing_analysis(boolean do_lut_input_balancing, boolean is_f
 #endif
 	} /* end of source_clock_domain loop */
 
-#ifdef FANCY_CRITICALITY
-	if (GetEchoOption()) {
-		print_clustering_timing_info("clustering_timing_info.echo", max_critical_input_paths, max_critical_output_paths, T_req_max_global);
-	}
-#endif
-	
 #if SLACK_DEFINITION == 3 
 	if (!is_final_analysis) {
 		/* Increase all slacks by the value of the smallest slack in the design, if it's negative. */
@@ -2640,12 +2632,12 @@ static void load_clock_domain_and_skew(boolean is_prepacked) {
 				net_name = block[tnode[inode].block].pb->rr_node_to_pb_mapping[tnode[inode - 1].pb_graph_pin->pin_count_in_cluster]->name;
 			}
 
-			io_index = find_io(net_name);
+			io_index = find_io(net_name + 4); /* the + 4 removes the prefix "out:" automatically prepended to outputs */
 			if (io_index != -1) {
 				/* tnode belongs to a constrained output, now find its associated virtual clock */
 				clock_index = find_clock(constrained_ios[io_index].virtual_clock_name);
 
-				assert(tnode[inode].num_edges == 1);
+				assert(tnode[inode].num_edges == 0);
 				
 				/* The clock domain for this output is that of its virtual clock */
 				tnode[inode].clock_domain = clock_index;
