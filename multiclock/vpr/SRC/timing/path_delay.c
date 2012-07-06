@@ -1489,6 +1489,23 @@ t_timing_stats * do_timing_analysis(boolean do_lut_input_balancing, boolean is_f
 				num_edges = tnode[inode].num_edges;					/* Get the number of edges fanning out from the node we're visiting */
 				tedge = tnode[inode].out_edges;						/* Get the list of edges from the node we're visiting */
 				
+#ifdef FANCY_CRITICALITY		
+				for (iedge = 0; iedge < num_edges; iedge++) {		
+					to_node = tedge[iedge].to_node;
+					/* Update number of near critical paths entering tnode. */
+					/* Check for approximate equality. */
+					if (fabs(tnode[to_node].T_arr - (tnode[inode].T_arr + tedge[iedge].Tdel)) < EQUAL_DEF) {
+						tnode[to_node].num_critical_input_paths += tnode[inode].num_critical_input_paths;
+					} else if (tnode[to_node].T_arr < (tnode[inode].T_arr + tedge[iedge].Tdel)) {
+					tnode[to_node].num_critical_input_paths =
+							tnode[inode].num_critical_input_paths;
+					}
+					if (tnode[to_node].num_critical_input_paths	> max_critical_input_paths) {
+						max_critical_input_paths = tnode[to_node].num_critical_input_paths;
+					}
+				}
+#endif
+				
 				for (iedge = 0; iedge < num_edges; iedge++) {		/* Now go through each edge coming out from this tnode */
 					to_node = tedge[iedge].to_node;					/* Get the index of the destination tnode of this edge. */
 					
@@ -1501,23 +1518,11 @@ t_timing_stats * do_timing_analysis(boolean do_lut_input_balancing, boolean is_f
 					the destination node's arrival time is greater than the existing maximum. */
 					T_arr_max_this_domain = max(T_arr_max_this_domain, tnode[to_node].T_arr);
 #endif
-				}
 
-#ifdef FANCY_CRITICALITY		
-				for (iedge = 0; iedge < num_edges; iedge++) {		
-					to_node = tedge[iedge].to_node;
-					/* Update number of near critical paths entering tnode. */
-					/* Check for approximate equality. */
-					if (fabs(tnode[to_node].T_arr - (tnode[inode].T_arr + tedge[iedge].Tdel)) < EQUAL_DEF) {
-						tnode[to_node].num_critical_input_paths += tnode[inode].num_critical_input_paths;
-					}
-					if (tnode[to_node].num_critical_input_paths	> max_critical_input_paths) {
-						max_critical_input_paths = tnode[to_node].num_critical_input_paths;
-					}
 				}
-#endif
 			}
 		}
+
 		assert(total == num_tnodes);
 
 		/* Compute the required arrival times with a backward breadth-first analysis *
