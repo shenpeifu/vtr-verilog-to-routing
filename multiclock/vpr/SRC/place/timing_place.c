@@ -97,7 +97,7 @@ void load_criticalities(float crit_exponent) {
 				/* We didn't analyze this connection, so give it a dummy, very negative criticality. */
 				timing_place_crit[inet][ipin] = HUGE_NEGATIVE_FLOAT;
 			} else {
-				timing_place_crit[inet][ipin] = pow(1-slack_ratio, crit_exponent);
+				timing_place_crit[inet][ipin] = pow(1 - slack_ratio, crit_exponent);
 			}
 		}
 	}

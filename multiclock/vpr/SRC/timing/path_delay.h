@@ -5,7 +5,7 @@
 
 /*********************** Defines for timing options *******************************/
 
-#define SLACK_DEFINITION 4
+#define SLACK_DEFINITION 5
 /* Choose whether, and how, to normalize negative slacks for optimization 
   (not for final analysis, since real slacks are always given here).
   Possible values:
@@ -13,7 +13,8 @@
    2: All negative slacks are "clipped" to 0.  
    3: If negative slacks exist, increase the value of all slacks by the largest negative slack.  Only the critical path will have 0 slack.
    4: Set the required time to the max of the "real" required time (constraint + tnode[inode].clock_skew) and the arrival time.  Only the critical path will have 0 slack.
-*/
+   5: As 4, except give normalized slacks in the final analysis as well.
+   */
 
 #define SLACK_RATIO_DEFINITION 1
 /* Which definition of slack ratio (related to criticality) should VPR use?  In general, slack ratio is slack/maximum delay.  Possible values:
