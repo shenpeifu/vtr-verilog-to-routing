@@ -555,7 +555,7 @@ void print_net_delay(float **net_delay, char *fname) {
 
 #ifdef FANCY_CRITICALITY
 void print_clustering_timing_info(char *fname) {
-	/* Print all information from tnodes which is used by the clusterer. */
+	/* Print information from tnodes which is used by the clusterer. */
 	int inode;
 	FILE *fp;
 
@@ -1491,29 +1491,31 @@ t_timing_stats * do_timing_analysis(boolean do_lut_input_balancing, boolean is_f
 				
 				for (iedge = 0; iedge < num_edges; iedge++) {		/* Now go through each edge coming out from this tnode */
 					to_node = tedge[iedge].to_node;					/* Get the index of the destination tnode of this edge. */
-#ifdef FANCY_CRITICALITY					
-					/* Update number of near critical paths entering tnode. */
-					/* Check for approximate equality. */
-					if (fabs(tnode[to_node].T_arr - (tnode[inode].T_arr + tedge[iedge].Tdel)) < EQUAL_DEF) {
-						tnode[to_node].num_critical_input_paths += tnode[inode].num_critical_input_paths;
-					} else if (tnode[to_node].T_arr < tnode[inode].T_arr + tedge[iedge].Tdel) {
-						tnode[to_node].num_critical_input_paths = tnode[inode].num_critical_input_paths;
-					}
-
-					if (tnode[to_node].num_critical_input_paths	> max_critical_input_paths) {
-						max_critical_input_paths = tnode[to_node].num_critical_input_paths;
-					}
-#endif
+					
 					/* The arrival time T_arr at the destination node is set to the maximum of all the possible arrival times from all edges fanning in to the node. *
 					 * The arrival time represents the latest time that all inputs must arrive at a node. LUT input rebalancing also occurs at this step. */
 					set_and_balance_arrival_time(to_node, inode, tedge[iedge].Tdel, do_lut_input_balancing);	
-					
+
 #if SLACK_DEFINITION == 4 || SLACK_DEFINITION == 5
 					/* Since we updated the destination node (to_node), change the max arrival time if 
 					the destination node's arrival time is greater than the existing maximum. */
 					T_arr_max_this_domain = max(T_arr_max_this_domain, tnode[to_node].T_arr);
 #endif
 				}
+
+#ifdef FANCY_CRITICALITY		
+				for (iedge = 0; iedge < num_edges; iedge++) {		
+					to_node = tedge[iedge].to_node;
+					/* Update number of near critical paths entering tnode. */
+					/* Check for approximate equality. */
+					if (fabs(tnode[to_node].T_arr - (tnode[inode].T_arr + tedge[iedge].Tdel)) < EQUAL_DEF) {
+						tnode[to_node].num_critical_input_paths += tnode[inode].num_critical_input_paths;
+					}
+					if (tnode[to_node].num_critical_input_paths	> max_critical_input_paths) {
+						max_critical_input_paths = tnode[to_node].num_critical_input_paths;
+					}
+				}
+#endif
 			}
 		}
 		assert(total == num_tnodes);
@@ -1660,7 +1662,7 @@ t_timing_stats * do_timing_analysis(boolean do_lut_input_balancing, boolean is_f
 
 						/* Update number of near critical paths affected by output of tnode. */
 						/* Check for approximate equality. */
-						if (fabs(tnode[to_node].T_req - tedge[iedge].Tdel - tnode[inode].T_req) < EQUAL_DEF) {
+						if (fabs(tnode[to_node].T_req - (tnode[inode].T_req + tedge[iedge].Tdel)) < EQUAL_DEF) {
 							tnode[inode].num_critical_output_paths += tnode[to_node].num_critical_output_paths;
 						}
 						if (tnode[to_node].num_critical_output_paths > max_critical_output_paths) {
