@@ -120,7 +120,7 @@ static void alloc_and_load_tnodes_from_prepacked_netlist(float block_delay,
 static void load_tnode(INP t_pb_graph_pin *pb_graph_pin, INP int iblock,
 		INOUTP int *inode, INP t_timing_inf timing_inf);
 #ifdef FANCY_CRITICALITY
-static void normalize_costs(float t_crit, long max_critical_input_paths,
+static void normalize_costs(float T_arr_max_this_domain, long max_critical_input_paths,
 		long max_critical_output_paths);
 #endif
 static void print_primitive_as_blif(FILE *fpout, int iblk);
@@ -1353,25 +1353,24 @@ t_timing_stats * do_timing_analysis(boolean do_lut_input_balancing, boolean is_f
 	long max_critical_output_paths = 0, max_critical_input_paths = 0;
 #endif
 
-#if defined FANCY_CRITICALITY || SLACK_RATIO_DEFINITION == 1
-	float T_req_max_this_domain; 
-	/* Maximum T_req in this clock domain - used to calculate denominator of clusterer criticalities 
-	(if defined FANCY_CRIT) and/or slack ratio (if SLACK_RATIO_DEFINITION == 1) */
-#endif
-
-#if SLACK_RATIO_DEFINITION == 2 || defined FANCY_CRITICALITY
-	float T_req_max_global = HUGE_NEGATIVE_FLOAT;
-	/* Maximum T_req in the entire design - used to calculate denominator of 
+#if SLACK_RATIO_DEFINITION == 2
+	float T_arr_max_global = HUGE_NEGATIVE_FLOAT;
+	/* Maximum T_arr in the entire design - used to calculate denominator of 
 	slack ratio (if SLACK_RATIO_DEFINITION == 2) */
 #endif
 
-#if SLACK_DEFINITION == 4 || SLACK_DEFINITION == 5
+#if defined FANCY_CRITICALITY || SLACK_RATIO_DEFINITION == 1 || SLACK_DEFINITION == 4 || SLACK_DEFINITION == 5
 	float T_arr_max_this_domain;
-	/* Maximum T_arr in this clock domain - used to normalize required times (and, indirectly, slacks) */
+	/* Maximum T_arr in this clock domain - used to normalize required times (if SLACK_DEFINITION == 4 or 5),
+	slack ratios (if SLACK__RATIO_DEFINITION == 1), and clusterer  */
 #endif
 
 #if SLACK_RATIO_DEFINITION == 2
 	float slack;
+#endif
+
+#if SLACK_DEFINITION == 3
+	float smallest_slack_in_design = HUGE_POSITIVE_FLOAT;
 #endif
 
 	/* Allocate timing_stats data structure and initialize critical_path_delay. */
@@ -1414,12 +1413,8 @@ t_timing_stats * do_timing_analysis(boolean do_lut_input_balancing, boolean is_f
 
 	/* For each source clock domain, we do one forward and one backward breadth-first traversal.  */
 	for (source_clock_domain = 0; source_clock_domain < num_constrained_clocks; source_clock_domain++) {
-#if SLACK_DEFINITION == 4 || SLACK_DEFINITION == 5
+#if defined FANCY_CRITICALITY || SLACK_RATIO_DEFINITION == 1 || SLACK_DEFINITION == 4 || SLACK_DEFINITION == 5
 		T_arr_max_this_domain = HUGE_NEGATIVE_FLOAT; /* Reset before each pair of traversals. */
-#endif
-
-#if defined FANCY_CRITICALITY || SLACK_RATIO_DEFINITION == 1
-		T_req_max_this_domain = HUGE_NEGATIVE_FLOAT; /* Reset before each pair of traversals. */
 #endif
 
 		/* Reset all used_on_this_traversal flags to FALSE.  Also, reset all arrival times to a
@@ -1505,13 +1500,16 @@ t_timing_stats * do_timing_analysis(boolean do_lut_input_balancing, boolean is_f
 					/* The arrival time T_arr at the destination node is set to the maximum of all the possible arrival times from all edges fanning in to the node. *
 					 * The arrival time represents the latest time that all inputs must arrive at a node. LUT input rebalancing also occurs at this step. */
 					set_and_balance_arrival_time(to_node, inode, tedge[iedge].Tdel, do_lut_input_balancing);	
+			
+#if SLACK_RATIO_DEFINITION == 2  
+					T_arr_max_global = max(T_arr_max_global, tnode[inode].T_arr);
+#endif		
 
-#if SLACK_DEFINITION == 4 || SLACK_DEFINITION == 5
+#if defined FANCY_CRITICALITY || SLACK_RATIO_DEFINITION == 1 || SLACK_DEFINITION == 4 || SLACK_DEFINITION == 5
 					/* Since we updated the destination node (to_node), change the max arrival time if 
 					the destination node's arrival time is greater than the existing maximum. */
 					T_arr_max_this_domain = max(T_arr_max_this_domain, tnode[to_node].T_arr);
 #endif
-
 				}
 			}
 		}
@@ -1550,11 +1548,11 @@ t_timing_stats * do_timing_analysis(boolean do_lut_input_balancing, boolean is_f
 						continue; /* Skip nodes on the clock net itself. */
 					}
 
-				if(!(tnode[inode].type == OUTPAD_SINK || tnode[inode].type == FF_SINK)) {
-					printf(ERRTAG "Timing graph terminated on node %s.%s[%d].  Likely cause: Timing edges not specified for block\n", 
-						tnode[inode].pb_graph_pin->parent_node->pb_type->name, tnode[inode].pb_graph_pin->port->name, tnode[inode].pb_graph_pin->pin_number);
-					exit(1);
-				}
+					if(!(tnode[inode].type == OUTPAD_SINK || tnode[inode].type == FF_SINK)) {
+						printf(ERRTAG "Timing graph terminated on node %s.%s[%d].  Likely cause: Timing edges not specified for block\n", 
+							tnode[inode].pb_graph_pin->parent_node->pb_type->name, tnode[inode].pb_graph_pin->port->name, tnode[inode].pb_graph_pin->pin_number);
+						exit(1);
+					}
 #endif
 					/* Assign the required time T_req for each FF_SINK leaf node, taking into account clock skew (OUTPAD_SINK nodes have no clock skew). *
 					 * T_req is the time we need all inputs to a tnode to arrive by, before it begins to affect the speed of the circuit.    *
@@ -1618,14 +1616,6 @@ t_timing_stats * do_timing_analysis(boolean do_lut_input_balancing, boolean is_f
 					/* We want to find the greatest T_req (either in the design or for this traversal), 
 					so update T_req_max_this_domain and/or T_req_max_global if this tnode's required time is greater than them. */
 
-#if defined FANCY_CRITICALITY || SLACK_RATIO_DEFINITION == 1
-					T_req_max_this_domain = max(T_req_max_this_domain, tnode[inode].T_req);
-#endif
-						
-#if SLACK_RATIO_DEFINITION == 2 || defined FANCY_CRITICALITY
-					T_req_max_global = max(T_req_max_global, tnode[inode].T_req);
-#endif		
-			
 #ifdef FANCY_CRITICALITY
 					tnode[inode].num_critical_output_paths = 1; /* Bottom-level tnodes have only one critical output path */
 #endif			
@@ -1687,18 +1677,24 @@ t_timing_stats * do_timing_analysis(boolean do_lut_input_balancing, boolean is_f
 		/* After each iteration of the iclock loop, update the slack if it has a newer, lower value.  Also update the normalized costs for clusterer (ifdef FANCY_CRITICALITY). */
 		
 #if SLACK_RATIO_DEFINITION == 1
-		timing_stats->least_slack_in_domain[source_clock_domain] = update_slacks(T_req_max_this_domain, is_final_analysis);
+		timing_stats->least_slack_in_domain[source_clock_domain] = update_slacks(T_arr_max_this_domain, is_final_analysis);
 #else	/* T_req_max_this_domain is not used in update_slacks so doesn't matter what we pass in. */
 		timing_stats->least_slack_in_domain[source_clock_domain] = update_slacks(0, is_final_analysis);
 #endif
 
 #ifdef FANCY_CRITICALITY
-		normalize_costs(T_req_max_this_domain, max_critical_input_paths, max_critical_output_paths);
+		normalize_costs(T_arr_max_this_domain, max_critical_input_paths, max_critical_output_paths);
 #endif
 	} /* end of source_clock_domain loop */
 
 #if SLACK_DEFINITION == 3 
 	if (!is_final_analysis) {
+
+		/* Find the smallest slack in the design. */
+		for (i = 0; i < num_constrained_clocks; i++) {
+			smallest_slack_in_design = min(smallest_slack_in_design, timing_stats->least_slack_in_domain[i]);
+		}
+
 		/* Increase all slacks by the value of the smallest slack in the design, if it's negative. */
 		if(smallest_slack_in_design < 0) {
 			for (inet = 0; inet < num_timing_nets; inet++) {
@@ -1722,10 +1718,10 @@ t_timing_stats * do_timing_analysis(boolean do_lut_input_balancing, boolean is_f
 		inode = net_to_driver_tnode[inet];
 		num_edges = tnode[inode].num_edges;
 		for (iedge = 0; iedge < num_edges; iedge++) {
-			/* The slack ratio of each edge is its slack divided by the maximum (possibly normalized) required time in the entire design. */
+			/* The slack ratio of each edge is its slack divided by the maximum arrival time in the entire design. */
 			slack = net_slack[inet][iedge + 1];
 			if (slack < HUGE_POSITIVE_FLOAT - 1) { /* if the slack is valid */
-				net_slack_ratio[inet][iedge + 1] = slack/T_req_max_global; 
+				net_slack_ratio[inet][iedge + 1] = slack/T_arr_max_global; 
 			}
 			/* otherwise, slack ratio remains HUGE_POSITIVE_FLOAT, as it was initialized */
 		}
@@ -2002,14 +1998,16 @@ void do_constant_net_delay_timing_analysis(t_timing_inf timing_inf,
 	free_timing_stats(timing_stats);
 }
 #ifdef FANCY_CRITICALITY
-static void normalize_costs(float T_req_max, long max_critical_input_paths,
+static void normalize_costs(float T_arr_max_this_domain, long max_critical_input_paths,
 		long max_critical_output_paths) {
 	int inode;
 	for (inode = 0; inode < num_tnodes; inode++) {
 		/* Only calculate for tnodes which have valid arrival and required times. */
 		if(tnode[inode].T_arr > HUGE_NEGATIVE_FLOAT + 1 && tnode[inode].T_req < HUGE_POSITIVE_FLOAT - 1) {
-			tnode[inode].normalized_slack = min(tnode[inode].normalized_slack, (tnode[inode].T_req - tnode[inode].T_arr)/T_req_max);
-			tnode[inode].normalized_T_arr = min(tnode[inode].normalized_T_arr, tnode[inode].T_arr/T_req_max);
+			tnode[inode].normalized_slack = min(tnode[inode].normalized_slack, 
+				(tnode[inode].T_req - tnode[inode].T_arr)/T_arr_max_this_domain);
+			tnode[inode].normalized_T_arr = min(tnode[inode].normalized_T_arr, 
+				tnode[inode].T_arr/T_arr_max_this_domain);
 			tnode[inode].normalized_total_critical_paths = min(tnode[inode].normalized_total_critical_paths, 
 					((float) tnode[inode].num_critical_input_paths + tnode[inode].num_critical_output_paths) /
 							 ((float) max_critical_input_paths + max_critical_output_paths));

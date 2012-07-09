@@ -584,6 +584,8 @@ void do_clustering(const t_arch *arch, t_pack_molecule *molecule_head,
 	free(unclustered_list_head);
 	free(memory_pool);
 	free(net_output_feeds_driving_block_input);
+
+#ifdef FANCY_CRITICALITY
 	if(criticality != NULL) {
 		free(criticality);
 		free(critindexarray);
@@ -594,12 +596,13 @@ void do_clustering(const t_arch *arch, t_pack_molecule *molecule_head,
 		free(net_pin_backward_criticality);
 		free(net_pin_forward_criticality);
 
+
 		criticality = NULL;
 		critindexarray = NULL;
 		net_pin_backward_criticality = NULL;
 		net_pin_forward_criticality = NULL;
 	}
-
+#endif
 
  free (primitives_list);
 
