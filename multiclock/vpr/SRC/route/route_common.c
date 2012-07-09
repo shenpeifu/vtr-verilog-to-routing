@@ -945,7 +945,7 @@ static void add_to_heap(struct s_heap *hptr) {
 
 /*WMF: peeking accessor :) */
 boolean is_empty_heap(void) {
-	return (heap_tail == 1);
+	return (boolean)(heap_tail == 1);
 }
 
 struct s_heap *
@@ -1103,7 +1103,7 @@ void print_route(char *route_file) {
 	int inet, inode, ipin, bnum, ilow, jlow, node_block_pin, iclass;
 	t_rr_type rr_type;
 	struct s_trace *tptr;
-	char *name_type[] = { "SOURCE", "SINK", "IPIN", "OPIN", "CHANX", "CHANY",
+	const char *name_type[] = { "SOURCE", "SINK", "IPIN", "OPIN", "CHANX", "CHANY",
 			"INTRA_CLUSTER_EDGE" };
 	FILE *fp;
 
@@ -1289,3 +1289,12 @@ static void adjust_one_rr_occ_and_pcost(int inode, int add_or_sub,
 				+ (occ + 1 - capacity) * pres_fac;
 	}
 }
+
+
+void free_chunk_memory_trace(void) {
+	if(trace_ch.chunk_ptr_head != NULL) {
+		free_chunk_memory(&trace_ch);
+	}
+}
+
+

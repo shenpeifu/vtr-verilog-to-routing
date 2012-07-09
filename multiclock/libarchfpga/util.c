@@ -10,8 +10,11 @@
  * arguments as the standard library ones, but exit    *
  * the program if they find an error condition.        */
 
+
 int file_line_number; /* file in line number being parsed */
-char *OutFilePrefix = NULL;
+char *out_file_prefix = NULL;
+
+
 static int cont; /* line continued? */
 
 /* Returns the min of cur and max. If cur > max, a warning
@@ -45,7 +48,7 @@ my_strncpy(char *dest, const char *src, size_t size) {
 	return dest;
 }
 
-/* Uses global var 'OutFilePrefix' */
+/* Uses global var 'out_file_prefix' */
 FILE *
 my_fopen(const char *fname, const char *flag, int prompt) {
 	FILE *fp;
@@ -54,13 +57,13 @@ my_fopen(const char *fname, const char *flag, int prompt) {
 	char prompt_filename[256];
 
 	/* Appends a prefix string for output files */
-	if (OutFilePrefix) {
+	if (out_file_prefix) {
 		if (strchr(flag, 'w')) {
 			Len = 1; /* NULL char */
-			Len += strlen(OutFilePrefix);
+			Len += strlen(out_file_prefix);
 			Len += strlen(fname);
 			new_fname = (char *) my_malloc(Len * sizeof(char));
-			strcpy(new_fname, OutFilePrefix);
+			strcpy(new_fname, out_file_prefix);
 			strcat(new_fname, fname);
 			fname = new_fname;
 		}
@@ -179,14 +182,14 @@ my_chunk_malloc(size_t size, t_chunk *chunk_info) {
 	 * structures where memory-efficiency is crucial.  This routine allocates   *
 	 * large "chunks" of data, and parcels them out as requested.  Whenever     *
 	 * it mallocs a new chunk it adds it to the linked list pointed to by       *
-	 * chunk_info->chunk_ptr_head.  This list can be used to free the			*
+	 * chunk_info->chunk_ptr_head.  This list can be used to free the		*
 	 * chunked memory.															*
 	 * Information about the currently open "chunk" must be stored by the       *
-	 * user program.  chunk_info->mem_avail_ptr points to an int storing		*
+	 * user program.  chunk_info->mem_avail_ptr points to an int storing	*
 	 * how many bytes are left in the current chunk, while						*
-	 * chunk_info->next_mem_loc_ptr is the address of a pointer to the			*
+	 * chunk_info->next_mem_loc_ptr is the address of a pointer to the	*
 	 * next free bytes in the chunk.  To start a new chunk, simply set			*
-	 * chunk_info->mem_avail_ptr = 0.  Each independent set of data				*
+	 * chunk_info->mem_avail_ptr = 0.  Each independent set of data		*
 	 * structures should use a new chunk.                                       */
 
 	/* To make sure the memory passed back is properly aligned, I must *
@@ -466,7 +469,7 @@ my_fgets(char *buf, int max_size, FILE * fp) {
 }
 
 char *
-my_strtok(char *ptr, char *tokens, FILE * fp, char *buf) {
+my_strtok(char *ptr, const char *tokens, FILE * fp, char *buf) {
 
 	/* Get next token, and wrap to next line if \ at end of line.    *
 	 * There is a bit of a "gotcha" in strtok.  It does not make a   *

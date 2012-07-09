@@ -273,7 +273,8 @@ static void processComplexBlock(INOUTP ezxml_t Parent, INOUTP t_block *cb,
 	/* Parse all pbs and CB internal nets*/
 	cb[index].pb->logical_block = OPEN;
 	cb[index].pb->pb_graph_node = cb[index].type->pb_graph_head;
-	rr_node = (t_rr_node*)my_calloc(cb[index].type->pb_graph_head->total_pb_pins,
+	rr_node = (t_rr_node*)my_calloc(cb[index].type->pb_graph_head->total_pb_pins + cb[index].type->pb_type->num_input_pins
+			+ cb[index].type->pb_type->num_output_pins + cb[index].type->pb_type->num_clock_pins,
 			sizeof(t_rr_node));
 	alloc_and_load_rr_graph_for_pb_graph_node(cb[index].pb->pb_graph_node, arch,
 			0);
@@ -299,7 +300,7 @@ static void processComplexBlock(INOUTP ezxml_t Parent, INOUTP t_block *cb,
 
 	processPb(Parent, cb[index].pb, cb[index].pb->rr_graph, cb[index].pb->rr_node_to_pb_mapping, num_primitives, vpack_net_hash, logical_block_hash);
 
-	cb[index].nets = my_malloc(cb[index].type->num_pins * sizeof(int));
+	cb[index].nets = (int *)my_malloc(cb[index].type->num_pins * sizeof(int));
 	for (i = 0; i < cb[index].type->num_pins; i++) {
 		cb[index].nets[i] = OPEN;
 	}
@@ -376,12 +377,15 @@ static void processPb(INOUTP ezxml_t Parent, INOUTP t_pb* pb,
 	} else {
 		/* process children of child if exists */
 
-		pb->child_pbs = my_calloc(pb_type->modes[pb->mode].num_pb_type_children,
+		pb->child_pbs = (t_pb **)my_calloc(pb_type->modes[pb->mode].num_pb_type_children,
 				sizeof(t_pb*));
 		for (i = 0; i < pb_type->modes[pb->mode].num_pb_type_children; i++) {
-			pb->child_pbs[i] = my_calloc(
+			pb->child_pbs[i] = (t_pb *)my_calloc(
 					pb_type->modes[pb->mode].pb_type_children[i].num_pb,
 					sizeof(t_pb));
+			for (j = 0; j < pb_type->modes[pb->mode].pb_type_children[i].num_pb; j++) {
+				pb->child_pbs[i][j].logical_block = OPEN;
+			}
 		}
 
 		/* Populate info for each physical block  */
@@ -538,7 +542,7 @@ static struct s_net *alloc_and_init_netlist_from_hash(INP int ncount,
 	struct s_hash *curr_net;
 	int i;
 
-	nlist = my_calloc(ncount, sizeof(struct s_net));
+	nlist = (struct s_net *)my_calloc(ncount, sizeof(struct s_net));
 
 	hash_iter = start_hash_table_iterator();
 	curr_net = get_next_hash(nhash, &hash_iter);
@@ -547,9 +551,9 @@ static struct s_net *alloc_and_init_netlist_from_hash(INP int ncount,
 		nlist[curr_net->index].name = my_strdup(curr_net->name);
 		nlist[curr_net->index].num_sinks = curr_net->count - 1;
 
-		nlist[curr_net->index].node_block = my_malloc(
+		nlist[curr_net->index].node_block = (int *)my_malloc(
 				curr_net->count * sizeof(int));
-		nlist[curr_net->index].node_block_pin = my_malloc(
+		nlist[curr_net->index].node_block_pin = (int *)my_malloc(
 				curr_net->count * sizeof(int));
 		nlist[curr_net->index].is_global = FALSE;
 		for (i = 0; i < curr_net->count; i++) {
@@ -913,7 +917,7 @@ static void load_external_nets_and_cb(INP int L_num_blocks,
 	/* Load global nets */
 	num_tokens = CountTokens(circuit_clocks);
 
-	count = my_calloc(*ext_ncount, sizeof(int));
+	count = (int *)my_calloc(*ext_ncount, sizeof(int));
 
 	/* complete load of external nets so that each net points back to the blocks */
 	for (i = 0; i < L_num_blocks; i++) {
@@ -1046,7 +1050,7 @@ static void load_internal_cb_nets(INOUTP t_pb *top_level,
 									+ i / 10 + j / 10
 									+ pb_graph_node->input_pins[i][j].pin_count_in_cluster
 											/ 10 + 26;
-					nets[*curr_net].name = my_calloc(size, sizeof(char));
+					nets[*curr_net].name = (char *)my_calloc(size, sizeof(char));
 					sprintf(nets[*curr_net].name,
 							"%s[%d].input[%d][%d].pin[%d]",
 							pb_graph_node->pb_type->name,
@@ -1072,7 +1076,7 @@ static void load_internal_cb_nets(INOUTP t_pb *top_level,
 									+ i / 10 + j / 10
 									+ pb_graph_node->clock_pins[i][j].pin_count_in_cluster
 											/ 10 + 26;
-					nets[*curr_net].name = my_calloc(size, sizeof(char));
+					nets[*curr_net].name = (char *)my_calloc(size, sizeof(char));
 					sprintf(nets[*curr_net].name,
 							"%s[%d].clock[%d][%d].pin[%d]",
 							pb_graph_node->pb_type->name,
@@ -1101,7 +1105,7 @@ static void load_internal_cb_nets(INOUTP t_pb *top_level,
 									+ i / 10 + j / 10
 									+ pb_graph_node->output_pins[i][j].pin_count_in_cluster
 											/ 10 + 26;
-					nets[*curr_net].name = my_calloc(size, sizeof(char));
+					nets[*curr_net].name = (char *)my_calloc(size, sizeof(char));
 					sprintf(nets[*curr_net].name,
 							"%s[%d].output[%d][%d].pin[%d]",
 							pb_graph_node->pb_type->name,
@@ -1157,11 +1161,11 @@ static void alloc_internal_cb_nets(INOUTP t_pb *top_level,
 										rr_graph);
 						top_level->local_nets[top_level->num_local_nets].num_sinks =
 								num_sinks;
-						top_level->local_nets[top_level->num_local_nets].node_block =
+						top_level->local_nets[top_level->num_local_nets].node_block = (int *)
 								my_calloc(num_sinks, sizeof(int));
-						top_level->local_nets[top_level->num_local_nets].node_block_port =
+						top_level->local_nets[top_level->num_local_nets].node_block_port = (int *)
 								my_calloc(num_sinks, sizeof(int));
-						top_level->local_nets[top_level->num_local_nets].node_block_pin =
+						top_level->local_nets[top_level->num_local_nets].node_block_pin = (int *)
 								my_calloc(num_sinks, sizeof(int));
 					}
 					top_level->num_local_nets++;
@@ -1179,11 +1183,11 @@ static void alloc_internal_cb_nets(INOUTP t_pb *top_level,
 										rr_graph);
 						top_level->local_nets[top_level->num_local_nets].num_sinks =
 								num_sinks;
-						top_level->local_nets[top_level->num_local_nets].node_block =
+						top_level->local_nets[top_level->num_local_nets].node_block = (int *)
 								my_calloc(num_sinks, sizeof(int));
-						top_level->local_nets[top_level->num_local_nets].node_block_port =
+						top_level->local_nets[top_level->num_local_nets].node_block_port = (int *)
 								my_calloc(num_sinks, sizeof(int));
-						top_level->local_nets[top_level->num_local_nets].node_block_pin =
+						top_level->local_nets[top_level->num_local_nets].node_block_pin = (int *)
 								my_calloc(num_sinks, sizeof(int));
 					}
 					top_level->num_local_nets++;
@@ -1205,11 +1209,11 @@ static void alloc_internal_cb_nets(INOUTP t_pb *top_level,
 										rr_graph);
 						top_level->local_nets[top_level->num_local_nets].num_sinks =
 								num_sinks;
-						top_level->local_nets[top_level->num_local_nets].node_block =
+						top_level->local_nets[top_level->num_local_nets].node_block = (int *)
 								my_calloc(num_sinks, sizeof(int));
-						top_level->local_nets[top_level->num_local_nets].node_block_port =
+						top_level->local_nets[top_level->num_local_nets].node_block_port = (int *)
 								my_calloc(num_sinks, sizeof(int));
-						top_level->local_nets[top_level->num_local_nets].node_block_pin =
+						top_level->local_nets[top_level->num_local_nets].node_block_pin = (int *)
 								my_calloc(num_sinks, sizeof(int));
 					}
 					top_level->num_local_nets++;
@@ -1232,7 +1236,7 @@ static void alloc_internal_cb_nets(INOUTP t_pb *top_level,
 
 	if (pb_graph_node->parent_pb_graph_node == NULL) { /* at top level */
 		if (pass == 1) {
-			top_level->local_nets = my_calloc(top_level->num_local_nets,
+			top_level->local_nets = (struct s_net *)my_calloc(top_level->num_local_nets,
 					sizeof(struct s_net));
 		}
 	}
@@ -1330,8 +1334,12 @@ void free_logical_blocks(void) {
 		if (logical_block[iblk].input_net_tnodes) 
 			free(logical_block[iblk].input_net_tnodes);
 		
-		if (logical_block[iblk].packed_molecules)
-			free(logical_block[iblk].packed_molecules);
+		tvptr = logical_block[iblk].packed_molecules;
+		while (tvptr != NULL) {
+			next = tvptr->next;
+			free(tvptr);
+			tvptr = next;
+		}
 
 		free(logical_block[iblk].input_nets);
 		port = logical_block[iblk].model->outputs;
@@ -1360,6 +1368,7 @@ void free_logical_blocks(void) {
 		}
 	}
 	free(logical_block);
+	logical_block = NULL;
 }
 
 /* Free  logical blocks of netlist */
@@ -1373,6 +1382,7 @@ void free_logical_nets(void) {
 		free(vpack_net[inet].node_block_pin);
 	}
 	free(vpack_net);
+	vpack_net = NULL;
 }
 
 

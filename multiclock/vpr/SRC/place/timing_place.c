@@ -55,7 +55,7 @@ static void free_crit(t_chunk *chunk_list_ptr){
 }
 
 /**************************************/
-void print_sink_delays(char *fname) {
+void print_sink_delays(const char *fname) {
 
 	int num_at_level, num_edges, inode, ilevel, i;
 	FILE *fp;
@@ -130,6 +130,7 @@ void free_lookups_and_criticalities(float ***net_delay) {
 	free_timing_graph();
 	free_net_delay(*net_delay, &net_delay_ch);
 
+	free_place_lookup_structs();
 }
 
 /**************************************/

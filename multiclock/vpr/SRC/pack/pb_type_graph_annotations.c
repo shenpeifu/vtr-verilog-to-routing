@@ -45,7 +45,7 @@ void load_pb_graph_pin_to_pin_annotations(INOUTP t_pb_graph_node *pb_graph_node)
 							|| annotations[i].prop[j]
 									== E_ANNOT_PIN_TO_PIN_DELAY_TSETUP) {
 										load_critical_path_annotations(annotations[i].line_num, pb_graph_node, OPEN,
-								annotations[i].format, annotations[i].prop[j],
+								annotations[i].format, (enum e_pin_to_pin_delay_annotations)annotations[i].prop[j],
 								annotations[i].input_pins,
 								annotations[i].output_pins,
 								annotations[i].value[j]);
@@ -80,7 +80,7 @@ void load_pb_graph_pin_to_pin_annotations(INOUTP t_pb_graph_node *pb_graph_node)
 											== E_ANNOT_PIN_TO_PIN_DELAY_TSETUP) {
 									load_critical_path_annotations(annotations[k].line_num, pb_graph_node, i,
 										annotations[k].format,
-										annotations[k].prop[m],
+										(enum e_pin_to_pin_delay_annotations)annotations[k].prop[m],
 										annotations[k].input_pins,
 										annotations[k].output_pins,
 										annotations[k].value[m]);
@@ -152,7 +152,7 @@ static void load_pack_pattern_annotations(INP int line_num, INOUTP t_pb_graph_no
 					 can use this info to only annotate existing edges */
 					if (iedge != in_port[i][j]->num_output_edges) {
 						in_port[i][j]->output_edges[iedge]->num_pack_patterns++;
-						in_port[i][j]->output_edges[iedge]->pack_pattern_names =
+						in_port[i][j]->output_edges[iedge]->pack_pattern_names = (char**)
 								my_realloc(
 										in_port[i][j]->output_edges[iedge]->pack_pattern_names,
 										sizeof(char*)
@@ -195,7 +195,7 @@ static void load_critical_path_annotations(INP int line_num,
 	float **delay_matrix;
 	t_pb_graph_node **children = NULL;
 
-	int count;
+	int count, prior_offset;
 	int num_inputs, num_outputs;
 
 	in_port = out_port = NULL;
@@ -258,9 +258,9 @@ static void load_critical_path_annotations(INP int line_num,
 		num_outputs = 1;
 	}
 
-	delay_matrix = my_malloc(sizeof(float*) * num_inputs);
+	delay_matrix = (float**)my_malloc(sizeof(float*) * num_inputs);
 	for (i = 0; i < num_inputs; i++) {
-		delay_matrix[i] = my_malloc(sizeof(float) * num_outputs);
+		delay_matrix[i] = (float*)my_malloc(sizeof(float) * num_outputs);
 	}
 
 	if (input_format == E_ANNOT_PIN_TO_PIN_MATRIX) {
@@ -329,26 +329,27 @@ static void load_critical_path_annotations(INP int line_num,
 							p++;
 						}
 					}
-					in_port[i][j]->num_pin_timing = count;
-					in_port[i][j]->pin_timing_del_max = my_malloc(
-							sizeof(float) * count);
-					in_port[i][j]->pin_timing = my_malloc(
-							sizeof(t_pb_graph_pin*) * count);
+					prior_offset = in_port[i][j]->num_pin_timing;
+					in_port[i][j]->num_pin_timing = prior_offset + count;
+					in_port[i][j]->pin_timing_del_max = (float*) my_realloc(in_port[i][j]->pin_timing_del_max,
+							sizeof(float) * in_port[i][j]->num_pin_timing);
+					in_port[i][j]->pin_timing = (t_pb_graph_pin**)my_realloc(in_port[i][j]->pin_timing,
+							sizeof(t_pb_graph_pin*) * in_port[i][j]->num_pin_timing);
 					p = 0;
 					count = 0;
 					for (m = 0; m < num_out_sets; m++) {
 						for (n = 0; n < num_out_ptrs[m]; n++) {
 							if (delay_matrix[k][p] != OPEN) {
-								in_port[i][j]->pin_timing_del_max[count] =
+								in_port[i][j]->pin_timing_del_max[prior_offset + count] =
 										delay_matrix[k][p];
-								in_port[i][j]->pin_timing[count] =
+								in_port[i][j]->pin_timing[prior_offset + count] =
 										out_port[m][n];
 								count++;
 							}
 							p++;
 						}
 					}
-					assert(in_port[i][j]->num_pin_timing == count);
+					assert(in_port[i][j]->num_pin_timing == prior_offset + count);
 					k++;
 				}
 			}

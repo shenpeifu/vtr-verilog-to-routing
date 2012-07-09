@@ -7,12 +7,13 @@ typedef struct s_options t_options;
 struct s_options {
 	/* File names */
 	char *ArchFile;
+	char *SettingsFile;
 	char *CircuitName;
 	char *NetFile;
 	char *PlaceFile;
 	char *RouteFile;
 	char *BlifFile;
-	char *OutFilePrefix;
+	char *out_file_prefix;
 	char *SDCFile;
 
 	/* General options */
@@ -50,9 +51,7 @@ struct s_options {
 	float PlaceInnerNum;
 	int Seed;
 	float place_cost_exp;
-	enum place_c_types PlaceCostType;
 	int PlaceChanWidth;
-	int PlaceNonlinearRegions;
 	char *PinFile;
 	boolean ShowPlaceTiming;
 	int block_dist;
@@ -82,7 +81,12 @@ struct s_options {
 	float criticality_exp;
 	float max_criticality;
 
+	/* State and metadata about various settings */
 	int Count[OT_BASE_UNKNOWN];
+	int Provenance[OT_BASE_UNKNOWN];
+
+	/* Last read settings file */
+	int read_settings;
 };
 
 void ReadOptions(INP int argc,

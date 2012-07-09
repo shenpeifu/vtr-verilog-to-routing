@@ -54,7 +54,7 @@ void CheckOptions(INP t_options Options, INP boolean TimingEnabled) {
 	}
 
 	/* If placing and timing is enabled, default to a timing placer */
-	TimingPlacer = ((Options.Count[OT_PLACE] || default_flow) && TimingEnabled);
+	TimingPlacer = (boolean)((Options.Count[OT_PLACE] || default_flow) && TimingEnabled);
 	if (Options.Count[OT_PLACE_ALGORITHM] > 0) {
 		if ((PATH_TIMING_DRIVEN_PLACE != Options.PlaceAlgorithm)
 				&& (NET_TIMING_DRIVEN_PLACE != Options.PlaceAlgorithm)) {
@@ -64,7 +64,7 @@ void CheckOptions(INP t_options Options, INP boolean TimingEnabled) {
 	}
 
 	/* If routing and timing is enabled, default to a timing router */
-	TimingRouter = ((Options.Count[OT_ROUTE] || default_flow) && TimingEnabled);
+	TimingRouter = (boolean)((Options.Count[OT_ROUTE] || default_flow) && TimingEnabled);
 	if (Options.Count[OT_ROUTER_ALGORITHM] > 0) {
 		if (TIMING_DRIVEN != Options.RouterAlgorithm) {
 			/* Turn off the timing router if they request a different router */
@@ -94,17 +94,11 @@ void CheckOptions(INP t_options Options, INP boolean TimingEnabled) {
 	if (Options.Count[OT_PLACE_ALGORITHM] > 0) {
 		Yes = OT_PLACE_ALGORITHM;
 	}
-	if (Options.Count[OT_PLACE_COST_TYPE] > 0) {
-		Yes = OT_PLACE_COST_TYPE;
-	}
 	if (Options.Count[OT_PLACE_COST_EXP] > 0) {
 		Yes = OT_PLACE_COST_EXP;
 	}
 	if (Options.Count[OT_PLACE_CHAN_WIDTH] > 0) {
 		Yes = OT_PLACE_CHAN_WIDTH;
-	}
-	if (Options.Count[OT_NUM_REGIONS] > 0) {
-		Yes = OT_NUM_REGIONS;
 	}
 	if (Options.Count[OT_ENABLE_TIMING_COMPUTATIONS] > 0) {
 		Yes = OT_ENABLE_TIMING_COMPUTATIONS;

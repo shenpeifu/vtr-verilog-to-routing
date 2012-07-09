@@ -4,6 +4,7 @@
 /* The order of this does NOT matter, but do not give things specific values
  * or you will screw up the ability to count things properly */
 enum e_OptionBaseToken {
+	OT_SETTINGS_FILE,
 	OT_NODISP,
 	OT_AUTO,
 	OT_RECOMPUTE_CRIT_ITER,
@@ -27,8 +28,6 @@ enum e_OptionBaseToken {
 	OT_TIMING_TRADEOFF,
 	OT_ENABLE_TIMING_COMPUTATIONS,
 	OT_BLOCK_DIST,
-	OT_PLACE_COST_TYPE,
-	OT_NUM_REGIONS,
 	OT_PLACE_CHAN_WIDTH,
 	OT_MAX_ROUTER_ITERATIONS,
 	OT_BB_FACTOR,
@@ -79,8 +78,6 @@ enum e_OptionArgToken {
 	OT_BOUNDING_BOX,
 	OT_NET_TIMING_DRIVEN,
 	OT_PATH_TIMING_DRIVEN,
-	OT_LINEAR,
-	OT_NONLINEAR,
 	OT_BREADTH_FIRST,
 	OT_TIMING_DRIVEN,
 	OT_DIRECTED_SEARCH,

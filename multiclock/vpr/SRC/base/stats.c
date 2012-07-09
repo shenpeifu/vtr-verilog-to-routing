@@ -99,6 +99,7 @@ void routing_stats(boolean full_stats, enum e_route_type route_type,
 				if (num_constrained_clocks == 1) {
 					print_critical_path("critical_path.echo");
 				}
+				print_lut_remapping("lut_remapping.echo");
 			}
 
 			get_timing_stats(timing_stats);
@@ -375,7 +376,7 @@ void print_wirelen_prob_dist(void) {
 						"Realloc'ing to increase 2-pin wirelen prob distribution array\n");
 				incr = index - prob_dist_size + 2;
 				prob_dist_size += incr;
-				prob_dist = my_realloc(prob_dist,
+				prob_dist = (float *)my_realloc(prob_dist,
 						prob_dist_size * sizeof(float));
 				for (i = prob_dist_size - incr; i < prob_dist_size; i++)
 					prob_dist[i] = 0.0;
@@ -393,7 +394,7 @@ void print_wirelen_prob_dist(void) {
 						"Realloc'ing to increase 2-pin wirelen prob distribution array\n");
 				incr = index - prob_dist_size + 2;
 				prob_dist_size += incr;
-				prob_dist = my_realloc(prob_dist,
+				prob_dist = (float *)my_realloc(prob_dist,
 						prob_dist_size * sizeof(float));
 				for (i = prob_dist_size - incr; i < prob_dist_size; i++)
 					prob_dist[i] = 0.0;

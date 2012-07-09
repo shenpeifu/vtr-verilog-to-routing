@@ -322,7 +322,7 @@ typedef enum {
  * num_critical_input_paths, num_critical_output_paths: Count total number of near critical paths that go through this node *
  */
 
-/*#define FANCY_CRITICALITY*/
+#define FANCY_CRITICALITY
 /* If defined, uses different, normalized and directional criticalities in the clusterer.  
 	If not defined, uses the same slack ratio fpr the clusterer as for the placer/router. */
 
@@ -390,12 +390,6 @@ enum pic_type {
 	NO_PICTURE, PLACEMENT, ROUTING
 };
 /* What's on screen? */
-
-/* For the placer.  Different types of cost functions that can be used. */
-enum place_c_types {
-	LINEAR_CONG, NONLINEAR_CONG
-};
-/* Nonlinear placement is deprecated */
 
 /* Map netlist to FPGA or timing analyze only */
 enum e_operation {
@@ -497,7 +491,7 @@ struct s_file_name_opts {
 	char *NetFile;
 	char *PlaceFile;
 	char *RouteFile;
-	char *OutFilePrefix;
+	char *out_file_prefix;
 };
 
 /* Options for packing
@@ -511,7 +505,6 @@ struct s_packer_opts {
 	char *sdc_file_name;
 	char *output_file;
 	boolean global_clocks;
-	int clocks_per_cluster;
 	boolean hill_climbing_flag;
 	boolean sweep_hanging_nets_and_inputs;
 	boolean timing_driven;
@@ -551,13 +544,11 @@ struct s_placer_opts {
 	enum e_place_algorithm place_algorithm;
 	float timing_tradeoff;
 	int block_dist;
-	enum place_c_types place_cost_type;
 	float place_cost_exp;
 	int place_chan_width;
 	enum e_pad_loc_type pad_loc_type;
 	char *pad_loc_file;
 	enum pfreq place_freq;
-	int num_regions;
 	int recompute_crit_iter;
 	boolean enable_timing_computations;
 	int inner_loop_recompute_divider;
@@ -570,21 +561,18 @@ struct s_placer_opts {
 /* Various options for the placer.                                           *
  * place_algorithm:  BOUNDING_BOX_PLACE or NET_TIMING_DRIVEN_PLACE, or       *
  *                   PATH_TIMING_DRIVEN_PLACE                                *
- * timing_tradeoff:  When TIMING_DRIVEN_PLACE mode, what is the tradeoff *
+ * timing_tradeoff:  When TIMING_DRIVEN_PLACE mode, what is the tradeoff     *
  *                   timing driven and BOUNDING_BOX_PLACE.                   *
  * block_dist:  Initial guess of how far apart blocks on the critical path   *
  *              This is used to compute the initial slacks and criticalities *
- * place_cost_type:  LINEAR_CONG or NONLINEAR_CONG.                          *
  * place_cost_exp:  Power to which denominator is raised for linear_cong.    *
  * place_chan_width:  The channel width assumed if only one placement is     *
  *                    performed.                                             *
- * pad_loc_type:  Are pins FREE, fixed randomly, or fixed from a file.  *
- * pad_loc_file:  File to read pin locations form if pad_loc_type  *
+ * pad_loc_type:  Are pins FREE, fixed randomly, or fixed from a file.       *
+ * pad_loc_file:  File to read pin locations form if pad_loc_type            *
  *                     is USER.                                              *
  * place_freq:  Should the placement be skipped, done once, or done for each *
  *              channel width in the binary search.                          *
- * num_regions:  Used only with NONLINEAR_CONG; in that case, congestion is  *
- *               computed on an array of num_regions x num_regions basis.    *
  * recompute_crit_iter: how many temperature stages pass before we recompute *
  *               criticalities based on average point to point delay         *
  * enable_timing_computations: in bounding_box mode, normally, timing        *
@@ -688,11 +676,6 @@ struct s_det_routing_arch {
  * if the route_type is DETAILED.                                           *
  * (UDSD by AY) directionality: Should the tracks be uni-directional or     *
  *                            bi-directional?                               *
- * Fc_type:   Are the Fc values below absolute numbers, or fractions of W?  *
- * Fc_output:  Number of tracks to which each clb output pin connect in     *
- *             each channel to which it is adjacent.                        *
- * Fc_input:  Number of tracks to which each clb input pin connects.        *
- * Fc_pad:    Number of tracks to which each I/O pad connects.              *
  * switch_block_type:  Pattern of switches at each switch block.  I         *
  *           assume Fs is always 3.  If the type is SUBSET, I use a         *
  *           Xilinx-like switch block where track i in one channel always   *
@@ -923,9 +906,28 @@ enum e_cost_indices {
 
 /* Type to store our list of token to enum pairings */
 struct s_TokenPair {
-	char *Str;
+	const char *Str;
 	int Enum;
 };
+
+/* Store settings for VPR */
+typedef struct s_vpr_setup {
+	boolean TimingEnabled;					/* Is VPR timing enabled */
+	struct s_file_name_opts FileNameOpts;	/* File names */
+	enum e_operation Operation;			/* run VPR or do analysis only */
+	t_model * user_models;					/* blif models defined by the user */
+	t_model * library_models;				/* blif models in VPR */
+	struct s_packer_opts PackerOpts;		/* Options for packer */
+	struct s_placer_opts PlacerOpts;		/* Options for placer */
+	struct s_annealing_sched AnnealSched;	/* Placement option annealing schedule */
+	struct s_router_opts RouterOpts;		/* router options */
+	struct s_det_routing_arch RoutingArch; /* routing architecture */
+	t_segment_inf * Segments;				/* wires in routing architecture */
+	t_timing_inf Timing;					/* timing information */
+	float constant_net_delay;				/* timing information when place and route not run */
+	boolean ShowGraphics;					/* option to show graphics */
+	int GraphPause;						/* user interactiveness graphics option */
+} t_vpr_setup; 
 
 #endif
 

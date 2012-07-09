@@ -40,30 +40,30 @@ t_timing_stats * do_timing_analysis(boolean do_lut_input_balancing, boolean is_f
 
 void free_timing_graph(void);
 
-void free_timing_stats(t_timing_stats * timing_stats);
+void free_timing_stats(t_timing_stats * timing_stats);void print_timing_graph(const char *fname);
 
-void print_timing_graph(char *fname);
+void print_lut_remapping(const char *fname);
 
-void print_net_slack(char *fname);
+void print_net_slack(const char *fname);
 
-void print_net_slack_ratio(char *fname);
+void print_net_slack_ratio(const char *fname);
 
-void print_net_delay(float **net_delay, char *fname);
+void print_net_delay(float **net_delay, const char *fname);
 
 #ifdef FANCY_CRITICALITY
-void print_clustering_timing_info(char *fname);
+void print_clustering_timing_info(const char *fname);
 #endif
 
 void print_lut_remapping(char *fname);
 
-void print_critical_path(char *fname);
+void print_critical_path(const char *fname);
 
 void get_tnode_block_and_output_net(int inode, int *iblk_ptr, int *inet_ptr);
 
 void do_constant_net_delay_timing_analysis(t_timing_inf timing_inf,
 		float constant_net_delay_value);
 
-void print_timing_graph_as_blif(char *fname, t_model *models);
+void print_timing_graph_as_blif(const char *fname, t_model *models);
 
 /*************************** Variable declarations ********************************/
 

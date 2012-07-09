@@ -48,56 +48,56 @@ void SetupVPR(INP t_options *Options, INP boolean TimingEnabled,
 	/* init default filenames */
 	if (Options->BlifFile == NULL) {
 		len = strlen(Options->CircuitName) + 6; /* circuit_name.blif/0*/
-		if (Options->OutFilePrefix != NULL) {
-			len += strlen(Options->OutFilePrefix);
+		if (Options->out_file_prefix != NULL) {
+			len += strlen(Options->out_file_prefix);
 		}
 		Options->BlifFile = (char*) my_calloc(len, sizeof(char));
-		if (Options->OutFilePrefix == NULL) {
+		if (Options->out_file_prefix == NULL) {
 			sprintf(Options->BlifFile, "%s.blif", Options->CircuitName);
 		} else {
-			sprintf(Options->BlifFile, "%s%s.blif", Options->OutFilePrefix,
+			sprintf(Options->BlifFile, "%s%s.blif", Options->out_file_prefix,
 					Options->CircuitName);
 		}
 	}
 
 	if (Options->NetFile == NULL) {
 		len = strlen(Options->CircuitName) + 5; /* circuit_name.net/0*/
-		if (Options->OutFilePrefix != NULL) {
-			len += strlen(Options->OutFilePrefix);
+		if (Options->out_file_prefix != NULL) {
+			len += strlen(Options->out_file_prefix);
 		}
 		Options->NetFile = (char*) my_calloc(len, sizeof(char));
-		if (Options->OutFilePrefix == NULL) {
+		if (Options->out_file_prefix == NULL) {
 			sprintf(Options->NetFile, "%s.net", Options->CircuitName);
 		} else {
-			sprintf(Options->NetFile, "%s%s.net", Options->OutFilePrefix,
+			sprintf(Options->NetFile, "%s%s.net", Options->out_file_prefix,
 					Options->CircuitName);
 		}
 	}
 
 	if (Options->PlaceFile == NULL) {
 		len = strlen(Options->CircuitName) + 7; /* circuit_name.place/0*/
-		if (Options->OutFilePrefix != NULL) {
-			len += strlen(Options->OutFilePrefix);
+		if (Options->out_file_prefix != NULL) {
+			len += strlen(Options->out_file_prefix);
 		}
 		Options->PlaceFile = (char*) my_calloc(len, sizeof(char));
-		if (Options->OutFilePrefix == NULL) {
+		if (Options->out_file_prefix == NULL) {
 			sprintf(Options->PlaceFile, "%s.place", Options->CircuitName);
 		} else {
-			sprintf(Options->PlaceFile, "%s%s.place", Options->OutFilePrefix,
+			sprintf(Options->PlaceFile, "%s%s.place", Options->out_file_prefix,
 					Options->CircuitName);
 		}
 	}
 
 	if (Options->RouteFile == NULL) {
 		len = strlen(Options->CircuitName) + 7; /* circuit_name.route/0*/
-		if (Options->OutFilePrefix != NULL) {
-			len += strlen(Options->OutFilePrefix);
+		if (Options->out_file_prefix != NULL) {
+			len += strlen(Options->out_file_prefix);
 		}
 		Options->RouteFile = (char*) my_calloc(len, sizeof(char));
-		if (Options->OutFilePrefix == NULL) {
+		if (Options->out_file_prefix == NULL) {
 			sprintf(Options->RouteFile, "%s.route", Options->CircuitName);
 		} else {
-			sprintf(Options->RouteFile, "%s%s.route", Options->OutFilePrefix,
+			sprintf(Options->RouteFile, "%s%s.route", Options->out_file_prefix,
 					Options->CircuitName);
 		}
 	}
@@ -108,7 +108,7 @@ void SetupVPR(INP t_options *Options, INP boolean TimingEnabled,
 	FileNameOpts->NetFile = Options->NetFile;
 	FileNameOpts->PlaceFile = Options->PlaceFile;
 	FileNameOpts->RouteFile = Options->RouteFile;
-	FileNameOpts->OutFilePrefix = Options->OutFilePrefix;
+	FileNameOpts->out_file_prefix = Options->out_file_prefix;
 	
 	SetupOperation(*Options, Operation);
 	SetupPlacerOpts(*Options, TimingEnabled, PlacerOpts);
@@ -151,7 +151,7 @@ void SetupVPR(INP t_options *Options, INP boolean TimingEnabled,
 	SetupPackerOpts(*Options, TimingEnabled, *Arch, Options->NetFile, PackerOpts);
 
 	/* init global variables */
-	OutFilePrefix = Options->OutFilePrefix;
+	out_file_prefix = Options->out_file_prefix;
 	grid_logic_tile_area = Arch->grid_logic_tile_area;
 	ipin_mux_trans_size = Arch->ipin_mux_trans_size;
 
@@ -516,7 +516,7 @@ void SetupPackerOpts(INP t_options Options, INP boolean TimingEnabled,
 		PackerOpts->timing_driven = Options.timing_driven;
 	}
 	PackerOpts->cluster_seed_type = (
-			TimingEnabled ? VPACK_TIMING : VPACK_MAX_INPUTS); /* DEFAULT */
+		TimingEnabled ? VPACK_TIMING : VPACK_MAX_INPUTS); /* DEFAULT */
 	if (Options.Count[OT_CLUSTER_SEED]) {
 		PackerOpts->cluster_seed_type = Options.cluster_seed_type;
 	}
@@ -583,26 +583,12 @@ static void SetupPlacerOpts(INP t_options Options, INP boolean TimingEnabled,
 		PlacerOpts->td_place_exp_last = Options.place_exp_last;
 	}
 
-	PlacerOpts->place_cost_type = LINEAR_CONG; /* DEFAULT */
-	if (Options.Count[OT_PLACE_COST_TYPE]) {
-		PlacerOpts->place_cost_type = Options.PlaceCostType;
-	}
-
-	/* Depends on PlacerOpts->place_cost_type */
 	PlacerOpts->place_algorithm = BOUNDING_BOX_PLACE; /* DEFAULT */
 	if (TimingEnabled) {
 		PlacerOpts->place_algorithm = PATH_TIMING_DRIVEN_PLACE; /* DEFAULT */
 	}
-	if (NONLINEAR_CONG == PlacerOpts->place_cost_type) {
-		PlacerOpts->place_algorithm = BOUNDING_BOX_PLACE; /* DEFAULT */
-	}
 	if (Options.Count[OT_PLACE_ALGORITHM]) {
 		PlacerOpts->place_algorithm = Options.PlaceAlgorithm;
-	}
-
-	PlacerOpts->num_regions = 4; /* DEFAULT */
-	if (Options.Count[OT_NUM_REGIONS]) {
-		PlacerOpts->num_regions = Options.PlaceNonlinearRegions;
 	}
 
 	PlacerOpts->pad_loc_file = NULL; /* DEFAULT */
@@ -617,12 +603,7 @@ static void SetupPlacerOpts(INP t_options Options, INP boolean TimingEnabled,
 		PlacerOpts->pad_loc_type = (Options.PinFile ? USER : RANDOM);
 	}
 
-	/* Depends on PlacerOpts->place_cost_type */
 	PlacerOpts->place_chan_width = 100; /* DEFAULT */
-	if ((NONLINEAR_CONG == PlacerOpts->place_cost_type)
-			&& (Options.Count[OT_ROUTE_CHAN_WIDTH])) {
-		PlacerOpts->place_chan_width = Options.RouteChanWidth;
-	}
 	if (Options.Count[OT_PLACE_CHAN_WIDTH]) {
 		PlacerOpts->place_chan_width = Options.PlaceChanWidth;
 	}
@@ -647,11 +628,7 @@ static void SetupPlacerOpts(INP t_options Options, INP boolean TimingEnabled,
 		PlacerOpts->enable_timing_computations = Options.ShowPlaceTiming;
 	}
 
-	/* Depends on PlacerOpts->place_cost_type */
 	PlacerOpts->place_freq = PLACE_ONCE; /* DEFAULT */
-	if (NONLINEAR_CONG == PlacerOpts->place_cost_type) {
-		PlacerOpts->place_freq = PLACE_ALWAYS; /* DEFAULT */
-	}
 	if ((Options.Count[OT_ROUTE_CHAN_WIDTH])
 			|| (Options.Count[OT_PLACE_CHAN_WIDTH])) {
 		PlacerOpts->place_freq = PLACE_ONCE;
@@ -682,10 +659,10 @@ static void SetupOperation(INP t_options Options,
 /* Determines whether timing analysis should be on or off. 
  Unless otherwise specified, always default to timing.
  */
-boolean IsTimingEnabled(INP t_options Options) {
+boolean IsTimingEnabled(INP t_options *Options) {
 	/* First priority to the '--timing_analysis' flag */
-	if (Options.Count[OT_TIMING_ANALYSIS]) {
-		return Options.TimingAnalysis;
+	if (Options->Count[OT_TIMING_ANALYSIS]) {
+		return Options->TimingAnalysis;
 	}
 	return TRUE;
 }
@@ -693,10 +670,10 @@ boolean IsTimingEnabled(INP t_options Options) {
 /* Determines whether file echo should be on or off. 
  Unless otherwise specified, always default to on.
  */
-boolean IsEchoEnabled(INP t_options Options) {
+boolean IsEchoEnabled(INP t_options *Options) {
 	/* First priority to the '--echo_file' flag */
-	if (Options.Count[OT_CREATE_ECHO_FILE]) {
-		return Options.CreateEchoFile;
+	if (Options->Count[OT_CREATE_ECHO_FILE]) {
+		return Options->CreateEchoFile;
 	}
 	return FALSE;
 }

@@ -10,6 +10,7 @@ void free_lookups_and_criticalities(float ***net_delay);
 
 void print_sink_delays(char *fname);
 
+void print_sink_delays(const char *fname);
 void load_criticalities(float crit_exponent);
 
 extern float **timing_place_crit;
