@@ -84,9 +84,9 @@ void read_sdc(char * sdc_file) {
 
 	/* If no SDC file is included or specified, use default behaviour of cutting paths between domains and optimizing each clock separately */
 	if ((sdc = fopen(sdc_file, "r")) == NULL) {
-		printf("SDC file %s not found.\n", sdc_file);
-		printf("All clocks will be optimized to run as fast as possible.\n");
-		printf("Paths between clock domains will be cut.\n\n");
+		printf("SDC file %s blank or not found.\n", sdc_file);
+		printf("Defaulting to: optimize all clocks to run as fast as possible.\n");
+		printf("Cut paths between clock domains.\n\n");
 
 		/* Find all netlist clocks and add them as constrained clocks. */
 		count_netlist_clocks_as_constrained_clocks();
@@ -194,6 +194,9 @@ void read_sdc(char * sdc_file) {
 	for (io_index = 0; io_index < num_constrained_ios; io_index++) {
 		constrained_ios[io_index].delay /= 1e9;
 	}
+
+	printf("SDC file %s parsed successfully.\n%d clocks (including virtual clocks)"
+		"and %d I/Os were constrained.\n\n", sdc_file, num_constrained_clocks, num_constrained_ios);
 
 	/* Since all the information we need is stored in timing_constraint, constrained_clocks, and constrained_ios, free other data structures used in this routine */
 	free(sdc_clocks);

@@ -467,7 +467,7 @@ static void get_timing_stats(t_timing_stats * timing_stats) {
 
 	if (num_constrained_clocks == 1) {
 		printf("\nCritical Path: %g ns", timing_stats->critical_path_delay[0][0] * 1e9);
-		printf("\nf_max: %g MHz", 1e-9 / timing_stats->critical_path_delay[0][0]);
+		printf("\nf_max: %g MHz", 1e-6 / timing_stats->critical_path_delay[0][0]);
 		if (timing_stats->least_slack_in_domain[0] < HUGE_POSITIVE_FLOAT - 1) {
 			printf("\nLeast slack in design: %g ns\n\n", timing_stats->least_slack_in_domain[0] * 1e9);
 		} else {

@@ -169,13 +169,9 @@ void alloc_and_load_timing_graph(t_timing_inf timing_inf) {
 
 	num_sinks = alloc_and_load_timing_graph_levels();
 
-	if (GetEchoOption()) {
-		print_timing_graph("initial_timing_graph.echo");
-	}
+	load_clock_domain_and_skew(FALSE); 
 
 	check_timing_graph(num_sinks);
-
-	load_clock_domain_and_skew(FALSE); 
 
 	alloc_net_slack_and_slack_ratio();
 }
@@ -229,7 +225,7 @@ static void alloc_net_slack_and_slack_ratio(void) {
 
 	/* Allocates the net_slack and net_slack_ratio structures ([0..num_nets-1][1..num_pins-1]).  Chunk allocated to save space. */
 
-	int inet, j;
+	int inet;
 	
 	net_slack		= (float **) my_malloc(num_timing_nets * sizeof(float *));
 	net_slack_ratio	= (float **) my_malloc(num_timing_nets * sizeof(float *));
@@ -237,11 +233,6 @@ static void alloc_net_slack_and_slack_ratio(void) {
 	for (inet = 0; inet < num_timing_nets; inet++) {
 		net_slack[inet]		  = (float *) my_chunk_malloc((timing_nets[inet].num_sinks + 1) * sizeof(float), &tedge_ch);
 		net_slack_ratio[inet] = (float *) my_chunk_malloc((timing_nets[inet].num_sinks + 1) * sizeof(float), &tedge_ch);
-		
-		for (j = 0; j <= timing_nets[inet].num_sinks; j++) {
-			net_slack[inet][j]		 = HUGE_POSITIVE_FLOAT; /* So that when we take the min, it will always be replaced. */
-			net_slack_ratio[inet][j] = HUGE_POSITIVE_FLOAT; /* So that when we take the min, it will always be replaced. */
-		}
 	}
 }
 
@@ -322,7 +313,7 @@ void print_net_slack(char *fname) {
 				max_slack = max(max_slack, slack);
 				min_slack = min(min_slack, slack);
 				total_slack += slack;
-				if (slack < -1e-15) { /* if slack is negative */
+				if (slack < -1e-15) { /* if slack is negative - 10^-15 is enough to exclude erroneous negatives caused by floating point roundoff */
 					total_negative_slack -= slack; /* By convention, we'll have total_negative_slack be a positive number. */
 				}
 			} else { /* slack was never analysed */
@@ -1137,16 +1128,6 @@ static void alloc_and_load_tnodes_from_prepacked_netlist(float block_delay,
 	for (i = 0; i < num_logical_nets; i++) {
 		assert(net_to_driver_tnode[i] != OPEN);
 	}
-
-	/* Remove clock skew = inter_cluster_net_delay from all INPAD_OPIN nodes leading to FF_CLOCK nodes,	since 
-	inter_cluster_net_delay is not meant to be used as clock skew. Set delay on all outgoing edges to 0 instead. */
-	for (inode = 0; inode < num_tnodes; inode++) {
-		if (tnode[inode].type == INPAD_OPIN && tnode[tnode[inode].out_edges[0].to_node].type == FF_CLOCK) {
-			for (i = 0; i < tnode[inode].num_edges; i++) {
-				tnode[inode].out_edges[i].Tdel = 0.;
-			}
-		}
-	}
 }
 
 static void load_tnode(INP t_pb_graph_pin *pb_graph_pin, INP int iblock,
@@ -1287,7 +1268,7 @@ char *tnode_type_names[] = { "INPAD_SOURCE", "INPAD_OPIN", "OUTPAD_IPIN",
 		}
 
 		if(itype == FF_CLOCK || itype == FF_SOURCE || itype == FF_SINK) {
-			fprintf(fp, "%d\t%f\t", tnode[inode].clock_domain, tnode[inode].clock_skew);
+			fprintf(fp, "%d\t%e\t", tnode[inode].clock_domain, tnode[inode].clock_skew);
 		}
 
 		else {
@@ -1360,16 +1341,12 @@ t_timing_stats * do_timing_analysis(boolean do_lut_input_balancing, boolean is_f
 	Please see vpr_types.h for definition of FANCY_CRITICALITY. */
 
 	float constraint;
-	int i, j, source_clock_domain, sink_clock_domain, inode, ilevel, num_at_level, num_edges, iedge, to_node;
+	int i, j, source_clock_domain, sink_clock_domain, inode, ilevel, num_at_level, num_edges, inet, iedge, to_node;
 	int total;
 	t_tedge *tedge;
 	t_pb *pb;
 	boolean found;
 	t_timing_stats * timing_stats = NULL;
-	
-#if defined VERBOSE || SLACK_RATIO_DEFINITION == 2
-	int inet; 
-#endif
 
 #ifdef FANCY_CRITICALITY
 	long max_critical_output_paths = 0, max_critical_input_paths = 0;
@@ -1426,6 +1403,14 @@ t_timing_stats * do_timing_analysis(boolean do_lut_input_balancing, boolean is_f
 		}
 	}
 
+	/* Reset net_slack and net_slack ratio */
+	for (inet = 0; inet < num_timing_nets; inet++) {
+		for (j = 0; j <= timing_nets[inet].num_sinks; j++) {
+			net_slack[inet][j]		 = HUGE_POSITIVE_FLOAT; /* So that when we take the min, it will always be replaced. */
+			net_slack_ratio[inet][j] = HUGE_POSITIVE_FLOAT; /* So that when we take the min, it will always be replaced. */
+		}
+	}
+
 	/* For each source clock domain, we do one forward and one backward breadth-first traversal.  */
 	for (source_clock_domain = 0; source_clock_domain < num_constrained_clocks; source_clock_domain++) {
 #if SLACK_DEFINITION == 4 || SLACK_DEFINITION == 5
@@ -1457,14 +1442,21 @@ t_timing_stats * do_timing_analysis(boolean do_lut_input_balancing, boolean is_f
 
 			if (tnode[inode].clock_domain == source_clock_domain) {
 				if (tnode[inode].type == FF_SOURCE) { 
+#if 0
 					/* Set the arrival time of this flip-flop tnode to its clock skew. */
 					tnode[inode].T_arr = tnode[inode].clock_skew;
+#else
+					/* For now, use a clock skew of 0. */
+					tnode[inode].T_arr = 0.;
+#endif
 				} else if (tnode[inode].type == INPAD_SOURCE) { 
 					/* There's no such thing as clock skew for external clocks. The closest equivalent, 
 					input delay, is already marked on the edge coming out from this node. 
 					As a result, the signal can be said to arrive at t = 0. */
 					tnode[inode].T_arr = 0.;
 				}
+
+
 			}
 		}
 
@@ -1544,12 +1536,15 @@ t_timing_stats * do_timing_analysis(boolean do_lut_input_balancing, boolean is_f
 				if (num_edges == 0) { /* sink */
 
 					/* Test this tnode against several conditions to make sure we should analyse it. */
-
+#if 0
 					if (tnode[inode].type == FF_CLOCK) {
 						continue; /* Skip nodes on the clock net itself. */
 					}
-					assert(tnode[inode].type == FF_SINK || tnode[inode].type == OUTPAD_SINK); 
 
+					assert(tnode[inode].type == FF_SINK || tnode[inode].type == OUTPAD_SINK); 
+#else
+					assert(tnode[inode].type == FF_SINK || tnode[inode].type == OUTPAD_SINK || tnode[inode].type == FF_CLOCK); 
+#endif
 					/* Assign the required time T_req for each FF_SINK leaf node, taking into account clock skew (OUTPAD_SINK nodes have no clock skew). *
 					 * T_req is the time we need all inputs to a tnode to arrive by, before it begins to affect the speed of the circuit.    *
 					 * Roughly speaking, the slack along a path is the difference between the required time and the arrival time - the       *
@@ -1588,16 +1583,16 @@ t_timing_stats * do_timing_analysis(boolean do_lut_input_balancing, boolean is_f
 					(that's what human designers care about), not the normalized ones. */	
 
 					if(!is_final_analysis) {
-						tnode[inode].T_req = max(constraint + tnode[inode].clock_skew, T_arr_max_this_domain);
+						tnode[inode].T_req = max(constraint /*+ tnode[inode].clock_skew*/, T_arr_max_this_domain);
 					} else {
-						tnode[inode].T_req = constraint + tnode[inode].clock_skew;
+						tnode[inode].T_req = constraint /*+ tnode[inode].clock_skew*/;
 					}
 #elif SLACK_DEFINITION == 5	
 					/* As for SLACK_DEFINITION == 4, except always normalize, even for final analysis. */
-					tnode[inode].T_req = max(constraint + tnode[inode].clock_skew, T_arr_max_this_domain);
+					tnode[inode].T_req = max(constraint /*+ tnode[inode].clock_skew*/, T_arr_max_this_domain);
 #else					
 					/* Don't do the normalization and always set T_req equal to the "real" required time. */
-					tnode[inode].T_req = constraint + tnode[inode].clock_skew;
+					tnode[inode].T_req = constraint /*+ tnode[inode].clock_skew*/;
 #endif				 
 						
 					/* Store the largest critical path delay for this constraint (source domain AND sink domain) in the matrix critical_path_delay.
@@ -1673,8 +1668,8 @@ t_timing_stats * do_timing_analysis(boolean do_lut_input_balancing, boolean is_f
 						if (tnode[to_node].num_critical_output_paths > max_critical_output_paths) {
 							max_critical_output_paths = tnode[to_node].num_critical_output_paths;
 						}
-#endif
 					}
+#endif
 				}
 			}
 		}
@@ -2611,11 +2606,12 @@ static void load_clock_domain_and_skew(boolean is_prepacked) {
 				tnode[inode].clock_domain = clock_index; 
 				tnode[inode].clock_skew = 0.;
 				propagate_clock_domain_and_skew(inode); /* ...and propagate this information forward to connected nodes. */
+#if 0
 				/* Now that the clock domain is on the flip-flops using this clock net, we set the clock domain of this clock
 				INPAD_SOURCE tnode to -1, so that we do not analyse it.  If we did not do this, the clock net would be analysed
 				on the same iteration of the timing analyzer as the flip-flops it drives! */
 				tnode[inode].clock_domain = -1;
-
+#endif
 			} else {/* it's an input - figure out if there's a timing constraint associated with it */
 				io_index = find_io(net_name);
 				if (io_index != -1) {

@@ -322,7 +322,7 @@ typedef enum {
  * num_critical_input_paths, num_critical_output_paths: Count total number of near critical paths that go through this node *
  */
 
-#define FANCY_CRITICALITY
+/*#define FANCY_CRITICALITY*/
 /* If defined, uses different, normalized and directional criticalities in the clusterer.  
 	If not defined, uses the same slack ratio fpr the clusterer as for the placer/router. */
 
