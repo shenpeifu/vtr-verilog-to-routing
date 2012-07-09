@@ -379,7 +379,11 @@ sub run_single_task {
 				print PBS_FILE "#PBS -N $task-$arch-$circuit\n";
 				print PBS_FILE "#PBS -l nodes=1\n";
 				print PBS_FILE "#PBS -l walltime=720:00:00\n";
-				print PBS_FILE "#PBS -l mem=5000mb\n";
+				if ($circuit =~ /PEEng/) {
+					print PBS_FILE "#PBS -l mem=6000mb\n";
+				} else {
+					print PBS_FILE "#PBS -l mem=1500mb\n";
+				}
 				print PBS_FILE
 				  "#PBS -o $task_dir/$run_prefix${experiment_number}/${arch}/${circuit}/pbs_out.txt\n";
 				print PBS_FILE
