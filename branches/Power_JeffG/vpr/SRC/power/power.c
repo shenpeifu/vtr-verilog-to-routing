@@ -68,13 +68,13 @@ typedef enum {
 	POWER_ELEMENT_CLOCK_WIRE,
 
 	POWER_ELEMENT_TILES,
-	POWER_ELEMENT_TILE_INTERC,
-	POWER_ELEMENT_TILE_LOCAL_WIRE,
-	POWER_ELEMENT_TILE_FF,
-	POWER_ELEMENT_TILE_LUT,
-	POWER_ELEMENT_TILE_LUT_DRIVER,
-	POWER_ELEMENT_TILE_LUT_MUX,
-	POWER_ELEMENT_TILE_LUT_RESTORER,
+	POWER_ELEMENT_LOCAL_INTERC,
+	POWER_ELEMENT_LOCAL_WIRE,
+	POWER_ELEMENT_FF,
+	POWER_ELEMENT_LUT,
+	POWER_ELEMENT_LUT_DRIVER,
+	POWER_ELEMENT_LUT_MUX,
+	POWER_ELEMENT_LUT_RESTORER,
 
 	POWER_ELEMENT_MAX_NUM
 } e_power_element_type;
@@ -219,7 +219,7 @@ void dealloc_mux_graph(t_mux_node * node);
 
 void power_log_msg(enum e_power_log_type log_type, char * msg);
 
-void output_logs(t_log * logs, int num_logs, FILE * fp);
+void output_logs(FILE * fp, t_log * logs, int num_logs);
 
 char binary_not(char c);
 
@@ -621,17 +621,17 @@ void power_calc_LUT(t_power_usage * power_usage, int LUT_size,
 		power_calc_INV1(&driver_power_usage, input_densities[reverse_idx],
 				input_probabilities[reverse_idx]);
 		power_add_usage_element(power_usage, &driver_power_usage,
-				POWER_ELEMENT_TILE_LUT_DRIVER);
+				POWER_ELEMENT_LUT_DRIVER);
 
 		power_calc_INV2(&driver_power_usage, input_densities[reverse_idx],
 				input_probabilities[reverse_idx]);
 		power_add_usage_element(power_usage, &driver_power_usage,
-				POWER_ELEMENT_TILE_LUT_DRIVER);
+				POWER_ELEMENT_LUT_DRIVER);
 
 		power_calc_INV2(&driver_power_usage, input_densities[reverse_idx],
 				1 - input_probabilities[reverse_idx]);
 		power_add_usage_element(power_usage, &driver_power_usage,
-				POWER_ELEMENT_TILE_LUT_DRIVER);
+				POWER_ELEMENT_LUT_DRIVER);
 
 		MUXCounter = 0;
 		SRAMCounter = 0;
@@ -722,7 +722,7 @@ void power_calc_LUT(t_power_usage * power_usage, int LUT_size,
 					input_densities[reverse_idx],
 					input_probabilities[reverse_idx]);
 			power_add_usage_element(power_usage, &sub_power,
-					POWER_ELEMENT_TILE_LUT_MUX);
+					POWER_ELEMENT_LUT_MUX);
 
 			if (level_restorer_this_level) {
 				/* Level restorer */
@@ -730,7 +730,7 @@ void power_calc_LUT(t_power_usage * power_usage, int LUT_size,
 						internal_density[level_idx + 1][MUX_idx],
 						internal_prob[level_idx + 1][MUX_idx]);
 				power_add_usage_element(power_usage, &sub_power,
-						POWER_ELEMENT_TILE_LUT_RESTORER);
+						POWER_ELEMENT_LUT_RESTORER);
 			}
 		}
 
@@ -743,7 +743,7 @@ void power_calc_LUT(t_power_usage * power_usage, int LUT_size,
 	free(internal_prob);
 	free(internal_density);
 
-	power_add_usage_element(NULL, power_usage, POWER_ELEMENT_TILE_LUT);
+	power_add_usage_element(NULL, power_usage, POWER_ELEMENT_LUT);
 
 	return;
 }
@@ -970,21 +970,19 @@ void power_calc_blif_primitive(t_power_usage * power_usage, t_pb * pb,
 		power_calc_FF(&sub_power_usage, D_dens, D_prob, Q_dens, Q_prob,
 				clk_dens, clk_prob);
 		power_add_usage_element(power_usage, &sub_power_usage,
-				POWER_ELEMENT_TILE_FF);
+				POWER_ELEMENT_FF);
 	} else {
 		char msg[BUFSIZE];
 		power_usage->dynamic = 0.;
 		power_usage->leakage = 0.;
 
 		if (calc_dynamic) {
-			sprintf(msg,
-					"There is no dynamic power usage defined for blif model: %s",
+			sprintf(msg, "No dynamic power defined for BLIF model: %s",
 					pb_graph_node->pb_type->blif_model);
 			power_log_msg(POWER_LOG_WARNING, msg);
 		}
 		if (calc_leakage) {
-			sprintf(msg,
-					"There is no leakage power usage defined for blif model: %s",
+			sprintf(msg, "No leakage power defined for BLIF model: %s",
 					pb_graph_node->pb_type->blif_model);
 			power_log_msg(POWER_LOG_WARNING, msg);
 		}
@@ -1084,7 +1082,7 @@ static void power_calc_interconnect(t_power_usage * power_usage, t_pb * pb,
 						interc_pins->input_pins[in_port_idx][pin_idx]);
 				sub_power_usage.dynamic = power_calc_dynamic(C_wire, dens);
 				power_add_usage_element(power_usage, &sub_power_usage,
-						POWER_ELEMENT_TILE_LOCAL_WIRE);
+						POWER_ELEMENT_LOCAL_WIRE);
 			}
 
 			/* Wire from output */
@@ -1092,7 +1090,7 @@ static void power_calc_interconnect(t_power_usage * power_usage, t_pb * pb,
 					interc_pins->output_pins[out_port_idx][pin_idx]);
 			sub_power_usage.dynamic = power_calc_dynamic(C_wire, dens);
 			power_add_usage_element(power_usage, &sub_power_usage,
-					POWER_ELEMENT_TILE_LOCAL_WIRE);
+					POWER_ELEMENT_LOCAL_WIRE);
 		}
 	}
 
@@ -1181,7 +1179,7 @@ static void power_calc_interconnect(t_power_usage * power_usage, t_pb * pb,
 						input_densities, input_prob, selected_input);
 
 				power_add_usage_element(power_usage, &MUX_power,
-						POWER_ELEMENT_TILE_INTERC);
+						POWER_ELEMENT_LOCAL_INTERC);
 			}
 		}
 
@@ -2459,8 +2457,7 @@ static float power_count_transistors_blif_primitive(t_pb_type * pb_type) {
 		/* Other */
 		char msg[BUFSIZE];
 
-		sprintf(msg,
-				"There is no transistor counter function defined for blif model: %s",
+		sprintf(msg, "No transistor counter function for BLIF model: %s",
 				pb_type->blif_model);
 		power_log_msg(POWER_LOG_WARNING, msg);
 		transistor_cnt = 0;
@@ -2773,14 +2770,23 @@ boolean power_uninit(void) {
 }
 
 void power_print_element_usage(char * name, e_power_element_type type,
-		e_power_element_type parent_type, int intdent_level) {
+		e_power_element_type parent_type, int indent_level) {
 	int i;
-	for (i = 0; i < intdent_level; i++) {
-		fprintf(g_power_output->out, "\t");
+
+	const int component_str_size = 30;
+
+	if (type == POWER_ELEMENT_TOTAL) {
+		fprintf(g_power_output->out, "%-*s%-20s%-15s%-15s%-15s\n",
+				component_str_size, "Component", "Power (W)", "%-Parent",
+				"%-Total", "%-Dynamic");
 	}
 
-	fprintf(g_power_output->out,
-			"<%s P=\"%g\" P_parent=\"%g\" P_total=\"%g\" P_dyn=\"%g\">\n", name,
+	for (i = 0; i < indent_level; i++) {
+		fprintf(g_power_output->out, "  ");
+	}
+
+	fprintf(g_power_output->out, "%-*s%-20.4g%-15.3g%-15.3g%-15.3g\n",
+			component_str_size - 2 * indent_level, name,
 			power_usage_combined(&g_power_breakdown->elements[type]),
 			power_usage_combined(&g_power_breakdown->elements[type])
 					/ power_usage_combined(
@@ -2791,6 +2797,56 @@ void power_print_element_usage(char * name, e_power_element_type type,
 			g_power_breakdown->elements[type].dynamic
 					/ power_usage_combined(&g_power_breakdown->elements[type]));
 
+	switch (type) {
+	case (POWER_ELEMENT_TOTAL):
+		power_print_element_usage("Routing", POWER_ELEMENT_ROUTING, type,
+				indent_level + 1);
+		power_print_element_usage("Clock", POWER_ELEMENT_CLOCK, type,
+				indent_level + 1);
+		power_print_element_usage("Tiles", POWER_ELEMENT_TILES, type,
+				indent_level + 1);
+		break;
+	case (POWER_ELEMENT_ROUTING):
+		power_print_element_usage("Switchbox", POWER_ELEMENT_ROUTE_SB, type,
+				indent_level + 1);
+		power_print_element_usage("Connectionbox", POWER_ELEMENT_ROUTE_CB, type,
+				indent_level + 1);
+		power_print_element_usage("GlobalWires", POWER_ELEMENT_ROUTE_GLB_WIRE,
+				type, indent_level + 1);
+		break;
+	case (POWER_ELEMENT_CLOCK):
+		power_print_element_usage("ClockBuffer", POWER_ELEMENT_CLOCK_BUFFER,
+				type, indent_level + 1);
+		power_print_element_usage("ClockWire", POWER_ELEMENT_CLOCK_WIRE, type,
+				indent_level + 1);
+		break;
+	case (POWER_ELEMENT_TILES):
+		power_print_element_usage("Interconnect", POWER_ELEMENT_LOCAL_INTERC,
+				type, indent_level + 1);
+		power_print_element_usage("LocalWire", POWER_ELEMENT_LOCAL_WIRE, type,
+				indent_level + 1);
+		power_print_element_usage("FF", POWER_ELEMENT_FF, type,
+				indent_level + 1);
+		power_print_element_usage("LUT", POWER_ELEMENT_LUT, type,
+				indent_level + 1);
+		break;
+	case (POWER_ELEMENT_LUT):
+		/*
+		 power_print_element_usage("Driver", POWER_ELEMENT_LUT_DRIVER, type,
+		 indent_level + 1);
+		 power_print_element_usage("Mux", POWER_ELEMENT_LUT_MUX, type,
+		 indent_level + 1);
+		 power_print_element_usage("Restorer", POWER_ELEMENT_LUT_RESTORER, type,
+		 indent_level + 1);
+		 */
+		break;
+	default:
+		break;
+	}
+
+	if (type == POWER_ELEMENT_TOTAL) {
+		fprintf(g_power_output->out, "\n");
+	}
 }
 
 void power_print_element_usage_close(char * name, int indent_level) {
@@ -2826,7 +2882,7 @@ void power_print_pb_usage_recursive(FILE * fp, t_pb_type * type,
 
 	print_tabs(fp, indent_level);
 	fprintf(fp,
-			"<pb_type name=\"%s\" P=\"%g\" P_parent=\"%g\" P_total=\"%g\" P_dyn=\"%g\" transistors=\"%g\">\n",
+			"<pb_type name=\"%s\" P=\"%.4g\" P_parent=\"%.3g\" P_total=\"%.3g\" P_dyn=\"%.3g\" transistors=\"%g\">\n",
 			type->name, pb_type_power, pb_type_power / parent_power * 100,
 			pb_type_power / total_power * 100,
 			type->power_usage.dynamic / pb_type_power, type->transistor_cnt);
@@ -2844,7 +2900,7 @@ void power_print_pb_usage_recursive(FILE * fp, t_pb_type * type,
 		if (type->num_modes > 1) {
 			print_tabs(fp, indent_level + mode_indent);
 			fprintf(fp,
-					"<mode name=\"%s\" P=\"%g\" P_parent=\"%g\" P_total=\"%g\" P_dyn=\"%g\">\n",
+					"<mode name=\"%s\" P=\"%.4g\" P_parent=\"%.3g\" P_total=\"%.3g\" P_dyn=\"%.3g\">\n",
 					type->modes[mode_idx].name, mode_power,
 					mode_power / pb_type_power * 100,
 					mode_power / total_power * 100,
@@ -2869,7 +2925,7 @@ void power_print_pb_usage_recursive(FILE * fp, t_pb_type * type,
 			/* All interconnect */
 			print_tabs(fp, indent_level + mode_indent + 1);
 			fprintf(fp,
-					"<interconnect P=\"%g\" P_parent=\"%g\" P_total=\"%g\" P_dyn=\"%g\">\n",
+					"<interconnect P=\"%.4g\" P_parent=\"%.3g\" P_total=\"%.3g\" P_dyn=\"%.3g\">\n",
 					interc_total_power, interc_total_power / mode_power * 100,
 					interc_total_power / total_power * 100,
 					interc_power_usage.dynamic / interc_total_power);
@@ -2882,7 +2938,7 @@ void power_print_pb_usage_recursive(FILE * fp, t_pb_type * type,
 				/* Each interconnect */
 				print_tabs(fp, indent_level + mode_indent + 2);
 				fprintf(fp,
-						"<%s name=\"%s\" P=\"%g\" P_parent=\"%g\" P_total=\"%g\" P_dyn=\"%g\"/>\n",
+						"<%s name=\"%s\" P=\"%.4g\" P_parent=\"%.3g\" P_total=\"%.3g\" P_dyn=\"%.3g\"/>\n",
 						interconnect_type_name(
 								type->modes[mode_idx].interconnect[interc_idx].type),
 						type->modes[mode_idx].interconnect[interc_idx].name,
@@ -3066,6 +3122,52 @@ void power_print_spice_comparison(void) {
 
 }
 
+void power_print_title(FILE * fp, char * title) {
+	int i;
+	const int width = 80;
+
+	int firsthalf = (width - strlen(title) - 2) / 2;
+	int secondhalf = width - strlen(title) - 2 - firsthalf;
+
+	for (i = 1; i < firsthalf; i++)
+		fprintf(fp, "-");
+	fprintf(fp, " %s ", title);
+	for (i = 1; i < secondhalf; i++)
+		fprintf(fp, "-");
+	fprintf(fp, "\n");
+}
+
+void power_print_stats(FILE * fp) {
+	fprintf(fp, "Technology (nm): %.0f\n",
+			g_power_arch->tech_size * CONVERT_NM_PER_M);
+	fprintf(fp, "Voltage: %.2f\n", g_power_arch->Vdd);
+	fprintf(fp, "Operating temperature: %g\n", g_power_arch->temperature);
+
+	fprintf(fp, "Layout of FPGA: %d x %d\n", nx, ny);
+
+	fprintf(fp, "Max Segment Fanout: %d\n", g_power_common->max_seg_fanout);
+	fprintf(fp, "Max Segment->Segment Fanout: %d\n",
+			g_power_common->max_seg_to_seg_fanout);
+	fprintf(fp, "Max Segment->IPIN Fanout: %d\n",
+			g_power_common->max_seg_to_IPIN_fanout);
+	fprintf(fp, "Max IPIN fanin: %d\n", g_power_common->max_IPIN_fanin);
+	fprintf(fp, "Average SB Buffer Size: %.1f\n",
+			g_power_common->total_sb_buffer_size
+					/ (float) g_power_common->num_sb_buffers);
+	fprintf(fp, "SB Buffer Transistors: %g\n",
+			power_count_transistors_buffer(
+					g_power_common->total_sb_buffer_size
+							/ (float) g_power_common->num_sb_buffers));
+	fprintf(fp, "Average CB Buffer Size: %.1f\n",
+			g_power_common->total_cb_buffer_size
+					/ (float) g_power_common->num_cb_buffers);
+	fprintf(fp, "Tile length (um): %.2f\n",
+			g_power_common->tile_length * CONVERT_UM_PER_M);
+	fprintf(fp, "1X Inverter C_in: %g\n", g_power_common->INV_1X_C_in);
+	fprintf(fp, "\n");
+
+}
+
 /*
  * Func Name	: 	calc_power
  *
@@ -3130,90 +3232,19 @@ e_power_ret_code power_total(void) {
 
 	power_add_usage_element(NULL, &total_power, POWER_ELEMENT_TOTAL);
 
-	for (i = 0; i < g_power_output->num_logs; i++) {
-		if (g_power_output->logs[i].num_messages) {
-			fprintf(g_power_output->out,
-					"\n**** There are %s. See below ****\n\n",
-					g_power_output->logs[i].name);
-		}
-	}
-
-	fprintf(g_power_output->out, "\n---------- Statistics ----------\n");
-	fprintf(g_power_output->out, "Technology (nm): %.0f\n",
-			g_power_arch->tech_size * CONVERT_NM_PER_M);
-	fprintf(g_power_output->out, "Voltage: %.2f\n", g_power_arch->Vdd);
-	fprintf(g_power_output->out, "Operating temperature: %g\n",
-			g_power_arch->temperature);
-
-	fprintf(g_power_output->out, "Layout of FPGA: %d x %d\n", nx, ny);
-
-	fprintf(g_power_output->out, "Max Segment Fanout: %d\n",
-			g_power_common->max_seg_fanout);
-	fprintf(g_power_output->out, "Max Segment->Segment Fanout: %d\n",
-			g_power_common->max_seg_to_seg_fanout);
-	fprintf(g_power_output->out, "Max Segment->IPIN Fanout: %d\n",
-			g_power_common->max_seg_to_IPIN_fanout);
-	fprintf(g_power_output->out, "Max IPIN fanin: %d\n",
-			g_power_common->max_IPIN_fanin);
-	fprintf(g_power_output->out, "Average SB Buffer Size: %.1f\n",
-			g_power_common->total_sb_buffer_size
-					/ (float) g_power_common->num_sb_buffers);
-	fprintf(g_power_output->out, "SB Buffer Transistors: %g\n",
-			power_count_transistors_buffer(
-					g_power_common->total_sb_buffer_size
-							/ (float) g_power_common->num_sb_buffers));
-	fprintf(g_power_output->out, "Average CB Buffer Size: %.1f\n",
-			g_power_common->total_cb_buffer_size
-					/ (float) g_power_common->num_cb_buffers);
-	fprintf(g_power_output->out, "Tile length (um): %.2f\n",
-			g_power_common->tile_length * CONVERT_UM_PER_M);
-	fprintf(g_power_output->out, "1X Inverter C_in: %g\n",
-			g_power_common->INV_1X_C_in);
-
 	/* Print Error & Warning Logs */
-	output_logs(g_power_output->logs, g_power_output->num_logs,
-			g_power_output->out);
+	output_logs(g_power_output->out, g_power_output->logs,
+			g_power_output->num_logs);
 
-	fprintf(g_power_output->out, "\n---------- Power by Element ----------\n");
+	power_print_title(g_power_output->out, "Statistics");
+	power_print_stats(g_power_output->out);
+
+	power_print_title(g_power_output->out, "Power By Element");
 
 	power_print_element_usage("Total", POWER_ELEMENT_TOTAL, POWER_ELEMENT_TOTAL,
 			0);
 
-	power_print_element_usage("Routing", POWER_ELEMENT_ROUTING,
-			POWER_ELEMENT_TOTAL, 1);
-	power_print_element_usage("Switchbox", POWER_ELEMENT_ROUTE_SB,
-			POWER_ELEMENT_ROUTING, 2);
-	power_print_element_usage("Connectionbox", POWER_ELEMENT_ROUTE_CB,
-			POWER_ELEMENT_ROUTING, 2);
-	power_print_element_usage("GlobalWires", POWER_ELEMENT_ROUTE_GLB_WIRE,
-			POWER_ELEMENT_ROUTING, 2);
-
-	power_print_element_usage("Clock", POWER_ELEMENT_CLOCK, POWER_ELEMENT_TOTAL,
-			1);
-	power_print_element_usage("ClockBuffer", POWER_ELEMENT_CLOCK_BUFFER,
-			POWER_ELEMENT_CLOCK, 2);
-	power_print_element_usage("ClockWire", POWER_ELEMENT_CLOCK_WIRE,
-			POWER_ELEMENT_CLOCK, 2);
-
-	power_print_element_usage("Tiles", POWER_ELEMENT_TILES, POWER_ELEMENT_TOTAL,
-			1);
-	power_print_element_usage("Interc", POWER_ELEMENT_TILE_INTERC,
-			POWER_ELEMENT_TILES, 2);
-	power_print_element_usage("LocalWire", POWER_ELEMENT_TILE_LOCAL_WIRE,
-			POWER_ELEMENT_TILES, 2);
-	power_print_element_usage("FF", POWER_ELEMENT_TILE_FF, POWER_ELEMENT_TILES,
-			2);
-	power_print_element_usage("LUT", POWER_ELEMENT_TILE_LUT,
-			POWER_ELEMENT_TILES, 2);
-	power_print_element_usage("Driver", POWER_ELEMENT_TILE_LUT_DRIVER,
-			POWER_ELEMENT_TILE_LUT, 3);
-	power_print_element_usage("Mux", POWER_ELEMENT_TILE_LUT_MUX,
-			POWER_ELEMENT_TILE_LUT, 3);
-	power_print_element_usage("Restorer", POWER_ELEMENT_TILE_LUT_RESTORER,
-			POWER_ELEMENT_TILE_LUT, 3);
-
-	fprintf(g_power_output->out,
-			"\n---------- Tile Power Breakdown ----------\n");
+	power_print_title(g_power_output->out, "Tile Power Breakdown");
 	power_print_pb_usage(g_power_output->out);
 
 	free(cb_power_usage);
@@ -3272,13 +3303,15 @@ void output_log(t_log * log_ptr, FILE * fp) {
 	}
 }
 
-void output_logs(t_log * logs, int num_logs, FILE * fp) {
+void output_logs(FILE * fp, t_log * logs, int num_logs) {
 	int log_idx;
 
 	for (log_idx = 0; log_idx < num_logs; log_idx++) {
-		fprintf(fp, "\n----- %s -----\n", logs[log_idx].name);
-		output_log(&logs[log_idx], fp);
-		fprintf(fp, "\n");
+		if (logs[log_idx].num_messages) {
+			power_print_title(fp, logs[log_idx].name);
+			output_log(&logs[log_idx], fp);
+			fprintf(fp, "\n");
+		}
 	}
 }
 
