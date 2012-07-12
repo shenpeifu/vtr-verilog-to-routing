@@ -8,6 +8,9 @@ A parse configuration file defines a set of values that will be searched for wit
 ==Format==
 The configuration file contains one line for each value to be searched for.  Each line contains a semicolon delimited triple in the following format:
 
+<code>
+<field_name>;<file_to_search_within>;<regex_expression>
+</code>
 
 *field_name*: The name of the value to be searched for.  This name is used when generating the output files of [Parse_VTR_Task parse_vtr_task.pl] and [Parse_VTR_Flow parse_vtr_flow.pl].
 
