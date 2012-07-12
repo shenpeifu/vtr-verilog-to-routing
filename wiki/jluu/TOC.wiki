@@ -3,8 +3,8 @@
 = Table of Contents =
 
 == Running VTR == 
-  * [InstallingVTR Installing VTR]
-  * [RunningVTR Running VTR]
+  * [InstallingVTR jluu  Installing VTR]
+  * [RunningVTR jluu  Running VTR]
 
 == Tasks ==
   * [RunningVTR#Tasks Tasks]
