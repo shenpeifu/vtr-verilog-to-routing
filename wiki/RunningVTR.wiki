@@ -1,5 +1,3 @@
-#summary Instructions on running VTR.
-
 = Running the VTR Flow =
 
 == Introduction ==
