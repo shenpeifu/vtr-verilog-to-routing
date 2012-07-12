@@ -37,4 +37,4 @@ For user provided benchmarks, the user should create his/her own file, which mus
 <vtr>/vtr_flow/benchmarks/misc/user_clocks.clock
 </code>
 
-This file is intentionally not included as part of the release, so that any future releases will not overwrite user created data.  
+This file is intentionally not included as part of the release, so that any future releases will not overwrite user created data.   
