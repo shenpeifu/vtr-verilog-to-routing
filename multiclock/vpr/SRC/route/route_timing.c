@@ -51,7 +51,7 @@ boolean try_timing_driven_route(struct s_router_opts router_opts,
 	float *pin_criticality; /* [1..max_pins_per_net-1]. */
 	int *sink_order; /* [1..max_pins_per_net-1]. */
 	t_rt_node **rt_node_of_sink; /* [1..max_pins_per_net-1]. */
-	float T_crit, pres_fac;
+	float pres_fac;
 
 	float *sinks;
 	int *net_index;
@@ -78,14 +78,13 @@ boolean try_timing_driven_route(struct s_router_opts router_opts,
 	for (inet = 0; inet < num_nets; inet++) {
 		if (clb_net[inet].is_global == FALSE) {
 			for (ipin = 1; ipin <= clb_net[inet].num_sinks; ipin++)
-				net_slack[inet][ipin] = 0.;
+				net_slack_ratio[inet][ipin] = 0.;
 		} else { /* Set delay of global signals to zero. */
 			for (ipin = 1; ipin <= clb_net[inet].num_sinks; ipin++)
 				net_delay[inet][ipin] = 0.;
 		}
 	}
 
-	T_crit = 1.;
 	pres_fac = router_opts.first_iter_pres_fac; /* Typically 0 -> ignore cong. */
 
 	for (itry = 1; itry <= router_opts.max_router_iterations; itry++) {
@@ -97,8 +96,8 @@ boolean try_timing_driven_route(struct s_router_opts router_opts,
 				is_routable = timing_driven_route_net(inet, pres_fac,
 						router_opts.max_criticality,
 						router_opts.criticality_exp, router_opts.astar_fac,
-						router_opts.bend_cost, net_slack[inet], pin_criticality,
-						sink_order, rt_node_of_sink, T_crit, net_delay[inet]);
+						router_opts.bend_cost, pin_criticality,
+						sink_order, rt_node_of_sink, net_delay[inet]);
 
 				/* Impossible to route? (disconnected rr_graph) */
 
@@ -200,9 +199,9 @@ boolean try_timing_driven_route(struct s_router_opts router_opts,
 		load_timing_graph_net_delays(net_delay);
 		
 #ifdef HACK_LUT_PIN_SWAPPING
-		timing_stats = do_timing_analysis(TRUE, FALSE);
+		timing_stats = do_timing_analysis(FALSE, TRUE, FALSE);
 #else
-		timing_stats = do_timing_analysis(FALSE, FALSE);
+		timing_stats = do_timing_analysis(FALSE, FALSE, FALSE);
 #endif
 		if (num_constrained_clocks == 1) {
 			printf("T_crit: %g\n", timing_stats->critical_path_delay[0][0]);
@@ -288,8 +287,8 @@ static int get_max_pins_per_net(void) {
 
 boolean timing_driven_route_net(int inet, float pres_fac, float max_criticality,
 		float criticality_exp, float astar_fac, float bend_cost,
-		float *net_slack_of_inet, float *pin_criticality, int *sink_order,
-		t_rt_node ** rt_node_of_sink, float T_crit, float *net_delay) {
+		float *pin_criticality, int *sink_order,
+		t_rt_node ** rt_node_of_sink, float *net_delay) {
 
 	/* Returns TRUE as long is found some way to hook up this net, even if that *
 	 * way resulted in overuse of resources (congestion).  If there is no way   *
@@ -297,8 +296,7 @@ boolean timing_driven_route_net(int inet, float pres_fac, float max_criticality,
 	 * case the rr_graph is disconnected and you can give up.                   */
 
 	int ipin, num_sinks, itarget, target_pin, target_node, inode;
-	float target_criticality, old_tcost, new_tcost, largest_criticality,
-			pin_crit;
+	float target_criticality, old_tcost, new_tcost, largest_criticality;
 	float old_back_cost, new_back_cost;
 	t_rt_node *rt_root;
 	struct s_heap *current;
@@ -310,11 +308,10 @@ boolean timing_driven_route_net(int inet, float pres_fac, float max_criticality,
 	pathfinder_update_one_cost(trace_head[inet], -1, pres_fac);
 	free_traceback(inet);
 
-	for (ipin = 1; ipin <= clb_net[inet].num_sinks; ipin++) { /* For all sinks */
-		pin_crit = max(max_criticality - net_slack_of_inet[ipin] / T_crit, 0.);
-		pin_crit = pow(pin_crit, criticality_exp);
-		pin_crit = min(pin_crit, max_criticality);
-		pin_criticality[ipin] = pin_crit;
+	for (ipin = 1; ipin <= clb_net[inet].num_sinks; ipin++) { 
+		/* For all sinks, set pin_criticality to (max_criticality - slack_ratio)^criticality_exp, 
+		but cut off at max_criticality. */
+		pin_criticality[ipin] = min(pow(max_criticality - net_slack_ratio[inet][ipin], criticality_exp), max_criticality);
 	}
 
 	num_sinks = clb_net[inet].num_sinks;

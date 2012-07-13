@@ -84,7 +84,6 @@ void load_criticalities(float crit_exponent) {
 	  in that pin), criticality = (1-slack ratio)^(criticality exponent) */
 
 	int inet, ipin;
-	float slack_ratio;
 
 	for (inet = 0; inet < num_nets; inet++) {
 		if (inet == OPEN)
@@ -92,12 +91,11 @@ void load_criticalities(float crit_exponent) {
 		if (clb_net[inet].is_global)
 			continue;
         for (ipin = 1; ipin <= clb_net[inet].num_sinks; ipin++) {
-			slack_ratio = net_slack_ratio[inet][ipin];
-			if (slack_ratio > HUGE_POSITIVE_FLOAT - 1) {
+			if (net_slack_ratio[inet][ipin] > HUGE_POSITIVE_FLOAT - 1) {
 				/* We didn't analyze this connection, so give it a dummy, very negative criticality. */
 				timing_place_crit[inet][ipin] = HUGE_NEGATIVE_FLOAT;
 			} else {
-				timing_place_crit[inet][ipin] = pow(1 - slack_ratio, crit_exponent);
+				timing_place_crit[inet][ipin] = pow(1 - net_slack_ratio[inet][ipin], crit_exponent);
 			}
 		}
 	}
@@ -116,7 +114,7 @@ void alloc_lookups_and_criticalities(t_chan_width_dist chan_width_dist,
 
 	compute_delay_lookup_tables(router_opts, det_routing_arch, segment_inf,
 			timing_inf, chan_width_dist);
-
+	
 	timing_place_crit = alloc_crit(&timing_place_crit_ch);
 
 }

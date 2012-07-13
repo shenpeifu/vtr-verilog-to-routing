@@ -36,7 +36,7 @@ t_linked_int *allocate_and_load_critical_path(void);
 
 void load_timing_graph_net_delays(float **net_delay);
 
-t_timing_stats * do_timing_analysis(boolean do_lut_input_balancing, boolean is_final_analysis);
+t_timing_stats * do_timing_analysis(boolean is_prepacked, boolean do_lut_input_balancing, boolean is_final_analysis);
 
 void free_timing_graph(void);
 
@@ -49,6 +49,8 @@ void print_net_slack(const char *fname);
 void print_net_slack_ratio(const char *fname);
 
 void print_net_delay(float **net_delay, const char *fname);
+
+void print_timing_place_crit(float ** timing_place_crit, const char *fname);
 
 #ifdef FANCY_CRITICALITY
 void print_clustering_timing_info(const char *fname);

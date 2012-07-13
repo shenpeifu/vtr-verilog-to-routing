@@ -544,6 +544,116 @@ void print_net_delay(float **net_delay, const char *fname) {
 	fclose(fp);
 }
 
+void print_timing_place_crit(float ** timing_place_crit, const char *fname) {
+
+	/* Prints timing place criticalities into a file. */
+
+	int inet, iedge, ibucket, driver_tnode, num_edges, num_unused_crits = 0;
+	t_tedge * tedge;
+	FILE *fp;
+	float max_crit = HUGE_NEGATIVE_FLOAT, min_crit = HUGE_POSITIVE_FLOAT, 
+		total_crit = 0, bucket_size, crit;
+	int crits_in_bucket[NUM_BUCKETS]; 
+
+	fp = my_fopen(fname, "w", 0);
+
+	/* Go through timing_place_crit once to get the largest and smallest slack, both for reporting and 
+	   so that we can delimit the buckets. */
+	for (inet = 0; inet < num_timing_nets; inet++) {
+		driver_tnode = net_to_driver_tnode[inet];
+		num_edges = tnode[driver_tnode].num_edges;
+		for (iedge = 0; iedge < num_edges; iedge++) { 
+			crit = timing_place_crit[inet][iedge + 1];
+			if (crit < HUGE_POSITIVE_FLOAT - 1) { /* if criticality was analysed */
+				max_crit = max(max_crit, crit);
+				min_crit = min(min_crit, crit);
+				total_crit += crit;
+			} else {
+				num_unused_crits++;
+			}
+		}
+	}
+
+	if (max_crit > HUGE_NEGATIVE_FLOAT + 1) {
+		fprintf(fp, "Largest criticality in design: %g\n", max_crit);
+	} else {
+		fprintf(fp, "Largest criticality in design: --\n");
+	}
+	
+	if (min_crit < HUGE_POSITIVE_FLOAT - 1) {
+		fprintf(fp, "Smallest criticality in design: %g\n", min_crit);
+	} else {
+		fprintf(fp, "Smallest criticality in design: --\n");
+	}
+
+	fprintf(fp, "Total criticality in design: %g\n", total_crit);
+
+	if (max_crit - min_crit > 1e-15) { /* Only sort the criticalities into buckets if not all criticalities are the same (if they are identical, no need to sort). */
+		/* Initialize crits_in_bucket, an array counting how many slacks are within certain linearly-spaced ranges (buckets). */
+		for (ibucket = 0; ibucket < NUM_BUCKETS; ibucket++) {
+			crits_in_bucket[ibucket] = 0;
+		}
+
+		/* The size of each bucket is the range of criticalities, divided by the number of buckets. */
+		bucket_size = (max_crit - min_crit)/NUM_BUCKETS;
+
+		/* Now, pass through again, incrementing the number of crits in the nth bucket 
+			for each crit between (min_crit + n*bucket_size) and (min_crit + (n+1)*bucket_size). */
+
+		for (inet = 0; inet < num_timing_nets; inet++) {
+			driver_tnode = net_to_driver_tnode[inet];
+			num_edges = tnode[driver_tnode].num_edges;
+			for (iedge = 0; iedge < num_edges; iedge++) { 
+				crit = timing_place_crit[inet][iedge + 1];
+				if (crit < HUGE_POSITIVE_FLOAT - 1) {
+					/* We have to watch out for the special case where crit = max_crit, in which case ibucket = NUM_BUCKETS and we go out of bounds of the array. */
+					ibucket = min(NUM_BUCKETS - 1, (int) ((crit - min_crit)/bucket_size));
+					crits_in_bucket[ibucket]++;
+				}
+			}
+		}
+
+		/* Now print how many criticalities are in each bucket. */
+		fprintf(fp, "\n\nRange\t\t");
+		for (ibucket = 0; ibucket < NUM_BUCKETS; ibucket++) {
+			fprintf(fp, "%.1e to ", min_crit);
+			min_crit += bucket_size;
+			fprintf(fp, "%.1e\t", min_crit);
+		}
+		fprintf(fp, "Not analysed");
+		fprintf(fp, "\nSlacks in range\t\t");
+		for (ibucket = 0; ibucket < NUM_BUCKETS; ibucket++) {
+			fprintf(fp, "%d\t\t\t", crits_in_bucket[ibucket]);
+		}
+		fprintf(fp, "%d", num_unused_crits);
+	}
+
+	/* Finally, print all the criticalities, organized by net. */
+	fprintf(fp, "\n\nNet #\tDriver_tnode\tto_node\tCriticality\n\n");
+
+	for (inet = 0; inet < num_timing_nets; inet++) {
+		driver_tnode = net_to_driver_tnode[inet];
+		num_edges = tnode[driver_tnode].num_edges;
+		tedge = tnode[driver_tnode].out_edges;
+		crit = timing_place_crit[inet][1];
+		if (crit < HUGE_POSITIVE_FLOAT - 1) {
+			fprintf(fp, "%5d\t%5d\t\t%5d\t%g\n", inet, driver_tnode, tedge[0].to_node, crit);
+		} else { /* Criticality is meaningless, so replace with --. */
+			fprintf(fp, "%5d\t%5d\t\t%5d\t--\n", inet, driver_tnode, tedge[0].to_node);
+		}
+		for (iedge = 1; iedge < num_edges; iedge++) { /* newline and indent subsequent edges after the first */
+			crit = timing_place_crit[inet][iedge+1];
+			if (crit < HUGE_POSITIVE_FLOAT - 1) {
+				fprintf(fp, "\t\t\t%5d\t%g\n", tedge[iedge].to_node, crit);
+			} else { /* Criticality is meaningless, so replace with --. */
+				fprintf(fp, "\t\t\t%5d\t--\n", tedge[iedge].to_node);
+			}
+		}
+	}
+
+	fclose(fp);
+}
+
 #ifdef FANCY_CRITICALITY
 void print_clustering_timing_info(const char *fname) {
 	/* Print information from tnodes which is used by the clusterer. */
@@ -1326,7 +1436,7 @@ void print_timing_graph(const char *fname) {
 	fclose(fp);
 }
 
-t_timing_stats * do_timing_analysis(boolean do_lut_input_balancing, boolean is_final_analysis) {
+t_timing_stats * do_timing_analysis(boolean is_prepacked, boolean do_lut_input_balancing, boolean is_final_analysis) {
 /*  Perform timing analysis on circuit.  Populates slack and slack ratio (related to criticality)
 	of nets in the circuit.  Returns output statistics. The timing graph must have already been built.	
 
@@ -1354,19 +1464,16 @@ t_timing_stats * do_timing_analysis(boolean do_lut_input_balancing, boolean is_f
 #endif
 
 #if SLACK_RATIO_DEFINITION == 2
-	float T_arr_max_global = HUGE_NEGATIVE_FLOAT;
-	/* Maximum T_arr in the entire design - used to calculate denominator of 
-	slack ratio (if SLACK_RATIO_DEFINITION == 2) */
+	float slack_ratio_denom_global = HUGE_NEGATIVE_FLOAT;
+	/* Denominator of slack ratio (if SLACK_RATIO_DEFINITION == 2) - max of all arrival times and all constraints. */
+	float slack;
 #endif
 
 #if defined FANCY_CRITICALITY || SLACK_RATIO_DEFINITION == 1 || SLACK_DEFINITION == 4 || SLACK_DEFINITION == 5
-	float T_arr_max_this_domain;
-	/* Maximum T_arr in this clock domain - used to normalize required times (if SLACK_DEFINITION == 4 or 5),
-	slack ratios (if SLACK__RATIO_DEFINITION == 1), and clusterer  */
-#endif
-
-#if SLACK_RATIO_DEFINITION == 2
-	float slack;
+	float slack_ratio_denom;
+	/* Max of all arrival times and constraints in each clock domain - 	used to normalize required times 
+	(if SLACK_DEFINITION == 4 or 5), slack ratios (if SLACK_RATIO_DEFINITION == 1), 
+	and FANCY_CRITICALITY normalized slack for clusterer. */
 #endif
 
 #if SLACK_DEFINITION == 3
@@ -1414,22 +1521,27 @@ t_timing_stats * do_timing_analysis(boolean do_lut_input_balancing, boolean is_f
 	/* For each source clock domain, we do one forward and one backward breadth-first traversal.  */
 	for (source_clock_domain = 0; source_clock_domain < num_constrained_clocks; source_clock_domain++) {
 #if defined FANCY_CRITICALITY || SLACK_RATIO_DEFINITION == 1 || SLACK_DEFINITION == 4 || SLACK_DEFINITION == 5
-		T_arr_max_this_domain = HUGE_NEGATIVE_FLOAT; /* Reset before each pair of traversals. */
+		slack_ratio_denom = HUGE_NEGATIVE_FLOAT; /* Reset before each pair of traversals. */
 #endif
 
 		/* Reset all used_on_this_traversal flags to FALSE.  Also, reset all arrival times to a
 		very large negative number, and all required times to a very large positive number. */
-		for(inode = 0; inode < num_tnodes; inode++) {
+		for (inode = 0; inode < num_tnodes; inode++) {
 			tnode[inode].used_on_this_traversal = FALSE;
 			tnode[inode].T_arr = HUGE_NEGATIVE_FLOAT; 
 			tnode[inode].T_req = HUGE_POSITIVE_FLOAT;
-#ifdef FANCY_CRITICALITY
-			/* Also reset all normalized values to a very large positive number. */
-			tnode[inode].normalized_slack = HUGE_POSITIVE_FLOAT;
-			tnode[inode].normalized_T_arr = HUGE_POSITIVE_FLOAT;
-			tnode[inode].normalized_total_critical_paths = HUGE_POSITIVE_FLOAT;
-#endif
 		}
+
+#ifdef FANCY_CRITICALITY
+		if (is_prepacked) {
+			for (inode = 0; inode < num_tnodes; inode++) {
+				/* Reset all normalized values to a very large positive number. */
+				tnode[inode].normalized_slack = HUGE_POSITIVE_FLOAT;
+				tnode[inode].normalized_T_arr = HUGE_POSITIVE_FLOAT;
+				tnode[inode].normalized_total_critical_paths = HUGE_POSITIVE_FLOAT;
+			}
+		}
+#endif
 
 		num_at_level = tnodes_at_level[0].nelem;	/* There are num_at_level top-level tnodes. */
 				
@@ -1438,21 +1550,14 @@ t_timing_stats * do_timing_analysis(boolean do_lut_input_balancing, boolean is_f
 
 			if (tnode[inode].clock_domain == source_clock_domain) {
 				if (tnode[inode].type == FF_SOURCE) { 
-#if 0
 					/* Set the arrival time of this flip-flop tnode to its clock skew. */
 					tnode[inode].T_arr = tnode[inode].clock_skew;
-#else
-					/* For now, use a clock skew of 0. */
-					tnode[inode].T_arr = 0.;
-#endif
 				} else if (tnode[inode].type == INPAD_SOURCE) { 
 					/* There's no such thing as clock skew for external clocks. The closest equivalent, 
 					input delay, is already marked on the edge coming out from this node. 
 					As a result, the signal can be said to arrive at t = 0. */
 					tnode[inode].T_arr = 0.;
 				}
-
-
 			}
 		}
 
@@ -1477,19 +1582,21 @@ t_timing_stats * do_timing_analysis(boolean do_lut_input_balancing, boolean is_f
 				num_edges = tnode[inode].num_edges;					/* Get the number of edges fanning out from the node we're visiting */
 				tedge = tnode[inode].out_edges;						/* Get the list of edges from the node we're visiting */
 				
-#ifdef FANCY_CRITICALITY		
-				for (iedge = 0; iedge < num_edges; iedge++) {		
-					to_node = tedge[iedge].to_node;
-					/* Update number of near critical paths entering tnode. */
-					/* Check for approximate equality. */
-					if (fabs(tnode[to_node].T_arr - (tnode[inode].T_arr + tedge[iedge].Tdel)) < EQUAL_DEF) {
-						tnode[to_node].num_critical_input_paths += tnode[inode].num_critical_input_paths;
-					} else if (tnode[to_node].T_arr < (tnode[inode].T_arr + tedge[iedge].Tdel)) {
-					tnode[to_node].num_critical_input_paths =
-							tnode[inode].num_critical_input_paths;
-					}
-					if (tnode[to_node].num_critical_input_paths	> max_critical_input_paths) {
-						max_critical_input_paths = tnode[to_node].num_critical_input_paths;
+#ifdef FANCY_CRITICALITY	
+				if (is_prepacked) {
+					for (iedge = 0; iedge < num_edges; iedge++) {		
+						to_node = tedge[iedge].to_node;
+						/* Update number of near critical paths entering tnode. */
+						/* Check for approximate equality. */
+						if (fabs(tnode[to_node].T_arr - (tnode[inode].T_arr + tedge[iedge].Tdel)) < EQUAL_DEF) {
+							tnode[to_node].num_critical_input_paths += tnode[inode].num_critical_input_paths;
+						} else if (tnode[to_node].T_arr < (tnode[inode].T_arr + tedge[iedge].Tdel)) {
+						tnode[to_node].num_critical_input_paths =
+								tnode[inode].num_critical_input_paths;
+						}
+						if (tnode[to_node].num_critical_input_paths	> max_critical_input_paths) {
+							max_critical_input_paths = tnode[to_node].num_critical_input_paths;
+						}
 					}
 				}
 #endif
@@ -1501,14 +1608,14 @@ t_timing_stats * do_timing_analysis(boolean do_lut_input_balancing, boolean is_f
 					 * The arrival time represents the latest time that all inputs must arrive at a node. LUT input rebalancing also occurs at this step. */
 					set_and_balance_arrival_time(to_node, inode, tedge[iedge].Tdel, do_lut_input_balancing);	
 			
+					/* Since we updated the destination node (to_node), change the slack ratio denominator(s) if 
+					the destination node's arrival time is greater than the existing maximum. */
 #if SLACK_RATIO_DEFINITION == 2  
-					T_arr_max_global = max(T_arr_max_global, tnode[inode].T_arr);
+					slack_ratio_denom_global = max(slack_ratio_denom_global, tnode[to_node].T_arr);
 #endif		
 
 #if defined FANCY_CRITICALITY || SLACK_RATIO_DEFINITION == 1 || SLACK_DEFINITION == 4 || SLACK_DEFINITION == 5
-					/* Since we updated the destination node (to_node), change the max arrival time if 
-					the destination node's arrival time is greater than the existing maximum. */
-					T_arr_max_this_domain = max(T_arr_max_this_domain, tnode[to_node].T_arr);
+					slack_ratio_denom = max(slack_ratio_denom, tnode[to_node].T_arr);
 #endif
 				}
 			}
@@ -1553,6 +1660,12 @@ t_timing_stats * do_timing_analysis(boolean do_lut_input_balancing, boolean is_f
 							tnode[inode].pb_graph_pin->parent_node->pb_type->name, tnode[inode].pb_graph_pin->port->name, tnode[inode].pb_graph_pin->pin_number);
 						exit(1);
 					}
+#else
+					if(!(tnode[inode].type == OUTPAD_SINK || tnode[inode].type == FF_SINK || tnode[inode].type == FF_CLOCK)) {
+						printf(ERRTAG "Timing graph terminated on node %s.%s[%d].  Likely cause: Timing edges not specified for block\n", 
+							tnode[inode].pb_graph_pin->parent_node->pb_type->name, tnode[inode].pb_graph_pin->port->name, tnode[inode].pb_graph_pin->pin_number);
+						exit(1);
+					}
 #endif
 					/* Assign the required time T_req for each FF_SINK leaf node, taking into account clock skew (OUTPAD_SINK nodes have no clock skew). *
 					 * T_req is the time we need all inputs to a tnode to arrive by, before it begins to affect the speed of the circuit.    *
@@ -1592,16 +1705,16 @@ t_timing_stats * do_timing_analysis(boolean do_lut_input_balancing, boolean is_f
 					(that's what human designers care about), not the normalized ones. */	
 
 					if(!is_final_analysis) {
-						tnode[inode].T_req = max(constraint /*+ tnode[inode].clock_skew*/, T_arr_max_this_domain);
+						tnode[inode].T_req = max(constraint + tnode[inode].clock_skew, T_arr_max_this_domain);
 					} else {
-						tnode[inode].T_req = constraint /*+ tnode[inode].clock_skew*/;
+						tnode[inode].T_req = constraint + tnode[inode].clock_skew;
 					}
 #elif SLACK_DEFINITION == 5	
 					/* As for SLACK_DEFINITION == 4, except always normalize, even for final analysis. */
-					tnode[inode].T_req = max(constraint /*+ tnode[inode].clock_skew*/, T_arr_max_this_domain);
+					tnode[inode].T_req = max(constraint + tnode[inode].clock_skew, slack_ratio_denom);
 #else					
 					/* Don't do the normalization and always set T_req equal to the "real" required time. */
-					tnode[inode].T_req = constraint /*+ tnode[inode].clock_skew*/;
+					tnode[inode].T_req = constraint + tnode[inode].clock_skew;
 #endif				 
 						
 					/* Store the largest critical path delay for this constraint (source domain AND sink domain) in the matrix critical_path_delay.
@@ -1617,6 +1730,7 @@ t_timing_stats * do_timing_analysis(boolean do_lut_input_balancing, boolean is_f
 					so update T_req_max_this_domain and/or T_req_max_global if this tnode's required time is greater than them. */
 
 #ifdef FANCY_CRITICALITY
+
 					tnode[inode].num_critical_output_paths = 1; /* Bottom-level tnodes have only one critical output path */
 #endif			
 				} else { /* not a sink */
@@ -1658,34 +1772,55 @@ t_timing_stats * do_timing_analysis(boolean do_lut_input_balancing, boolean is_f
 					}
 
 #ifdef FANCY_CRITICALITY
-					for (iedge = 0; iedge < num_edges; iedge++) { 
-						to_node = tedge[iedge].to_node;
+					if (is_prepacked) {
+						for (iedge = 0; iedge < num_edges; iedge++) { 
+							to_node = tedge[iedge].to_node;
 
-						/* Update number of near critical paths affected by output of tnode. */
-						/* Check for approximate equality. */
-						if (fabs(tnode[to_node].T_req - (tnode[inode].T_req + tedge[iedge].Tdel)) < EQUAL_DEF) {
-							tnode[inode].num_critical_output_paths += tnode[to_node].num_critical_output_paths;
-						}
-						if (tnode[to_node].num_critical_output_paths > max_critical_output_paths) {
-							max_critical_output_paths = tnode[to_node].num_critical_output_paths;
+							/* Update number of near critical paths affected by output of tnode. */
+							/* Check for approximate equality. */
+							if (fabs(tnode[to_node].T_req - (tnode[inode].T_req + tedge[iedge].Tdel)) < EQUAL_DEF) {
+								tnode[inode].num_critical_output_paths += tnode[to_node].num_critical_output_paths;
+							}
+							if (tnode[to_node].num_critical_output_paths > max_critical_output_paths) {
+								max_critical_output_paths = tnode[to_node].num_critical_output_paths;
+							}
 						}
 					}
 #endif
 				}
 			}
 		}
-		/* After each iteration of the iclock loop, update the slack if it has a newer, lower value.  Also update the normalized costs for clusterer (ifdef FANCY_CRITICALITY). */
-		
-#if SLACK_RATIO_DEFINITION == 1
-		timing_stats->least_slack_in_domain[source_clock_domain] = update_slacks(T_arr_max_this_domain, is_final_analysis);
-#else	/* T_req_max_this_domain is not used in update_slacks so doesn't matter what we pass in. */
-		timing_stats->least_slack_in_domain[source_clock_domain] = update_slacks(0, is_final_analysis);
+
+
+#if defined FANCY_CRITICALITY || SLACK_RATIO_DEFINITION == 1 || SLACK_DEFINITION == 4 || SLACK_DEFINITION == 5
+		for (sink_clock_domain = 0; sink_clock_domain < num_constrained_clocks; sink_clock_domain++) {
+			slack_ratio_denom = max(slack_ratio_denom, timing_constraint[source_clock_domain][sink_clock_domain]);
+		}
 #endif
 
+		/* After each iteration of the iclock loop, update the slack if it has a newer, lower value.  Also update the normalized costs for clusterer (ifdef FANCY_CRITICALITY). */
+		if (!is_prepacked) {
+#if SLACK_RATIO_DEFINITION == 1
+			timing_stats->least_slack_in_domain[source_clock_domain] = update_slacks(slack_ratio_denom, is_final_analysis);
+#else		/* T_req_max_this_domain is not used in update_slacks so doesn't matter what we pass in. */
+			timing_stats->least_slack_in_domain[source_clock_domain] = update_slacks(0, is_final_analysis);
+#endif
+		}
+
 #ifdef FANCY_CRITICALITY
-		normalize_costs(T_arr_max_this_domain, max_critical_input_paths, max_critical_output_paths);
+		if (is_prepacked) {
+			normalize_costs(slack_ratio_denom, max_critical_input_paths, max_critical_output_paths);
+		}
 #endif
 	} /* end of source_clock_domain loop */
+
+#if SLACK_RATIO_DEFINITION == 2
+	for (source_clock_domain = 0; source_clock_domain < num_constrained_clocks; source_clock_domain++) {
+		for (sink_clock_domain = 0; sink_clock_domain < num_constrained_clocks; sink_clock_domain++) {
+			slack_ratio_denom_global = max(slack_ratio_denom_global, timing_constraint[source_clock_domain][sink_clock_domain]);
+		}
+	}
+#endif
 
 #if SLACK_DEFINITION == 3 
 	if (!is_final_analysis) {
@@ -1981,7 +2116,7 @@ void do_constant_net_delay_timing_analysis(t_timing_inf timing_inf,
 	load_constant_net_delay(net_delay, constant_net_delay_value, timing_nets,
 			num_timing_nets);
 	load_timing_graph_net_delays(net_delay);
-	timing_stats = do_timing_analysis(FALSE, TRUE);
+	timing_stats = do_timing_analysis(FALSE, FALSE, TRUE);
 
 	if (GetEchoOption()) {
 		if (num_constrained_clocks == 1) {
@@ -2713,7 +2848,9 @@ static void propagate_clock_domain_and_skew(int inode) {
  * be problematic in cases of multiplexed or locally-generated clocks. */
 
 	int num_edges, iedge, to_node;
+#if 0
 	float Tdel;
+#endif
 	t_tedge * tedge;
 
 	tedge = tnode[inode].out_edges;	/* Get the list of edges from the node we're visiting. */
@@ -2739,10 +2876,16 @@ static void propagate_clock_domain_and_skew(int inode) {
 
 	for (iedge = 0; iedge < num_edges; iedge++) {		/* Go through each edge coming out from this tnode */
 		to_node = tedge[iedge].to_node;					/* Get the index of the destination tnode of this edge... */
+#if 0
 		Tdel = tedge[iedge].Tdel;						/* ...and get the delay to that tnode, along this edge. */
+#endif
 
 		tnode[to_node].clock_domain = tnode[inode].clock_domain;	/* Propagate clock domain forward unchanged. */
-		tnode[to_node].clock_skew = tnode[inode].clock_skew + Tdel; /* Propagate clock skew forward along this clock net, adding the delay of the wires (edges) of the clock network. */ 
+		tnode[to_node].clock_skew = tnode[inode].clock_skew 
+#if 0
+			+ Tdel
+#endif
+			; /* Propagate clock skew forward along this clock net, adding the delay of the wires (edges) of the clock network. */ 
 		
 		/* Finally, call recursively on the destination tnode. */
 		propagate_clock_domain_and_skew(to_node);

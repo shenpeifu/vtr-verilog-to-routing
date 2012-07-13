@@ -353,7 +353,7 @@ void do_clustering(const t_arch *arch, t_pack_molecule *molecule_head,
 	if (timing_driven) {
 		alloc_and_load_pre_packing_timing_graph(block_delay,
 				inter_cluster_net_delay, arch->models, timing_inf);
-		timing_stats = do_timing_analysis(FALSE, FALSE);
+		timing_stats = do_timing_analysis(TRUE, FALSE, FALSE);
 		free_timing_stats(timing_stats);
 
 		if (GetEchoOption()) {

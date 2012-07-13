@@ -195,7 +195,7 @@ void read_sdc(char * sdc_file) {
 		constrained_ios[io_index].delay /= 1e9;
 	}
 
-	printf("SDC file %s parsed successfully.\n%d clocks (including virtual clocks)"
+	printf("SDC file %s parsed successfully.\n%d clocks (including virtual clocks) "
 		"and %d I/Os were constrained.\n\n", sdc_file, num_constrained_clocks, num_constrained_ios);
 
 	/* Since all the information we need is stored in timing_constraint, constrained_clocks, and constrained_ios, free other data structures used in this routine */
