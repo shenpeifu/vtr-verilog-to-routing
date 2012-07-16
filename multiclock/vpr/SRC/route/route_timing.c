@@ -302,7 +302,7 @@ boolean timing_driven_route_net(int inet, float pres_fac, float max_criticality,
 	struct s_heap *current;
 	struct s_trace *new_route_start_tptr;
 	int highfanout_rlim;
-	float pin_crit;
+
 	/* Rip-up any old routing. */
 
 	pathfinder_update_one_cost(trace_head[inet], -1, pres_fac);

@@ -1477,7 +1477,6 @@ t_timing_stats * do_timing_analysis(t_slack * slacks, boolean is_prepacked, bool
 #if SLACK_RATIO_DEFINITION == 2
 	float slack_ratio_denom_global = HUGE_NEGATIVE_FLOAT;
 	/* Denominator of slack ratio (if SLACK_RATIO_DEFINITION == 2) - max of all arrival times and all constraints. */
-	float slack;
 #endif
 
 #if defined FANCY_CRITICALITY || SLACK_RATIO_DEFINITION == 1 || SLACK_DEFINITION == 4 || SLACK_DEFINITION == 5
@@ -1814,7 +1813,7 @@ t_timing_stats * do_timing_analysis(t_slack * slacks, boolean is_prepacked, bool
 #if SLACK_RATIO_DEFINITION == 1
 			timing_stats->least_slack_in_domain[source_clock_domain] = update_slacks(slacks, slack_ratio_denom, is_final_analysis);
 #else		/* T_req_max_this_domain is not used in update_slacks so doesn't matter what we pass in. */
-			timing_stats->least_slack_in_domain[source_clock_domain] = update_slacks(0, is_final_analysis);
+			timing_stats->least_slack_in_domain[source_clock_domain] = update_slacks(slacks, 0, is_final_analysis);
 #endif
 		}
 
@@ -1865,9 +1864,8 @@ t_timing_stats * do_timing_analysis(t_slack * slacks, boolean is_prepacked, bool
 		num_edges = tnode[inode].num_edges;
 		for (iedge = 0; iedge < num_edges; iedge++) {
 			/* The slack ratio of each edge is its slack divided by the maximum arrival time in the entire design. */
-			slack = net_slack[inet][iedge + 1];
-			if (slack < HUGE_POSITIVE_FLOAT - 1) { /* if the slack is valid */
-				net_slack_ratio[inet][iedge + 1] = slack/T_arr_max_global; 
+			if (net_slack[inet][iedge + 1] < HUGE_POSITIVE_FLOAT - 1) { /* if the slack is valid */
+				net_slack_ratio[inet][iedge + 1] = net_slack[inet][iedge + 1]/slack_ratio_denom_global; 
 			}
 			/* otherwise, slack ratio remains HUGE_POSITIVE_FLOAT, as it was initialized */
 		}
@@ -1887,10 +1885,6 @@ static float update_slacks(t_slack * slacks, float T_req_max_this_domain, boolea
 	t_tedge *tedge;
 	float T_arr, Tdel, T_req, min_slack = HUGE_POSITIVE_FLOAT;
 
-#if SLACK_RATIO_DEFINITION == 1
-	float slack_ratio_from_this_traversal;
-#endif
-		
 	for (inet = 0; inet < num_timing_nets; inet++) {
 		inode = net_to_driver_tnode[inet];
 		T_arr = tnode[inode].T_arr;
