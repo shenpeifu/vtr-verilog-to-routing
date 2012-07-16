@@ -12,6 +12,7 @@
 #include "path_delay.h"
 #include "net_delay.h"
 #include "stats.h"
+#include "ReadOptions.h"
 
 /******************** Subroutines local to route_timing.c ********************/
 
@@ -40,7 +41,7 @@ static int mark_node_expansion_by_bin(int inet, int target_node,
 /************************ Subroutine definitions *****************************/
 
 boolean try_timing_driven_route(struct s_router_opts router_opts,
-		float **net_delay, t_ivec ** clb_opins_used_locally) {
+		float **net_delay, t_slack * slacks, t_ivec ** clb_opins_used_locally) {
 
 	/* Timing-driven routing algorithm.  The timing graph (includes net_slack)   *
 	 * must have already been allocated, and net_delay must have been allocated. *
@@ -78,7 +79,7 @@ boolean try_timing_driven_route(struct s_router_opts router_opts,
 	for (inet = 0; inet < num_nets; inet++) {
 		if (clb_net[inet].is_global == FALSE) {
 			for (ipin = 1; ipin <= clb_net[inet].num_sinks; ipin++)
-				net_slack_ratio[inet][ipin] = 0.;
+				slacks->net_slack_ratio[inet][ipin] = 0.;
 		} else { /* Set delay of global signals to zero. */
 			for (ipin = 1; ipin <= clb_net[inet].num_sinks; ipin++)
 				net_delay[inet][ipin] = 0.;
@@ -97,7 +98,7 @@ boolean try_timing_driven_route(struct s_router_opts router_opts,
 						router_opts.max_criticality,
 						router_opts.criticality_exp, router_opts.astar_fac,
 						router_opts.bend_cost, pin_criticality,
-						sink_order, rt_node_of_sink, net_delay[inet]);
+						sink_order, rt_node_of_sink, net_delay[inet], slacks->net_slack_ratio[inet]);
 
 				/* Impossible to route? (disconnected rr_graph) */
 
@@ -199,9 +200,9 @@ boolean try_timing_driven_route(struct s_router_opts router_opts,
 		load_timing_graph_net_delays(net_delay);
 		
 #ifdef HACK_LUT_PIN_SWAPPING
-		timing_stats = do_timing_analysis(FALSE, TRUE, FALSE);
+		timing_stats = do_timing_analysis(slacks, FALSE, TRUE, FALSE);
 #else
-		timing_stats = do_timing_analysis(FALSE, FALSE, FALSE);
+		timing_stats = do_timing_analysis(slacks, FALSE, FALSE, FALSE);
 #endif
 		if (num_constrained_clocks == 1) {
 			printf("T_crit: %g\n", timing_stats->critical_path_delay[0][0]);
@@ -219,7 +220,6 @@ boolean try_timing_driven_route(struct s_router_opts router_opts,
 			}
 			printf("\n");
 		}
-
 		fflush(stdout);
 	}
 
@@ -288,7 +288,7 @@ static int get_max_pins_per_net(void) {
 boolean timing_driven_route_net(int inet, float pres_fac, float max_criticality,
 		float criticality_exp, float astar_fac, float bend_cost,
 		float *pin_criticality, int *sink_order,
-		t_rt_node ** rt_node_of_sink, float *net_delay) {
+		t_rt_node ** rt_node_of_sink, float *net_delay, float *net_slack_ratio) {
 
 	/* Returns TRUE as long is found some way to hook up this net, even if that *
 	 * way resulted in overuse of resources (congestion).  If there is no way   *
@@ -302,7 +302,7 @@ boolean timing_driven_route_net(int inet, float pres_fac, float max_criticality,
 	struct s_heap *current;
 	struct s_trace *new_route_start_tptr;
 	int highfanout_rlim;
-
+	float pin_crit;
 	/* Rip-up any old routing. */
 
 	pathfinder_update_one_cost(trace_head[inet], -1, pres_fac);
@@ -311,7 +311,12 @@ boolean timing_driven_route_net(int inet, float pres_fac, float max_criticality,
 	for (ipin = 1; ipin <= clb_net[inet].num_sinks; ipin++) { 
 		/* For all sinks, set pin_criticality to (max_criticality - slack_ratio)^criticality_exp, 
 		but cut off at max_criticality. */
-		pin_criticality[ipin] = min(pow(max_criticality - net_slack_ratio[inet][ipin], criticality_exp), max_criticality);
+		if (net_slack_ratio[ipin] < HUGE_POSITIVE_FLOAT - 1) {
+			pin_criticality[ipin] = min(pow(max_criticality - net_slack_ratio[ipin], criticality_exp), max_criticality);
+		} else {
+			/* Pin has dummy slack ratio */
+			pin_criticality[ipin] = 0;
+		}
 	}
 
 	num_sinks = clb_net[inet].num_sinks;

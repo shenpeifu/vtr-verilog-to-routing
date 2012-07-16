@@ -376,6 +376,13 @@ typedef struct s_timing_stats {
 } t_timing_stats;
 /* Timing statistics for final reporting. */
 
+typedef struct s_slack {
+	float ** net_slack;
+	float ** net_slack_ratio;
+} t_slack;
+/* Matrices storing slacks and slack ratios of each sink pin on each net 
+[0..num_nets-1][1..num_pins-1] */
+
 /***************************************************************************
  * Placement and routing data types
  ****************************************************************************/

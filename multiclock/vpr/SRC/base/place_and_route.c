@@ -56,7 +56,7 @@ void place_and_route(enum e_operation operation,
 	int width_fac, inet, i;
 	boolean success, Fc_clipped;
 	float **net_delay;
-
+	t_slack * slacks = (t_slack *) my_malloc(sizeof(t_slack));
 	t_chunk net_delay_ch = {NULL, 0, NULL};
 
 	/*struct s_linked_vptr *net_delay_chunk_list_head;*/
@@ -142,15 +142,17 @@ void place_and_route(enum e_operation operation,
 		clb_opins_used_locally = alloc_route_structs();
 
 		if (timing_inf.timing_analysis_enabled) {
-			alloc_and_load_timing_graph(timing_inf);
+			slacks = alloc_and_load_timing_graph(timing_inf);
 			net_delay = alloc_net_delay(&net_delay_ch, clb_net,
 					num_nets);
 		} else {
-			net_delay = NULL; /* Defensive coding. */
+			slacks = NULL;
+			net_delay = NULL; 
+			/* Defensive coding. */
 		}
 
 		success = try_route(width_fac, router_opts, det_routing_arch,
-				segment_inf, timing_inf, net_delay, chan_width_dist,
+				segment_inf, timing_inf, net_delay, slacks, chan_width_dist,
 				clb_opins_used_locally, mst, &Fc_clipped);
 
 		if (Fc_clipped) {
@@ -181,7 +183,7 @@ void place_and_route(enum e_operation operation,
 					det_routing_arch.num_segment, det_routing_arch.R_minW_nmos,
 					det_routing_arch.R_minW_pmos,
 					det_routing_arch.directionality,
-					timing_inf.timing_analysis_enabled, net_delay);
+					timing_inf.timing_analysis_enabled, net_delay, slacks);
 
 			print_route(route_file);
 
@@ -198,14 +200,14 @@ void place_and_route(enum e_operation operation,
 		update_screen(MAJOR, msg, ROUTING, timing_inf.timing_analysis_enabled);
 
 		if (timing_inf.timing_analysis_enabled) {
-			assert(net_slack);
+			assert(slacks->net_slack);
 
 			if (GetEchoOption()) {
 				print_timing_graph_as_blif("post_flow_timing_graph.blif",
 						models);
 			}
 
-			free_timing_graph();
+			free_timing_graph(slacks);
 
 			assert(net_delay);
 			free_net_delay(net_delay, &net_delay_ch);
@@ -264,6 +266,7 @@ static int binary_search_place_and_route(struct s_placer_opts placer_opts,
 	boolean success, prev_success, prev2_success, Fc_clipped = FALSE;
 	char msg[BUFSIZE];
 	float **net_delay;
+	t_slack * slacks = (t_slack *) my_malloc(sizeof(t_slack));
 
 	t_chunk net_delay_ch = {NULL, 0, NULL};
 
@@ -297,11 +300,11 @@ static int binary_search_place_and_route(struct s_placer_opts placer_opts,
 			&saved_clb_opins_used_locally);
 
 	if (timing_inf.timing_analysis_enabled) {
-		alloc_and_load_timing_graph(timing_inf);
+		slacks = alloc_and_load_timing_graph(timing_inf);
 		net_delay = alloc_net_delay(&net_delay_ch, clb_net, num_nets);
 	} else {
 		net_delay = NULL; /* Defensive coding. */
-		net_slack = NULL;
+		slacks->net_slack = NULL;
 	}
 
 	/* UDSD by AY Start */
@@ -378,7 +381,7 @@ static int binary_search_place_and_route(struct s_placer_opts placer_opts,
 					&mst);
 		}
 		success = try_route(current, router_opts, det_routing_arch, segment_inf,
-				timing_inf, net_delay, chan_width_dist,
+				timing_inf, net_delay, slacks, chan_width_dist,
 				clb_opins_used_locally, mst, &Fc_clipped);
 		attempt_count++;
 		fflush(stdout);
@@ -488,7 +491,7 @@ static int binary_search_place_and_route(struct s_placer_opts placer_opts,
 			}
 
 			success = try_route(current, router_opts, det_routing_arch,
-					segment_inf, timing_inf, net_delay,
+					segment_inf, timing_inf, net_delay, slacks,
 					chan_width_dist, clb_opins_used_locally, mst, &Fc_clipped);
 
 			if (success && Fc_clipped == FALSE) {
@@ -550,7 +553,7 @@ static int binary_search_place_and_route(struct s_placer_opts placer_opts,
 			det_routing_arch.num_switch, segment_inf,
 			det_routing_arch.num_segment, det_routing_arch.R_minW_nmos,
 			det_routing_arch.R_minW_pmos, det_routing_arch.directionality,
-			timing_inf.timing_analysis_enabled, net_delay);
+			timing_inf.timing_analysis_enabled, net_delay, slacks);
 
 	print_route(route_file);
 
@@ -566,7 +569,7 @@ static int binary_search_place_and_route(struct s_placer_opts placer_opts,
 		if (GetEchoOption()) {
 			print_timing_graph_as_blif("post_flow_timing_graph.blif", models);
 		}
-		free_timing_graph();
+		free_timing_graph(slacks);
 		free_net_delay(net_delay, &net_delay_ch);
 	}
 

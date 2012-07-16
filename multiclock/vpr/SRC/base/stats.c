@@ -28,7 +28,7 @@ void routing_stats(boolean full_stats, enum e_route_type route_type,
 		int num_switch, t_segment_inf * segment_inf, int num_segment,
 		float R_minW_nmos, float R_minW_pmos,
 		enum e_directionality directionality, boolean timing_analysis_enabled,
-		float **net_delay) {
+		float **net_delay, t_slack * slacks) {
 
 	/* Prints out various statistics about the current routing.  Both a routing *
 	 * and an rr_graph must exist when you call this routine.                   */
@@ -87,15 +87,15 @@ void routing_stats(boolean full_stats, enum e_route_type route_type,
 			load_timing_graph_net_delays(net_delay);
 
 #ifdef HACK_LUT_PIN_SWAPPING			
-			timing_stats = do_timing_analysis(FALSE, TRUE, TRUE);
+			timing_stats = do_timing_analysis(slacks, FALSE, TRUE, TRUE);
 #else
-			timing_stats = do_timing_analysis(FALSE, FALSE, TRUE);
+			timing_stats = do_timing_analysis(slacks, FALSE, FALSE, TRUE);
 #endif
 
 			if (GetEchoOption()) {
 				print_timing_graph("timing_graph.echo");
-				print_net_slack("net_slack.echo");
-				print_net_slack_ratio("net_slack_ratio.echo");
+				print_net_slack(slacks->net_slack, "net_slack.echo");
+				print_net_slack_ratio(slacks->net_slack_ratio, "net_slack_ratio.echo");
 				if (num_constrained_clocks == 1) {
 					print_critical_path("critical_path.echo");
 				}

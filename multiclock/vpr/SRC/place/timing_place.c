@@ -78,7 +78,7 @@ void print_sink_delays(const char *fname) {
 }
 
 /**************************************/
-void load_criticalities(float crit_exponent) {
+void load_criticalities(float ** net_slack_ratio, float crit_exponent) {
 	/* Performs a 1-to-1 mapping from net_slack_ratio to timing_place_crit.  
 	  For every pin on every net (or, equivalently, for every tedge ending 
 	  in that pin), criticality = (1-slack ratio)^(criticality exponent) */
@@ -102,12 +102,12 @@ void load_criticalities(float crit_exponent) {
 }
 
 /**************************************/
-void alloc_lookups_and_criticalities(t_chan_width_dist chan_width_dist,
+t_slack * alloc_lookups_and_criticalities(t_chan_width_dist chan_width_dist,
 		struct s_router_opts router_opts,
 		struct s_det_routing_arch det_routing_arch, t_segment_inf * segment_inf,
 		t_timing_inf timing_inf, float ***net_delay) {
 
-	alloc_and_load_timing_graph(timing_inf);
+	t_slack * slacks = alloc_and_load_timing_graph(timing_inf);
 
 	(*net_delay) = alloc_net_delay(&net_delay_ch, clb_net,
 			num_nets);
@@ -117,15 +117,16 @@ void alloc_lookups_and_criticalities(t_chan_width_dist chan_width_dist,
 	
 	timing_place_crit = alloc_crit(&timing_place_crit_ch);
 
+	return slacks;
 }
 
 /**************************************/
-void free_lookups_and_criticalities(float ***net_delay) {
+void free_lookups_and_criticalities(float ***net_delay, t_slack * slacks) {
 
 	free(timing_place_crit);
 	free_crit(&timing_place_crit_ch);
 
-	free_timing_graph();
+	free_timing_graph(slacks);
 	free_net_delay(*net_delay, &net_delay_ch);
 
 	free_place_lookup_structs();

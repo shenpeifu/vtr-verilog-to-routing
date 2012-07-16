@@ -27,26 +27,28 @@
 
 /*************************** Function declarations ********************************/
 
-void alloc_and_load_timing_graph(t_timing_inf timing_inf);
+t_slack * alloc_and_load_timing_graph(t_timing_inf timing_inf);
 
-void alloc_and_load_pre_packing_timing_graph(float block_delay,
+t_slack * alloc_and_load_pre_packing_timing_graph(float block_delay,
 		float inter_cluster_net_delay, t_model *models, t_timing_inf timing_inf);
 
 t_linked_int *allocate_and_load_critical_path(void);
 
 void load_timing_graph_net_delays(float **net_delay);
 
-t_timing_stats * do_timing_analysis(boolean is_prepacked, boolean do_lut_input_balancing, boolean is_final_analysis);
+t_timing_stats * do_timing_analysis(t_slack * slacks, boolean is_prepacked, boolean do_lut_input_balancing, boolean is_final_analysis);
 
-void free_timing_graph(void);
+void free_timing_graph(t_slack * slack);
 
-void free_timing_stats(t_timing_stats * timing_stats);void print_timing_graph(const char *fname);
+void free_timing_stats(t_timing_stats * timing_stats);
+
+void print_timing_graph(const char *fname);
 
 void print_lut_remapping(const char *fname);
 
-void print_net_slack(const char *fname);
+void print_net_slack(float ** net_slack, const char *fname);
 
-void print_net_slack_ratio(const char *fname);
+void print_net_slack_ratio(float ** net_slack, const char *fname);
 
 void print_net_delay(float **net_delay, const char *fname);
 
@@ -55,8 +57,6 @@ void print_timing_place_crit(float ** timing_place_crit, const char *fname);
 #ifdef FANCY_CRITICALITY
 void print_clustering_timing_info(const char *fname);
 #endif
-
-void print_lut_remapping(char *fname);
 
 void print_critical_path(const char *fname);
 
@@ -76,7 +76,5 @@ extern int num_constrained_ios; /* number of I/Os with timing constraints */
 extern t_io * constrained_ios; /* [0..num_constrained_ios - 1] array of I/Os with timing constraints */
 
 extern float ** timing_constraint; /* [0..num_constrained_clocks - 1 (source)][0..num_constrained_clocks - 1 (destination)] */
-
-extern float ** net_slack, ** net_slack_ratio; /* [0..num_nets-1][1..num_pins] */
 
 #endif

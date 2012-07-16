@@ -90,8 +90,6 @@ int num_constrained_ios = 0; /* number of I/Os with timing constraints */
 t_clock * constrained_clocks = NULL; /* [0..num_constrained_clocks - 1] array of clocks in netlist */
 t_io * constrained_ios = NULL; /* [0..num_constrained_ios - 1] array of I/Os with timing constraints */
 float ** timing_constraint = NULL; /* [0..num_constrained_clocks - 1 (source)][0..num_constrained_clocks - 1 (destination)] */
-float ** net_slack = NULL; /* [0..num_nets-1][1..num_pins] */
-float ** net_slack_ratio = NULL; /* same indexing as net_slack */
 
 /******************** Variables local to this module ************************/
 
@@ -108,9 +106,9 @@ static int num_timing_nets = 0;
 
 /***************** Subroutines local to this module *************************/
 
-static void alloc_net_slack_and_slack_ratio(void);
+static t_slack * alloc_net_slack_and_slack_ratio(void);
 
-static float update_slacks(float T_req_max_this_domain, boolean is_final_analysis);
+static float update_slacks(t_slack * slacks, float T_req_max_this_domain, boolean is_final_analysis);
 
 static void alloc_and_load_tnodes(t_timing_inf timing_inf);
 
@@ -137,12 +135,12 @@ static void propagate_clock_domain_and_skew(int inode);
 
 /********************* Subroutine definitions *******************************/
 
-void alloc_and_load_timing_graph(t_timing_inf timing_inf) {
+t_slack * alloc_and_load_timing_graph(t_timing_inf timing_inf) {
 
 	/* This routine builds the graph used for timing analysis.  Every cb pin is a 
-	 * timing node (tnode).  The connectivity between pins is *
+	 * timing node (tnode).  The connectivity between pins is					*
 	 * represented by timing edges (tedges).  All delay is marked on edges, not *
-	 * on nodes.  This routine also allocates two arrays that will store slack values:   *
+	 * on nodes.  Returns two arrays that will store slack values:				*
 	 * net_slack and net_slack_ratio ([0..num_nets-1][1..num_pins]).           */
 
 	/*  For pads, only the first two pin locations are used (input to pad is first,
@@ -150,6 +148,7 @@ void alloc_and_load_timing_graph(t_timing_inf timing_inf) {
 	 * mapping set to OPEN so I won't use it by mistake.                          */
 
 	int num_sinks;
+	t_slack * slacks = (t_slack *) my_malloc(sizeof(t_slack));
 
 	if (tedge_ch.chunk_ptr_head != NULL) {
 		printf("Error in alloc_and_load_timing_graph:\n"
@@ -173,16 +172,19 @@ void alloc_and_load_timing_graph(t_timing_inf timing_inf) {
 
 	check_timing_graph(num_sinks);
 
-	alloc_net_slack_and_slack_ratio();
+	slacks = alloc_net_slack_and_slack_ratio();
+
+	return slacks;
+
 }
 
-void alloc_and_load_pre_packing_timing_graph(float block_delay,
+t_slack * alloc_and_load_pre_packing_timing_graph(float block_delay,
 		float inter_cluster_net_delay, t_model *models, t_timing_inf timing_inf) {
 
 	/* This routine builds the graph used for timing analysis.  Every technology-
 	 * mapped netlist pin is a timing node (tnode).  The connectivity between pins is *
 	 * represented by timing edges (tedges).  All delay is marked on edges, not *
-	 * on nodes.  This routine also allocates two arrays that will store slack values:   *
+	 * on nodes.  Returns two arrays that will store slack values:				 *
 	 * net_slack and net_slack_ratio ([0..num_nets-1][1..num_pins]).           */
 
 	/*  For pads, only the first two pin locations are used (input to pad is first,
@@ -190,6 +192,7 @@ void alloc_and_load_pre_packing_timing_graph(float block_delay,
 	 * mapping set to OPEN so I won't use it by mistake.                          */
 
 	int num_sinks;
+	t_slack * slacks = (t_slack *) my_malloc(sizeof(t_slack));
 
 	if (tedge_ch.chunk_ptr_head != NULL) {
 		printf("Error in alloc_and_load_timing_graph:\n"
@@ -213,27 +216,33 @@ void alloc_and_load_pre_packing_timing_graph(float block_delay,
 
 	load_clock_domain_and_skew(TRUE);
 
-	alloc_net_slack_and_slack_ratio();
+	slacks = alloc_net_slack_and_slack_ratio();
 
 	if (GetEchoOption()) {
 		print_timing_graph_as_blif("pre_packing_timing_graph_as_blif.blif", models);
 	}
 	check_timing_graph(num_sinks);
+
+	return slacks;
+	
 }
 
-static void alloc_net_slack_and_slack_ratio(void) {
+static t_slack * alloc_net_slack_and_slack_ratio(void) {
 
 	/* Allocates the net_slack and net_slack_ratio structures ([0..num_nets-1][1..num_pins-1]).  Chunk allocated to save space. */
 
 	int inet;
+	t_slack * slacks = (t_slack *) my_malloc(sizeof(t_slack));
 	
-	net_slack		= (float **) my_malloc(num_timing_nets * sizeof(float *));
-	net_slack_ratio	= (float **) my_malloc(num_timing_nets * sizeof(float *));
+	slacks->net_slack = (float **) my_malloc(num_timing_nets * sizeof(float *));
+	slacks->net_slack_ratio = (float **) my_malloc(num_timing_nets * sizeof(float *));
 
 	for (inet = 0; inet < num_timing_nets; inet++) {
-		net_slack[inet]		  = (float *) my_chunk_malloc((timing_nets[inet].num_sinks + 1) * sizeof(float), &tedge_ch);
-		net_slack_ratio[inet] = (float *) my_chunk_malloc((timing_nets[inet].num_sinks + 1) * sizeof(float), &tedge_ch);
+		slacks->net_slack[inet]		  = (float *) my_chunk_malloc((timing_nets[inet].num_sinks + 1) * sizeof(float), &tedge_ch);
+		slacks->net_slack_ratio[inet] = (float *) my_chunk_malloc((timing_nets[inet].num_sinks + 1) * sizeof(float), &tedge_ch);
 	}
+
+	return slacks;
 }
 
 void load_timing_graph_net_delays(float **net_delay) {
@@ -258,19 +267,22 @@ void load_timing_graph_net_delays(float **net_delay) {
 	}
 }
 
-void free_timing_graph(void) {
+void free_timing_graph(t_slack * slack) {
 
 	if (tedge_ch.chunk_ptr_head == NULL) {
 		printf("Error in free_timing_graph: No timing graph to free.\n");
 		exit(1);
 	}
 
+	
 	free_chunk_memory(&tedge_ch);
 	free(tnode);
 	free(net_to_driver_tnode);
 	free_ivec_vector(tnodes_at_level, 0, num_tnode_levels - 1);
-	free(net_slack);
-	free(net_slack_ratio);
+
+	free(slack->net_slack);
+	free(slack->net_slack_ratio);
+	free(slack);
 
 	tnode = NULL;
 	num_tnodes = 0;
@@ -289,7 +301,7 @@ void free_timing_stats(t_timing_stats * timing_stats) {
 	free(timing_stats);
 }
 
-void print_net_slack(const char *fname) {
+void print_net_slack(float ** net_slack, const char *fname) {
 
 	/* Prints the net slacks into a file. */
 
@@ -405,7 +417,7 @@ void print_net_slack(const char *fname) {
 
 /* Note: this is an exact clone of print_net_slack, with all occurrences of "slack" replaced by "slack_ratio". 
 Make sure you port all changes made in one function to the other. */
-void print_net_slack_ratio(const char *fname) {
+void print_net_slack_ratio(float ** net_slack_ratio, const char *fname) {
 
 	/* Prints the net slack_ratios into a file. */
 
@@ -1436,7 +1448,7 @@ void print_timing_graph(const char *fname) {
 	fclose(fp);
 }
 
-t_timing_stats * do_timing_analysis(boolean is_prepacked, boolean do_lut_input_balancing, boolean is_final_analysis) {
+t_timing_stats * do_timing_analysis(t_slack * slacks, boolean is_prepacked, boolean do_lut_input_balancing, boolean is_final_analysis) {
 /*  Perform timing analysis on circuit.  Populates slack and slack ratio (related to criticality)
 	of nets in the circuit.  Returns output statistics. The timing graph must have already been built.	
 
@@ -1451,13 +1463,12 @@ t_timing_stats * do_timing_analysis(boolean is_prepacked, boolean do_lut_input_b
 	Please see path_delay.h for definition of SLACK_DEFINITION and SLACK_RATIO_DEFINITION.
 	Please see vpr_types.h for definition of FANCY_CRITICALITY. */
 
-	float constraint;
-	int i, j, source_clock_domain, sink_clock_domain, inode, ilevel, num_at_level, num_edges, inet, iedge, to_node;
-	int total;
+	float constraint, ** net_slack = slacks->net_slack, ** net_slack_ratio = slacks->net_slack_ratio;
+	int i, j, source_clock_domain, sink_clock_domain, inode, ilevel, num_at_level, num_edges, inet, iedge, to_node, total;
 	t_tedge *tedge;
 	t_pb *pb;
 	boolean found;
-	t_timing_stats * timing_stats = NULL;
+	t_timing_stats * timing_stats;
 
 #ifdef FANCY_CRITICALITY
 	long max_critical_output_paths = 0, max_critical_input_paths = 0;
@@ -1801,7 +1812,7 @@ t_timing_stats * do_timing_analysis(boolean is_prepacked, boolean do_lut_input_b
 		/* After each iteration of the iclock loop, update the slack if it has a newer, lower value.  Also update the normalized costs for clusterer (ifdef FANCY_CRITICALITY). */
 		if (!is_prepacked) {
 #if SLACK_RATIO_DEFINITION == 1
-			timing_stats->least_slack_in_domain[source_clock_domain] = update_slacks(slack_ratio_denom, is_final_analysis);
+			timing_stats->least_slack_in_domain[source_clock_domain] = update_slacks(slacks, slack_ratio_denom, is_final_analysis);
 #else		/* T_req_max_this_domain is not used in update_slacks so doesn't matter what we pass in. */
 			timing_stats->least_slack_in_domain[source_clock_domain] = update_slacks(0, is_final_analysis);
 #endif
@@ -1866,7 +1877,7 @@ t_timing_stats * do_timing_analysis(boolean is_prepacked, boolean do_lut_input_b
 	return timing_stats;
 }
 
-static float update_slacks(float T_req_max_this_domain, boolean is_final_analysis) {
+static float update_slacks(t_slack * slacks, float T_req_max_this_domain, boolean is_final_analysis) {
 	/* Updates the slack of each source-sink pair of block pins in net_slack. 
 	 * For n clock domains, this function will be called n^2 times for each iteration of the timing analyser.
 	 * At each iteration, slacks and slack ratios of each edge will be updated if they are less than the previous lowest values. 
@@ -1874,7 +1885,7 @@ static float update_slacks(float T_req_max_this_domain, boolean is_final_analysi
 
 	int inet, iedge, inode, to_node, num_edges;
 	t_tedge *tedge;
-	float T_arr, Tdel, T_req, slack, min_slack = HUGE_POSITIVE_FLOAT;
+	float T_arr, Tdel, T_req, min_slack = HUGE_POSITIVE_FLOAT;
 
 #if SLACK_RATIO_DEFINITION == 1
 	float slack_ratio_from_this_traversal;
@@ -1898,30 +1909,28 @@ static float update_slacks(float T_req_max_this_domain, boolean is_final_analysi
 			}
 			Tdel = tedge[iedge].Tdel;
 			T_req = tnode[to_node].T_req;
-
-			slack = T_req - T_arr - Tdel;
-			if(slack < net_slack[inet][iedge + 1]) { /* Only update on this traversal if this edge would have lower slack from this traversal than its current value. */
+			
+			if(T_req - T_arr - Tdel < slacks->net_slack[inet][iedge + 1]) { /* Only update on this traversal if this edge would have lower slack from this traversal than its current value. */
 
 #if SLACK_DEFINITION == 2 
 				if (!is_final_analysis) {
 					/* Update the slack for this edge.  If any slack would become negative in this process, set it to 0. */
-					net_slack[inet][iedge + 1] = max(slack, 0);
+					slacks->net_slack[inet][iedge + 1] = max(T_req - T_arr - Tdel, 0);
 				} else { /* Update the slack for this edge. */
-					net_slack[inet][iedge + 1] = slack;
+					slacks->net_slack[inet][iedge + 1] = T_req - T_arr - Tdel;
 				}
 #else			
 				/* Update the slack for this edge. */
-				net_slack[inet][iedge + 1] = slack;
+				slacks->net_slack[inet][iedge + 1] = T_req - T_arr - Tdel;
 #endif
 			}
 
-			min_slack = min(min_slack, slack); /* Minimum slack for this traversal */
+			min_slack = min(min_slack, T_req - T_arr - Tdel); /* Minimum slack for this traversal */
 
 #if SLACK_RATIO_DEFINITION == 1
 			/* Since slack ratios are not equivalent to slacks, we have to check separately that the slack ratio is lower. */
-			slack_ratio_from_this_traversal = net_slack[inet][iedge + 1]/T_req_max_this_domain;
 			/* Update the slack ratio for this edge if the slack ratio from this traversal is less than its current value. */
-			net_slack_ratio[inet][iedge + 1] = min(net_slack_ratio[inet][iedge + 1], slack_ratio_from_this_traversal); 
+			slacks->net_slack_ratio[inet][iedge + 1] = min(slacks->net_slack_ratio[inet][iedge + 1], (T_req - T_arr - Tdel)/T_req_max_this_domain); 
 #endif
 		}
 	}
@@ -2016,8 +2025,7 @@ void print_critical_path(const char *fname) {
 	free_int_list(&critical_path_head);
 }
 
-t_linked_int *
-allocate_and_load_critical_path(void) {
+t_linked_int * allocate_and_load_critical_path(void) {
 
 	/* Finds the critical path and puts a list of the tnodes on the critical    *
 	 * path in a linked list, from the path SOURCE to the path SINK.            */
@@ -2106,29 +2114,29 @@ void do_constant_net_delay_timing_analysis(t_timing_inf timing_inf,
 
 	t_chunk net_delay_ch = {NULL, 0, NULL};
 	t_timing_stats * timing_stats;
-
+	t_slack * slacks;
 	float **net_delay;
 
-	alloc_and_load_timing_graph(timing_inf);
+	slacks = alloc_and_load_timing_graph(timing_inf);
 	net_delay = alloc_net_delay(&net_delay_ch, timing_nets,
 			num_timing_nets);
 
 	load_constant_net_delay(net_delay, constant_net_delay_value, timing_nets,
 			num_timing_nets);
 	load_timing_graph_net_delays(net_delay);
-	timing_stats = do_timing_analysis(FALSE, FALSE, TRUE);
+	timing_stats = do_timing_analysis(slacks, FALSE, FALSE, TRUE);
 
 	if (GetEchoOption()) {
 		if (num_constrained_clocks == 1) {
 			print_critical_path("critical_path.echo");
 		}
 		print_timing_graph("timing_graph.echo");
-		print_net_slack("net_slack.echo");
-		print_net_slack_ratio("net_slack_ratio.echo");
+		print_net_slack(slacks->net_slack, "net_slack.echo");
+		print_net_slack_ratio(slacks->net_slack_ratio, "net_slack_ratio.echo");
 		print_net_delay(net_delay, "net_delay.echo");
 	}
 
-	free_timing_graph();
+	free_timing_graph(slacks);
 	free_net_delay(net_delay, &net_delay_ch);
 	free_timing_stats(timing_stats);
 }

@@ -541,9 +541,9 @@ static float assign_blocks_and_route_net(t_type_ptr source_type,
 
 	is_routeable = timing_driven_route_net(NET_USED, pres_fac,
 			router_opts.max_criticality, router_opts.criticality_exp,
-			router_opts.astar_fac, router_opts.bend_cost,
+			router_opts.astar_fac, router_opts.bend_cost, 
 			pin_criticality, sink_order, rt_node_of_sink, 
-			net_delay[NET_USED]);
+			net_delay[NET_USED], net_slack_ratio[NET_USED]);
 
 	if (is_routeable) {
 		/*here so that the variable unused warning will not flag 'is_routeable' */

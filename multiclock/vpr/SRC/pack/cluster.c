@@ -243,6 +243,7 @@ void do_clustering(const t_arch *arch, t_pack_molecule *molecule_head,
 	 
 	 */
 
+	t_slack * slacks;
 	t_pack_molecule *istart, *next_molecule, *prev_molecule, *cur_molecule;
 	int i, num_molecules;
 #ifdef FANCY_CRITICALITY
@@ -351,14 +352,14 @@ void do_clustering(const t_arch *arch, t_pack_molecule *molecule_head,
 	/* Limit maximum number of elements for each cluster */
 
 	if (timing_driven) {
-		alloc_and_load_pre_packing_timing_graph(block_delay,
+		slacks = alloc_and_load_pre_packing_timing_graph(block_delay,
 				inter_cluster_net_delay, arch->models, timing_inf);
-		timing_stats = do_timing_analysis(TRUE, FALSE, FALSE);
+		timing_stats = do_timing_analysis(slacks, TRUE, FALSE, FALSE);
 		free_timing_stats(timing_stats);
 
 		if (GetEchoOption()) {
-			print_net_slack("pre_packing_net_slack.echo");
-			print_net_slack_ratio("pre_packing_net_slack_ratio.echo");
+			print_net_slack(slacks->net_slack, "pre_packing_net_slack.echo");
+			print_net_slack_ratio(slacks->net_slack_ratio, "pre_packing_net_slack_ratio.echo");
 			print_timing_graph("pre_packing_timing_graph.echo");
 #ifdef FANCY_CRITICALITY
 			print_clustering_timing_info("clustering_timing_info.echo");
@@ -418,6 +419,9 @@ void do_clustering(const t_arch *arch, t_pack_molecule *molecule_head,
 			istart = get_seed_logical_molecule_with_most_ext_inputs(
 					max_molecule_inputs);
 		}
+
+		free_timing_graph(slacks);
+
 	} else /*cluster seed is max input (since there is no timing information)*/ {
 		istart = get_seed_logical_molecule_with_most_ext_inputs(
 				max_molecule_inputs);
@@ -548,10 +552,6 @@ void do_clustering(const t_arch *arch, t_pack_molecule *molecule_head,
 				indexofcrit = savedindexofcrit;
 			}
 		}
-	}
-
-	if (timing_driven) {
-		free_timing_graph();
 	}
 
 	free_cluster_legality_checker();
