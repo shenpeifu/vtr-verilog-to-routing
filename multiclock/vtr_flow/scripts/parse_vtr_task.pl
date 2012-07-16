@@ -105,151 +105,6 @@ if ($calc_geomean) {
 	calc_geomean;
 }
 
-sub summarize_qor {
-
-	##############################################################
-	# Set up output file
-	##############################################################
-
-	my $first = 1;
-	
-	my $task = @tasks[0];
-	my $task_path = "$vtr_flow_path/tasks/$task";
-	
-	my $output_path = $task_path;
-	my $exp_num = last_exp($task_path);
-
-	if ( ( ( $#tasks + 1 ) > 1 ) | ( -e "$task_path/../task_list.txt" ) ) {
-		$output_path = "$task_path/../";
-	}
-	if ( !-e "$output_path/task_summary" ) {
-		mkdir "$output_path/task_summary";
-	}
-	if ( -e "$output_path/task_summary/${run_prefix}${exp_num}_summary.txt" ) {
-		return;
-	}
-	open( OUTPUT_FILE, ">$output_path/task_summary/${run_prefix}${exp_num}_summary.txt" );
-	
-	##############################################################
-	# Append contents of QoR files to output file
-	##############################################################
-
-	foreach my $task (@tasks) {
-		chomp($task);
-		$task_path = "$vtr_flow_path/tasks/$task";
-		$exp_num = last_exp($task_path);
-		my $run_path = "$task_path/${run_prefix}${exp_num}";
-
-		open( RESULTS_FILE, "$run_path/qor_results.txt" );
-		my $output = <RESULTS_FILE>;
-
-		if ($first) {
-			print OUTPUT_FILE "task_name\t$output";
-			$first = 0;
-		}
-		
-		while ($output = <RESULTS_FILE>) {
-			print OUTPUT_FILE $task . "\t" . $output;
-		}
-		close(RESULTS_FILE);
-	}
-	close(OUTPUT_FILE);
-}
-
-sub calc_geomean {
-
-	##############################################################
-	# Set up output file
-	##############################################################
-
-	my $first = 0;
-
-	my $task = @tasks[0];
-	my $task_path = "$vtr_flow_path/tasks/$task";
-	
-	my $output_path = $task_path;
-	my $exp_num = last_exp($task_path);
-
-	if ( ( ( $#tasks + 1 ) > 1 ) | ( -e "$task_path/../task_list.txt" ) ) {
-		$output_path = "$task_path/../"; 
-	}
-	if ( !-e "$output_path/qor_geomean.txt" ) {
-		open( OUTPUT_FILE, ">$output_path/qor_geomean.txt" );
-		$first = 1;
-	}
-	else {
-		open( OUTPUT_FILE, ">>$output_path/qor_geomean.txt" );
-	}
-	
-	##############################################################
-	# Read summary file
-	##############################################################
-
-	my $summary_file = "$output_path/task_summary/${run_prefix}${exp_num}_summary.txt";
-
-	if ( !-r $summary_file ) {
-		print "[ERROR] Failed to open $summary_file: $!";
-		return;
-	}
-	open( SUMMARY_FILE, "<$summary_file" );
-	my @summary_data = <SUMMARY_FILE>;
-	close(SUMMARY_FILE);
-
-	my $summary_params = shift @summary_data;
-	my @summary_params = split( /\t/, trim($summary_params) );
-	
-	if ($first) {
-		# Hack - remove unwanted labels
-		my $num = 4;
-		while ($num) {
-			shift @summary_params;
-			--$num;
-		}
-		print OUTPUT_FILE "run";
-		my @temp = @summary_params;
-		while ( $#temp >= 0 ) {
-			my $label = shift @temp;
-			print OUTPUT_FILE "\t" . "$label";
-		}
-		$first = 0;
-	}
-	else {
-	}
-	print OUTPUT_FILE "\n${exp_num}";
-
-	##############################################################
-	# Compute & write geomean to output file
-	##############################################################
-
-	my $index = 4;
-	my @summary_params = split( /\t/, trim($summary_params) );
-	
-	while ( $#summary_params  >= $index ) {
-		my $geomean = 1; my $num = 0;
-		foreach my $line (@summary_data) {
-			my @test_line = split( /\t/, $line );
-			if ( trim( @test_line[$index] ) > 0 ) {
-				$geomean *= trim( @test_line[$index] );
-				$num++;
-			}
-		}
-		$geomean **= 1/$num;
-		print OUTPUT_FILE "\t" . "${geomean}" ;
-		$index++;
-	}
-	close(OUTPUT_FILE);
-}
-
-sub last_exp {
-	my $path = shift;
-	my $num = 1;
-	while ( -e "$path/${run_prefix}${num}" ) {
-		++$num;
-	}
-	--$num;
-	return $num;
-}
-
 sub parse_single_task {
 	my $task_name = shift;
 	my $task_path = "$vtr_flow_path/tasks/$task_name";
@@ -374,6 +229,150 @@ sub parse_single_task {
 	}
 }
 
+sub summarize_qor {
+
+	##############################################################
+	# Set up output file
+	##############################################################
+
+	my $first = 1;
+	
+	my $task = @tasks[0];
+	my $task_path = "$vtr_flow_path/tasks/$task";
+	
+	my $output_path = $task_path;
+	my $exp_num = last_exp($task_path);
+
+	if ( ( ( $#tasks + 1 ) > 1 ) | ( -e "$task_path/../task_list.txt" ) ) {
+		$output_path = "$task_path/../";
+	}
+	if ( !-e "$output_path/task_summary" ) {
+		mkdir "$output_path/task_summary";
+	}
+	if ( -e "$output_path/task_summary/${run_prefix}${exp_num}_summary.txt" ) {
+	}
+	open( OUTPUT_FILE, ">$output_path/task_summary/${run_prefix}${exp_num}_summary.txt" );
+	
+	##############################################################
+	# Append contents of QoR files to output file
+	##############################################################
+
+	foreach my $task (@tasks) {
+		chomp($task);
+		$task_path = "$vtr_flow_path/tasks/$task";
+		$exp_num = last_exp($task_path);
+		my $run_path = "$task_path/${run_prefix}${exp_num}";
+
+		open( RESULTS_FILE, "$run_path/qor_results.txt" );
+		my $output = <RESULTS_FILE>;
+
+		if ($first) {
+			print OUTPUT_FILE "task_name\t$output";
+			$first = 0;
+		}
+		
+		while ($output = <RESULTS_FILE>) {
+			print OUTPUT_FILE $task . "\t" . $output;
+		}
+		close(RESULTS_FILE);
+	}
+	close(OUTPUT_FILE);
+}
+
+sub calc_geomean {
+
+	##############################################################
+	# Set up output file
+	##############################################################
+
+	my $first = 0;
+
+	my $task = @tasks[0];
+	my $task_path = "$vtr_flow_path/tasks/$task";
+	
+	my $output_path = $task_path;
+	my $exp_num = last_exp($task_path);
+
+	if ( ( ( $#tasks + 1 ) > 1 ) | ( -e "$task_path/../task_list.txt" ) ) {
+		$output_path = "$task_path/../"; 
+	}
+	if ( !-e "$output_path/qor_geomean.txt" ) {
+		open( OUTPUT_FILE, ">$output_path/qor_geomean.txt" );
+		$first = 1;
+	}
+	else {
+		open( OUTPUT_FILE, ">>$output_path/qor_geomean.txt" );
+	}
+	
+	##############################################################
+	# Read summary file
+	##############################################################
+
+	my $summary_file = "$output_path/task_summary/${run_prefix}${exp_num}_summary.txt";
+
+	if ( !-r $summary_file ) {
+		print "[ERROR] Failed to open $summary_file: $!";
+		return;
+	}
+	open( SUMMARY_FILE, "<$summary_file" );
+	my @summary_data = <SUMMARY_FILE>;
+	close(SUMMARY_FILE);
+
+	my $summary_params = shift @summary_data;
+	my @summary_params = split( /\t/, trim($summary_params) );
+	
+	if ($first) {
+		# Hack - remove unwanted labels
+		my $num = 4;
+		while ($num) {
+			shift @summary_params;
+			--$num;
+		}
+		print OUTPUT_FILE "run";
+		my @temp = @summary_params;
+		while ( $#temp >= 0 ) {
+			my $label = shift @temp;
+			print OUTPUT_FILE "\t" . "$label";
+		}
+		$first = 0;
+	}
+	else {
+	}
+	print OUTPUT_FILE "\n${exp_num}";
+
+	##############################################################
+	# Compute & write geomean to output file
+	##############################################################
+
+	my $index = 4;
+	my @summary_params = split( /\t/, trim($summary_params) );
+	
+	while ( $#summary_params  >= $index ) {
+		my $geomean = 1; my $num = 0;
+		foreach my $line (@summary_data) {
+			my @test_line = split( /\t/, $line );
+			if ( trim( @test_line[$index] ) > 0 ) {
+				$geomean *= trim( @test_line[$index] );
+				$num++;
+			}
+		}
+		$geomean **= 1/$num;
+		print OUTPUT_FILE "\t" . "${geomean}" ;
+		$index++;
+	}
+	close(OUTPUT_FILE);
+}
+
+sub last_exp {
+	my $path = shift;
+	my $num = 1;
+	while ( -e "$path/${run_prefix}${num}" ) {
+		++$num;
+	}
+	--$num;
+	return $num;
+} 
+
 sub check_golden {
 	my $task_name = shift;
 	my $task_path = shift;
@@ -469,7 +468,7 @@ sub check_golden {
 	  split( /\t/, trim($test_params) );      # get parameters of test results
 
 	if ( $golden_params ne $test_params ) {
-		print "[ERROR] Different parameters in golden and result file.\n";
+		print "[ERROR] Different parameters in golden and result file. $golden_params different from $test_params\n";
 		return;
 	}
 

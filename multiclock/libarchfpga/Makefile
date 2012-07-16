@@ -10,14 +10,13 @@
 
 #############################################################################################
 
-CC = gcc
+CC = g++
 AR = ar
 
-#WARN_FLAGS = -Wall -Wpointer-arith -Wcast-qual -D__USE_FIXED_PROTOTYPES__ -pedantic -Wshadow -Wcast-align -Wno-overlength-strings
-WARN_FLAGS = -Wall -Wpointer-arith -Wcast-qual -D__USE_FIXED_PROTOTYPES__ -pedantic -Wshadow -Wcast-align
+WARN_FLAGS = -Wall -Wpointer-arith -Wcast-qual -D__USE_FIXED_PROTOTYPES__ -ansi -pedantic -Wshadow -Wcast-align -D_POSIX_SOURCE -Wno-write-strings
 DEBUG_FLAGS = -g
 OPT_FLAGS = -O3
-INC_FLAGS = -Iinclude
+INC_FLAGS = -Iinclude -I../printhandler/SRC/TIO_InputOutputHandlers
 LIB_FLAGS = rcs
 
 EXE = read_arch
@@ -35,14 +34,19 @@ OBJS = $(SRC:.c=.o)
 
 DEPS = $(OBJS:.o=.d) main.d
 
-libarchfpga.a: $(OBJS)
-	$(AR) $(LIB_FLAGS) $@ $(OBJS)
-
 # Standalone executable to test architecture reader
 $(EXE): main.o libarchfpga.a
 	$(CC) main.o -o $(EXE) $(INC_FLAGS) -L. -lm -larchfpga
  
- 
+
+libarchfpga.a: $(OBJS) ../printhandler/libprinthandler.a
+	 cp ../printhandler/libprinthandler.a $@
+	 ar rcs $@ $(OBJS)
+	 ar d $@ main.o
+
+../printhandler/libprinthandler.a:
+	@ cd ../printhandler && make
+
 %.o: %.c
 	$(CC) $(FLAGS) -c $< -o $@ 
  

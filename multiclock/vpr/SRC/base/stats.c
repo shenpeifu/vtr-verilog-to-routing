@@ -40,7 +40,7 @@ void routing_stats(boolean full_stats, enum e_route_type route_type,
 	get_length_and_bends_stats();
 	get_channel_occupancy_stats();
 
-	printf(
+	vpr_printf(TIO_MESSAGE_INFO, 
 			"Logic Area (in minimum width transistor areas, excludes I/Os and empty grid tiles):\n");
 
 	area = 0;
@@ -56,7 +56,7 @@ void routing_stats(boolean full_stats, enum e_route_type route_type,
 		}
 	}
 	/* Todo: need to add pitch of routing to blocks with height > 3 */
-	printf(
+	vpr_printf(TIO_MESSAGE_INFO, 
 			"Total Logic Block Area (Warning, need to add pitch of routing to blocks with height > 3): %g \n",
 			area);
 
@@ -70,7 +70,7 @@ void routing_stats(boolean full_stats, enum e_route_type route_type,
 			}
 		}
 	}
-	printf("Total Used Logic Block Area: %g \n", used_area);
+	vpr_printf(TIO_MESSAGE_INFO, "Total Used Logic Block Area: %g \n", used_area);
 
 	if (route_type == DETAILED) {
 		count_routing_transistors(directionality, num_switch, segment_inf,
@@ -152,23 +152,23 @@ void get_length_and_bends_stats(void) {
 	}
 
 	av_bends = (float) total_bends / (float) (num_nets - num_global_nets);
-	printf("\nAverage number of bends per net: %#g  Maximum # of bends: %d\n\n",
+	vpr_printf(TIO_MESSAGE_INFO, "\nAverage number of bends per net: %#g  Maximum # of bends: %d\n\n",
 			av_bends, max_bends);
 
 	av_length = (float) total_length / (float) (num_nets - num_global_nets);
-	printf("\nThe number of routed nets (nonglobal): %d\n",
+	vpr_printf(TIO_MESSAGE_INFO, "\nThe number of routed nets (nonglobal): %d\n",
 			num_nets - num_global_nets);
-	printf("Wirelength results (all in units of 1 clb segments):\n");
-	printf("\tTotal wirelength: %d   Average net length: %#g\n", total_length,
+	vpr_printf(TIO_MESSAGE_INFO, "Wirelength results (all in units of 1 clb segments):\n");
+	vpr_printf(TIO_MESSAGE_INFO, "\tTotal wirelength: %d   Average net length: %#g\n", total_length,
 			av_length);
-	printf("\tMaximum net length: %d\n\n", max_length);
+	vpr_printf(TIO_MESSAGE_INFO, "\tMaximum net length: %d\n\n", max_length);
 
 	av_segments = (float) total_segments / (float) (num_nets - num_global_nets);
-	printf("Wirelength results in terms of physical segments:\n");
-	printf("\tTotal wiring segments used: %d   Av. wire segments per net: "
+	vpr_printf(TIO_MESSAGE_INFO, "Wirelength results in terms of physical segments:\n");
+	vpr_printf(TIO_MESSAGE_INFO, "\tTotal wiring segments used: %d   Av. wire segments per net: "
 			"%#g\n", total_segments, av_segments);
-	printf("\tMaximum segments used by a net: %d\n\n", max_segments);
-	printf("\tTotal local nets with reserved CLB opins: %d\n\n",
+	vpr_printf(TIO_MESSAGE_INFO, "\tMaximum segments used by a net: %d\n\n", max_segments);
+	vpr_printf(TIO_MESSAGE_INFO, "\tTotal local nets with reserved CLB opins: %d\n\n",
 			num_clb_opins_reserved);
 }
 
@@ -185,8 +185,8 @@ static void get_channel_occupancy_stats(void) {
 	chany_occ = (int **) alloc_matrix(0, nx, 1, ny, sizeof(int));
 	load_channel_occupancies(chanx_occ, chany_occ);
 
-	printf("\nX - Directed channels:\n\n");
-	printf("j\tmax occ\tav_occ\t\tcapacity\n");
+	vpr_printf(TIO_MESSAGE_INFO, "\nX - Directed channels:\n\n");
+	vpr_printf(TIO_MESSAGE_INFO, "j\tmax occ\tav_occ\t\tcapacity\n");
 
 	total_x = 0;
 
@@ -200,11 +200,11 @@ static void get_channel_occupancy_stats(void) {
 			av_occ += chanx_occ[i][j];
 		}
 		av_occ /= nx;
-		printf("%d\t%d\t%-#9g\t%d\n", j, max_occ, av_occ, chan_width_x[j]);
+		vpr_printf(TIO_MESSAGE_INFO, "%d\t%d\t%-#9g\t%d\n", j, max_occ, av_occ, chan_width_x[j]);
 	}
 
-	printf("\nY - Directed channels:\n\n");
-	printf("i\tmax occ\tav_occ\t\tcapacity\n");
+	vpr_printf(TIO_MESSAGE_INFO, "\nY - Directed channels:\n\n");
+	vpr_printf(TIO_MESSAGE_INFO, "i\tmax occ\tav_occ\t\tcapacity\n");
 
 	total_y = 0;
 
@@ -218,10 +218,10 @@ static void get_channel_occupancy_stats(void) {
 			av_occ += chany_occ[i][j];
 		}
 		av_occ /= ny;
-		printf("%d\t%d\t%-#9g\t%d\n", i, max_occ, av_occ, chan_width_y[i]);
+		vpr_printf(TIO_MESSAGE_INFO, "%d\t%d\t%-#9g\t%d\n", i, max_occ, av_occ, chan_width_y[i]);
 	}
 
-	printf("\nTotal Tracks in X-direction: %d  in Y-direction: %d\n\n", total_x,
+	vpr_printf(TIO_MESSAGE_INFO, "\nTotal Tracks in X-direction: %d  in Y-direction: %d\n\n", total_x,
 			total_y);
 
 	free_matrix(chanx_occ, 1, nx, 0, sizeof(int));
@@ -299,8 +299,8 @@ void get_num_bends_and_length(int inet, int *bends_ptr, int *len_ptr,
 
 	prevptr = trace_head[inet]; /* Should always be SOURCE. */
 	if (prevptr == NULL) {
-		printf(
-				"Error in get_num_bends_and_length:  net #%d has no traceback.\n",
+		vpr_printf(TIO_MESSAGE_ERROR, 
+				"in get_num_bends_and_length:  net #%d has no traceback.\n",
 				inet);
 		exit(1);
 	}
@@ -369,10 +369,10 @@ void print_wirelen_prob_dist(void) {
 			index = (int) two_point_length;
 			if (index >= prob_dist_size) {
 
-				printf(
-						"Warning: index (%d) to prob_dist exceeds its allocated size (%d)\n",
+				vpr_printf(TIO_MESSAGE_WARNING, 
+						"index (%d) to prob_dist exceeds its allocated size (%d)\n",
 						index, prob_dist_size);
-				printf(
+				vpr_printf(TIO_MESSAGE_INFO, 
 						"Realloc'ing to increase 2-pin wirelen prob distribution array\n");
 				incr = index - prob_dist_size + 2;
 				prob_dist_size += incr;
@@ -387,10 +387,10 @@ void print_wirelen_prob_dist(void) {
 			index++;
 			if (index >= prob_dist_size) {
 
-				printf(
+				vpr_printf(TIO_MESSAGE_WARNING, 
 						"Warning: index (%d) to prob_dist exceeds its allocated size (%d)\n",
 						index, prob_dist_size);
-				printf(
+				vpr_printf(TIO_MESSAGE_INFO, 
 						"Realloc'ing to increase 2-pin wirelen prob distribution array\n");
 				incr = index - prob_dist_size + 2;
 				prob_dist_size += incr;
@@ -408,20 +408,20 @@ void print_wirelen_prob_dist(void) {
 
 	/* Normalize so total probability is 1 and print out. */
 
-	printf("\nProbability distribution of 2-pin net lengths:\n\n");
-	printf("Length    p(Lenth)\n");
+	vpr_printf(TIO_MESSAGE_INFO, "\nProbability distribution of 2-pin net lengths:\n\n");
+	vpr_printf(TIO_MESSAGE_INFO, "Length    p(Lenth)\n");
 
 	av_length = 0;
 
 	for (index = 0; index < prob_dist_size; index++) {
 		prob_dist[index] /= norm_fac;
-		printf("%6d  %10.6f\n", index, prob_dist[index]);
+		vpr_printf(TIO_MESSAGE_INFO, "%6d  %10.6f\n", index, prob_dist[index]);
 		av_length += prob_dist[index] * index;
 	}
 
-	printf("\nThe number of 2-pin nets is ;%g;\n", norm_fac);
-	printf("\nExpected value of 2-pin net length (R) is ;%g;\n", av_length);
-	printf("\nTotal wire length is ;%g;\n", norm_fac * av_length);
+	vpr_printf(TIO_MESSAGE_INFO, "\nThe number of 2-pin nets is ;%g;\n", norm_fac);
+	vpr_printf(TIO_MESSAGE_INFO, "\nExpected value of 2-pin net length (R) is ;%g;\n", av_length);
+	vpr_printf(TIO_MESSAGE_INFO, "\nTotal wire length is ;%g;\n", norm_fac * av_length);
 
 	free(prob_dist);
 }
@@ -455,7 +455,7 @@ void print_lambda(void) {
 	}
 
 	lambda = (float) num_inputs_used / (float) num_blocks;
-	printf("Average lambda (input pins used per clb) is: %g\n", lambda);
+	vpr_printf(TIO_MESSAGE_INFO, "Average lambda (input pins used per clb) is: %g\n", lambda);
 }
 
 static void get_timing_stats(t_timing_stats * timing_stats) {
@@ -467,33 +467,39 @@ static void get_timing_stats(t_timing_stats * timing_stats) {
 	of the edge with this worst slack).*/
 
 	if (num_constrained_clocks == 1) {
-		printf("\nCritical Path: %g ns", timing_stats->critical_path_delay[0][0] * 1e9);
-		printf("\nf_max: %g MHz", 1e-6 / timing_stats->critical_path_delay[0][0]);
+			if (pb_max_internal_delay == UNDEFINED || pb_max_internal_delay < timing_stats->critical_path_delay[0][0]) {
+				vpr_printf(TIO_MESSAGE_INFO, "Critical path: %g ns\n", timing_stats->critical_path_delay[0][0] * 1e9);
+			} else {
+				vpr_printf(TIO_MESSAGE_INFO, 
+					"Critical path: %g ns - capped by fmax of block type %s\n", 
+					pb_max_internal_delay * 1e9, pbtype_max_internal_delay->name);
+			}
+		vpr_printf(TIO_MESSAGE_INFO, "\nf_max: %g MHz", 1e-6 / timing_stats->critical_path_delay[0][0]);
 		if (timing_stats->least_slack_in_domain[0] < HUGE_POSITIVE_FLOAT - 1) {
-			printf("\nLeast slack in design: %g ns\n\n", timing_stats->least_slack_in_domain[0] * 1e9);
+			vpr_printf(TIO_MESSAGE_INFO, "\nLeast slack in design: %g ns\n\n", timing_stats->least_slack_in_domain[0] * 1e9);
 		} else {
-			printf("\nLeast slack in design: --\n\n");
+			vpr_printf(TIO_MESSAGE_INFO, "\nLeast slack in design: --\n\n");
 		}
 	} else if (num_constrained_clocks > 1) {
 		int source_clock_domain, sink_clock_domain, clock_domain, fanout, total_fanout = 0, num_netlist_clocks_with_intra_domain_paths = 0;
 		float geomean_f_max = 1, fanout_weighted_geomean_f_max = 1;
 
-		printf("\nMinimum possible clock period to meet each constraint (including skew effects):\n");
+		vpr_printf(TIO_MESSAGE_INFO, "\nMinimum possible clock period to meet each constraint (including skew effects):\n");
 		for (source_clock_domain = 0; source_clock_domain < num_constrained_clocks; source_clock_domain++) {
 			
 			/* First, print the clock name and intra-domain constraint. */
-			printf("%s:\t", constrained_clocks[source_clock_domain].name);
+			vpr_printf(TIO_MESSAGE_INFO, "%s:\t", constrained_clocks[source_clock_domain].name);
 
 			if (timing_constraint[source_clock_domain][source_clock_domain] > -0.01 
 				&& timing_stats->critical_path_delay[source_clock_domain][source_clock_domain] > HUGE_NEGATIVE_FLOAT + 1) { 
 			/* if timing constraint is not DO_NOT_ANALYSE and if there was at least one path analyzed */
 				/* convert to nanoseconds / megahertz */
-				printf("to %s: %g ns (%g MHz)", constrained_clocks[source_clock_domain].name, 
+				vpr_printf(TIO_MESSAGE_INFO, "to %s: %g ns (%g MHz)", constrained_clocks[source_clock_domain].name, 
 					1e9 * timing_stats->critical_path_delay[source_clock_domain][source_clock_domain],
 					1e-6 / timing_stats->critical_path_delay[source_clock_domain][source_clock_domain]);
 			}
 
-			printf("\n");
+			vpr_printf(TIO_MESSAGE_INFO, "\n");
 
 			/* Then, print all other constraints on separate lines. */
 			for (sink_clock_domain = 0; sink_clock_domain < num_constrained_clocks; sink_clock_domain++) {
@@ -503,7 +509,7 @@ static void get_timing_stats(t_timing_stats * timing_stats) {
 					/* if timing constraint is not DO_NOT_ANALYSE and if there was at least one path analyzed 
 					and the two clock domains are not the same. */
 					/* Convert to nanoseconds and megahertz */
-					printf("\tto %s: %g ns (%g MHz)\n", constrained_clocks[sink_clock_domain].name, 
+					vpr_printf(TIO_MESSAGE_INFO, "\tto %s: %g ns (%g MHz)\n", constrained_clocks[sink_clock_domain].name, 
 					1e9 * timing_stats->critical_path_delay[source_clock_domain][sink_clock_domain],
 					1e-6 / timing_stats->critical_path_delay[source_clock_domain][sink_clock_domain]);
 				}
@@ -528,22 +534,24 @@ static void get_timing_stats(t_timing_stats * timing_stats) {
 		if (geomean_f_max < 1 - 1e-15 || geomean_f_max > 1 + 1e-15) { 
 			/* If geometric mean is 1, it probably means we never found any actual f_max. */
 			/* Convert to MHz */
-			printf("\nGeometric mean intra-domain f_max: %g MHz\n", geomean_f_max * 1e-6);
+			vpr_printf(TIO_MESSAGE_INFO, "\nGeometric mean intra-domain f_max: %g MHz\n", geomean_f_max * 1e-6);
 		}
 		if (fanout_weighted_geomean_f_max < 1 - 1e-15 || fanout_weighted_geomean_f_max > 1 + 1e-15) { 
 			/* Convert to MHz */
-			printf("Fanout-weighted geomean intra-domain f_max: %g MHz\n", fanout_weighted_geomean_f_max * 1e-6);
+			vpr_printf(TIO_MESSAGE_INFO, "Fanout-weighted geomean intra-domain f_max: %g MHz\n", fanout_weighted_geomean_f_max * 1e-6);
 		}
 
-		printf("\nLeast slack in each domain:\n");
+		vpr_printf(TIO_MESSAGE_INFO, "\nLeast slack in each domain:\n");
 		for (clock_domain = 0; clock_domain < num_constrained_clocks; clock_domain++) {
 			if (timing_stats->least_slack_in_domain[clock_domain] < HUGE_POSITIVE_FLOAT - 1) {
 				/* Convert to nanoseconds */
-				printf("%s: %g ns\n", constrained_clocks[clock_domain].name, timing_stats->least_slack_in_domain[clock_domain]*1e9);
+				vpr_printf(TIO_MESSAGE_INFO, "%s: %g ns\n", constrained_clocks[clock_domain].name, timing_stats->least_slack_in_domain[clock_domain]*1e9);
 			} else { /* No valid path was analyzed. */
-				printf("%s: --\n", constrained_clocks[clock_domain].name);
+				vpr_printf(TIO_MESSAGE_INFO, "%s: --\n", constrained_clocks[clock_domain].name);
 			}
 		}
-		printf("\n");
+		vpr_printf(TIO_MESSAGE_INFO, "\n");
 	}
 }
+
+

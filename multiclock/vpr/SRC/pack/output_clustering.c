@@ -37,7 +37,7 @@ static void print_string(const char *str_ptr, int *column, int num_tabs, FILE * 
 
 	len = strlen(str_ptr);
 	if (len + 3 > LINELENGTH) {
-		printf("Error in print_string: String %s is too long for desired\n"
+		vpr_printf(TIO_MESSAGE_ERROR, "In print_string: String %s is too long for desired\n"
 				"maximum line length.\n", str_ptr);
 		exit(1);
 	}
@@ -444,8 +444,8 @@ static void print_stats(t_block *clb, int num_clusters) {
 	/* Prints out one cluster (clb).  Both the external pins and the *
 	 * internal connections are printed out.                         */
 
-	int ipin, icluster, itype, inet, iblk;
-	int unabsorbable_ffs;
+	int ipin, icluster, itype, inet;/*, iblk;*/
+	/*int unabsorbable_ffs;*/
 	int total_nets_absorbed;
 	boolean * nets_absorbed;
 
@@ -464,6 +464,10 @@ static void print_stats(t_block *clb, int num_clusters) {
 		nets_absorbed[inet] = TRUE;
 	}
 
+#if 0
+
+/*counting number of flipflops which cannot be absorbed to check the optimality of the packer wrt CLB density*/
+
 	unabsorbable_ffs = 0;
 	for (iblk = 0; iblk < num_logical_blocks; iblk++) {
 		if (strcmp(logical_block[iblk].model->name, "latch") == 0) {
@@ -475,8 +479,9 @@ static void print_stats(t_block *clb, int num_clusters) {
 			}
 		}
 	}
-	printf("\n");
-	printf("%d FFs in input netlist not absorbable (ie. impossible to form BLE) \n", unabsorbable_ffs);
+	vpr_printf(TIO_MESSAGE_INFO, "\n");
+	vpr_printf(TIO_MESSAGE_INFO, "%d FFs in input netlist not absorbable (ie. impossible to form BLE) \n", unabsorbable_ffs);
+#endif
 
 	/* Counters used only for statistics purposes. */
 
@@ -498,12 +503,12 @@ static void print_stats(t_block *clb, int num_clusters) {
 
 	for (itype = 0; itype < num_types; itype++) {
 		if (num_clb_types[itype] == 0) {
-			printf(
+			vpr_printf(TIO_MESSAGE_INFO, 
 					"\t%s: # blocks %d, avg # input + clock pins used %g, avg # output pins used %g\n",
 					type_descriptors[itype].name, num_clb_types[itype], 0.0,
 					0.0);
 		} else {
-			printf(
+			vpr_printf(TIO_MESSAGE_INFO, 
 					"\t%s: # blocks %d, avg # input + clock pins used %g, avg # output pins used %g\n",
 					type_descriptors[itype].name, num_clb_types[itype],
 					(float) num_clb_inputs_used[itype]
@@ -519,7 +524,7 @@ static void print_stats(t_block *clb, int num_clusters) {
 			total_nets_absorbed++;
 		}
 	}
-	printf("Absorbed logical nets %d out of %d nets, %d nets not absorbed\n",
+	vpr_printf(TIO_MESSAGE_INFO, "Absorbed logical nets %d out of %d nets, %d nets not absorbed\n",
 			total_nets_absorbed, num_logical_nets,
 			num_logical_nets - total_nets_absorbed);
 	free(nets_absorbed);
@@ -589,15 +594,15 @@ void output_clustering(t_block *clb, int num_clusters, boolean global_clocks,
 			break;
 
 		case VPACK_EMPTY:
-			printf(
-					"Error in output_netlist -- logical_block %d is VPACK_EMPTY.\n",
+			vpr_printf(TIO_MESSAGE_ERROR, 
+					"in output_netlist -- logical_block %d is VPACK_EMPTY.\n",
 					bnum);
 			exit(1);
 			break;
 
 		default:
-			printf(
-					"Error in output_netlist.  Unexpected type %d for logical_block"
+			vpr_printf(TIO_MESSAGE_ERROR, 
+					"in output_netlist.  Unexpected type %d for logical_block"
 							"%d.\n", logical_block[bnum].type, bnum);
 		}
 	}

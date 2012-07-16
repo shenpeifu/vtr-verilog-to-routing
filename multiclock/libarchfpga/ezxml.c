@@ -22,13 +22,13 @@
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-/* Ted Campbell, Aug 14 2007 */
-#if defined(WIN32) || defined(_WIN32)
-#include <io.h>
-
 #ifndef EZXML_NOMMAP
 #define EZXML_NOMMAP
 #endif /* EXXML_NOMMAP */
+
+/* Ted Campbell, Aug 14 2007 */
+#if defined(WIN32) || defined(_WIN32)
+#include <io.h>
 #endif /* WIN32 */
 
 #include <stdlib.h>
@@ -1275,7 +1275,7 @@ main(int argc,
 	return fprintf(stderr, "usage: %s xmlfile\n", argv[0]);
 
 	xml = ezxml_parse_file(argv[1]);
-	printf("%s\n", (s = ezxml_toxml(xml)));
+	vpr_printf("%s\n", (s = ezxml_toxml(xml)));
 	free(s);
 	i = fprintf(stderr, "%s", ezxml_error(xml));
 	ezxml_free(xml);
