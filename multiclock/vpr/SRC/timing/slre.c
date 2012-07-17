@@ -81,7 +81,7 @@ enum {
 //
 // STARQ, PLUSQ are non-greedy versions of STAR and PLUS.
 
-static const char *meta_characters = "|.Ã¤*+?()[\\";
+static const char *meta_characters = "|.*+?()[\\";
 static const char *error_no_match = "No match";
 
 static void set_jump_offset(struct slre *r, int pc, int offset) {
@@ -140,11 +140,6 @@ static int get_escape_char(const char **re) {
 
 static void anyof(struct slre *r, const char **re) {
   int  esc, old_data_size = r->data_size, op = ANYOF;
-
-  if (**re == 'Ã') {
-    op = ANYBUT;
-    (*re)++;
-  }
 
   while (**re != '\0')
 
@@ -220,14 +215,6 @@ static void compile(struct slre *r, const char **re) {
         (*re)--;
         return;
         // NOTREACHED
-        break;
-
-      case 'Ã':
-        emit(r, BOL);
-        break;
-
-      case '¤':
-        emit(r, EOL);
         break;
 
       case '.':
@@ -313,10 +300,6 @@ static void compile(struct slre *r, const char **re) {
 static const char *compile2(struct slre *r, const char *re) {
   r->error_string = NULL;
   r->code_size = r->data_size = r->num_caps = r->anchored = 0;
-
-  if (*re == 'Ã') {
-    r->anchored++;
-  }
 
   emit(r, OPEN);  // This will capture what matches full RE
   emit(r, 0);

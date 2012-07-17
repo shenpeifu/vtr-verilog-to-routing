@@ -85,38 +85,35 @@ void read_sdc(char * sdc_file) {
 	/* If no SDC file is included or specified, use default behaviour of cutting paths between domains and optimizing each clock separately */
 	if ((sdc = fopen(sdc_file, "r")) == NULL) {
 		vpr_printf(TIO_MESSAGE_INFO, "SDC file %s blank or not found.\n", sdc_file);
-		vpr_printf(TIO_MESSAGE_INFO, "Defaulting to: optimize all clocks to run as fast as possible.\n");
-		vpr_printf(TIO_MESSAGE_INFO, "Cut paths between clock domains.\n\n");
 
 		/* Find all netlist clocks and add them as constrained clocks. */
 		count_netlist_clocks_as_constrained_clocks();
 
-		/* Allocate matrix of timing constraints [0..num_constrained_clocks-1][0..num_constrained_clocks-1] */
-		timing_constraint = (float **) alloc_matrix(0, num_constrained_clocks-1, 0, num_constrained_clocks-1, sizeof(float));
-		for(source_clock_domain=0; source_clock_domain<num_constrained_clocks; source_clock_domain++) {
-			for(sink_clock_domain=0; sink_clock_domain<num_constrained_clocks; sink_clock_domain++) {
-				if(source_clock_domain == sink_clock_domain) {
-					timing_constraint[source_clock_domain][sink_clock_domain] = 0.;
-				} else {
-					timing_constraint[source_clock_domain][sink_clock_domain] = DO_NOT_ANALYSE;
+		/* We'll use separate defaults for clocked and unclocked circuits. */
+		if (num_constrained_clocks == 0) {
+			vpr_printf(TIO_MESSAGE_INFO, "Defaulting to: constrain all I/Os on a virtual, external clock.\n");
+			vpr_printf(TIO_MESSAGE_INFO, "Optimize this virtual clock to run as fast as possible.\n\n");
+			timing_constraint = (float **) alloc_matrix(0, 0, 0, 0, sizeof(float));
+
+		} else { /* At least one clock in the circuit. */
+			vpr_printf(TIO_MESSAGE_INFO, "Defaulting to: optimize all clocks to run as fast as possible.\n");
+			vpr_printf(TIO_MESSAGE_INFO, "Cut paths between clock domains.\n\n");
+			/* Allocate matrix of timing constraints [0..num_constrained_clocks-1][0..num_constrained_clocks-1] */
+			timing_constraint = (float **) alloc_matrix(0, num_constrained_clocks-1, 0, num_constrained_clocks-1, sizeof(float));
+			for(source_clock_domain=0; source_clock_domain<num_constrained_clocks; source_clock_domain++) {
+				for(sink_clock_domain=0; sink_clock_domain<num_constrained_clocks; sink_clock_domain++) {
+					if(source_clock_domain == sink_clock_domain) {
+						timing_constraint[source_clock_domain][sink_clock_domain] = 0.;
+					} else {
+						timing_constraint[source_clock_domain][sink_clock_domain] = DO_NOT_ANALYSE;
+					}
 				}
 			}
 		}
 
 		if (GetEchoOption()) {
-			print_timing_constraint_info("timing_constraints.echo");
+				print_timing_constraint_info("timing_constraints.echo");
 		}
-
-		/* Now normalize timing_constraint and constrained_ios to be in seconds, not nanoseconds. */
-		for (source_clock_domain=0; source_clock_domain<num_constrained_clocks; source_clock_domain++) {
-			for (sink_clock_domain=0; sink_clock_domain<num_constrained_clocks; sink_clock_domain++) {
-				constraint = timing_constraint[source_clock_domain][sink_clock_domain];
-				if (constraint > -0.01) { /* if constraint does not equal DO_NOT_ANALYSE */
-					timing_constraint[source_clock_domain][sink_clock_domain] = constraint/1e9;
-				}
-			}
-		}
-
 		return;
 	}
 	
