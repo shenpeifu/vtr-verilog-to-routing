@@ -8,8 +8,6 @@ t_slack * alloc_lookups_and_criticalities(t_chan_width_dist chan_width_dist,
 
 void free_lookups_and_criticalities(float ***net_delay, t_slack * slacks);
 
-void print_sink_delays(char *fname);
-
 void print_sink_delays(const char *fname);
 
 void load_criticalities(float ** net_slack_ratio, float crit_exponent);

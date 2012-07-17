@@ -979,7 +979,7 @@ static boolean regex_match (char * string, char * regular_expression) {
 	if (strcmp(regular_expression, "*") == 0)
 		return TRUE; /* The regex library hangs if it is fed "*" as a regular expression. */
 
-	error = slre_match((slre_option) 0, regular_expression, string, strlen(string));
+	error = slre_match((enum slre_option) 0, regular_expression, string, strlen(string));
 
 	if (!error) 
 		return TRUE;

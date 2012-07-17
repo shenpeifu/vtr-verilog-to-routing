@@ -26,6 +26,7 @@
 #include "ReadOptions.h"
 
 #define AAPACK_MAX_OVERUSE_LOOKAHEAD_PINS_FAC 2 /* Maximum relative number of pins that can exceed input pins before giving up */
+#define AAPACK_MAX_OVERUSE_LOOKAHEAD_PINS_CONST 5 /* Maximum constant number of pins that can exceed input pins before giving up */
 
 #define AAPACK_MAX_FEASIBLE_BLOCK_ARRAY_SIZE 30      /* This value is used to determine the max size of the priority queue for candidates that pass the early filter legality test but not the more detailed routing test */
 
@@ -1235,24 +1236,25 @@ static void alloc_and_load_pb_stats(t_pb *pb, int max_models,
 
 	for (i = 0; i < pb->pb_graph_node->num_input_pin_class; i++) {
 		pb->pb_stats.lookahead_input_pins_used[i] = (int*) my_malloc(
-				pb->pb_graph_node->input_pin_class_size[i]
-						* AAPACK_MAX_OVERUSE_LOOKAHEAD_PINS_FAC * sizeof(int));
+			(AAPACK_MAX_OVERUSE_LOOKAHEAD_PINS_CONST + pb->pb_graph_node->input_pin_class_size[i]
+						* AAPACK_MAX_OVERUSE_LOOKAHEAD_PINS_FAC) * sizeof(int));
 		for (j = 0;
 				j
 						< pb->pb_graph_node->input_pin_class_size[i]
-								* AAPACK_MAX_OVERUSE_LOOKAHEAD_PINS_FAC; j++) {
+								* AAPACK_MAX_OVERUSE_LOOKAHEAD_PINS_FAC + AAPACK_MAX_OVERUSE_LOOKAHEAD_PINS_CONST; j++) {
 			pb->pb_stats.lookahead_input_pins_used[i][j] = OPEN;
 		}
 	}
 
 	for (i = 0; i < pb->pb_graph_node->num_output_pin_class; i++) {
 		pb->pb_stats.lookahead_output_pins_used[i] = (int*) my_malloc(
+			(AAPACK_MAX_OVERUSE_LOOKAHEAD_PINS_CONST + 
 				pb->pb_graph_node->output_pin_class_size[i]
-						* AAPACK_MAX_OVERUSE_LOOKAHEAD_PINS_FAC * sizeof(int));
+						* AAPACK_MAX_OVERUSE_LOOKAHEAD_PINS_FAC) * sizeof(int));
 		for (j = 0;
 				j
 						< pb->pb_graph_node->output_pin_class_size[i]
-								* AAPACK_MAX_OVERUSE_LOOKAHEAD_PINS_FAC; j++) {
+								* AAPACK_MAX_OVERUSE_LOOKAHEAD_PINS_FAC + AAPACK_MAX_OVERUSE_LOOKAHEAD_PINS_CONST; j++) {
 			pb->pb_stats.lookahead_output_pins_used[i][j] = OPEN;
 		}
 	}
@@ -2551,7 +2553,7 @@ static void reset_lookahead_pins_used(t_pb *cur_pb) {
 			for (j = 0;
 					j
 							< cur_pb->pb_graph_node->input_pin_class_size[i]
-									* AAPACK_MAX_OVERUSE_LOOKAHEAD_PINS_FAC;
+									* AAPACK_MAX_OVERUSE_LOOKAHEAD_PINS_FAC + AAPACK_MAX_OVERUSE_LOOKAHEAD_PINS_CONST;
 					j++) {
 				cur_pb->pb_stats.lookahead_input_pins_used[i][j] = OPEN;
 			}
@@ -2561,7 +2563,7 @@ static void reset_lookahead_pins_used(t_pb *cur_pb) {
 			for (j = 0;
 					j
 							< cur_pb->pb_graph_node->output_pin_class_size[i]
-									* AAPACK_MAX_OVERUSE_LOOKAHEAD_PINS_FAC;
+									* AAPACK_MAX_OVERUSE_LOOKAHEAD_PINS_FAC + AAPACK_MAX_OVERUSE_LOOKAHEAD_PINS_CONST;
 					j++) {
 				cur_pb->pb_stats.lookahead_output_pins_used[i][j] = OPEN;
 			}
@@ -2717,7 +2719,7 @@ static void compute_and_mark_lookahead_pins_used_for_pin(
 				for (i = 0;
 						i
 								< cur_pb->pb_graph_node->input_pin_class_size[pin_class]
-										* AAPACK_MAX_OVERUSE_LOOKAHEAD_PINS_FAC;
+										* AAPACK_MAX_OVERUSE_LOOKAHEAD_PINS_FAC + AAPACK_MAX_OVERUSE_LOOKAHEAD_PINS_CONST;
 						i++) {
 					if (cur_pb->pb_stats.lookahead_input_pins_used[pin_class][i]
 							== inet) {
@@ -2729,7 +2731,7 @@ static void compute_and_mark_lookahead_pins_used_for_pin(
 					for (i = 0;
 							i
 									< cur_pb->pb_graph_node->input_pin_class_size[pin_class]
-											* AAPACK_MAX_OVERUSE_LOOKAHEAD_PINS_FAC;
+											* AAPACK_MAX_OVERUSE_LOOKAHEAD_PINS_FAC + AAPACK_MAX_OVERUSE_LOOKAHEAD_PINS_CONST;
 							i++) {
 						if (cur_pb->pb_stats.lookahead_input_pins_used[pin_class][i]
 								== OPEN) {
@@ -2785,7 +2787,7 @@ static void compute_and_mark_lookahead_pins_used_for_pin(
 				for (i = 0;
 						i
 								< cur_pb->pb_graph_node->output_pin_class_size[pin_class]
-										* AAPACK_MAX_OVERUSE_LOOKAHEAD_PINS_FAC;
+										* AAPACK_MAX_OVERUSE_LOOKAHEAD_PINS_FAC + AAPACK_MAX_OVERUSE_LOOKAHEAD_PINS_CONST;
 						i++) {
 					assert(
 							cur_pb->pb_stats.lookahead_output_pins_used[pin_class][i] != inet);
@@ -2819,7 +2821,7 @@ static boolean check_lookahead_pins_used(t_pb *cur_pb) {
 			for (j = 0;
 					j
 							< cur_pb->pb_graph_node->input_pin_class_size[i]
-									* AAPACK_MAX_OVERUSE_LOOKAHEAD_PINS_FAC;
+									* AAPACK_MAX_OVERUSE_LOOKAHEAD_PINS_FAC + AAPACK_MAX_OVERUSE_LOOKAHEAD_PINS_CONST;
 					j++) {
 				if (cur_pb->pb_stats.lookahead_input_pins_used[i][j] != OPEN) {
 					ipin++;
@@ -2836,7 +2838,7 @@ static boolean check_lookahead_pins_used(t_pb *cur_pb) {
 			for (j = 0;
 					j
 							< cur_pb->pb_graph_node->output_pin_class_size[i]
-									* AAPACK_MAX_OVERUSE_LOOKAHEAD_PINS_FAC;
+									* AAPACK_MAX_OVERUSE_LOOKAHEAD_PINS_FAC + AAPACK_MAX_OVERUSE_LOOKAHEAD_PINS_CONST;
 					j++) {
 				if (cur_pb->pb_stats.lookahead_output_pins_used[i][j] != OPEN) {
 					ipin++;
@@ -2881,7 +2883,7 @@ static void commit_lookahead_pins_used(t_pb *cur_pb) {
 			for (j = 0;
 					j
 							< cur_pb->pb_graph_node->input_pin_class_size[i]
-									* AAPACK_MAX_OVERUSE_LOOKAHEAD_PINS_FAC;
+									* AAPACK_MAX_OVERUSE_LOOKAHEAD_PINS_FAC + AAPACK_MAX_OVERUSE_LOOKAHEAD_PINS_CONST;
 					j++) {
 				if (cur_pb->pb_stats.lookahead_input_pins_used[i][j] != OPEN) {
 					cur_pb->pb_stats.input_pins_used[i][ipin] =
@@ -2897,7 +2899,7 @@ static void commit_lookahead_pins_used(t_pb *cur_pb) {
 			for (j = 0;
 					j
 							< cur_pb->pb_graph_node->output_pin_class_size[i]
-									* AAPACK_MAX_OVERUSE_LOOKAHEAD_PINS_FAC;
+									* AAPACK_MAX_OVERUSE_LOOKAHEAD_PINS_FAC + AAPACK_MAX_OVERUSE_LOOKAHEAD_PINS_CONST;
 					j++) {
 				if (cur_pb->pb_stats.lookahead_output_pins_used[i][j] != OPEN) {
 					cur_pb->pb_stats.output_pins_used[i][ipin] =
