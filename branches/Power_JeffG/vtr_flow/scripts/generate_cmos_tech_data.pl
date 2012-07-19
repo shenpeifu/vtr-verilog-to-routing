@@ -311,19 +311,20 @@ sub get_trans_properties
 	# 5		0 1 0	    1 0 1	Pass-Logic
 	
 	
-	$spice_string = $spice_string . ".param t0s = '0*simt/6+rise'\n";	
-	$spice_string = $spice_string . ".param t0e = '1*simt/6'\n";	
-	$spice_string = $spice_string . ".param t1s = '1*simt/6+rise'\n";	
-	$spice_string = $spice_string . ".param t1e = '2*simt/6'\n";	
-	$spice_string = $spice_string . ".param t2s = '2*simt/6+rise'\n";	
-	$spice_string = $spice_string . ".param t2e = '3*simt/6'\n";	
-	$spice_string = $spice_string . ".param t3s = '3*simt/6+rise'\n";	
-	$spice_string = $spice_string . ".param t3e = '4*simt/6'\n";	
-	$spice_string = $spice_string . ".param t4s = '4*simt/6+rise'\n";	
-	$spice_string = $spice_string . ".param t4e = '5*simt/6'\n";	
-	$spice_string = $spice_string . ".param t5s = '5*simt/6+rise'\n";	
-	$spice_string = $spice_string . ".param t5e = '6*simt/6'\n";	
+	$spice_string = $spice_string . ".param t0s = '0*simt/6+2*rise'\n";	
+	$spice_string = $spice_string . ".param t0e = '1*simt/6-rise'\n";	
+	$spice_string = $spice_string . ".param t1s = '1*simt/6+2*rise'\n";	
+	$spice_string = $spice_string . ".param t1e = '2*simt/6-rise'\n";	
+	$spice_string = $spice_string . ".param t2s = '2*simt/6+2*rise'\n";	
+	$spice_string = $spice_string . ".param t2e = '3*simt/6-rise'\n";	
+	$spice_string = $spice_string . ".param t3s = '3*simt/6+2*rise'\n";	
+	$spice_string = $spice_string . ".param t3e = '4*simt/6-rise'\n";	
+	$spice_string = $spice_string . ".param t4s = '4*simt/6+2*rise'\n";	
+	$spice_string = $spice_string . ".param t4e = '5*simt/6-rise'\n";	
+	$spice_string = $spice_string . ".param t5s = '5*simt/6+2*rise'\n";	
+	$spice_string = $spice_string . ".param t5e = '6*simt/6-rise'\n";	
 	
+	$spice_string = $spice_string . "Vdd Vdd 0 Vol\n";	
 	
 	if ($type eq "nmos")
 	{	
@@ -337,7 +338,7 @@ sub get_trans_properties
 		$spice_string = $spice_string . "Vdrain drain 0 PWL(0 0 '1*simt/6' 0 '1*simt/6+rise' Vol '2*simt/6' Vol '2*simt/6+rise' 0 '4*simt/6' 0 '4*simt/6+rise' Vol)\n";
 		$spice_string = $spice_string . "Vsource source 0 PWL(0 0 '1*simt/6' 0 '1*simt/6+rise' Vol '2*simt/6' Vol '2*simt/6+rise' 0 '3*simt/6' 0 '3*simt/6+rise' Vol '4*simt/6' Vol '4*simt/6+rise' 0 '5*simt/6' 0 '5*simt/6+rise' Vol)\n";
 		
-		$spice_string = $spice_string . "M1 drain gate source Vol $type L='L' W='W' AS='W*D' PS='2*D+W' AD='W*D' PD='2*D+W'\n";
+		$spice_string = $spice_string . "M1 drain gate source Vdd $type L='L' W='W' AS='W*D' PS='2*D+W' AD='W*D' PD='2*D+W'\n";
 	}	
 	
 	
@@ -345,7 +346,7 @@ sub get_trans_properties
 	$spice_string = $spice_string . ".OP\n";
 	$spice_string = $spice_string . ".OPTIONS LIST NODE POST CAPTAB\n";
 	
-	$spice_string = $spice_string . ".tran 'simt/1000' simt\n";
+	$spice_string = $spice_string . ".tran 'simt/10000' simt\n";
 	$spice_string = $spice_string . ".print tran cap(gate)\n";
 	$spice_string = $spice_string . ".print tran cap(drain)\n";
 	$spice_string = $spice_string . ".print tran cap(source)\n";
