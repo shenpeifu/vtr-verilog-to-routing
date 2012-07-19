@@ -20,7 +20,7 @@
 /* Which definition of slack ratio (related to criticality) should VPR use?  In general, slack ratio is slack/maximum delay.  Possible values:
    1: slack ratio = minimum over all traversals of (slack of edge for this traversal)/(maximum required time T_req_max_this_domain for this traversal)
    2: slack ratio = (slack of this edge)/(maximum required time T_req_max_global in design)
-   Note that if SLACK_DEFINITION = 4 above, T_req_max will be taken from normalized required times, not real required times.
+   Note that if SLACK_DEFINITION = 4 or 5 above, T_req_max will be taken from normalized required times, not real required times.
 */
 
 /* WARNING: SLACK_DEFINITION 3 and SLACK_RATIO_DEFINITION 1 are not compatible. */

@@ -413,62 +413,46 @@ my_fgets(char *buf, int max_size, FILE * fp) {
 	 * by a newline character \n.  It also deals with the    *
 	 * special case where there's no newline before EOF.	 */
 
-	char *val;
+	char ch;
 	int i;
 
 	cont = 0;
-	val = fgets(buf, max_size, fp);
 	file_line_number++;
-	if (val == NULL) /* end of line */
-		return NULL;
-
-	/* Check that line completely fit into buffer.  (Flags long line   *
-	 * truncation).                                                    */
 
 	for (i = 0; i < max_size; i++) {
-		/* Eliminate Windows \r\n newlines by replacing each \r by an \n. *
-		 * This must also be done for Windows, surprisingly.			  */
-		if (buf[i] == '\r') { 
-			buf[i] = '\n';
-			buf[i+1] = '\0';
-			break;
+		ch = fgetc(fp);
+
+		if (ferror(fp)) {
+			vpr_printf(TIO_MESSAGE_ERROR, "Error reading file.\n");
+			exit(1);
 		}
 
-		if (buf[i] == '\n') 
-			break; /* end of line */
-		
-		if (buf[i] == '\0') {
-
-			if (feof(fp)) { 
-			/* Special case where there's no newline before end of file.
-			Since we passed the end of the file, it's okay to have a \0. */ 
-				return val;
-			} else {
-			/* The line did not completely fit into the buffer. */
-				vpr_printf(TIO_MESSAGE_ERROR, "Error on line %d -- line is too long for input buffer.\n",
-						file_line_number);
-				vpr_printf(TIO_MESSAGE_ERROR, "All lines must be at most %d characters long.\n",
-						BUFSIZE - 2);
-				exit(1);
-			}
-		}
-	}
-
-	for (i = 0; i < max_size && buf[i] != '\0'; i++) {
-		if (buf[i] == '#') {
+		if (ch == '#' || feof(fp)) { /* feof = end of file */
 			buf[i] = '\0';
-			break;
+			return buf;
 		}
+
+		if (ch == '\r' || ch == '\n') {
+			if (i != 0 && buf[i-1] == '\\') {
+				cont = 1; /* line continued */
+				buf[i-1] = '\n'; /* May need this for tokens */
+				buf[i] = '\0';
+			} else {
+				buf[i] = '\n';
+				buf[i+1] = '\0';
+			}
+			return buf;
+		}
+
+		buf[i] = ch;
+
 	}
 
-	if (i < 2)
-		return (val);
-	if (buf[i - 1] == '\n' && buf[i - 2] == '\\') {
-		cont = 1; /* line continued */
-		buf[i - 2] = '\n'; /* May need this for tokens */
-		buf[i - 1] = '\0';
-	}
-	return (val);
+	vpr_printf(TIO_MESSAGE_ERROR, "Error on line %d -- line is too long for input buffer.\n",
+			file_line_number);
+	vpr_printf(TIO_MESSAGE_ERROR, "All lines must be at most %d characters long.\n",
+			BUFSIZE - 2);
+	exit(1);
 }
 
 char *

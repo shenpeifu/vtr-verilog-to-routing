@@ -61,9 +61,10 @@ static boolean check_if_number(char * ptr);
 static int find_constrained_clock(char * ptr);
 static float calculate_constraint(t_sdc_clock source_domain, t_sdc_clock sink_domain);
 static int find_override_constraint(int source_clock_domain, int sink_clock_domain);
-static void print_timing_constraint_info(char *fname);
+static void print_timing_constraint_info(const char *fname);
 static void print_spaces(FILE * fp, int num_spaces);
 static boolean regex_match (char *string, char *pattern);
+static void count_netlist_ios_as_constrained_ios(char * clock_name, int io_delay);
 
 /********************* Subroutine definitions *******************************/
 
@@ -73,7 +74,7 @@ void read_sdc(char * sdc_file) {
  * specified, it leaves timing_constraint pointing to NULL.            */
 
 	char buf[BUFSIZE];
-	int source_clock_domain, sink_clock_domain, io_index, override_index;
+	int source_clock_domain, sink_clock_domain, iio, ioverride;
 	float constraint;
 	
 	/* Make sure we haven't called this subroutine before. */
@@ -91,13 +92,20 @@ void read_sdc(char * sdc_file) {
 
 		/* We'll use separate defaults for clocked and unclocked circuits. */
 		if (num_constrained_clocks == 0) {
-			vpr_printf(TIO_MESSAGE_INFO, "Defaulting to: constrain all I/Os on a virtual, external clock.\n");
-			vpr_printf(TIO_MESSAGE_INFO, "Optimize this virtual clock to run as fast as possible.\n\n");
+			/* Create one virtual clock called virtual_clock with period 0... */
 			timing_constraint = (float **) alloc_matrix(0, 0, 0, 0, sizeof(float));
+			timing_constraint[0][0] = 0.;
+			constrained_clocks = (t_clock *) my_malloc(sizeof(t_clock));
+			constrained_clocks[0].name = my_strdup("virtual_clock");
+			constrained_clocks[0].is_netlist_clock = FALSE;
+			
+			/* ...and constrain all I/Os on the netlist to this clock, with I/O delay 0. */
+			count_netlist_ios_as_constrained_ios("virtual_clock", 0.);
+
+			vpr_printf(TIO_MESSAGE_INFO, "\nDefaulting to: constrain all %d I/Os on a virtual, external clock.\n", num_constrained_ios);
+			vpr_printf(TIO_MESSAGE_INFO, "Optimize this virtual clock to run as fast as possible.\n\n");
 
 		} else { /* At least one clock in the circuit. */
-			vpr_printf(TIO_MESSAGE_INFO, "Defaulting to: optimize all clocks to run as fast as possible.\n");
-			vpr_printf(TIO_MESSAGE_INFO, "Cut paths between clock domains.\n\n");
 			/* Allocate matrix of timing constraints [0..num_constrained_clocks-1][0..num_constrained_clocks-1] */
 			timing_constraint = (float **) alloc_matrix(0, num_constrained_clocks-1, 0, num_constrained_clocks-1, sizeof(float));
 			for(source_clock_domain=0; source_clock_domain<num_constrained_clocks; source_clock_domain++) {
@@ -109,10 +117,13 @@ void read_sdc(char * sdc_file) {
 					}
 				}
 			}
+
+			vpr_printf(TIO_MESSAGE_INFO, "\nDefaulting to: optimize all clocks to run as fast as possible.\n");
+			vpr_printf(TIO_MESSAGE_INFO, "Cut paths between clock domains.\n\n");
 		}
 
 		if (GetEchoOption()) {
-				print_timing_constraint_info("timing_constraints.echo");
+			print_timing_constraint_info("timing_constraints.echo");
 		}
 		return;
 	}
@@ -133,20 +144,20 @@ void read_sdc(char * sdc_file) {
 	fclose(sdc);
 
 	/* Make sure that all virtual clocks referenced in set_input_delay and set_output_delay have been constrained. */
-	for (io_index = 0; io_index < num_constrained_ios; io_index++) {
-		if ((find_constrained_clock(constrained_ios[io_index].virtual_clock_name)) == -1) {
-			fprintf(stderr, "I/O %s is associated with an unconstrained clock %s in SDC file.\n", constrained_ios[io_index].name, constrained_ios[io_index].virtual_clock_name);
+	for (iio = 0; iio < num_constrained_ios; iio++) {
+		if ((find_constrained_clock(constrained_ios[iio].virtual_clock_name)) == -1) {
+			fprintf(stderr, "I/O %s is associated with an unconstrained clock %s in SDC file.\n", constrained_ios[iio].name, constrained_ios[iio].virtual_clock_name);
 			exit(1);
 		}
 	}
 
 	/* Make sure that all clocks referenced in override_constraints have been constrained. */
-	for (override_index = 0; override_index < num_override_constraints; override_index++) {
-		if ((find_constrained_clock(override_constraints[override_index].source_clock_domain)) == -1) {
-			fprintf(stderr, "Token %s is not a clock constrained in the SDC file.\n", override_constraints[override_index].source_clock_domain);
+	for (ioverride = 0; ioverride < num_override_constraints; ioverride++) {
+		if ((find_constrained_clock(override_constraints[ioverride].source_clock_domain)) == -1) {
+			fprintf(stderr, "Token %s is not a clock constrained in the SDC file.\n", override_constraints[ioverride].source_clock_domain);
 			exit(1);
-		} else if (find_constrained_clock(override_constraints[override_index].sink_clock_domain) == -1) {
-			fprintf(stderr, "Token %s is not a clock constrained in the SDC file.\n", override_constraints[override_index].sink_clock_domain);
+		} else if (find_constrained_clock(override_constraints[ioverride].sink_clock_domain) == -1) {
+			fprintf(stderr, "Token %s is not a clock constrained in the SDC file.\n", override_constraints[ioverride].sink_clock_domain);
 			exit(1);
 		}
 	}
@@ -157,15 +168,15 @@ void read_sdc(char * sdc_file) {
 	/* Based on the information from sdc_clocks, calculate constraints for all paths except ones with an override constraint. */
 		for (source_clock_domain=0; source_clock_domain<num_constrained_clocks; source_clock_domain++) {
 			for (sink_clock_domain=0; sink_clock_domain<num_constrained_clocks; sink_clock_domain++) {
-				if ((override_index = find_override_constraint(source_clock_domain, sink_clock_domain)) != -1) {
-					if (override_constraints[override_index].num_multicycles == 0) {
+				if ((ioverride = find_override_constraint(source_clock_domain, sink_clock_domain)) != -1) {
+					if (override_constraints[ioverride].num_multicycles == 0) {
 						/* There's a special constraint from set_false_path, set_clock_groups -exclusive or set_max_delay which overrides the default constraint. */
-						timing_constraint[source_clock_domain][sink_clock_domain] = override_constraints[override_index].constraint;
+						timing_constraint[source_clock_domain][sink_clock_domain] = override_constraints[ioverride].constraint;
 					} else {
 						/* There's a special constraint from set_multicycle_path which overrides the default constraint. 
 						This constraint = default constraint (obtained via edge counting) + (num_multicycles - 1) * period of sink clock domain. */
 						timing_constraint[source_clock_domain][sink_clock_domain] = 
-							calculate_constraint(sdc_clocks[source_clock_domain], sdc_clocks[sink_clock_domain]) + (override_constraints[override_index].num_multicycles - 1)* sdc_clocks[sink_clock_domain].period;
+							calculate_constraint(sdc_clocks[source_clock_domain], sdc_clocks[sink_clock_domain]) + (override_constraints[ioverride].num_multicycles - 1) * sdc_clocks[sink_clock_domain].period;
 					}
 				} else {
 					/* Calculate the constraint between clock domains by finding the smallest positive difference between a posedge in the source domain and one in the sink domain. */
@@ -188,11 +199,11 @@ void read_sdc(char * sdc_file) {
 		}
 	}
 
-	for (io_index = 0; io_index < num_constrained_ios; io_index++) {
-		constrained_ios[io_index].delay /= 1e9;
+	for (iio = 0; iio < num_constrained_ios; iio++) {
+		constrained_ios[iio].delay /= 1e9;
 	}
 
-	vpr_printf(TIO_MESSAGE_INFO, "SDC file %s parsed successfully.\n%d clocks (including virtual clocks) "
+	vpr_printf(TIO_MESSAGE_INFO, "\nSDC file %s parsed successfully.\n%d clocks (including virtual clocks) "
 		"and %d I/Os were constrained.\n\n", sdc_file, num_constrained_clocks, num_constrained_ios);
 
 	/* Since all the information we need is stored in timing_constraint, constrained_clocks, and constrained_ios, free other data structures used in this routine */
@@ -226,7 +237,7 @@ static void alloc_and_load_netlist_clocks_and_ios(void) {
 			/* If we get here, the clock is new and so we add it to the array netlist_clocks */
 				num_netlist_clocks++;
 				/* dynamically grow the array to fit one new element */
-				netlist_clocks = (char **) my_realloc (netlist_clocks, num_netlist_clocks * sizeof(t_clock));
+				netlist_clocks = (char **) my_realloc (netlist_clocks, num_netlist_clocks * sizeof(char *));
 				netlist_clocks[num_netlist_clocks - 1] = my_strdup(name);
 			}
 		} else if(logical_block[iblock].type == VPACK_INPAD || logical_block[iblock].type == VPACK_OUTPAD) {
@@ -242,7 +253,7 @@ static void alloc_and_load_netlist_clocks_and_ios(void) {
 			/* If we get here, the I/O is new and so we add it to the array netlist_ios */
 				num_netlist_ios++;
 				/* dynamically grow the array to fit one new element */
-				netlist_ios = (char **) my_realloc (netlist_ios, num_netlist_ios * sizeof(t_io));
+				netlist_ios = (char **) my_realloc (netlist_ios, num_netlist_ios * sizeof(char *));
 				if (logical_block[iblock].type == VPACK_OUTPAD) {
 					netlist_ios[num_netlist_ios - 1] = my_strdup(name + 4); 
 					/* the + 4 removes the prefix "out:" automatically prepended to outputs */
@@ -255,15 +266,14 @@ static void alloc_and_load_netlist_clocks_and_ios(void) {
 }
 
 static void count_netlist_clocks_as_constrained_clocks(void) {
-	/* Count how many clocks are in the netlist, and adds them to the array constrained_clocks. */
+	/* Counts how many clocks are in the netlist, and adds them to the array constrained_clocks. */
 
 	int iblock, i, net;
 	char * name;
 	boolean found;
 
 	num_constrained_clocks = 0;
-	num_constrained_ios = 0;
-
+	
 	for (iblock = 0; iblock < num_logical_blocks; iblock++) {
 		if(logical_block[iblock].type == VPACK_LATCH) {
 			net = logical_block[iblock].clock_net;
@@ -283,6 +293,40 @@ static void count_netlist_clocks_as_constrained_clocks(void) {
 				constrained_clocks[num_constrained_clocks - 1].name = my_strdup(name);
 				constrained_clocks[num_constrained_clocks - 1].is_netlist_clock = TRUE;
 				/* Fanout will be filled out once the timing graph has been constructed. */
+			}
+		}
+	}
+}
+
+static void count_netlist_ios_as_constrained_ios(char * clock_name, int io_delay) {
+	/* Count how many I/Os are in the netlist, and adds them to the array 
+	constrained_ios with an I/O delay of 0 and . */
+
+	int iblock, iio; 
+	char * name;
+	boolean found;
+
+	num_constrained_ios = 0;
+
+	for (iblock = 0; iblock < num_logical_blocks; iblock++) {
+		if (logical_block[iblock].type == VPACK_INPAD || logical_block[iblock].type == VPACK_OUTPAD) {
+			name = logical_block[iblock].name;
+			/* Now that we've found an I/O, let's see if we've counted it already */
+			found = FALSE;
+			for (iio = 0; !found && iio < num_netlist_ios; iio++) {
+				if (strcmp(netlist_ios[iio], name) == 0) {
+					found = TRUE;
+				}
+			}
+			if(!found) {
+				/* If we get here, the I/O is new and so we add it to the array netlist_ios */
+				num_constrained_ios++;
+				/* dynamically grow the array to fit one new element */
+				constrained_ios = (t_io *) my_realloc (constrained_ios, num_constrained_ios * sizeof(t_io));
+				constrained_ios[num_constrained_ios - 1].name = my_strdup(logical_block[iblock].type == VPACK_OUTPAD ? name + 4 : name); 
+				/* the + 4 removes the prefix "out:" automatically prepended to outputs */
+				constrained_ios[num_constrained_ios - 1].virtual_clock_name = my_strdup(clock_name);
+				constrained_ios[num_constrained_ios - 1].delay = 0.;
 			}
 		}
 	}
@@ -887,7 +931,7 @@ static float calculate_constraint(t_sdc_clock source_domain, t_sdc_clock sink_do
 	return constraint;
 }
 
-static void print_timing_constraint_info(char *fname) {
+static void print_timing_constraint_info(const char *fname) {
 	/* Prints the contents of timing_constraint, constrained_clocks, constrained_ios and override_constraints to a file. */
 	
 	FILE * fp;

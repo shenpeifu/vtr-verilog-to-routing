@@ -173,13 +173,15 @@ static void update_connection_gain_values(int inet, int clustered_block,
 
 static void update_length_gain_values(int inet, int clustered_block,
 		t_pb* cur_pb,
-		enum e_net_relation_to_clustered_block net_relation_to_clustered_block);
+		enum e_net_relation_to_clustered_block net_relation_to_clustered_block,
+		t_slack * slacks);
 
 static void mark_and_update_partial_gain(int inet, enum e_gain_update gain_flag,
 		int clustered_block, int port_on_clustered_block,
 		int pin_on_clustered_block, boolean timing_driven,
 		boolean connection_driven,
-		enum e_net_relation_to_clustered_block net_relation_to_clustered_block);
+		enum e_net_relation_to_clustered_block net_relation_to_clustered_block, 
+		t_slack * slacks);
 
 static void update_total_gain(float alpha, float beta, boolean timing_driven,
 		boolean connection_driven, boolean global_clocks, t_pb *pb);
@@ -187,7 +189,7 @@ static void update_total_gain(float alpha, float beta, boolean timing_driven,
 static void update_cluster_stats( INP t_pack_molecule *molecule,
 		INP int clb_index, INP boolean *is_clock, INP boolean global_clocks,
 		INP float alpha, INP float beta, INP boolean timing_driven,
-		INP boolean connection_driven);
+		INP boolean connection_driven, INP t_slack * slacks);
 
 static void start_new_cluster(
 		INP t_cluster_placement_stats *cluster_placement_stats,
@@ -420,8 +422,9 @@ void do_clustering(const t_arch *arch, t_pack_molecule *molecule_head,
 			istart = get_seed_logical_molecule_with_most_ext_inputs(
 					max_molecule_inputs);
 		}
-
+#ifdef FANCY_CRITICALITY
 		free_timing_graph(slacks);
+#endif
 
 	} else /*cluster seed is max input (since there is no timing information)*/ {
 		istart = get_seed_logical_molecule_with_most_ext_inputs(
@@ -444,7 +447,7 @@ void do_clustering(const t_arch *arch, t_pack_molecule *molecule_head,
 					clb[num_clb].type->name);
 			fflush(stdout);
 			update_cluster_stats(istart, num_clb, is_clock, global_clocks, alpha,
-					beta, timing_driven, connection_driven);
+					beta, timing_driven, connection_driven, slacks);
 			num_clb++;
 
 			if (timing_driven && !early_exit) {
@@ -501,7 +504,7 @@ void do_clustering(const t_arch *arch, t_pack_molecule *molecule_head,
 				}
 				update_cluster_stats(next_molecule, num_clb - 1, is_clock,
 						global_clocks, alpha, beta, timing_driven,
-						connection_driven);
+						connection_driven, slacks);
 				num_unrelated_clustering_attempts = 0;
 
 				if (timing_driven && !early_exit) {
@@ -602,6 +605,10 @@ void do_clustering(const t_arch *arch, t_pack_molecule *molecule_head,
 		critindexarray = NULL;
 		net_pin_backward_criticality = NULL;
 		net_pin_forward_criticality = NULL;
+	}
+#else
+	if (timing_driven) {
+		free_timing_graph(slacks);
 	}
 #endif
 
@@ -1596,7 +1603,7 @@ static void update_connection_gain_values(int inet, int clustered_block,
 /*****************************************/
 static void update_length_gain_values(int inet, int clustered_block,
 		t_pb *cur_pb,
-		enum e_net_relation_to_clustered_block net_relation_to_clustered_block) {
+		enum e_net_relation_to_clustered_block net_relation_to_clustered_block, t_slack * slacks) {
 
 	/*This function is called when the length_gain values on the vpack_net*
 	 *inet requires updating.   */
@@ -1619,7 +1626,7 @@ static void update_length_gain_values(int inet, int clustered_block,
 #ifdef FANCY_CRITICALITY
 				lengain = net_pin_backward_criticality[inet][ipin];
 #else
-				lengain = 1 - net_slack_ratio[inet][ipin];
+				lengain = 1 - slacks->net_slack_ratio[inet][ipin];
 #endif
 				if (lengain > cur_pb->pb_stats.lengthgain[iblk])
 					cur_pb->pb_stats.lengthgain[iblk] = lengain;
@@ -1637,7 +1644,7 @@ static void update_length_gain_values(int inet, int clustered_block,
 #ifdef FANCY_CRITICALITY
 				lengain = net_pin_forward_criticality[inet][ipin];
 #else
-				lengain = 1 - net_slack_ratio[inet][ipin];
+				lengain = 1 - slacks->net_slack_ratio[inet][ipin];
 #endif
 				if (lengain > cur_pb->pb_stats.lengthgain[newblk])
 					cur_pb->pb_stats.lengthgain[newblk] = lengain;
@@ -1651,7 +1658,8 @@ static void mark_and_update_partial_gain(int inet, enum e_gain_update gain_flag,
 		int clustered_block, int port_on_clustered_block,
 		int pin_on_clustered_block, boolean timing_driven,
 		boolean connection_driven,
-		enum e_net_relation_to_clustered_block net_relation_to_clustered_block) {
+		enum e_net_relation_to_clustered_block net_relation_to_clustered_block, 
+		t_slack * slacks) {
 
 	/* Updates the marked data structures, and if gain_flag is GAIN,  *
 	 * the gain when a logic logical_block is added to a cluster.  The        *
@@ -1714,7 +1722,7 @@ static void mark_and_update_partial_gain(int inet, enum e_gain_update gain_flag,
 
 			if (timing_driven) {
 				update_length_gain_values(inet, clustered_block, cur_pb,
-						net_relation_to_clustered_block);
+						net_relation_to_clustered_block, slacks);
 			}
 		}
 
@@ -1810,7 +1818,7 @@ static void update_total_gain(float alpha, float beta, boolean timing_driven,
 static void update_cluster_stats( INP t_pack_molecule *molecule,
 		INP int clb_index, INP boolean *is_clock, INP boolean global_clocks,
 		INP float alpha, INP float beta, INP boolean timing_driven,
-		INP boolean connection_driven) {
+		INP boolean connection_driven, INP t_slack * slacks) {
 
 	/* Updates cluster stats such as gain, used pins, and clock structures.  */
 
@@ -1861,11 +1869,11 @@ static void update_cluster_stats( INP t_pack_molecule *molecule,
 					if (!is_clock[inet] || !global_clocks)
 						mark_and_update_partial_gain(inet, GAIN, new_blk,
 								port->index, ipin, timing_driven,
-								connection_driven, OUTPUT);
+								connection_driven, OUTPUT, slacks);
 					else
 						mark_and_update_partial_gain(inet, NO_GAIN, new_blk,
 								port->index, ipin, timing_driven,
-								connection_driven, OUTPUT);
+								connection_driven, OUTPUT, slacks);
 				}
 			}
 			port = port->next;
@@ -1882,7 +1890,7 @@ static void update_cluster_stats( INP t_pack_molecule *molecule,
 				if (inet != OPEN) {
 					mark_and_update_partial_gain(inet, GAIN, new_blk,
 							port->index, ipin, timing_driven, connection_driven,
-							INPUT);
+							INPUT, slacks);
 				}
 			}
 			port = port->next;
@@ -1896,10 +1904,10 @@ static void update_cluster_stats( INP t_pack_molecule *molecule,
 		if (inet != OPEN) {
 			if (global_clocks)
 				mark_and_update_partial_gain(inet, NO_GAIN, new_blk, 0, 0,
-						timing_driven, connection_driven, INPUT);
+						timing_driven, connection_driven, INPUT, slacks);
 			else
 				mark_and_update_partial_gain(inet, GAIN, new_blk, 0, 0,
-						timing_driven, connection_driven, INPUT);
+						timing_driven, connection_driven, INPUT, slacks);
 
 		}
 

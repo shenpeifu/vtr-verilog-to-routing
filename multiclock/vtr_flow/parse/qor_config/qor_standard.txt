@@ -1,7 +1,7 @@
 vpr_status;output.txt;vpr_status=(.*)
 min_chan_width;vpr.out;Best routing used a channel width factor of (\d+)
-crit_path_delay_(mcw);vpr.out;Critical Path: (.*) ns
-crit_path_delay_(1.3mcw);vpr.crit_path.out;Critical Path: (.*) ns
+crit_path_delay_(mcw);vpr.out;Critical path: (.*) ns
+crit_path_delay_(1.3mcw);vpr.crit_path.out;Critical path: (.*) ns
 total_wirelength_(mcw);vpr.out;Total wirelength:\s*(\d+)
 total_wirelength_(1.3mcw);vpr.crit_path.out;Total wirelength:\s*(\d+)
 total_runtime;vpr.out;The entire flow of VPR took (.*) seconds
@@ -14,6 +14,5 @@ num_post_packed_nets;vpr.out;Netlist num_nets:\s*(\d+)
 num_clb;vpr.out;Netlist clb blocks:\s*(\d+)
 num_io;vpr.out;Netlist inputs pins:\s*(\d+)
 num_outputs;vpr.out;Netlist output pins:\s*(\d+)
-unabsorb_ff;vpr.out;(\d+) FFs in input netlist not absorbable
 num_memories;vpr.out;Netlist memory blocks:\s*(\d+)
 num_mult;vpr.out;Netlist mult_36 blocks:\s*(\d+)

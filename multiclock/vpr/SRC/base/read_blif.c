@@ -80,7 +80,7 @@ static void read_blif(char *blif_file, boolean sweep_hanging_nets_and_inputs,
 	boolean done;
 	boolean add_truth_table;
 	t_model *inpad_model, *outpad_model, *logic_model, *latch_model;
-
+	
 	blif = fopen(blif_file, "r");
 	if (blif == NULL) {
 		vpr_printf(TIO_MESSAGE_ERROR, "Failed to open blif file %s\n", blif_file);
@@ -101,7 +101,8 @@ static void read_blif(char *blif_file, boolean sweep_hanging_nets_and_inputs,
 			done = FALSE;
 			add_truth_table = FALSE;
 			model_lines = 0;
-			while (my_fgets(buffer, BUFSIZE, blif) != NULL) {
+			while (!feof(blif)) {
+				my_fgets(buffer, BUFSIZE, blif);
 				get_blif_tok(buffer, pass, doall, &done, &add_truth_table,
 						inpad_model, outpad_model, logic_model, latch_model,
 						user_models);
@@ -901,9 +902,8 @@ static int add_vpack_net(char *ptr, int type, int bnum, int bport, int bpin,
 				if ((vpack_net[nindex].num_sinks - num_driver[nindex])
 						>= temp_num_pins[nindex]) {
 					vpr_printf(TIO_MESSAGE_ERROR, 
-							"Net #%d (%s) has no driver and will cause\n",
+							"Net #%d (%s) has no driver and will cause memory corruption.\n",
 							nindex, ptr);
-					vpr_printf(TIO_MESSAGE_INFO, "memory corruption.\n");
 					exit(1);
 				}
 			}
