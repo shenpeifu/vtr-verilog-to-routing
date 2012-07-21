@@ -80,7 +80,7 @@ foreach my $type (@transistor_types) {
 
 	( $leakage_high, $leakage_low, $C_gate_cmos, $C_drain_cmos, $C_gate_pass, $C_source_pass, $C_drain_pass ) = get_trans_properties( $type, $long_size[0], $long_size[1], $Vth );
 	print "\t\t<long_size W=\"" . $long_size[0] . "\" L=\"" . $long_size[1] . "\">\n";
-	print "\t\t\t<leakage_current Vdd_to_0=\"$leakage_high\" Vdd-Vth_to_0=\"$leakage_low\"/>\n";
+	print "\t\t\t<leakage_current high=\"$leakage_high\" low=\"$leakage_low\"/>\n";
 	print "\t\t\t<capacitance gate_cmos=\"$C_gate_cmos\" drain_cmos=\"$C_drain_cmos\" gate_pass=\"$C_gate_pass\" source_pass=\"$C_source_pass\" drain_pass=\"$C_drain_pass\"/>\n";
 	print "\t\t</long_size>\n";
 
@@ -88,7 +88,7 @@ foreach my $type (@transistor_types) {
 		my @size = @$size_ref;
 		( $leakage_high, $leakage_low, $C_gate_cmos, $C_drain_cmos, $C_gate_pass, $C_source_pass, $C_drain_pass ) = get_trans_properties( $type, $size[0], $size[1], $Vth );
 		print "\t\t<size W=\"" . $size[0] . "\" L=\"" . $size[1] . "\">\n";
-		print "\t\t\t<leakage_current Vdd_to_0=\"$leakage_high\" Vdd-Vth_to_0=\"$leakage_low\"/>\n";
+		print "\t\t\t<leakage_current high=\"$leakage_high\" low=\"$leakage_low\"/>\n";
 		print "\t\t\t<capacitance gate_cmos=\"$C_gate_cmos\" drain_cmos=\"$C_drain_cmos\" gate_pass=\"$C_gate_pass\" source_pass=\"$C_source_pass\" drain_pass=\"$C_drain_pass\"/>\n";
 		print "\t\t</size>\n";
 	}
