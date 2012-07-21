@@ -664,10 +664,15 @@ typedef enum {
 typedef struct s_transistor_inf t_transistor_inf;
 typedef struct s_transistor_size_inf t_transistor_size_inf;
 
+/*
+ * Leakage High - Leakage for Vds = Vdd
+ * Leakage Low - Leakage for Vds = Vdd - Vth
+ */
 struct s_transistor_size_inf {
 	float size;
 
-	float leakage;
+	float leakage_high;
+	float leakage_low;
 	float C_gate_cmos;
 	float C_source_cmos;
 	float C_drain_cmos;

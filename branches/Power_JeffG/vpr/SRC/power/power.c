@@ -14,7 +14,7 @@
 #include "ezxml.h"
 #include "read_xml_util.h"
 
-#define PRINT_SPICE_COMPARISON 0
+#define PRINT_SPICE_COMPARISON 1
 
 #define CONVERT_NM_PER_M 1000000000
 #define CONVERT_UM_PER_M 1000000
@@ -48,6 +48,12 @@ typedef struct s_power_breakdown t_power_breakdown;
 struct s_power_breakdown {
 	t_power_usage * elements;
 };
+
+typedef enum {
+	POWER_VOLTAGE_LEVEL_VDD = 0,
+	POWER_VOLTAGE_LEVEL_VDD_SUB_VTH,
+	POWER_VOLTAGE_LEVEL_VTH
+} e_power_voltage_level;
 
 typedef enum {
 	POWER_CIRCUIT_TYPE_CMOS = 0, POWER_CIRCUIT_TYPE_PASS
@@ -92,22 +98,26 @@ typedef struct s_power_output {
 } t_power_output;
 
 typedef struct s_power_commonly_used {
-	float NMOS_1X_C_gate_max;
-	float NMOS_1X_C_drain_max;
-	float NMOS_1X_C_source_max;
-	float NMOS_1X_C_gate_avg;
-	float NMOS_1X_C_drain_avg;
-	float NMOS_1X_C_source_avg;
-	float NMOS_1X_leakage;
-	float NMOS_2X_leakage;
-	float PMOS_1X_C_gate_max;
-	float PMOS_1X_C_drain_max;
-	float PMOS_1X_C_source_max;
-	float PMOS_1X_C_gate_avg;
-	float PMOS_1X_C_drain_avg;
-	float PMOS_1X_C_source_avg;
-	float PMOS_1X_leakage;
-	float PMOS_2X_leakage;
+	float NMOS_1X_C_gate_cmos;
+	float NMOS_1X_C_drain_cmos;
+	float NMOS_1X_C_source_cmos;
+	float NMOS_1X_C_gate_pass;
+	float NMOS_1X_C_drain_pass;
+	float NMOS_1X_C_source_pass;
+	float NMOS_1X_leakage_high;
+	float NMOS_2X_leakage_high;
+	float NMOS_1X_leakage_low;
+	float NMOS_2X_leakage_low;
+	float PMOS_1X_C_gate_cmos;
+	float PMOS_1X_C_drain_cmos;
+	float PMOS_1X_C_source_cmos;
+	float PMOS_1X_C_gate_pass;
+	float PMOS_1X_C_drain_pass;
+	float PMOS_1X_C_source_pass;
+	float PMOS_1X_leakage_high;
+	float PMOS_2X_leakage_high;
+	float PMOS_1X_leakage_low;
+	float PMOS_2X_leakage_low;
 	float INV_1X_C_in;
 	float INV_1X_C;
 	float INV_2X_C;
@@ -196,6 +206,9 @@ void power_reset_tile_usage(void);
 void power_add_usage_element(t_power_usage * dest, t_power_usage * src,
 		e_power_element_type element_idx);
 
+static float power_ret_voltage_from_voltage_level(
+		e_power_voltage_level voltage_level, e_tx_type tx_type);
+
 static void power_zero_usage(t_power_usage * power_usage);
 
 static void power_calc_level_restorer(t_power_usage * power_usage,
@@ -266,7 +279,8 @@ void power_calc_blif_primitive(t_power_usage * power_usage, t_pb * pb,
 void power_calc_MUX(t_power_usage * power_usage, t_mux_arch * mux_arch,
 		float * in_density, float * in_prob, int selected_input);
 
-float power_calc_transistor_leakage(e_tx_type transistor_type, float size);
+float power_calc_transistor_leakage(e_tx_type transistor_type,
+		e_power_voltage_level Vds_level, float size);
 
 void power_calc_transistor_capacitance(float *C_drain, float *C_source,
 		float *C_gate, e_tx_type transistor_type, float size,
@@ -297,8 +311,10 @@ static void power_calc_FF(t_power_usage * power_usage, float D_dens,
 void power_print_pb_usage_recursive(FILE * fp, t_pb_type * type,
 		int indent_level, float parent_power, float total_power);
 
-static void power_calc_MUX2(t_power_usage * power_usage, float Vin, float Vout,
-		float out_density, float * in_density, float * in_prob, float sel_dens,
+static void power_calc_MUX2(t_power_usage * power_usage,
+		e_power_voltage_level voltage_level_in,
+		e_power_voltage_level voltage_level_out, float out_density,
+		float out_prob, float * in_density, float * in_prob, float sel_dens,
 		float sel_prob);
 
 boolean power_find_transistor_info(t_transistor_size_inf ** lower,
@@ -717,6 +733,7 @@ void power_calc_LUT(t_power_usage * power_usage, int LUT_size,
 
 			power_calc_MUX2(&sub_power, Vin, Vout,
 					internal_density[level_idx + 1][MUX_idx],
+					internal_prob[level_idx + 1][MUX_idx],
 					&internal_density[level_idx][MUX_idx * 2],
 					&internal_prob[level_idx][MUX_idx * 2],
 					input_densities[reverse_idx],
@@ -969,8 +986,7 @@ void power_calc_blif_primitive(t_power_usage * power_usage, t_pb * pb,
 
 		power_calc_FF(&sub_power_usage, D_dens, D_prob, Q_dens, Q_prob,
 				clk_dens, clk_prob);
-		power_add_usage_element(power_usage, &sub_power_usage,
-				POWER_ELEMENT_FF);
+
 	} else {
 		char msg[BUFSIZE];
 		power_usage->dynamic = 0.;
@@ -1874,7 +1890,7 @@ static void power_calc_routing(t_power_usage * power_usage) {
 			/* Driver for ConnectionBox */
 			if (connectionbox_fanout) {
 				float connectionbox_effort = connectionbox_fanout
-						* (g_power_common->NMOS_1X_C_drain_avg
+						* (g_power_common->NMOS_1X_C_drain_pass
 								/ g_power_common->INV_1X_C_in);
 				buffer_size =
 						max(1, connectionbox_effort / POWER_BUFFER_STAGE_GAIN);
@@ -2016,7 +2032,7 @@ void process_transistor_info(ezxml_t parent) {
 	}
 	ezxml_set_attr(parent, "type", NULL);
 
-	trans_inf->Vth = GetFloatProperty(parent, "Vth", FALSE, 0.);
+	trans_inf->Vth = GetFloatProperty(parent, "Vth", TRUE, 0.);
 
 	trans_inf->long_trans_inf = my_malloc(sizeof(t_transistor_size_inf));
 
@@ -2024,9 +2040,11 @@ void process_transistor_info(ezxml_t parent) {
 	assert(GetIntProperty(child, "L", TRUE, 0) == 2);
 	trans_inf->long_trans_inf->size = GetFloatProperty(child, "W", TRUE, 0);
 
-	grandchild = FindElement(child, "current", TRUE);
-	trans_inf->long_trans_inf->leakage = GetFloatProperty(grandchild, "leakage",
-			TRUE, 0);
+	grandchild = FindElement(child, "leakage_current", TRUE);
+	trans_inf->long_trans_inf->leakage_high = GetFloatProperty(grandchild,
+			"high", TRUE, 0);
+	trans_inf->long_trans_inf->leakage_low = GetFloatProperty(grandchild,
+			"low", TRUE, 0);
 	FreeNode(grandchild);
 
 	grandchild = FindElement(child, "capacitance", TRUE);
@@ -2056,9 +2074,11 @@ void process_transistor_info(ezxml_t parent) {
 
 		trans_inf->size_inf[i].size = GetFloatProperty(child, "W", TRUE, 0);
 
-		grandchild = FindElement(child, "current", TRUE);
-		trans_inf->size_inf[i].leakage = GetFloatProperty(grandchild, "leakage",
-				TRUE, 0);
+		grandchild = FindElement(child, "leakage_current", TRUE);
+		trans_inf->size_inf[i].leakage_high = GetFloatProperty(grandchild,
+				"high", TRUE, 0);
+		trans_inf->size_inf[i].leakage_low = GetFloatProperty(grandchild,
+				"low", TRUE, 0);
 		FreeNode(grandchild);
 
 		grandchild = FindElement(child, "capacitance", TRUE);
@@ -2212,41 +2232,54 @@ boolean power_init(t_power_opts * power_opts, t_power_arch * power_arch) {
 	/* Initialize Commonly Used Values */
 	power_calc_transistor_capacitance(&C_drain, &C_source, &C_gate, NMOS, 1.0,
 			POWER_CIRCUIT_TYPE_CMOS);
-	g_power_common->NMOS_1X_C_drain_max = C_drain;
-	g_power_common->NMOS_1X_C_gate_max = C_gate;
-	g_power_common->NMOS_1X_C_source_max = C_source;
+	g_power_common->NMOS_1X_C_drain_cmos = C_drain;
+	g_power_common->NMOS_1X_C_gate_cmos = C_gate;
+	g_power_common->NMOS_1X_C_source_cmos = C_source;
 
 	power_calc_transistor_capacitance(&C_drain, &C_source, &C_gate, NMOS, 1.0,
 			POWER_CIRCUIT_TYPE_PASS);
-	g_power_common->NMOS_1X_C_drain_avg = C_drain;
-	g_power_common->NMOS_1X_C_gate_avg = C_gate;
-	g_power_common->NMOS_1X_C_source_avg = C_source;
+	g_power_common->NMOS_1X_C_drain_pass = C_drain;
+	g_power_common->NMOS_1X_C_gate_pass = C_gate;
+	g_power_common->NMOS_1X_C_source_pass = C_source;
 
 	power_calc_transistor_capacitance(&C_drain, &C_source, &C_gate, NMOS,
 			power_arch->P_to_N_size_ratio, POWER_CIRCUIT_TYPE_CMOS);
-	g_power_common->PMOS_1X_C_drain_max = C_drain;
-	g_power_common->PMOS_1X_C_gate_max = C_gate;
-	g_power_common->PMOS_1X_C_source_max = C_source;
+	g_power_common->PMOS_1X_C_drain_cmos = C_drain;
+	g_power_common->PMOS_1X_C_gate_cmos = C_gate;
+	g_power_common->PMOS_1X_C_source_cmos = C_source;
 
 	power_calc_transistor_capacitance(&C_drain, &C_source, &C_gate, NMOS,
 			power_arch->P_to_N_size_ratio, POWER_CIRCUIT_TYPE_PASS);
-	g_power_common->PMOS_1X_C_drain_avg = C_drain;
-	g_power_common->PMOS_1X_C_gate_avg = C_gate;
-	g_power_common->PMOS_1X_C_source_avg = C_source;
+	g_power_common->PMOS_1X_C_drain_pass = C_drain;
+	g_power_common->PMOS_1X_C_gate_pass = C_gate;
+	g_power_common->PMOS_1X_C_source_pass = C_source;
 
-	g_power_common->NMOS_1X_leakage = power_calc_transistor_leakage(NMOS, 1.0);
-	g_power_common->PMOS_1X_leakage = power_calc_transistor_leakage(PMOS,
+	g_power_common->NMOS_1X_leakage_high = power_calc_transistor_leakage(NMOS,
+			POWER_VOLTAGE_LEVEL_VDD, 1.0);
+	g_power_common->PMOS_1X_leakage_high = power_calc_transistor_leakage(PMOS,
+			POWER_VOLTAGE_LEVEL_VDD, 1.0 * g_power_arch->P_to_N_size_ratio);
+	g_power_common->NMOS_1X_leakage_low = power_calc_transistor_leakage(NMOS,
+			POWER_VOLTAGE_LEVEL_VDD_SUB_VTH, 1.0);
+	g_power_common->PMOS_1X_leakage_low = power_calc_transistor_leakage(PMOS,
+			POWER_VOLTAGE_LEVEL_VDD_SUB_VTH,
 			1.0 * g_power_arch->P_to_N_size_ratio);
-	g_power_common->NMOS_2X_leakage = power_calc_transistor_leakage(NMOS, 2.0);
-	g_power_common->PMOS_2X_leakage = power_calc_transistor_leakage(PMOS,
+
+	g_power_common->NMOS_2X_leakage_high = power_calc_transistor_leakage(NMOS,
+			POWER_VOLTAGE_LEVEL_VDD, 2.0);
+	g_power_common->PMOS_2X_leakage_high = power_calc_transistor_leakage(PMOS,
+			POWER_VOLTAGE_LEVEL_VDD, 2.0 * g_power_arch->P_to_N_size_ratio);
+	g_power_common->NMOS_2X_leakage_low = power_calc_transistor_leakage(NMOS,
+			POWER_VOLTAGE_LEVEL_VDD_SUB_VTH, 2.0);
+	g_power_common->PMOS_2X_leakage_low = power_calc_transistor_leakage(PMOS,
+			POWER_VOLTAGE_LEVEL_VDD_SUB_VTH,
 			2.0 * g_power_arch->P_to_N_size_ratio);
 
-	g_power_common->INV_1X_C_in = g_power_common->NMOS_1X_C_gate_max
-			+ g_power_common->PMOS_1X_C_gate_max;
-	g_power_common->INV_1X_C = g_power_common->NMOS_1X_C_gate_max
-			+ g_power_common->PMOS_1X_C_gate_max
-			+ g_power_common->NMOS_1X_C_drain_max
-			+ g_power_common->PMOS_1X_C_drain_max;
+	g_power_common->INV_1X_C_in = g_power_common->NMOS_1X_C_gate_cmos
+			+ g_power_common->PMOS_1X_C_gate_cmos;
+	g_power_common->INV_1X_C = g_power_common->NMOS_1X_C_gate_cmos
+			+ g_power_common->PMOS_1X_C_gate_cmos
+			+ g_power_common->NMOS_1X_C_drain_cmos
+			+ g_power_common->PMOS_1X_C_drain_cmos;
 
 	power_calc_transistor_capacitance(&C_drain, &C_source, &C_gate, NMOS, 2.0,
 			POWER_CIRCUIT_TYPE_CMOS);
@@ -2632,10 +2665,9 @@ static float power_count_transistors_connectionbox(void) {
 	CLB_inputs = FILL_TYPE->pb_graph_head->num_input_pins[0];
 
 	/* Buffers from Tracks */
-	buffer_size =
-			g_power_common->max_seg_to_IPIN_fanout
-					* (g_power_common->NMOS_1X_C_drain_avg
-							/ g_power_common->INV_1X_C_in)/ POWER_BUFFER_STAGE_GAIN;
+	buffer_size = g_power_common->max_seg_to_IPIN_fanout
+			* (g_power_common->NMOS_1X_C_drain_pass
+					/ g_power_common->INV_1X_C_in) / POWER_BUFFER_STAGE_GAIN;
 	buffer_size = max(1, buffer_size);
 	transistor_cnt += g_solution_inf->channel_width
 			* power_count_transistors_buffer(buffer_size);
@@ -2831,14 +2863,14 @@ void power_print_element_usage(char * name, e_power_element_type type,
 				indent_level + 1);
 		break;
 	case (POWER_ELEMENT_LUT):
-		/*
-		 power_print_element_usage("Driver", POWER_ELEMENT_LUT_DRIVER, type,
-		 indent_level + 1);
-		 power_print_element_usage("Mux", POWER_ELEMENT_LUT_MUX, type,
-		 indent_level + 1);
-		 power_print_element_usage("Restorer", POWER_ELEMENT_LUT_RESTORER, type,
-		 indent_level + 1);
-		 */
+
+		power_print_element_usage("Driver", POWER_ELEMENT_LUT_DRIVER, type,
+				indent_level + 1);
+		power_print_element_usage("Mux", POWER_ELEMENT_LUT_MUX, type,
+				indent_level + 1);
+		power_print_element_usage("Restorer", POWER_ELEMENT_LUT_RESTORER, type,
+				indent_level + 1);
+
 		break;
 	default:
 		break;
@@ -3001,7 +3033,6 @@ char binary_not(char c) {
 }
 
 void power_print_spice_comparison(void) {
-	float leakage;
 	t_power_usage sub_power_usage;
 
 	float inv_sizes[3] = { 1, 16, 64 };
@@ -3011,7 +3042,9 @@ void power_print_spice_comparison(void) {
 	int LUT_sizes[3] = { 2, 4, 6 };
 
 	float sb_buffer_sizes[5] = { 9, 9, 16, 64, 64 };
-	int sb_mux_sizes[5] = { 4, 7, 12, 16, 20 };
+	int sb_mux_sizes[5] = { 4, 8, 12, 16, 20 };
+
+	int mux_sizes[5] = { 4, 8, 12, 16, 20 };
 
 	unsigned int i, j;
 	float * dens = NULL;
@@ -3019,18 +3052,64 @@ void power_print_spice_comparison(void) {
 	char * SRAM_bits = NULL;
 	int sram_idx;
 
-	leakage = power_calc_transistor_leakage(NMOS, 1);
-	fprintf(g_power_output->out, "Leakage of min-size NMOS: %g\n", leakage);
-	leakage = power_calc_transistor_leakage(PMOS,
-			g_power_arch->P_to_N_size_ratio);
-	fprintf(g_power_output->out, "Leakage of min-size PMOS: %g\n", leakage);
-
-	fprintf(g_power_output->out, "Energy of INV\n");
+	fprintf(g_power_output->out, "Energy of INV (High Activity)\n");
 	for (i = 0; i < (sizeof(inv_sizes) / sizeof(float)); i++) {
 		power_calc_INV(&sub_power_usage, 2, 0.5,
 				g_power_arch->P_to_N_size_ratio * inv_sizes[i], inv_sizes[i]);
 		fprintf(g_power_output->out, "%g\t%g\n", inv_sizes[i],
 				(sub_power_usage.dynamic + sub_power_usage.leakage)
+						* g_solution_inf->T_crit);
+	}
+
+	fprintf(g_power_output->out, "Energy of INV (No Activity)\n");
+	for (i = 0; i < (sizeof(inv_sizes) / sizeof(float)); i++) {
+		power_calc_INV(&sub_power_usage, 0, 1,
+				g_power_arch->P_to_N_size_ratio * inv_sizes[i], inv_sizes[i]);
+		fprintf(g_power_output->out, "%g\t%g\n", inv_sizes[i],
+				(sub_power_usage.dynamic + sub_power_usage.leakage)
+						* g_solution_inf->T_crit);
+	}
+
+	fprintf(g_power_output->out, "Energy of Mux (High Activity)\n");
+	for (i = 0; i < (sizeof(mux_sizes) / sizeof(int)); i++) {
+		t_power_usage mux_power_usage;
+
+		power_zero_usage(&mux_power_usage);
+
+		dens = my_realloc(dens, mux_sizes[i] * sizeof(float));
+		prob = my_realloc(prob, mux_sizes[i] * sizeof(float));
+		for (j = 0; j < mux_sizes[i]; j++) {
+			dens[j] = 2;
+			prob[j] = 0.5;
+		}
+		power_calc_MUX(&mux_power_usage,
+				&g_power_common->mux_arch[mux_sizes[i]], dens, prob, 0);
+		fprintf(g_power_output->out, "%d\t%g\n", mux_sizes[i],
+				(mux_power_usage.dynamic + mux_power_usage.leakage)
+						* g_solution_inf->T_crit);
+	}
+
+	fprintf(g_power_output->out, "Energy of Mux (No Activity)\n");
+	for (i = 0; i < (sizeof(mux_sizes) / sizeof(int)); i++) {
+		t_power_usage mux_power_usage;
+
+		power_zero_usage(&mux_power_usage);
+
+		dens = my_realloc(dens, mux_sizes[i] * sizeof(float));
+		prob = my_realloc(prob, mux_sizes[i] * sizeof(float));
+		for (j = 0; j < mux_sizes[i]; j++) {
+			if (j == 0) {
+				dens[j] = 0;
+				prob[j] = 1;
+			} else {
+				dens[j] = 0;
+				prob[j] = 0;
+			}
+		}
+		power_calc_MUX(&mux_power_usage,
+				&g_power_common->mux_arch[mux_sizes[i]], dens, prob, 0);
+		fprintf(g_power_output->out, "%d\t%g\n", mux_sizes[i],
+				(mux_power_usage.dynamic + mux_power_usage.leakage)
 						* g_solution_inf->T_crit);
 	}
 
@@ -3075,24 +3154,6 @@ void power_print_spice_comparison(void) {
 	fprintf(g_power_output->out, "%g\n",
 			(sub_power_usage.dynamic + sub_power_usage.leakage)
 					* g_solution_inf->T_crit * 2);
-
-	fprintf(g_power_output->out, "Energy of Mux\n");
-	for (i = 1; i <= 0; i++) {
-		t_power_usage mux_power_usage;
-
-		power_zero_usage(&mux_power_usage);
-
-		dens = my_realloc(dens, i * sizeof(float));
-		prob = my_realloc(prob, i * sizeof(float));
-		dens[i - 1] = 2;
-		prob[i - 1] = 0.5;
-
-		power_calc_MUX(&mux_power_usage, &g_power_common->mux_arch[i], dens,
-				prob, 0);
-		fprintf(g_power_output->out, "%d\t%g\n", i,
-				(mux_power_usage.dynamic + mux_power_usage.leakage)
-						* g_solution_inf->T_crit);
-	}
 
 	fprintf(g_power_output->out, "Energy of SB\n");
 	for (i = 0; i < (sizeof(sb_buffer_sizes) / sizeof(float)); i++) {
@@ -3188,7 +3249,6 @@ void power_print_stats(FILE * fp) {
 e_power_ret_code power_total(void) {
 	t_power_usage total_power;
 	t_power_usage sub_power_usage;
-	int i;
 	t_power_usage * cb_power_usage;
 	int type_idx;
 
@@ -3201,33 +3261,34 @@ e_power_ret_code power_total(void) {
 		return POWER_RET_CODE_ERRORS;
 	}
 
-	if (PRINT_SPICE_COMPARISON) {
-		power_print_spice_comparison();
-	}
-
-	/* Calculate Power */
-
-	/* Routing */
-	power_calc_routing(&sub_power_usage);
-	power_add_usage_element(&total_power, &sub_power_usage,
-			POWER_ELEMENT_ROUTING);
-
-	/* Clock  */
-	power_calc_clock(&sub_power_usage, g_arch->clocks);
-	power_add_usage_element(&total_power, &sub_power_usage,
-			POWER_ELEMENT_CLOCK);
-
-	/* Complex Blocks */
 	cb_power_usage = malloc(num_types * sizeof(t_power_usage));
 	for (type_idx = 0; type_idx < num_types; type_idx++) {
 		cb_power_usage[type_idx].dynamic = 0.;
 		cb_power_usage[type_idx].leakage = 0.;
 	}
-	power_calc_tile_usage(cb_power_usage);
 
-	for (type_idx = 0; type_idx < num_types; type_idx++) {
-		power_add_usage_element(&total_power, &cb_power_usage[type_idx],
-				POWER_ELEMENT_TILES);
+	if (PRINT_SPICE_COMPARISON) {
+		power_print_spice_comparison();
+	} else {
+
+		/* Calculate Power */
+
+		/* Routing */
+		power_calc_routing(&sub_power_usage);
+		power_add_usage_element(&total_power, &sub_power_usage,
+				POWER_ELEMENT_ROUTING);
+
+		/* Clock  */
+		power_calc_clock(&sub_power_usage, g_arch->clocks);
+		power_add_usage_element(&total_power, &sub_power_usage,
+				POWER_ELEMENT_CLOCK);
+
+		/* Complex Blocks */
+		power_calc_tile_usage(cb_power_usage);
+		for (type_idx = 0; type_idx < num_types; type_idx++) {
+			power_add_usage_element(&total_power, &cb_power_usage[type_idx],
+					POWER_ELEMENT_TILES);
+		}
 	}
 
 	power_add_usage_element(NULL, &total_power, POWER_ELEMENT_TOTAL);
@@ -3335,9 +3396,11 @@ void power_calc_INV(t_power_usage * power_usage, float in_density,
 
 	power_usage->dynamic = power_calc_dynamic(C_inv, in_density);
 	power_usage->leakage = in_probability
-			* power_calc_transistor_leakage(PMOS, PMOS_size)
+			* power_calc_transistor_leakage(PMOS, POWER_VOLTAGE_LEVEL_VDD,
+					PMOS_size)
 			+ (1 - in_probability)
-					* power_calc_transistor_leakage(NMOS, NMOS_size);
+					* power_calc_transistor_leakage(NMOS,
+							POWER_VOLTAGE_LEVEL_VDD, NMOS_size);
 }
 
 void power_calc_INV1(t_power_usage * power_usage, float in_density,
@@ -3345,8 +3408,8 @@ void power_calc_INV1(t_power_usage * power_usage, float in_density,
 	power_usage->dynamic = power_calc_dynamic(g_power_common->INV_1X_C,
 			in_density);
 	power_usage->leakage = (1 - in_probability)
-			* g_power_common->NMOS_1X_leakage
-			+ in_probability * g_power_common->PMOS_1X_leakage;
+			* g_power_common->NMOS_1X_leakage_high
+			+ in_probability * g_power_common->PMOS_1X_leakage_high;
 }
 
 void power_calc_INV2(t_power_usage * power_usage, float in_density,
@@ -3354,8 +3417,8 @@ void power_calc_INV2(t_power_usage * power_usage, float in_density,
 	power_usage->dynamic = power_calc_dynamic(g_power_common->INV_2X_C,
 			in_density);
 	power_usage->leakage = (1 - in_probability)
-			* g_power_common->NMOS_2X_leakage
-			+ in_probability * g_power_common->PMOS_2X_leakage;
+			* g_power_common->NMOS_2X_leakage_high
+			+ in_probability * g_power_common->PMOS_2X_leakage_high;
 }
 
 void power_calc_MUX_node(t_power_usage * power_usage, float * out_dens,
@@ -3364,10 +3427,13 @@ void power_calc_MUX_node(t_power_usage * power_usage, float * out_dens,
 		float * primary_input_prob) {
 	int input_idx;
 	float C_drain, C_source, C_gate;
-	float leakage;
 	float * in_prob;
 	float output_prob;
+	e_power_voltage_level Vin_type;
+	e_power_voltage_level Vout_type;
 	float Vin;
+	float Vout;
+	int selected_idx;
 
 	/* Single input mux is really just a wire, and has no power.
 	 * Ensure that it has no children before returning. */
@@ -3379,22 +3445,23 @@ void power_calc_MUX_node(t_power_usage * power_usage, float * out_dens,
 	(*out_dens) = 0;
 	output_prob = 0.;
 
+	selected_idx = selector_values[mux_node->level];
+
 	in_prob = my_calloc(mux_node->num_inputs, sizeof(float));
 
 	power_calc_transistor_capacitance(&C_drain, &C_source, &C_gate, NMOS,
 			mux_arch->transistor_sizes[mux_node->level],
 			POWER_CIRCUIT_TYPE_PASS);
 
-	/* Leakage of all transistors */
-	leakage = power_calc_transistor_leakage(NMOS,
-			mux_arch->transistor_sizes[mux_node->level]);
-
-	/* Input Voltage */
+	/* Input/Output Voltage */
 	if (mux_node->level == 0) {
-		Vin = g_power_arch->Vdd;
+		Vin_type = POWER_VOLTAGE_LEVEL_VDD;
 	} else {
-		Vin = g_power_arch->Vdd - g_power_arch->NMOS_tx_record.Vth;
+		Vin_type = POWER_VOLTAGE_LEVEL_VDD_SUB_VTH;
 	}
+	Vout_type = POWER_VOLTAGE_LEVEL_VDD_SUB_VTH;
+	Vin = power_ret_voltage_from_voltage_level(Vin_type, NMOS);
+	Vout = power_ret_voltage_from_voltage_level(Vout_type, NMOS);
 
 	for (input_idx = 0; input_idx < mux_node->num_inputs; input_idx++) {
 		float in_density;
@@ -3410,7 +3477,7 @@ void power_calc_MUX_node(t_power_usage * power_usage, float * out_dens,
 					primary_input_density, primary_input_prob);
 		}
 
-		if (input_idx == selector_values[mux_node->level]) {
+		if (input_idx == selected_idx) {
 			(*out_dens) = in_density;
 			output_prob = in_prob[input_idx];
 		}
@@ -3421,21 +3488,34 @@ void power_calc_MUX_node(t_power_usage * power_usage, float * out_dens,
 
 	/* Calculate leakage for all input transistors */
 	for (input_idx = 0; input_idx < mux_node->num_inputs; input_idx++) {
+		float prob_leaking;
 
 		/* The selected input will never leak */
-		if (input_idx == selector_values[mux_node->level]) {
+		if (input_idx == selected_idx) {
 			continue;
 		}
 
-		/* Leakage occurs when output != input */
-		power_usage->leakage += ((1 - in_prob[input_idx]) * output_prob
-				+ in_prob[input_idx] * (1 - output_prob)) * leakage;
+		/* Leakage from output node to input node.
+		 * Out = High, In = Low
+		 */
+		prob_leaking = in_prob[selected_idx] * (1 - in_prob[input_idx]);
+		power_usage->leakage += prob_leaking
+				* power_calc_transistor_leakage(NMOS, Vout_type,
+						mux_arch->transistor_sizes[mux_node->level]);
+
+		/* Leakage from input node to output node.
+		 * Out = Low, In = High
+		 */
+		prob_leaking = (1 - in_prob[selected_idx]) * in_prob[input_idx];
+		power_usage->leakage += prob_leaking
+				* power_calc_transistor_leakage(NMOS, Vin_type,
+						mux_arch->transistor_sizes[mux_node->level]);
 	}
 
 	/* Dynamic Power at Output */
 	power_usage->dynamic += power_calc_dynamic_v(
 			C_source * mux_node->num_inputs, (*out_dens),
-			g_power_arch->Vdd - g_power_arch->NMOS_tx_record.Vth);
+			power_ret_voltage_from_voltage_level(Vout_type, NMOS));
 
 	*out_prob = output_prob;
 }
@@ -3461,7 +3541,7 @@ static void power_calc_level_restorer(t_power_usage * power_usage,
 
 	power_usage->dynamic += power_calc_dynamic(C, in_density);
 	power_usage->leakage += (1 - in_probability)
-			* g_power_arch->PMOS_tx_record.long_trans_inf->leakage;
+			* g_power_arch->PMOS_tx_record.long_trans_inf->leakage_high;
 
 }
 
@@ -3510,6 +3590,7 @@ static void power_calc_FF(t_power_usage * power_usage, float D_dens,
 	power_calc_INV1(&sub_power_usage, Q_dens, Q_prob);
 	power_add_usage(power_usage, &sub_power_usage);
 
+	power_add_usage_element(NULL, power_usage, POWER_ELEMENT_FF);
 	return;
 }
 
@@ -3520,55 +3601,109 @@ static void power_calc_MUX2_transmission(t_power_usage * power_usage,
 	power_zero_usage(power_usage);
 
 	/* A transmission gate leaks if the selected input != other input  */
-	power_usage->leakage +=
-			(in_prob[0] * (1 - in_prob[1]) + (1 - in_prob[0]) * in_prob[1])
-					* (g_power_common->NMOS_1X_leakage
-							+ g_power_common->PMOS_1X_leakage);
+	power_usage->leakage += (in_prob[0] * (1 - in_prob[1])
+			+ (1 - in_prob[0]) * in_prob[1])
+			* (g_power_common->NMOS_1X_leakage_high
+					+ g_power_common->PMOS_1X_leakage_high);
 
 	/* Gate switching */
 	power_usage->dynamic += 2
 			* power_calc_dynamic(
-					g_power_common->NMOS_1X_C_gate_avg
-							+ g_power_common->PMOS_1X_C_gate_avg, sel_dens);
+					g_power_common->NMOS_1X_C_gate_pass
+							+ g_power_common->PMOS_1X_C_gate_pass, sel_dens);
 
 	/* Input switching */
 	power_usage->dynamic += power_calc_dynamic(
-			g_power_common->NMOS_1X_C_drain_avg
-					+ g_power_common->PMOS_1X_C_source_avg, in_dens[0]);
+			g_power_common->NMOS_1X_C_drain_pass
+					+ g_power_common->PMOS_1X_C_source_pass, in_dens[0]);
 	power_usage->dynamic += power_calc_dynamic(
-			g_power_common->NMOS_1X_C_drain_avg
-					+ g_power_common->PMOS_1X_C_source_avg, in_dens[1]);
+			g_power_common->NMOS_1X_C_drain_pass
+					+ g_power_common->PMOS_1X_C_source_pass, in_dens[1]);
 
 	/* Output switching */
 	power_usage->dynamic += power_calc_dynamic(
 			2
-					* (g_power_common->NMOS_1X_C_source_avg
-							+ g_power_common->PMOS_1X_C_drain_avg), out_dens);
+					* (g_power_common->NMOS_1X_C_source_pass
+							+ g_power_common->PMOS_1X_C_drain_pass), out_dens);
 }
 
-static void power_calc_MUX2(t_power_usage * power_usage, float Vin, float Vout,
-		float out_density, float * in_density, float * in_prob, float sel_dens,
+static t_transistor_inf * power_ret_tx_info_from_type(e_tx_type tx_type) {
+	if (tx_type == NMOS) {
+		return &g_power_arch->NMOS_tx_record;
+	} else if (tx_type == PMOS) {
+		return &g_power_arch->PMOS_tx_record;
+	} else {
+		assert(0);
+	}
+}
+
+static float power_ret_voltage_from_voltage_level(
+		e_power_voltage_level voltage_level, e_tx_type tx_type) {
+	t_transistor_inf * tx_info = power_ret_tx_info_from_type(tx_type);
+
+	switch (voltage_level) {
+	case POWER_VOLTAGE_LEVEL_VDD:
+		return g_power_arch->Vdd;
+	case POWER_VOLTAGE_LEVEL_VDD_SUB_VTH:
+		return g_power_arch->Vdd - tx_info->Vth;
+	case POWER_VOLTAGE_LEVEL_VTH:
+		return tx_info->Vth;
+	default:
+		assert(0);
+	}
+}
+
+static void power_calc_MUX2(t_power_usage * power_usage,
+		e_power_voltage_level Vin_level,
+		e_power_voltage_level Vout_level, float out_density,
+		float out_prob, float * in_density, float * in_prob, float sel_dens,
 		float sel_prob) {
+
+	float Vin;
+	float Vout;
+	float prob_leaking;
 
 	power_zero_usage(power_usage);
 
-	/* A transistor leaks if the selected input != other input */
-	power_usage->leakage += (in_prob[0] * (1 - in_prob[1])
-			+ (1 - in_prob[0]) * in_prob[1]) * g_power_common->NMOS_1X_leakage;
+
+	/* Leakage occurs when input1 != input2.
+	 * If the selected input is low, the other transistor leaks input->output
+	 * If the selected input is high, the other transistor leaks output->input*/
+
+	/* 1st selected, 1st Low, 2nd High */
+	prob_leaking = (1 - sel_prob) * (1 - in_prob[0]) * in_prob[1];
+
+	/* 2nd selected, 2nd Low, 1st High */
+	prob_leaking += sel_prob * in_prob[0] * (1 - in_prob[1]);
+
+	power_usage->leakage += prob_leaking * power_calc_transistor_leakage(NMOS, Vin_level, 1.0);
+
+
+	/* 1st selected, 1st High, 2nd Low */
+	prob_leaking = (1 - sel_prob) * in_prob[0] * (1 - in_prob[1]);
+
+	/* 2nd selected, 2nd High, 1st Low */
+	prob_leaking += sel_prob * (1 - in_prob[0]) * in_prob[1];
+
+	power_usage->leakage += prob_leaking * power_calc_transistor_leakage(NMOS, Vout_level, 1.0);
+
 
 	/* Gate switching */
 	power_usage->dynamic += 2
-			* power_calc_dynamic(g_power_common->NMOS_1X_C_gate_avg, sel_dens);
+			* power_calc_dynamic(g_power_common->NMOS_1X_C_gate_pass, sel_dens);
+
+	Vin = power_ret_voltage_from_voltage_level(Vin_level, NMOS);
+	Vout = power_ret_voltage_from_voltage_level(Vout_level, NMOS);
 
 	/* Input switching */
 	power_usage->dynamic += power_calc_dynamic_v(
-			g_power_common->NMOS_1X_C_drain_avg, in_density[0], Vin);
+			g_power_common->NMOS_1X_C_drain_pass, in_density[0], Vin);
 	power_usage->dynamic += power_calc_dynamic_v(
-			g_power_common->NMOS_1X_C_drain_avg, in_density[1], Vin);
+			g_power_common->NMOS_1X_C_drain_pass, in_density[1], Vin);
 
 	/* Output switching */
 	power_usage->dynamic += power_calc_dynamic_v(
-			2 * g_power_common->NMOS_1X_C_source_avg, out_density, Vout);
+			2 * g_power_common->NMOS_1X_C_source_pass, out_density, Vout);
 }
 
 /*
@@ -3674,11 +3809,15 @@ float power_calc_dynamic_v(float capacitance, float density, float voltage) {
  *
  * Returns		: 	Leakage power (Watts)
  */
-float power_calc_transistor_leakage(e_tx_type transistor_type, float size) {
+float power_calc_transistor_leakage(e_tx_type transistor_type,
+		e_power_voltage_level Vds_level, float size) {
 	t_transistor_size_inf * tx_info_lower;
 	t_transistor_size_inf * tx_info_upper;
 	boolean error;
 	float current;
+
+	assert(
+			Vds_level == POWER_VOLTAGE_LEVEL_VDD || Vds_level == POWER_VOLTAGE_LEVEL_VDD_SUB_VTH);
 
 	error = power_find_transistor_info(&tx_info_lower, &tx_info_upper,
 			transistor_type, size);
@@ -3688,16 +3827,29 @@ float power_calc_transistor_leakage(e_tx_type transistor_type, float size) {
 
 	if (tx_info_lower == NULL) {
 		/* No lower bound */
-		current = tx_info_upper->leakage;
+		if (Vds_level == POWER_VOLTAGE_LEVEL_VDD) {
+			current = tx_info_upper->leakage_high;
+		} else if (Vds_level == POWER_VOLTAGE_LEVEL_VDD_SUB_VTH) {
+			current = tx_info_upper->leakage_low;
+		}
 	} else if (tx_info_upper == NULL) {
 		/* No upper bound */
-		current = tx_info_lower->leakage;
+		if (Vds_level == POWER_VOLTAGE_LEVEL_VDD) {
+			current = tx_info_lower->leakage_high;
+		} else if (Vds_level == POWER_VOLTAGE_LEVEL_VDD_SUB_VTH) {
+			current = tx_info_lower->leakage_low;
+		}
 	} else {
 		/* Linear approximation between sizes */
 		float percent_upper = (size - tx_info_lower->size)
 				/ (tx_info_upper->size - tx_info_lower->size);
-		current = (1 - percent_upper) * tx_info_lower->leakage
-				+ percent_upper * tx_info_upper->leakage;
+		if (Vds_level == POWER_VOLTAGE_LEVEL_VDD) {
+			current = (1 - percent_upper) * tx_info_lower->leakage_high
+					+ percent_upper * tx_info_upper->leakage_high;
+		} else if (Vds_level == POWER_VOLTAGE_LEVEL_VDD_SUB_VTH) {
+			current = (1 - percent_upper) * tx_info_lower->leakage_low
+					+ percent_upper * tx_info_upper->leakage_low;
+		}
 	}
 
 	return current * g_power_arch->Vdd;
