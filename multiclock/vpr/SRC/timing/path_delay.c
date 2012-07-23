@@ -2879,12 +2879,11 @@ static t_tnode * find_ff_clock_tnode(int inode, boolean is_prepacked) {
 	t_pb_graph_pin * pb_graph_pin;
 
 	current_block = tnode[inode].block;
-
 	if (is_prepacked) {
 		node = logical_block[current_block].clock_net_tnode;
 	} else {
 		rr_graph = block[current_block].pb->rr_graph;
-		pb_graph_node = logical_block[tnode[inode].block].pb->pb_graph_node;
+		pb_graph_node = logical_block[current_block].pb->pb_graph_node;
 		pb_graph_pin = &pb_graph_node->clock_pins[0][0];
 		node = rr_graph[pb_graph_pin->pin_count_in_cluster].tnode;	
 	}
