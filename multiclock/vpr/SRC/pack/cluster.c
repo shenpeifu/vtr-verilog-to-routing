@@ -357,7 +357,13 @@ void do_clustering(const t_arch *arch, t_pack_molecule *molecule_head,
 	if (timing_driven) {
 		slacks = alloc_and_load_pre_packing_timing_graph(block_delay,
 				inter_cluster_net_delay, arch->models, timing_inf);
+#ifdef FANCY_CRITICALITY
 		timing_stats = do_timing_analysis(slacks, TRUE, FALSE, FALSE);
+#else
+		/* We need the same values as for the post-packed netlist (that's what simple 
+		criticality is) so do the same steps as for a post-packed timing analysis. */
+		timing_stats = do_timing_analysis(slacks, FALSE, FALSE, FALSE);
+#endif
 		free_timing_stats(timing_stats);
 
 		if (GetEchoOption()) {
@@ -383,7 +389,7 @@ void do_clustering(const t_arch *arch, t_pack_molecule *molecule_head,
 			/* Only calculate for tnodes which have valid arrival and required times.  
 			Tnodes that do not have both times valid were not part of the analysis. 
 			Because we calloc-ed the array criticality, such nodes will have criticality 0, the lowest possible value. */
-			if(tnode[i].T_arr > HUGE_NEGATIVE_FLOAT + 1 && tnode[i].T_req < HUGE_POSITIVE_FLOAT - 1) {
+			if (tnode[i].T_arr > HUGE_NEGATIVE_FLOAT + 1 && tnode[i].T_req < HUGE_POSITIVE_FLOAT - 1) {
 				iblk = tnode[i].block;
 				num_paths_scaling = SCALE_NUM_PATHS
 						* (float) tnode[i].normalized_total_critical_paths;
@@ -435,7 +441,7 @@ void do_clustering(const t_arch *arch, t_pack_molecule *molecule_head,
 	while (istart != NULL) {
 		is_cluster_legal = FALSE;
 		savedindexofcrit = indexofcrit;
-		for(detailed_routing_stage = (int)E_DETAILED_ROUTE_AT_END_ONLY; !is_cluster_legal && detailed_routing_stage != (int)E_DETAILED_ROUTE_END; detailed_routing_stage++) {
+		for (detailed_routing_stage = (int)E_DETAILED_ROUTE_AT_END_ONLY; !is_cluster_legal && detailed_routing_stage != (int)E_DETAILED_ROUTE_END; detailed_routing_stage++) {
 			reset_legalizer_for_cluster(&clb[num_clb]);
 
 			/* start a new cluster and reset all stats */
@@ -516,9 +522,9 @@ void do_clustering(const t_arch *arch, t_pack_molecule *molecule_head,
 						cur_cluster_placement_stats_ptr);
 			}
 			vpr_printf(TIO_MESSAGE_INFO, "\n");
-			if(detailed_routing_stage == (int)E_DETAILED_ROUTE_AT_END_ONLY) {
+			if (detailed_routing_stage == (int)E_DETAILED_ROUTE_AT_END_ONLY) {
 				is_cluster_legal = try_breadth_first_route_cluster();
-				if(is_cluster_legal == TRUE) {
+				if (is_cluster_legal == TRUE) {
 					vpr_printf(TIO_MESSAGE_INFO, "Passed route at end\n");
 				} else {
 					vpr_printf(TIO_MESSAGE_INFO, "Failed route at end, repack cluster trying detailed routing at each stage \n");
@@ -526,7 +532,7 @@ void do_clustering(const t_arch *arch, t_pack_molecule *molecule_head,
 			} else {
 				is_cluster_legal = TRUE;
 			}
-			if(is_cluster_legal == TRUE) {
+			if (is_cluster_legal == TRUE) {
 				save_cluster_solution();
 				if (timing_driven) {
 					if (num_blocks_hill_added > 0 && !early_exit) {
@@ -566,7 +572,7 @@ void do_clustering(const t_arch *arch, t_pack_molecule *molecule_head,
 
 	output_clustering(clb, num_clb, global_clocks, is_clock, out_fname, FALSE);
 	if (GetEchoOption()) {
-		output_blif(clb, num_clb, global_clocks, is_clock,
+		output_blif (clb, num_clb, global_clocks, is_clock,
 				"post_pack_netlist.blif", FALSE);
 	}
 
@@ -590,7 +596,7 @@ void do_clustering(const t_arch *arch, t_pack_molecule *molecule_head,
 	free(net_output_feeds_driving_block_input);
 
 #ifdef FANCY_CRITICALITY
-	if(criticality != NULL) {
+	if (criticality != NULL) {
 		free(criticality);
 		free(critindexarray);
 		for (i = 0; i < num_logical_nets; i++) {
@@ -861,10 +867,10 @@ static boolean outputs_clocks_and_placement_feasible (enum e_packer_algorithm pa
 	/*              2. Logic block output can't internally connect to clocks. */
 	clocks_feasible = outputs_feasible = TRUE;
 	temp_pb = cur_pb;
-	while(temp_pb && clocks_feasible && outputs_feasible) {
+	while (temp_pb && clocks_feasible && outputs_feasible) {
 
 		clocks_avail = cur_pb->pb_stats.clocks_avail;
-		if(clocks_avail == NOT_VALID) {
+		if (clocks_avail == NOT_VALID) {
 			clocks_avail = temp_pb->pb_graph_node->pb_type->num_clock_pins;
 		}
 
@@ -880,18 +886,18 @@ static boolean outputs_clocks_and_placement_feasible (enum e_packer_algorithm pa
 		}
 
 		outputs_avail = temp_pb->pb_stats.outputs_avail;
-		if(outputs_avail == NOT_VALID) {
+		if (outputs_avail == NOT_VALID) {
 			outputs_avail = temp_pb->pb_graph_node->pb_type->num_output_pins;
 		}
 
 		port = logical_block[iblk].model->outputs;
-		while(port) {
+		while (port) {
 			/* Outputs that connect to internal blocks free up an input pin. */
-			for(ipin = 0; ipin < port->size; ipin++) {
+			for (ipin = 0; ipin < port->size; ipin++) {
 				output_net = logical_block[iblk].output_nets[port->index][ipin];
 				if (output_net != OPEN) {
-					if(temp_pb->pb_stats.num_pins_of_net_in_pb[output_net] >= vpack_net[output_net].num_sinks - net_output_feeds_driving_block_input[output_net]) {
-						if((temp_pb->pb_stats.num_pins_of_net_in_pb[output_net] != vpack_net[output_net].num_sinks - net_output_feeds_driving_block_input[output_net])) {
+					if (temp_pb->pb_stats.num_pins_of_net_in_pb[output_net] >= vpack_net[output_net].num_sinks - net_output_feeds_driving_block_input[output_net]) {
+						if ((temp_pb->pb_stats.num_pins_of_net_in_pb[output_net] != vpack_net[output_net].num_sinks - net_output_feeds_driving_block_input[output_net])) {
 							vpr_printf(TIO_MESSAGE_ERROR, "net %d %s %d != %d\n", output_net, vpack_net[output_net].name,
 									temp_pb->pb_stats.num_pins_of_net_in_pb[output_net], vpack_net[output_net].num_sinks - net_output_feeds_driving_block_input[output_net]);
 						}
@@ -905,15 +911,15 @@ static boolean outputs_clocks_and_placement_feasible (enum e_packer_algorithm pa
 		}
 
 		port = logical_block[iblk].model->inputs;
-		while(port) {
-			if(port->is_clock == TRUE) {
+		while (port) {
+			if (port->is_clock == TRUE) {
 				port = port->next;
 				continue;
 			}
 			for (ipin = 0; ipin < port->size; ipin++) {
 				inet = logical_block[iblk].input_nets[port->index][ipin];
-				if(inet != OPEN) {
-					if(temp_pb->pb_stats.net_output_in_pb[inet] &&
+				if (inet != OPEN) {
+					if (temp_pb->pb_stats.net_output_in_pb[inet] &&
 							temp_pb->pb_stats.num_pins_of_net_in_pb[inet] + net_output_feeds_driving_block_input[inet] == vpack_net[inet].num_sinks) {
 						outputs_avail++;
 					}
@@ -928,7 +934,7 @@ static boolean outputs_clocks_and_placement_feasible (enum e_packer_algorithm pa
 		temp_pb = temp_pb->parent_pb;
 	}
 
-	if(exists_free_primitive_for_logical_block(cluster_placement_stats_ptr, iblk)) {
+	if (exists_free_primitive_for_logical_block(cluster_placement_stats_ptr, iblk)) {
 		if (clocks_feasible && outputs_feasible)
 		return (TRUE);
 		else
@@ -2050,16 +2056,16 @@ static boolean inputs_outputs_models_and_clocks_feasible (INP enum e_packer_algo
 	int inputs_avail;
 
 	temp_pb = cur_pb;
-	while(temp_pb && inputs_feasible) {
+	while (temp_pb && inputs_feasible) {
 		inputs_avail = temp_pb->pb_stats.inputs_avail;
-		if(inputs_avail == NOT_VALID) {
+		if (inputs_avail == NOT_VALID) {
 			inputs_avail = temp_pb->pb_graph_node->pb_type->num_input_pins;
 		}
 
 		port = logical_block[iblk].model->outputs;
-		while(port) {
+		while (port) {
 			/* Outputs that connect to internal blocks free up an input pin. */
-			for(ipin = 0; ipin < port->size; ipin++) {
+			for (ipin = 0; ipin < port->size; ipin++) {
 				output_net = logical_block[iblk].output_nets[port->index][ipin];
 				if (output_net != OPEN && temp_pb->pb_stats.num_pins_of_net_in_pb[output_net] != 0 && !is_clock[output_net])
 				inputs_avail++;
@@ -2068,13 +2074,13 @@ static boolean inputs_outputs_models_and_clocks_feasible (INP enum e_packer_algo
 		}
 
 		port = logical_block[iblk].model->inputs;
-		while(port) {
-			if(!port->is_clock) {
+		while (port) {
+			if (!port->is_clock) {
 				/* Inputs that do not connect to an output pin of an internal block (including this one) require an input pin. */
 				for (ipin = 0; ipin < port->size; ipin++) {
 					inet = logical_block[iblk].input_nets[port->index][ipin];
 					if (inet != OPEN && temp_pb->pb_stats.num_pins_of_net_in_pb[inet] == 0) {
-						if(net_output_feeds_driving_block_input[inet] == 0) {
+						if (net_output_feeds_driving_block_input[inet] == 0) {
 							inputs_avail--;
 						}
 					}

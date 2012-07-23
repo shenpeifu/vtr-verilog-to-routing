@@ -184,7 +184,7 @@ void vpr_init(INP int argc, INP char **argv, OUTP t_options *options, OUTP t_vpr
 	fflush(stdout);
 
 	/* Read blif file and sweep unused components */
-	read_and_process_blif(vpr_setup->PackerOpts.blif_file_name, vpr_setup->PackerOpts.sweep_hanging_nets_and_inputs, vpr_setup->user_models, vpr_setup->library_models);
+	read_and_process_blif (vpr_setup->PackerOpts.blif_file_name, vpr_setup->PackerOpts.sweep_hanging_nets_and_inputs, vpr_setup->user_models, vpr_setup->library_models);
 	fflush(stdout);
 
 	ShowSetup(*options, *vpr_setup);
@@ -498,7 +498,7 @@ static void free_complex_block_types(void) {
 			free(type_descriptors[i].pin_loc_assignments[j]);
 			free(type_descriptors[i].num_pin_loc_assignments[j]);
 		}
-		for(j = 0; j < type_descriptors[i].num_class; j++) {
+		for (j = 0; j < type_descriptors[i].num_class; j++) {
 			free(type_descriptors[i].class_inf[j].pinlist);
 		}
 		free(type_descriptors[i].pinloc);
@@ -611,8 +611,8 @@ void free_circuit() {
 		free_logical_nets();
 	}
 
-	if(clb_net != NULL) {
-		for(i = 0; i <  num_nets; i++) {
+	if (clb_net != NULL) {
+		for (i = 0; i <  num_nets; i++) {
 			free(clb_net[i].name);
 			free(clb_net[i].node_block);
 			free(clb_net[i].node_block_pin);
@@ -622,9 +622,9 @@ void free_circuit() {
 	free(clb_net);
 	clb_net = NULL;
 
-	if(block != NULL) {
-		for(i = 0; i < num_blocks; i++) {
-			if(block[i].pb != NULL) {
+	if (block != NULL) {
+		for (i = 0; i < num_blocks; i++) {
+			if (block[i].pb != NULL) {
 				free_cb(block[i].pb);
 				free(block[i].pb);
 			}
@@ -642,7 +642,7 @@ void free_circuit() {
 
 void vpr_free_all(INOUTP t_arch Arch, INOUTP t_options options, INOUTP t_vpr_setup vpr_setup) {
 	
-	if(vpr_setup.Timing.SDCFile != NULL) {
+	if (vpr_setup.Timing.SDCFile != NULL) {
 		free(vpr_setup.Timing.SDCFile);
 		vpr_setup.Timing.SDCFile = NULL;
 	}
@@ -702,9 +702,9 @@ void vpr_free_all(INOUTP t_arch Arch, INOUTP t_options options, INOUTP t_vpr_set
 		CheckSetup(Operation, PlacerOpts, AnnealSched, RouterOpts, RoutingArch, Segments, Timing,  Chans);
 	}
 	/* Read blif file and sweep unused components */
-	void vpr_read_and_process_blif(INP char *blif_file, INP boolean sweep_hanging_nets_and_inputs,
+	void vpr_read_and_process_blif (INP char *blif_file, INP boolean sweep_hanging_nets_and_inputs,
 		INP t_model *user_models, INP t_model *library_models) {
-		read_and_process_blif(blif_file, sweep_hanging_nets_and_inputs, user_models, library_models);
+		read_and_process_blif (blif_file, sweep_hanging_nets_and_inputs, user_models, library_models);
 	}
 	/* Show current setup */
 	void vpr_show_setup(INP t_options options, INP t_vpr_setup vpr_setup) {

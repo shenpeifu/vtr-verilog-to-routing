@@ -929,9 +929,9 @@ print_array(float **array_to_print,
 
 	fprintf(lookup_dump, "\nPrinting Array \n\n");
 
-	for(idx_y = y2; idx_y >= y1; idx_y--)
+	for (idx_y = y2; idx_y >= y1; idx_y--)
 	{
-		for(idx_x = x1; idx_x <= x2; idx_x++)
+		for (idx_x = x1; idx_x <= x2; idx_x++)
 		{
 			fprintf(lookup_dump, " %9.2e",
 					array_to_print[idx_x][idx_y]);

@@ -779,7 +779,7 @@ static void breadth_first_expand_neighbours_cluster(int inode, float pcost,
 	num_edges = rr_node[inode].num_edges;
 	for (iconn = 0; iconn < num_edges; iconn++) {
 		to_node = rr_node[inode].edges[iconn];
-		/*if(first_time) { */
+		/*if (first_time) { */
 		tot_cost = pcost
 				+ get_rr_cong_cost(to_node) * rr_node_intrinsic_cost(to_node);
 		/*

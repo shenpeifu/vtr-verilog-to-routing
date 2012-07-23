@@ -203,7 +203,7 @@ void place_and_route(enum e_operation operation,
 			assert(slacks->net_slack);
 
 			if (GetEchoOption()) {
-				print_timing_graph_as_blif("post_flow_timing_graph.blif",
+				print_timing_graph_as_blif ("post_flow_timing_graph.blif",
 						models);
 			}
 
@@ -227,11 +227,11 @@ void place_and_route(enum e_operation operation,
 
 	/*WMF: cleaning up memory usage */
 
-	/*	if(g_heap_free_head)
+	/*	if (g_heap_free_head)
 		free(g_heap_free_head);
-	if(g_trace_free_head)
+	if (g_trace_free_head)
 		free(g_trace_free_head);
-	if(g_linked_f_pointer_free_head)
+	if (g_linked_f_pointer_free_head)
 		free(g_linked_f_pointer_free_head);*/
 
 	if (mst) {
@@ -388,7 +388,7 @@ static int binary_search_place_and_route(struct s_placer_opts placer_opts,
 #if 1
 		if (success && (Fc_clipped == FALSE)) {
 #else
-			if(success
+			if (success
 					&& (Fc_clipped == FALSE
 							|| det_routing_arch.Fc_type == FRACTIONAL))
 			{
@@ -407,7 +407,7 @@ static int binary_search_place_and_route(struct s_placer_opts placer_opts,
 
 			/* If we're re-placing constantly, save placement in case it is best. */
 #if 0
-			if(placer_opts.place_freq == PLACE_ALWAYS)
+			if (placer_opts.place_freq == PLACE_ALWAYS)
 			{
 				print_place(place_file, net_file, arch_file);
 			}
@@ -518,7 +518,7 @@ static int binary_search_place_and_route(struct s_placer_opts placer_opts,
 	 * * the best channel widths for final drawing and statistics output.  */
 	init_chan(final, chan_width_dist);
 #if 0
-	if(placer_opts.place_freq == PLACE_ALWAYS)
+	if (placer_opts.place_freq == PLACE_ALWAYS)
 	{
 		vpr_printf(TIO_MESSAGE_INFO, "Reading best placement back in.\n");
 		placer_opts.place_chan_width = final;
@@ -567,7 +567,7 @@ static int binary_search_place_and_route(struct s_placer_opts placer_opts,
 
 	if (timing_inf.timing_analysis_enabled) {
 		if (GetEchoOption()) {
-			print_timing_graph_as_blif("post_flow_timing_graph.blif", models);
+			print_timing_graph_as_blif ("post_flow_timing_graph.blif", models);
 		}
 		free_timing_graph(slacks);
 		free_net_delay(net_delay, &net_delay_ch);
@@ -641,10 +641,10 @@ void init_chan(int cfactor, t_chan_width_dist chan_width_dist) {
 	}
 #ifdef VERBOSE
 	vpr_printf(TIO_MESSAGE_INFO, "\nchan_width_x:\n");
-	for(i = 0; i <= ny; i++)
+	for (i = 0; i <= ny; i++)
 	vpr_printf(TIO_MESSAGE_INFO, "%d  ", chan_width_x[i]);
 	vpr_printf(TIO_MESSAGE_INFO, "\n\nchan_width_y:\n");
-	for(i = 0; i <= nx; i++)
+	for (i = 0; i <= nx; i++)
 	vpr_printf(TIO_MESSAGE_INFO, "%d  ", chan_width_y[i]);
 	vpr_printf(TIO_MESSAGE_INFO, "\n\n");
 #endif

@@ -13,6 +13,7 @@ static boolean EchoEnabled;
 
 static char **ReadBaseToken(INP char **Args, OUTP enum e_OptionBaseToken *Token);
 static void Error(INP const char *Token);
+static void ErrorOption(INP const char *Option);
 static char **ProcessOption(INP char **Args, INOUTP t_options * Options);
 static void MergeOptions(INOUTP t_options * dest, INP t_options * src, int id);
 static char **ReadFloat(INP char **Args, OUTP float *Val);
@@ -79,9 +80,6 @@ void ReadOptions(INP int argc, INP char **argv, OUTP t_options * Options) {
 				Options->CircuitName[strlen(Options->CircuitName) - 5] = '\0';
 			}
 			++Args;
-		} else if (NULL == Options->SDCFile) {
-			Options->SDCFile = my_strdup(*Args);
-			++Args;
 		} else {
 			/* Not an option and arch and net already specified so fail */
 			Error(*Args);
@@ -111,7 +109,9 @@ void ReadOptions(INP int argc, INP char **argv, OUTP t_options * Options) {
 static char **
 ProcessOption(INP char **Args, INOUTP t_options * Options) {
 	enum e_OptionBaseToken Token;
+	char **PrevArgs;
 
+	PrevArgs = Args;
 	Args = ReadBaseToken(Args, &Token);
 
 	if (Token < OT_BASE_UNKNOWN) {
@@ -137,6 +137,8 @@ ProcessOption(INP char **Args, INOUTP t_options * Options) {
 		return ReadString(Args, &Options->PlaceFile);
 	case OT_ROUTE_FILE:
 		return ReadString(Args, &Options->RouteFile);
+	case OT_SDC_FILE:
+		return ReadString(Args, &Options->SDCFile);
 	case OT_SETTINGS_FILE:
 		return ReadString(Args, &Options->SettingsFile);
 		/* General Options */
@@ -264,6 +266,7 @@ ProcessOption(INP char **Args, INOUTP t_options * Options) {
 	case OT_CRITICALITY_EXP:
 		return ReadFloat(Args, &Options->criticality_exp);
 	default:
+		ErrorOption(*PrevArgs);
 		return NULL;
 	}
 }
@@ -305,6 +308,9 @@ static void MergeOptions(INOUTP t_options * dest, INP t_options * src, int id)
 			break;
 		case OT_SETTINGS_FILE:
 			dest->SettingsFile = src->SettingsFile;
+			break;
+		case OT_SDC_FILE:
+			dest->SDCFile = src->SDCFile;
 			break;
 			/* General Options */
 		case OT_NODISP:
@@ -537,6 +543,11 @@ static void Error(INP const char *Token) {
 	} else {
 		vpr_printf(TIO_MESSAGE_ERROR, "Missing token at end of command line\n");
 	}
+	exit(1);
+}
+
+static void ErrorOption(INP const char *Option) {
+	vpr_printf(TIO_MESSAGE_ERROR, "Unexpected option '%s' on command line\n", Option);
 	exit(1);
 }
 

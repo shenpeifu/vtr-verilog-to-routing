@@ -41,7 +41,7 @@ void PrintHandlerNew(
    printHandler.WriteBanner( );
 
    /* Apply optional print handler file logging and include program banner */
-   if( pszLogFileName )
+   if ( pszLogFileName )
    {
       printHandler.SetLogFileOutput( pszLogFileName );
 

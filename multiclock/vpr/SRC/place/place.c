@@ -237,10 +237,10 @@ void try_place(struct s_placer_opts placer_opts,
 		/*print the crit_path, assuming delay between blocks that are*
 		 *block_dist apart*/
 
-		if(placer_opts.block_dist <= nx)
+		if (placer_opts.block_dist <= nx)
 		place_delay_value =
 		delta_clb_to_clb[placer_opts.block_dist][0];
-		else if(placer_opts.block_dist <= ny)
+		else if (placer_opts.block_dist <= ny)
 		place_delay_value =
 		delta_clb_to_clb[0][placer_opts.block_dist];
 		else
@@ -508,7 +508,7 @@ void try_place(struct s_placer_opts placer_opts,
 			vpr_printf
 			("t = %g  cost = %g   bb_cost = %g timing_cost = %g move = %d dmax = %g\n",
 					t, cost, bb_cost, timing_cost, inner_iter, d_max);
-			if(fabs
+			if (fabs
 					(bb_cost -
 							comp_bb_cost(CHECK)) >
 					bb_cost * ERROR_TOL)
@@ -905,7 +905,7 @@ static void update_t(float *t, float std_dev, float rlim, float success_rat,
 	/* #define LAMBDA .7  */
 	/* ------------------------------------ */
 #if 0
-	else if(std_dev == 0.)
+	else if (std_dev == 0.)
 	{
 		*t = 0.;
 	}
@@ -1131,7 +1131,7 @@ static int try_swap(float t, float *cost, float *bb_cost, float *timing_cost,
 			get_non_updateable_bb(inet, &ts_bb_coord_new[bb_index]);
 		} else {
 
-			if(ts_net_block_moved[k] == FROM)
+			if (ts_net_block_moved[k] == FROM)
 			update_bb(inet, &ts_bb_coord_new[bb_index],
 					&ts_bb_edge_new[bb_index], x_from, y_from,
 					x_to, y_to);
@@ -1700,7 +1700,7 @@ static void comp_delta_td_cost(int b_from, int b_to, int num_of_pins,
 
 				temp_point_to_point_delay_cost[inet][net_pin] = temp_delay;
 
-				if(timing_place_crit[inet][net_pin] < HUGE_NEGATIVE_FLOAT + 1) {
+				if (timing_place_crit[inet][net_pin] < HUGE_NEGATIVE_FLOAT + 1) {
 					temp_point_to_point_timing_cost[inet][net_pin] = 0;
 				} else {
 					temp_point_to_point_timing_cost[inet][net_pin] =
@@ -1721,7 +1721,7 @@ static void comp_delta_td_cost(int b_from, int b_to, int num_of_pins,
 
 				temp_point_to_point_delay_cost[inet][ipin] = temp_delay;
 				
-				if(timing_place_crit[inet][ipin] < HUGE_NEGATIVE_FLOAT + 1) {
+				if (timing_place_crit[inet][ipin] < HUGE_NEGATIVE_FLOAT + 1) {
 					temp_point_to_point_timing_cost[inet][ipin] = 0;
 				} else {
 					temp_point_to_point_timing_cost[inet][ipin] =
@@ -1762,7 +1762,7 @@ static void comp_delta_td_cost(int b_from, int b_to, int num_of_pins,
 
 					temp_point_to_point_delay_cost[inet][net_pin] = temp_delay;
 
-					if(timing_place_crit[inet][net_pin] < HUGE_NEGATIVE_FLOAT + 1) {
+					if (timing_place_crit[inet][net_pin] < HUGE_NEGATIVE_FLOAT + 1) {
 						temp_point_to_point_timing_cost[inet][net_pin] = 0;
 					} else {
 						temp_point_to_point_timing_cost[inet][net_pin] =
@@ -1784,7 +1784,7 @@ static void comp_delta_td_cost(int b_from, int b_to, int num_of_pins,
 
 					temp_point_to_point_delay_cost[inet][ipin] = temp_delay;
 
-					if(timing_place_crit[inet][ipin] < HUGE_NEGATIVE_FLOAT + 1) {
+					if (timing_place_crit[inet][ipin] < HUGE_NEGATIVE_FLOAT + 1) {
 						temp_point_to_point_timing_cost[inet][ipin] = 0;
 					} else {
 						temp_point_to_point_timing_cost[inet][ipin] =
@@ -2738,7 +2738,7 @@ static void check_place(float bb_cost, float timing_cost,
 }
 
 static void free_try_swap_arrays(void) {
-	if(ts_bb_coord_new != NULL) {
+	if (ts_bb_coord_new != NULL) {
 		free(ts_bb_coord_new);
 		free(ts_bb_edge_new);
 		free(ts_nets_to_update);

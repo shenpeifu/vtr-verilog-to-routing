@@ -65,7 +65,7 @@ void get_tnode_block_and_output_net(int inode, int *iblk_ptr, int *inet_ptr);
 void do_constant_net_delay_timing_analysis(t_timing_inf timing_inf,
 		float constant_net_delay_value);
 
-void print_timing_graph_as_blif(const char *fname, t_model *models);
+void print_timing_graph_as_blif (const char *fname, t_model *models);
 
 /*************************** Variable declarations ********************************/
 
@@ -76,5 +76,14 @@ extern int num_constrained_ios; /* number of I/Os with timing constraints */
 extern t_io * constrained_ios; /* [0..num_constrained_ios - 1] array of I/Os with timing constraints */
 
 extern float ** timing_constraint; /* [0..num_constrained_clocks - 1 (source)][0..num_constrained_clocks - 1 (destination)] */
+
+extern int num_cf_constraints; /* number of special-case clock-to-flipflop constraints overriding default, calculated, timing constraints */
+extern t_cf_constraint * clock_to_ff_constraints; /*  [0..num_cf_constraints - 1] array of such constraints */
+
+extern int num_fc_constraints; /* number of special-case flipflop-to-clock constraints */
+extern t_fc_constraint * ff_to_clock_constraints; /*  [0..num_fc_constraints - 1] */
+
+extern int num_ff_constraints; /* number of special-case flipflop-to-flipflop constraints */
+extern t_ff_constraint * ff_to_ff_constraints; /*  [0..num_ff_constraints - 1] array of such constraints */
 
 #endif
