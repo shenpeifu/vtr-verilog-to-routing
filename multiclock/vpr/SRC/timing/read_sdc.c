@@ -779,7 +779,7 @@ static void get_sdc_tok(char * buf) {
 		}
 
 	} else if (strcmp(ptr, "set_output_delay") == 0) {
-		/* Syntax: set_output_delay -clock <virtual or netlist clock> -max <max_delay> [get_ports {<port_list>}] */
+		/* Syntax: set_output_delay -clock <virtual or netlist clock> -max <max_delay> [get_ports {<I/O port list or regexes>}] */
 		
 		/* We want to assign virtual_clock to all output ports in port_list, and set the output delay (from the external device to the FPGA) to max_delay. */
 
