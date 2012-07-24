@@ -71,7 +71,7 @@ my $ending_stage            = stage_index("vpr");
 my $keep_intermediate_files = 0;
 my $has_memory              = 1;
 my $timing_driven           = "on";
-my $min_chan_width          = -1;
+my $min_chan_width          = -1; 
 my $lut_size                = -1;
 my $vpr_cluster_seed_type   = "";
 my $tech_file               = "";
@@ -79,8 +79,9 @@ my $do_power                = 0;
 my $check_equivalent = "off";
 
 while ( $token = shift(@ARGV) ) {
-	$ext = ( $token =~ m/([^.]+)$/ )[0];
-	if ( $ext eq "sdc" ) {
+	# $ext = ( $token =~ m/([^.]+)$/ )[0];
+	# if ( $ext eq "sdc" ) {
+	if ( $token eq "-sdc_file" ) {
 		$sdc_file_path = expand_user_path( $token );
 	}
 	elsif ( $token eq "-starting_stage" ) {
@@ -472,7 +473,7 @@ if ( $ending_stage >= $stage_idx_vpr and !$error_code ) {
 			"--timing_analysis",          "$timing_driven",
 			"--timing_driven_clustering", "$timing_driven",
 			"--cluster_seed_type",        "$vpr_cluster_seed_type",
-			$sdc_file_path, 			  # Optional SDC file
+			"--sdc_file", 				  "$sdc_file_path",
 			"--nodisp"
 		);
 		if ( $timing_driven eq "on" ) {
@@ -515,7 +516,7 @@ if ( $ending_stage >= $stage_idx_vpr and !$error_code ) {
 					"--route_chan_width",    "$min_chan_width",
 					"--cluster_seed_type",   "$vpr_cluster_seed_type",
 					"--nodisp",              @vpr_power_args,
-					"$sdc_file_path" 		 # Optional SDC file
+					"--sdc_file",			 "$sdc_file_path"
 				);
 			}
 		}
@@ -531,7 +532,7 @@ if ( $ending_stage >= $stage_idx_vpr and !$error_code ) {
 			"--route_chan_width",         "$min_chan_width",
 			"--nodisp",                   "--cluster_seed_type",
 			"$vpr_cluster_seed_type",     @vpr_power_args,
-			"$sdc_file_path" 			  # Optional SDC file
+			"--sdc_file",				  "$sdc_file_path"
 		);
 	}
 	  					

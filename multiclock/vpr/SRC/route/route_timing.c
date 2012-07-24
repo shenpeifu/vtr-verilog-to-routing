@@ -220,6 +220,7 @@ boolean try_timing_driven_route(struct s_router_opts router_opts,
 			}
 			vpr_printf(TIO_MESSAGE_INFO, "\n");
 		}
+		free_timing_stats(timing_stats);
 		fflush(stdout);
 	}
 

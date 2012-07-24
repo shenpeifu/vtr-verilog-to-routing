@@ -55,8 +55,8 @@ void place_and_route(enum e_operation operation,
 	char msg[BUFSIZE];
 	int width_fac, inet, i;
 	boolean success, Fc_clipped;
-	float **net_delay;
-	t_slack * slacks = (t_slack *) my_malloc(sizeof(t_slack));
+	float **net_delay = NULL;
+	t_slack * slacks = NULL;
 	t_chunk net_delay_ch = {NULL, 0, NULL};
 
 	/*struct s_linked_vptr *net_delay_chunk_list_head;*/
@@ -145,10 +145,6 @@ void place_and_route(enum e_operation operation,
 			slacks = alloc_and_load_timing_graph(timing_inf);
 			net_delay = alloc_net_delay(&net_delay_ch, clb_net,
 					num_nets);
-		} else {
-			slacks = NULL;
-			net_delay = NULL; 
-			/* Defensive coding. */
 		}
 
 		success = try_route(width_fac, router_opts, det_routing_arch,
@@ -265,8 +261,8 @@ static int binary_search_place_and_route(struct s_placer_opts placer_opts,
 	int max_pins_per_clb, i;
 	boolean success, prev_success, prev2_success, Fc_clipped = FALSE;
 	char msg[BUFSIZE];
-	float **net_delay;
-	t_slack * slacks = (t_slack *) my_malloc(sizeof(t_slack));
+	float **net_delay = NULL;
+	t_slack * slacks = NULL;
 
 	t_chunk net_delay_ch = {NULL, 0, NULL};
 
@@ -302,9 +298,6 @@ static int binary_search_place_and_route(struct s_placer_opts placer_opts,
 	if (timing_inf.timing_analysis_enabled) {
 		slacks = alloc_and_load_timing_graph(timing_inf);
 		net_delay = alloc_net_delay(&net_delay_ch, clb_net, num_nets);
-	} else {
-		net_delay = NULL; /* Defensive coding. */
-		slacks->net_slack = NULL;
 	}
 
 	/* UDSD by AY Start */

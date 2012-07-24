@@ -96,7 +96,7 @@ void read_sdc(char * sdc_file) {
 			timing_constraint = (float **) alloc_matrix(0, 0, 0, 0, sizeof(float));
 			timing_constraint[0][0] = 0.;
 			constrained_clocks = (t_clock *) my_malloc(sizeof(t_clock));
-			constrained_clocks[0].name = my_strdup("virtual_clock");
+			constrained_clocks[0].name = "virtual_clock";
 			constrained_clocks[0].is_netlist_clock = FALSE;
 			
 			/* ...and constrain all I/Os on the netlist to this clock, with I/O delay 0. */
@@ -191,8 +191,8 @@ void read_sdc(char * sdc_file) {
 	}
 
 	/* Now normalize timing_constraint and constrained_ios to be in seconds, not nanoseconds. */
-	for (source_clock_domain=0; source_clock_domain<num_constrained_clocks; source_clock_domain++) {
-		for (sink_clock_domain=0; sink_clock_domain<num_constrained_clocks; sink_clock_domain++) {
+	for (source_clock_domain = 0; source_clock_domain < num_constrained_clocks; source_clock_domain++) {
+		for (sink_clock_domain = 0; sink_clock_domain < num_constrained_clocks; sink_clock_domain++) {
 			constraint = timing_constraint[source_clock_domain][sink_clock_domain];
 			if (constraint > -0.01) { /* if constraint does not equal DO_NOT_ANALYSE */
 				timing_constraint[source_clock_domain][sink_clock_domain] = constraint/1e9;
@@ -239,7 +239,7 @@ static void alloc_and_load_netlist_clocks_and_ios(void) {
 				num_netlist_clocks++;
 				/* dynamically grow the array to fit one new element */
 				netlist_clocks = (char **) my_realloc (netlist_clocks, num_netlist_clocks * sizeof(char *));
-				netlist_clocks[num_netlist_clocks - 1] = my_strdup(name);
+				netlist_clocks[num_netlist_clocks - 1] = name;
 			}
 		} else if (logical_block[iblock].type == VPACK_INPAD || logical_block[iblock].type == VPACK_OUTPAD) {
 			name = logical_block[iblock].name;
@@ -255,12 +255,8 @@ static void alloc_and_load_netlist_clocks_and_ios(void) {
 				num_netlist_ios++;
 				/* dynamically grow the array to fit one new element */
 				netlist_ios = (char **) my_realloc (netlist_ios, num_netlist_ios * sizeof(char *));
-				if (logical_block[iblock].type == VPACK_OUTPAD) {
-					netlist_ios[num_netlist_ios - 1] = my_strdup(name + 4); 
-					/* the + 4 removes the prefix "out:" automatically prepended to outputs */
-				} else {
-					netlist_ios[num_netlist_ios - 1] = my_strdup(name);
-				}
+				netlist_ios[num_netlist_ios - 1] = logical_block[iblock].type == VPACK_OUTPAD ? name + 4 : name; 
+				/* the + 4 removes the prefix "out:" automatically prepended to outputs */
 			}
 		}
 	}
@@ -301,7 +297,7 @@ static void count_netlist_clocks_as_constrained_clocks(void) {
 
 static void count_netlist_ios_as_constrained_ios(char * clock_name, int io_delay) {
 	/* Count how many I/Os are in the netlist, and adds them to the array 
-	constrained_ios with an I/O delay of 0 and . */
+	constrained_ios with an I/O delay of 0 and constrains them to clock clock_name. */
 
 	int iblock, iio; 
 	char * name;
@@ -420,7 +416,7 @@ static void get_sdc_tok(char * buf) {
 
 			/* Store the clock's name, period and offset in the local array sdc_clocks. */
 			sdc_clocks = (t_sdc_clock *) my_realloc(sdc_clocks, num_constrained_clocks * sizeof(t_sdc_clock));
-			sdc_clocks[num_constrained_clocks - 1].name = my_strdup(ptr);
+			sdc_clocks[num_constrained_clocks - 1].name = ptr;
 			sdc_clocks[num_constrained_clocks - 1].period = clock_period;
 			sdc_clocks[num_constrained_clocks - 1].offset = rising_edge; 
 			
@@ -462,7 +458,7 @@ static void get_sdc_tok(char * buf) {
 
 						/* Store the clock's name, period and offset in the local array sdc_clocks. */
 						sdc_clocks = (t_sdc_clock *) my_realloc(sdc_clocks, num_constrained_clocks * sizeof(t_sdc_clock));
-						sdc_clocks[num_constrained_clocks - 1].name = my_strdup(netlist_clocks[iclock]);
+						sdc_clocks[num_constrained_clocks - 1].name = netlist_clocks[iclock];
 						sdc_clocks[num_constrained_clocks - 1].period = clock_period;
 						sdc_clocks[num_constrained_clocks - 1].offset = rising_edge; 
 
@@ -510,7 +506,7 @@ static void get_sdc_tok(char * buf) {
 				/* We have a clock name */
 				num_exclusive_clocks++;
 				exclusive_groups = (t_sdc_exclusive_group *) my_realloc(exclusive_groups, num_exclusive_clocks * sizeof(t_sdc_exclusive_group));
-				exclusive_groups[num_exclusive_clocks - 1].name = my_strdup(ptr);
+				exclusive_groups[num_exclusive_clocks - 1].name = ptr;
 				exclusive_groups[num_exclusive_clocks - 1].group = current_group_number;
 			}
 		}
@@ -557,7 +553,7 @@ static void get_sdc_tok(char * buf) {
 			}
 			num_from++;
 			from_list = (char **) my_realloc(from_list, num_from * sizeof(char *));
-			from_list[num_from - 1] = my_strdup(ptr);
+			from_list[num_from - 1] = ptr;
 		} while (strcmp(ptr = my_strtok(NULL, SDC_TOKENS, sdc, buf), "-to") != 0);
 
 		ptr = my_strtok(NULL, SDC_TOKENS, sdc, buf);
@@ -570,7 +566,7 @@ static void get_sdc_tok(char * buf) {
 			/* Keep adding clock names to to_list until we hit the end of the line. */
 			num_to++;
 			to_list = (char **) my_realloc(to_list, num_to * sizeof(char *));
-			to_list[num_to - 1] = my_strdup(ptr);
+			to_list[num_to - 1] = ptr;
 		} while ((ptr = my_strtok(NULL, SDC_TOKENS, sdc, buf)) != NULL);
 
 		/* Create a constraint between each element in from_list and each element in to_list with value DO_NOT_ANALYSE. */
@@ -614,7 +610,7 @@ static void get_sdc_tok(char * buf) {
 			}
 			num_from++;
 			from_list = (char **) my_realloc(from_list, num_from * sizeof(char *));
-			from_list[num_from - 1] = my_strdup(ptr);
+			from_list[num_from - 1] = ptr;
 		} while (strcmp(ptr = my_strtok(NULL, SDC_TOKENS, sdc, buf), "-to") != 0);
 
 		ptr = my_strtok(NULL, SDC_TOKENS, sdc, buf);
@@ -627,7 +623,7 @@ static void get_sdc_tok(char * buf) {
 			/* Keep adding clock names to to_list until we hit the end of the line. */
 			num_to++;
 			to_list = (char **) my_realloc(to_list, num_to * sizeof(char *));
-			to_list[num_to - 1] = my_strdup(ptr);
+			to_list[num_to - 1] = ptr;
 		} while ((ptr = my_strtok(NULL, SDC_TOKENS, sdc, buf)) != NULL);
 
 		/* Create a constraint between each element in from_list and each element in to_list with value max_delay. */
@@ -671,7 +667,7 @@ static void get_sdc_tok(char * buf) {
 			}
 			num_from++;
 			from_list = (char **) my_realloc(from_list, num_from * sizeof(char *));
-			from_list[num_from - 1] = my_strdup(ptr);
+			from_list[num_from - 1] = ptr;
 		} while (strcmp(ptr = my_strtok(NULL, SDC_TOKENS, sdc, buf), "-to") != 0);
 
 		ptr = my_strtok(NULL, SDC_TOKENS, sdc, buf);
@@ -684,7 +680,7 @@ static void get_sdc_tok(char * buf) {
 			/* Keep adding clock names to to_list until we hit a number (i.e. num_multicycles). */
 			num_to++;
 			to_list = (char **) my_realloc(to_list, num_to * sizeof(char *));
-			to_list[num_to - 1] = my_strdup(ptr);
+			to_list[num_to - 1] = ptr;
 		} while (!is_number(ptr = my_strtok(NULL, SDC_TOKENS, sdc, buf)));
 
 		if (!ptr) {
@@ -883,7 +879,7 @@ static int find_constrained_clock(char * ptr) {
 /* Given a string ptr, find whether it's the name of a clock in the array constrained_clocks.  *
  * if it is, return the clock's index in constrained_clocks; if it's not, return -1. */
 	int index;
-	for (index=0; index<num_constrained_clocks; index++) {
+	for (index = 0; index < num_constrained_clocks; index++) {
 		if (strcmp(ptr, constrained_clocks[index].name) == 0) {
 			return index;
 		}
@@ -1017,12 +1013,12 @@ static float calculate_constraint(t_sdc_clock source_domain, t_sdc_clock sink_do
 	source_edges = (int *) my_malloc((num_source_edges + 1) * sizeof(int));
 	sink_edges = (int *) my_malloc((num_sink_edges + 1) * sizeof(int));
 	
-	for (i = 0, time=source_offset; i < num_source_edges; i++) {
+	for (i = 0, time = source_offset; i < num_source_edges + 1; i++) {
 		source_edges[i] = time;
 		time += source_period;
 	}
 
-	for (i = 0, time=sink_offset; i < num_sink_edges; i++) {
+	for (i = 0, time = sink_offset; i < num_sink_edges + 1; i++) {
 		sink_edges[i] = time;
 		time += sink_period;
 	}
@@ -1033,17 +1029,17 @@ static float calculate_constraint(t_sdc_clock source_domain, t_sdc_clock sink_do
 
 	constraint_as_int = INT_MAX; /* constraint starts off at +ve infinity so that everything will be less than it */
 
-	for (i = 0; i < num_source_edges+1; i++) {
-		for (j = 0; j < num_sink_edges+1; j++) {
-			if (sink_edges[j]>source_edges[i]) {
-				constraint_as_int = min(constraint_as_int, sink_edges[j]-source_edges[i]);
+	for (i = 0; i < num_source_edges + 1; i++) {
+		for (j = 0; j < num_sink_edges + 1; j++) {
+			if (sink_edges[j] > source_edges[i]) {
+				constraint_as_int = min(constraint_as_int, sink_edges[j] - source_edges[i]);
 			}
 		}
 	}
 
 	/* Divide by 1000 again and turn the constraint back into a float, and clean up memory. */
 
-	constraint = (float) constraint_as_int/1000;
+	constraint = (float) constraint_as_int / 1000;
 
 	free(source_edges);
 	free(sink_edges);

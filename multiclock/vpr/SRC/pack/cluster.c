@@ -246,7 +246,7 @@ void do_clustering(const t_arch *arch, t_pack_molecule *molecule_head,
 	 
 	 */
 
-	t_slack * slacks;
+	t_slack * slacks = NULL;
 	t_pack_molecule *istart, *next_molecule, *prev_molecule, *cur_molecule;
 	int i, num_molecules;
 #ifdef FANCY_CRITICALITY
@@ -360,8 +360,8 @@ void do_clustering(const t_arch *arch, t_pack_molecule *molecule_head,
 #ifdef FANCY_CRITICALITY
 		timing_stats = do_timing_analysis(slacks, TRUE, FALSE, FALSE);
 #else
-		/* We need the same values as for the post-packed netlist (that's what simple 
-		criticality is) so do the same steps as for a post-packed timing analysis. */
+		/* Simple criticality uses the same info as the post-packed netlist,
+		so do the same steps as for a post-packed timing analysis. */
 		timing_stats = do_timing_analysis(slacks, FALSE, FALSE, FALSE);
 #endif
 		free_timing_stats(timing_stats);

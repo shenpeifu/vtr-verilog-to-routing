@@ -163,7 +163,7 @@ t_slack * alloc_and_load_timing_graph(t_timing_inf timing_inf) {
 	 * mapping set to OPEN so I won't use it by mistake.                          */
 
 	int num_sinks;
-	t_slack * slacks = (t_slack *) my_malloc(sizeof(t_slack));
+	t_slack * slacks = NULL;
 
 	if (tedge_ch.chunk_ptr_head != NULL) {
 		vpr_printf(TIO_MESSAGE_ERROR, "In alloc_and_load_timing_graph:\n"
@@ -207,7 +207,7 @@ t_slack * alloc_and_load_pre_packing_timing_graph(float block_delay,
 	 * mapping set to OPEN so I won't use it by mistake.                          */
 
 	int num_sinks;
-	t_slack * slacks = (t_slack *) my_malloc(sizeof(t_slack));
+	t_slack * slacks = NULL;
 
 	if (tedge_ch.chunk_ptr_head != NULL) {
 		vpr_printf(TIO_MESSAGE_ERROR, "iI alloc_and_load_timing_graph:\n"
@@ -290,7 +290,6 @@ void free_timing_graph(t_slack * slack) {
 		exit(1);
 	}
 
-	
 	free_chunk_memory(&tedge_ch);
 	free(tnode);
 	free(net_to_driver_tnode);
@@ -299,12 +298,13 @@ void free_timing_graph(t_slack * slack) {
 	free(slack->net_slack);
 	free(slack->net_slack_ratio);
 	free(slack);
-
+	
 	tnode = NULL;
 	num_tnodes = 0;
 	net_to_driver_tnode = NULL;
 	tnodes_at_level = NULL;
 	num_tnode_levels = 0;
+	slack = NULL;
 }
 
 void free_timing_stats(t_timing_stats * timing_stats) {
@@ -313,8 +313,10 @@ void free_timing_stats(t_timing_stats * timing_stats) {
 	for (i = 0; i < num_constrained_clocks; i++) {
 		free(timing_stats->critical_path_delay[i]);
 	}
+	free(timing_stats->critical_path_delay);
 	free(timing_stats->least_slack_in_domain);
 	free(timing_stats);
+	timing_stats = NULL;
 }
 
 void print_net_slack(float ** net_slack, const char *fname) {
@@ -1331,7 +1333,7 @@ static void load_tnode(INP t_pb_graph_pin *pb_graph_pin, INP int iblock,
 						1 * sizeof(t_tedge), &tedge_ch);
 				tnode[i].out_edges->Tdel = pb_graph_pin->tsu_tco;
 				tnode[i].out_edges->to_node = i + 1;
-				tnode[i + 1].pb_graph_pin = NULL;
+				tnode[i + 1].pb_graph_pin = pb_graph_pin;
 				tnode[i + 1].T_req = 0;
 				tnode[i + 1].T_arr = 0;
 				tnode[i + 1].type = FF_SINK;
@@ -1347,7 +1349,7 @@ static void load_tnode(INP t_pb_graph_pin *pb_graph_pin, INP int iblock,
 						1 * sizeof(t_tedge), &tedge_ch);
 				tnode[i + 1].out_edges->Tdel = pb_graph_pin->tsu_tco;
 				tnode[i + 1].out_edges->to_node = i;
-				tnode[i + 1].pb_graph_pin = NULL;
+				tnode[i + 1].pb_graph_pin = pb_graph_pin;
 				tnode[i + 1].T_req = 0;
 				tnode[i + 1].T_arr = 0;
 				tnode[i + 1].type = FF_SOURCE;
@@ -2134,8 +2136,8 @@ void do_constant_net_delay_timing_analysis(t_timing_inf timing_inf,
 
 	t_chunk net_delay_ch = {NULL, 0, NULL};
 	t_timing_stats * timing_stats;
-	t_slack * slacks;
-	float **net_delay;
+	t_slack * slacks = NULL;
+	float **net_delay = NULL;
 	int i, j;
 
 	slacks = alloc_and_load_timing_graph(timing_inf);
@@ -2441,22 +2443,24 @@ static t_tnode * find_ff_clock_tnode(int inode, boolean is_prepacked) {
 	/* Finds the FF_CLOCK tnode on the same flipflop as an FF_SOURCE or FF_SINK tnode. */
 	
 	int current_block;
-	t_tnode * node;
+	t_tnode * ff_clock_tnode;
 	t_rr_node * rr_graph;
-	t_pb_graph_node * pb_graph_node;
-	t_pb_graph_pin * pb_graph_pin;
+	t_pb_graph_node * parent_pb_graph_node;
+	t_pb_graph_pin * ff_source_or_sink_pb_graph_pin, * clock_pb_graph_pin;
 
 	current_block = tnode[inode].block;
 	if (is_prepacked) {
-		node = logical_block[current_block].clock_net_tnode;
+		ff_clock_tnode = logical_block[current_block].clock_net_tnode;
 	} else {
 		rr_graph = block[current_block].pb->rr_graph;
-		pb_graph_node = logical_block[current_block].pb->pb_graph_node;
-		pb_graph_pin = &pb_graph_node->clock_pins[0][0];
-		node = rr_graph[pb_graph_pin->pin_count_in_cluster].tnode;	
+		ff_source_or_sink_pb_graph_pin = tnode[inode].pb_graph_pin;
+		parent_pb_graph_node = ff_source_or_sink_pb_graph_pin->parent_node;
+		clock_pb_graph_pin = &parent_pb_graph_node->clock_pins[0][0];
+		ff_clock_tnode = rr_graph[clock_pb_graph_pin->pin_count_in_cluster].tnode;
 	}
-	assert(node->type == FF_CLOCK);
-	return node;
+	assert(ff_clock_tnode != NULL);
+	assert(ff_clock_tnode->type == FF_CLOCK);
+	return ff_clock_tnode;
 }
 
 static int find_clock(char * net_name) {
