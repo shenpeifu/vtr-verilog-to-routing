@@ -235,7 +235,7 @@ void try_place(struct s_placer_opts placer_opts,
 	
 	int i, j;
 	t_timing_stats * timing_stats;
-	t_slack * slacks;
+	t_slack * slacks = NULL;
 
 	/* Allocated here because it goes into timing critical code where each memory allocation is expensive */
 	x_lookup = (int*)my_malloc(nx * sizeof(int));

@@ -188,7 +188,7 @@ static void init_parse(int doall) {
 		}
 #ifdef PRINT_PIN_NETS
 		vpr_printf(TIO_MESSAGE_INFO, "i\ttemp_num_pins\n\n");
-		for (i=0;i<num_logical_nets;i++) {
+		for (i = 0;i < num_logical_nets;i++) {
 			vpr_printf(TIO_MESSAGE_INFO, "%d\t%d\n",i,temp_num_pins[i]);
 		}
 		vpr_printf(TIO_MESSAGE_INFO, "num_logical_nets %d\n", num_logical_nets);

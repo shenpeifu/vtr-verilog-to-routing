@@ -355,7 +355,8 @@ static void get_sdc_tok(char * buf) {
 	}
 
 	if (strcmp(ptr, "create_clock") == 0) {
-		/* Syntax: create_clock -period <float> [-waveform {rising_edge falling_edge}] <clock names> */
+		/* Syntax: create_clock -period <float> [-waveform {rising_edge falling_edge}] <netlist clock list or regexes> 
+				or create_clock -period <float> [-waveform {rising_edge falling_edge}] -name <virtual clock name>*/
 
 		/* make sure clock has -period specified */
 		
@@ -484,7 +485,7 @@ static void get_sdc_tok(char * buf) {
 			}	
 		}
 	} else if (strcmp(ptr, "set_clock_groups") == 0) {
-		/* Syntax: set_clock_groups -exclusive -group {<clock name(s)>} -group {<clock name(s)>} [-group {<clock name(s)>} ...] */
+		/* Syntax: set_clock_groups -exclusive -group {<clock list or regexes>} -group {<clock list or regexes>} [-group {<clock list or regexes>} ...] */
 
 		ptr = my_strtok(NULL, SDC_TOKENS, sdc, buf);
 		if (strcmp(ptr, "-exclusive") != 0) {
@@ -533,7 +534,7 @@ static void get_sdc_tok(char * buf) {
 		return;
 
 	} else if (strcmp(ptr, "set_false_path") == 0) {
-		/* Syntax: set_false_path -from <clock/flip-flop list> -to <clock/flip-flop list> */
+		/* Syntax: set_false_path -from <clock list or regexes> -to <clock list or regexes> */
 
 		ptr = my_strtok(NULL, SDC_TOKENS, sdc, buf);
 		if (strcmp(ptr, "-from") != 0) {
@@ -580,7 +581,7 @@ static void get_sdc_tok(char * buf) {
 		return;
 
 	} else if (strcmp(ptr, "set_max_delay") == 0) {
-		/* Syntax: set_max_delay <delay> -from <clock/flip-flop list> -to <clock/flip-flop list> */
+		/* Syntax: set_max_delay <delay> -from <clock list or regexes> -to <clock list or regexes> */
 
 		/* Basically the same as set_false_path above, except we get a specific delay value for the constraint. */
 
@@ -637,7 +638,7 @@ static void get_sdc_tok(char * buf) {
 		return;
 
 	} else if (strcmp(ptr, "set_multicycle_path") == 0) {
-		/* Syntax: set_multicycle_path -setup -from <clock/flip-flop list> -to <clock/flip-flop list> <num_multicycles>*/
+		/* Syntax: set_multicycle_path -setup -from <clock list or regexes> -to <clock list or regexes> <num_multicycles> */
 
 		/* Basically the same as set_false_path and set_max_delay above, except we have to calculate the default value of the constraint (obtained via edge counting)
 		first, and then set a constraint equal to default constraint + (num_multicycles - 1) * period of sink clock domain. */
@@ -703,7 +704,7 @@ static void get_sdc_tok(char * buf) {
 		return;
 
 	} if (strcmp(ptr, "set_input_delay") == 0) {
-		/* Syntax: set_input_delay -clock <virtual or netlist clock> -max <max_delay> [get_ports {<port_list>}] */
+		/* Syntax: set_input_delay -clock <virtual or netlist clock> -max <max_delay> [get_ports {<I/O port list or regexes>}] */
 		
 		/* We want to assign virtual_clock to all input ports in port_list, and set the input delay (from the external device to the FPGA) to max_delay. */
 
@@ -864,7 +865,7 @@ static boolean is_number(char * ptr) {
  * there can also be no more than one decimal point.       */
 	int i, len, num_decimal_points = 0;
 	len = strlen(ptr);
-	for (i=0; i<len; i++) {
+	for (i = 0; i < len; i++) {
 		if ((ptr[i] < '0' || ptr[i] > '9')) {
 			if (ptr[i] != '.') {
 				return FALSE;
@@ -1016,12 +1017,12 @@ static float calculate_constraint(t_sdc_clock source_domain, t_sdc_clock sink_do
 	source_edges = (int *) my_malloc((num_source_edges + 1) * sizeof(int));
 	sink_edges = (int *) my_malloc((num_sink_edges + 1) * sizeof(int));
 	
-	for (i=0, time=source_offset; i<num_source_edges; i++) {
+	for (i = 0, time=source_offset; i < num_source_edges; i++) {
 		source_edges[i] = time;
 		time += source_period;
 	}
 
-	for (i=0, time=sink_offset; i<num_sink_edges; i++) {
+	for (i = 0, time=sink_offset; i < num_sink_edges; i++) {
 		sink_edges[i] = time;
 		time += sink_period;
 	}
@@ -1032,8 +1033,8 @@ static float calculate_constraint(t_sdc_clock source_domain, t_sdc_clock sink_do
 
 	constraint_as_int = INT_MAX; /* constraint starts off at +ve infinity so that everything will be less than it */
 
-	for (i=0; i<num_source_edges+1; i++) {
-		for (j=0; j<num_sink_edges+1; j++) {
+	for (i = 0; i < num_source_edges+1; i++) {
+		for (j = 0; j < num_sink_edges+1; j++) {
 			if (sink_edges[j]>source_edges[i]) {
 				constraint_as_int = min(constraint_as_int, sink_edges[j]-source_edges[i]);
 			}

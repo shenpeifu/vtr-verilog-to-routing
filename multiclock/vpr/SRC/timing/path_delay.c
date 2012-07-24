@@ -2196,6 +2196,293 @@ static void normalize_costs(float T_arr_max_this_domain, long max_critical_input
 	}
 }
 #endif
+
+/* Set new arrival time
+	Special code for LUTs to enable LUT input delay balancing
+*/
+static void set_and_balance_arrival_time(int to_node, int from_node, float Tdel, boolean do_lut_input_balancing) {
+	int i, j;
+	t_pb *pb;
+	boolean rebalance;
+	t_tnode *input_tnode;
+
+	boolean *assigned = NULL;
+	int fastest_unassigned_pin, most_crit_tnode, most_crit_pin;
+	float min_delay, highest_T_arr, balanced_T_arr;
+
+	/* Normal case for determining arrival time */
+	tnode[to_node].T_arr = max(tnode[to_node].T_arr, tnode[from_node].T_arr + Tdel);
+
+	/* Do LUT input rebalancing for LUTs */
+	if (do_lut_input_balancing && tnode[to_node].type == PRIMITIVE_OPIN && tnode[to_node].pb_graph_pin != NULL) {
+		pb = block[tnode[to_node].block].pb->rr_node_to_pb_mapping[tnode[to_node].pb_graph_pin->pin_count_in_cluster];
+		if (pb != NULL && pb->lut_pin_remap != NULL) {
+			/* this is a LUT primitive, do pin swapping */
+			assert(pb->pb_graph_node->pb_type->num_output_pins == 1 && pb->pb_graph_node->pb_type->num_clock_pins == 0); /* ensure LUT properties are valid */
+			assert(pb->pb_graph_node->num_input_ports == 1);
+			assert(tnode[from_node].block == tnode[to_node].block);
+			
+			/* assign from_node to default location */
+			assert(pb->lut_pin_remap[tnode[from_node].pb_graph_pin->pin_number] == OPEN);
+			pb->lut_pin_remap[tnode[from_node].pb_graph_pin->pin_number] = tnode[from_node].pb_graph_pin->pin_number;
+			
+			/* If all input pins are known, perform LUT input delay rebalancing, do nothing otherwise */
+			rebalance = TRUE;
+			for (i = 0; i < pb->pb_graph_node->num_input_pins[0]; i++) {
+				input_tnode = block[tnode[to_node].block].pb->rr_graph[pb->pb_graph_node->input_pins[0][i].pin_count_in_cluster].tnode;
+				if (input_tnode != NULL && pb->lut_pin_remap[i] == OPEN) {
+					rebalance = FALSE;
+				}
+			}
+			if (rebalance == TRUE) {
+				/* Rebalance LUT inputs so that the most critical paths get the fastest inputs */
+				balanced_T_arr = OPEN;
+				assigned = (boolean*)my_calloc(pb->pb_graph_node->num_input_pins[0], sizeof(boolean));
+				/* Clear pin remapping */
+				for (i = 0; i < pb->pb_graph_node->num_input_pins[0]; i++) {
+					pb->lut_pin_remap[i] = OPEN;
+				}
+				/* load new T_arr and pin mapping */
+				for (i = 0; i < pb->pb_graph_node->num_input_pins[0]; i++) {
+					/* Find fastest physical input pin of LUT */
+					fastest_unassigned_pin = OPEN;
+					min_delay = OPEN;
+					for (j = 0; j < pb->pb_graph_node->num_input_pins[0]; j++) {
+						if (pb->lut_pin_remap[j] == OPEN) {
+							if (fastest_unassigned_pin == OPEN) {
+								fastest_unassigned_pin = j;
+								min_delay = pb->pb_graph_node->input_pins[0][j].pin_timing_del_max[0];
+							} else if (min_delay > pb->pb_graph_node->input_pins[0][j].pin_timing_del_max[0]) {
+								fastest_unassigned_pin = j;
+								min_delay = pb->pb_graph_node->input_pins[0][j].pin_timing_del_max[0];
+							}
+						}
+					}
+					assert(fastest_unassigned_pin != OPEN);
+
+					/* Find most critical LUT input pin in user circuit */
+					most_crit_tnode = OPEN;
+					highest_T_arr = OPEN;
+					most_crit_pin = OPEN;
+					for (j = 0; j < pb->pb_graph_node->num_input_pins[0]; j++) {
+						input_tnode = block[tnode[to_node].block].pb->rr_graph[pb->pb_graph_node->input_pins[0][j].pin_count_in_cluster].tnode;
+						if (input_tnode != NULL && assigned[j] == FALSE) {
+							if (most_crit_tnode == OPEN) {
+								most_crit_tnode = input_tnode->index;
+								highest_T_arr = input_tnode->T_arr;
+								most_crit_pin = j;
+							} else if (highest_T_arr < input_tnode->T_arr) {
+								most_crit_tnode = input_tnode->index;
+								highest_T_arr = input_tnode->T_arr;
+								most_crit_pin = j;
+							}
+						}
+					}
+
+					if (most_crit_tnode == OPEN) {
+						break;
+					} else {
+						assert(tnode[most_crit_tnode].num_edges == 1);
+						tnode[most_crit_tnode].out_edges[0].Tdel = min_delay;
+						pb->lut_pin_remap[fastest_unassigned_pin] = most_crit_pin;
+						assigned[most_crit_pin] = TRUE;
+						if (balanced_T_arr < min_delay + highest_T_arr) {
+							balanced_T_arr = min_delay + highest_T_arr;
+						}
+					}
+				}
+				free(assigned);
+				if (balanced_T_arr != OPEN) {
+					tnode[to_node].T_arr = balanced_T_arr;
+				}
+			}
+		}
+	} 
+}
+
+static void load_clock_domain_and_skew_and_io_delay(boolean is_prepacked) {
+/* Loads clock domain and clock skew (i.e. clock delay) onto FF_SOURCE and FF_SINK tnodes, 
+by propagating both forward from clock net input pins to FF_CLOCK tnodes, and then looking up the
+FF_CLOCK tnode corresponding to each FF_SOURCE and FF_SINK tnode.  Loads input delay/output delay 
+(from set_input_delay or set_output_delay SDC constraints) onto the tedges between INPAD_SOURCE/OPIN 
+and OUTPAD_IPIN/SINK tnodes.  Finds fanout of each clock domain, including virtual clocks.  
+Marks unconstrained I/Os with a dummy clock domain (-1). */
+
+	int i, iclock, inode, num_at_level, clock_index, io_index;
+	char * net_name;
+	t_tnode * clock_node;
+
+	/* Wipe fanout of each clock domain in constrained_clocks. */
+	for (iclock = 0; iclock < num_constrained_clocks; iclock++) {
+		constrained_clocks[iclock].fanout = 0;
+	}
+
+	/* First, visit all INPAD_SOURCE tnodes */
+	num_at_level = tnodes_at_level[0].nelem;	/* There are num_at_level top-level tnodes. */
+	for (i = 0; i < num_at_level; i++) {		
+		inode = tnodes_at_level[0].list[i];		/* Iterate through each tnode. inode is the index of the tnode in the array tnode. */
+		if (tnode[inode].type == INPAD_SOURCE) {	/* See if this node is the start of an I/O pad (as oppposed to a flip-flop source). */			
+			net_name = find_tnode_net_name(inode, is_prepacked);
+			if ((clock_index = find_clock(net_name)) != -1) { /* We have a clock inpad. */
+				/* Set clock skew to 0 at the source and propagate skew 
+				recursively to all connected nodes, adding delay as we go. 
+				Set the clock domain to the index of the clock in the
+				constrained_clocks array and propagate unchanged. */
+				tnode[inode].clock_skew = 0.;
+				tnode[inode].clock_domain = clock_index;
+				propagate_clock_domain_and_skew(inode);
+#if 0
+				/* Set the clock domain of this clock inpad to -1, so that we do not analyse it.  
+				If we did not do this, the clock net would be analysed on the same iteration of 
+				the timing analyzer as the flip-flops it drives! */
+				tnode[inode].clock_domain = -1;
+#else
+				/* Timing analyse this clock net with the clock domain it drives. */
+				tnode[inode].clock_domain = clock_index; 
+#endif
+			} else if ((io_index = find_io(net_name)) != -1) {
+				/* We have a constrained non-clock inpad - find its associated virtual clock. */
+				clock_index = find_clock(constrained_ios[io_index].virtual_clock_name);
+				/* The clock domain for this input is that of its virtual clock */
+				tnode[inode].clock_domain = clock_index;
+				/* Increment the fanout of this virtual clock domain. */
+				constrained_clocks[clock_index].fanout++;
+				/* Mark input delay specified in SDC file on the timing graph edge leading out from the INPAD_SOURCE node. */
+				tnode[inode].out_edges[0].Tdel = constrained_ios[io_index].delay;
+			} else { /* We have an unconstrained input - mark with dummy clock domain and do not analyze. */
+				tnode[inode].clock_domain = -1;
+			}
+		}
+	}	
+
+	/* Second, visit all OUTPAD_SINK tnodes. Unlike for INPAD_SOURCE tnodes,
+	we have to search the entire tnode array since these are all on different levels. */
+	for (inode = 0; inode < num_tnodes; inode++) {
+		if (tnode[inode].type == OUTPAD_SINK) {
+			/*  Since the pb_graph_pin of OUTPAD_SINK tnodes points to NULL, we have to find the net 
+			from the pb_graph_pin of the corresponding OUTPAD_IPIN node. 
+			Exploit the fact that the OUTPAD_IPIN node will always be one prior in the tnode array. */
+			assert(tnode[inode - 1].type == OUTPAD_IPIN);
+			net_name = find_tnode_net_name(inode - 1, is_prepacked);
+			io_index = find_io(net_name + 4); /* the + 4 removes the prefix "out:" automatically prepended to outputs */
+			if (io_index != -1) {
+				/* tnode belongs to a constrained output, now find its associated virtual clock */
+				clock_index = find_clock(constrained_ios[io_index].virtual_clock_name);
+				/* The clock domain for this output is that of its virtual clock */
+				tnode[inode].clock_domain = clock_index;
+				/* Increment the fanout of this virtual clock domain. */
+				constrained_clocks[clock_index].fanout++;
+				/* Mark output delay specified in SDC file on the timing graph edge leading into the OUTPAD_SINK node. 
+				However, this edge is part of the corresponding OUTPAD_IPIN node. 
+				Exploit the fact that the OUTPAD_IPIN node will always be one prior in the tnode array. */
+				tnode[inode - 1].out_edges[0].Tdel = constrained_ios[io_index].delay;
+
+			} else { /* We have an unconstrained input - mark with dummy clock domain and do not analyze. */
+				tnode[inode].clock_domain = -1;
+			}
+		}
+	}
+
+	/* Third, visit all FF_SOURCE and FF_SINK tnodes, and transfer the clock domain and skew from their corresponding FF_CLOCK tnodes*/
+	for (inode = 0; inode < num_tnodes; inode++) {
+		if (tnode[inode].type == FF_SOURCE || tnode[inode].type == FF_SINK) {
+			clock_node = find_ff_clock_tnode(inode, is_prepacked);
+			tnode[inode].clock_domain = clock_node->clock_domain;
+			tnode[inode].clock_skew   = clock_node->clock_skew;
+		}
+	}
+}
+
+static void propagate_clock_domain_and_skew(int inode) {
+/* Given a tnode indexed by inode (which is part of a clock net), 
+ * propagate forward the clock domain (unchanged) and skew (adding the delay of edges) to all nodes in its fanout. 
+ * We then call recursively on all children in a depth-first search.  If num_edges is 0, we should be at an FF_CLOCK tnode; we then set the 
+ * FF_SOURCE and FF_SINK nodes to have the same clock domain and skew as the FF_CLOCK node.  We implicitly rely on a tnode not being 
+ * part of two separate clock nets, since undefined behaviour would result if one DFS overwrote the results of another.  This may
+ * be problematic in cases of multiplexed or locally-generated clocks. */
+
+	int iedge, to_node;
+	t_tedge * tedge;
+
+	tedge = tnode[inode].out_edges;	/* Get the list of edges from the node we're visiting. */
+
+	if (!tedge) { /* Leaf/sink node; base case of the recursion. */
+		assert(tnode[inode].type == FF_CLOCK);
+		constrained_clocks[tnode[inode].clock_domain].fanout++;
+		return;
+	}
+
+	for (iedge = 0; iedge < tnode[inode].num_edges; iedge++) {	/* Go through each edge coming out from this tnode */
+		to_node = tedge[iedge].to_node;
+		/* Propagate clock skew forward along this clock net, adding the delay of the wires (edges) of the clock network. */ 
+		tnode[to_node].clock_skew = tnode[inode].clock_skew 
+#if 0
+			+ tedge[iedge].Tdel
+#endif
+			; 
+		/* Propagate clock domain forward unchanged */
+		tnode[to_node].clock_domain = tnode[inode].clock_domain;
+		/* Finally, call recursively on the destination tnode. */
+		propagate_clock_domain_and_skew(to_node);
+	}
+}
+
+static char * find_tnode_net_name(int inode, boolean is_prepacked) {
+	/* Finds the name of the net which a tnode (inode) is on (different for pre-/post-packed netlists). */
+	
+	if (is_prepacked) {
+		return logical_block[tnode[inode].block].name;
+	} else {
+		return block[tnode[inode].block].pb->rr_node_to_pb_mapping[tnode[inode].pb_graph_pin->pin_count_in_cluster]->name;
+	}
+}
+
+static t_tnode * find_ff_clock_tnode(int inode, boolean is_prepacked) {
+	/* Finds the FF_CLOCK tnode on the same flipflop as an FF_SOURCE or FF_SINK tnode. */
+	
+	int current_block;
+	t_tnode * node;
+	t_rr_node * rr_graph;
+	t_pb_graph_node * pb_graph_node;
+	t_pb_graph_pin * pb_graph_pin;
+
+	current_block = tnode[inode].block;
+	if (is_prepacked) {
+		node = logical_block[current_block].clock_net_tnode;
+	} else {
+		rr_graph = block[current_block].pb->rr_graph;
+		pb_graph_node = logical_block[current_block].pb->pb_graph_node;
+		pb_graph_pin = &pb_graph_node->clock_pins[0][0];
+		node = rr_graph[pb_graph_pin->pin_count_in_cluster].tnode;	
+	}
+	assert(node->type == FF_CLOCK);
+	return node;
+}
+
+static int find_clock(char * net_name) {
+/* Given a string net_name, find whether it's the name of a clock in the array constrained_clocks.  *
+ * if it is, return the clock's index in constrained_clocks; if it's not, return -1. */
+	int index;
+	for (index = 0; index < num_constrained_clocks; index++) {
+		if (strcmp(net_name, constrained_clocks[index].name) == 0) {
+			return index;
+		}
+	}
+	return -1;
+}
+
+static int find_io(char * net_name) {
+/* Given a string net_name, find whether it's the name of a constrained I/O in the array constrained_ios.  *
+ * if it is, return its index in constrained_ios; if it's not, return -1. */
+	int index;
+	for (index = 0; index < num_constrained_ios; index++) {
+		if (strcmp(net_name, constrained_ios[index].name) == 0) {
+			return index;
+		}
+	}
+	return -1;
+}
+
 void print_timing_graph_as_blif (const char *fname, t_model *models) {
 	struct s_model_ports *port;
 	struct s_linked_vptr *p_io_removed;
@@ -2659,292 +2946,5 @@ static void print_primitive_as_blif (FILE *fpout, int iblk) {
 				}
 			}
 		}
-	}
-}
-
-/* Set new arrival time
-	Special code for LUTs to enable LUT input delay balancing
-*/
-static void set_and_balance_arrival_time(int to_node, int from_node, float Tdel, boolean do_lut_input_balancing) {
-	int i, j;
-	t_pb *pb;
-	boolean rebalance;
-	t_tnode *input_tnode;
-
-	boolean *assigned = NULL;
-	int fastest_unassigned_pin, most_crit_tnode, most_crit_pin;
-	float min_delay, highest_T_arr, balanced_T_arr;
-
-	/* Normal case for determining arrival time */
-	tnode[to_node].T_arr = max(tnode[to_node].T_arr, tnode[from_node].T_arr + Tdel);
-
-	/* Do LUT input rebalancing for LUTs */
-	if (do_lut_input_balancing && tnode[to_node].type == PRIMITIVE_OPIN && tnode[to_node].pb_graph_pin != NULL) {
-		pb = block[tnode[to_node].block].pb->rr_node_to_pb_mapping[tnode[to_node].pb_graph_pin->pin_count_in_cluster];
-		if (pb != NULL && pb->lut_pin_remap != NULL) {
-			/* this is a LUT primitive, do pin swapping */
-			assert(pb->pb_graph_node->pb_type->num_output_pins == 1 && pb->pb_graph_node->pb_type->num_clock_pins == 0); /* ensure LUT properties are valid */
-			assert(pb->pb_graph_node->num_input_ports == 1);
-			assert(tnode[from_node].block == tnode[to_node].block);
-			
-			/* assign from_node to default location */
-			assert(pb->lut_pin_remap[tnode[from_node].pb_graph_pin->pin_number] == OPEN);
-			pb->lut_pin_remap[tnode[from_node].pb_graph_pin->pin_number] = tnode[from_node].pb_graph_pin->pin_number;
-			
-			/* If all input pins are known, perform LUT input delay rebalancing, do nothing otherwise */
-			rebalance = TRUE;
-			for (i = 0; i < pb->pb_graph_node->num_input_pins[0]; i++) {
-				input_tnode = block[tnode[to_node].block].pb->rr_graph[pb->pb_graph_node->input_pins[0][i].pin_count_in_cluster].tnode;
-				if (input_tnode != NULL && pb->lut_pin_remap[i] == OPEN) {
-					rebalance = FALSE;
-				}
-			}
-			if (rebalance == TRUE) {
-				/* Rebalance LUT inputs so that the most critical paths get the fastest inputs */
-				balanced_T_arr = OPEN;
-				assigned = (boolean*)my_calloc(pb->pb_graph_node->num_input_pins[0], sizeof(boolean));
-				/* Clear pin remapping */
-				for (i = 0; i < pb->pb_graph_node->num_input_pins[0]; i++) {
-					pb->lut_pin_remap[i] = OPEN;
-				}
-				/* load new T_arr and pin mapping */
-				for (i = 0; i < pb->pb_graph_node->num_input_pins[0]; i++) {
-					/* Find fastest physical input pin of LUT */
-					fastest_unassigned_pin = OPEN;
-					min_delay = OPEN;
-					for (j = 0; j < pb->pb_graph_node->num_input_pins[0]; j++) {
-						if (pb->lut_pin_remap[j] == OPEN) {
-							if (fastest_unassigned_pin == OPEN) {
-								fastest_unassigned_pin = j;
-								min_delay = pb->pb_graph_node->input_pins[0][j].pin_timing_del_max[0];
-							} else if (min_delay > pb->pb_graph_node->input_pins[0][j].pin_timing_del_max[0]) {
-								fastest_unassigned_pin = j;
-								min_delay = pb->pb_graph_node->input_pins[0][j].pin_timing_del_max[0];
-							}
-						}
-					}
-					assert(fastest_unassigned_pin != OPEN);
-
-					/* Find most critical LUT input pin in user circuit */
-					most_crit_tnode = OPEN;
-					highest_T_arr = OPEN;
-					most_crit_pin = OPEN;
-					for (j = 0; j < pb->pb_graph_node->num_input_pins[0]; j++) {
-						input_tnode = block[tnode[to_node].block].pb->rr_graph[pb->pb_graph_node->input_pins[0][j].pin_count_in_cluster].tnode;
-						if (input_tnode != NULL && assigned[j] == FALSE) {
-							if (most_crit_tnode == OPEN) {
-								most_crit_tnode = input_tnode->index;
-								highest_T_arr = input_tnode->T_arr;
-								most_crit_pin = j;
-							} else if (highest_T_arr < input_tnode->T_arr) {
-								most_crit_tnode = input_tnode->index;
-								highest_T_arr = input_tnode->T_arr;
-								most_crit_pin = j;
-							}
-						}
-					}
-
-					if (most_crit_tnode == OPEN) {
-						break;
-					} else {
-						assert(tnode[most_crit_tnode].num_edges == 1);
-						tnode[most_crit_tnode].out_edges[0].Tdel = min_delay;
-						pb->lut_pin_remap[fastest_unassigned_pin] = most_crit_pin;
-						assigned[most_crit_pin] = TRUE;
-						if (balanced_T_arr < min_delay + highest_T_arr) {
-							balanced_T_arr = min_delay + highest_T_arr;
-						}
-					}
-				}
-				free(assigned);
-				if (balanced_T_arr != OPEN) {
-					tnode[to_node].T_arr = balanced_T_arr;
-				}
-			}
-		}
-	} 
-}
-
-static void load_clock_domain_and_skew_and_io_delay(boolean is_prepacked) {
-/* UPDATE THIS COMMENT */
-
-/* Makes a single traversal through the timing graph starting only from clock drivers.		 
- * The delay from the clock input is stored in tnode[inode].clock_skew and the clock's index in constrained_clocks is stored in tnode[inode].clock. 
- * Both clock and clock_skew are propagated through to FF_CLOCK sink nodes, and then across to the associated FF_SOURCE and FF_SINK tnodes. 
- * Also, find all constrained I/Os, mark their virtual clock indices on their INPAD_SOURCE and OUTPAD_SINK tnodes, and mark the input and 
- * output delays specified in the SDC file on the tedges inside I/O pads.  Mark all unconstrained I/Os with dummy clock domain -1. */
-
-	int i, iclock, inode, num_at_level, clock_index, io_index;
-	char * net_name;
-	t_tnode * clock_node;
-
-	/* Wipe fanout of each clock domain in constrained_clocks. */
-	for (iclock = 0; iclock < num_constrained_clocks; iclock++) {
-		constrained_clocks[iclock].fanout = 0;
-	}
-
-	/* First, visit all INPAD_SOURCE tnodes */
-	num_at_level = tnodes_at_level[0].nelem;	/* There are num_at_level top-level tnodes. */
-	for (i = 0; i < num_at_level; i++) {		
-		inode = tnodes_at_level[0].list[i];		/* Iterate through each tnode. inode is the index of the tnode in the array tnode. */
-		if (tnode[inode].type == INPAD_SOURCE) {	/* See if this node is the start of an I/O pad (as oppposed to a flip-flop source). */			
-			net_name = find_tnode_net_name(inode, is_prepacked);
-			if ((clock_index = find_clock(net_name)) != -1) { /* We have a clock inpad. */
-				/* Set clock skew to 0 at the source and propagate skew 
-				recursively to all connected nodes, adding delay as we go. 
-				Set the clock domain to the index of the clock in the
-				constrained_clocks array and propagate unchanged. */
-				tnode[inode].clock_skew = 0.;
-				tnode[inode].clock_domain = clock_index;
-				propagate_clock_domain_and_skew(inode);
-#if 0
-				/* Set the clock domain of this clock inpad to -1, so that we do not analyse it.  
-				If we did not do this, the clock net would be analysed on the same iteration of 
-				the timing analyzer as the flip-flops it drives! */
-				tnode[inode].clock_domain = -1;
-#else
-				/* Timing analyse this clock net with the clock domain it drives. */
-				tnode[inode].clock_domain = clock_index; 
-#endif
-			} else if ((io_index = find_io(net_name)) != -1) {
-				/* We have a constrained non-clock inpad - find its associated virtual clock. */
-				clock_index = find_clock(constrained_ios[io_index].virtual_clock_name);
-				/* The clock domain for this input is that of its virtual clock */
-				tnode[inode].clock_domain = clock_index;
-				/* Increment the fanout of this virtual clock domain. */
-				constrained_clocks[clock_index].fanout++;
-				/* Mark input delay specified in SDC file on the timing graph edge leading out from the INPAD_SOURCE node. */
-				tnode[inode].out_edges[0].Tdel = constrained_ios[io_index].delay;
-			} else { /* We have an unconstrained input - mark with dummy clock domain and do not analyze. */
-				tnode[inode].clock_domain = -1;
-			}
-		}
-	}	
-
-	/* Second, visit all OUTPAD_SINK tnodes. Unlike for INPAD_SOURCE tnodes,
-	we have to search the entire tnode array since these are all on different levels. */
-	for (inode = 0; inode < num_tnodes; inode++) {
-		if (tnode[inode].type == OUTPAD_SINK) {
-			/*  Since the pb_graph_pin of OUTPAD_SINK tnodes points to NULL, we have to find the net 
-			from the pb_graph_pin of the corresponding OUTPAD_IPIN node. 
-			Exploit the fact that the OUTPAD_IPIN node will always be one prior in the tnode array. */
-			assert(tnode[inode - 1].type == OUTPAD_IPIN);
-			net_name = find_tnode_net_name(inode - 1, is_prepacked);
-			io_index = find_io(net_name + 4); /* the + 4 removes the prefix "out:" automatically prepended to outputs */
-			if (io_index != -1) {
-				/* tnode belongs to a constrained output, now find its associated virtual clock */
-				clock_index = find_clock(constrained_ios[io_index].virtual_clock_name);
-				/* The clock domain for this output is that of its virtual clock */
-				tnode[inode].clock_domain = clock_index;
-				/* Increment the fanout of this virtual clock domain. */
-				constrained_clocks[clock_index].fanout++;
-				/* Mark output delay specified in SDC file on the timing graph edge leading into the OUTPAD_SINK node. 
-				However, this edge is part of the corresponding OUTPAD_IPIN node. 
-				Exploit the fact that the OUTPAD_IPIN node will always be one prior in the tnode array. */
-				tnode[inode - 1].out_edges[0].Tdel = constrained_ios[io_index].delay;
-
-			} else { /* We have an unconstrained input - mark with dummy clock domain and do not analyze. */
-				tnode[inode].clock_domain = -1;
-			}
-		}
-	}
-
-	/* Third, visit all FF_SOURCE and FF_SINK tnodes, and transfer the clock domain and skew from their corresponding FF_CLOCK tnodes*/
-	for (inode = 0; inode < num_tnodes; inode++) {
-		if (tnode[inode].type == FF_SOURCE || tnode[inode].type == FF_SINK) {
-			clock_node = find_ff_clock_tnode(inode, is_prepacked);
-			tnode[inode].clock_domain = clock_node->clock_domain;
-			tnode[inode].clock_skew   = clock_node->clock_skew;
-		}
-	}
-}
-
-static char * find_tnode_net_name(int inode, boolean is_prepacked) {
-	/* Finds the name of the net which a tnode (inode) is on (different for pre-/post-packed netlists). */
-	
-	if (is_prepacked) {
-		return logical_block[tnode[inode].block].name;
-	} else {
-		return block[tnode[inode].block].pb->rr_node_to_pb_mapping[tnode[inode].pb_graph_pin->pin_count_in_cluster]->name;
-	}
-}
-
-static t_tnode * find_ff_clock_tnode(int inode, boolean is_prepacked) {
-	/* Finds the FF_CLOCK tnode on the same flipflop as an FF_SOURCE or FF_SINK tnode. */
-	
-	int current_block;
-	t_tnode * node;
-	t_rr_node * rr_graph;
-	t_pb_graph_node * pb_graph_node;
-	t_pb_graph_pin * pb_graph_pin;
-
-	current_block = tnode[inode].block;
-	if (is_prepacked) {
-		node = logical_block[current_block].clock_net_tnode;
-	} else {
-		rr_graph = block[current_block].pb->rr_graph;
-		pb_graph_node = logical_block[current_block].pb->pb_graph_node;
-		pb_graph_pin = &pb_graph_node->clock_pins[0][0];
-		node = rr_graph[pb_graph_pin->pin_count_in_cluster].tnode;	
-	}
-	assert(node->type == FF_CLOCK);
-	return node;
-}
-
-static int find_clock(char * net_name) {
-/* Given a string net_name, find whether it's the name of a clock in the array constrained_clocks.  *
- * if it is, return the clock's index in constrained_clocks; if it's not, return -1. */
-	int index;
-	for (index = 0; index < num_constrained_clocks; index++) {
-		if (strcmp(net_name, constrained_clocks[index].name) == 0) {
-			return index;
-		}
-	}
-	return -1;
-}
-
-static int find_io(char * net_name) {
-/* Given a string net_name, find whether it's the name of a constrained I/O in the array constrained_ios.  *
- * if it is, return its index in constrained_ios; if it's not, return -1. */
-	int index;
-	for (index = 0; index < num_constrained_ios; index++) {
-		if (strcmp(net_name, constrained_ios[index].name) == 0) {
-			return index;
-		}
-	}
-	return -1;
-}
-
-static void propagate_clock_domain_and_skew(int inode) {
-/* Given a tnode indexed by inode (which is part of a clock net), 
- * propagate forward the clock domain (unchanged) and skew (adding the delay of edges) to all nodes in its fanout. 
- * We then call recursively on all children in a depth-first search.  If num_edges is 0, we should be at an FF_CLOCK tnode; we then set the 
- * FF_SOURCE and FF_SINK nodes to have the same clock domain and skew as the FF_CLOCK node.  We implicitly rely on a tnode not being 
- * part of two separate clock nets, since undefined behaviour would result if one DFS overwrote the results of another.  This may
- * be problematic in cases of multiplexed or locally-generated clocks. */
-
-	int iedge, to_node;
-	t_tedge * tedge;
-
-	tedge = tnode[inode].out_edges;	/* Get the list of edges from the node we're visiting. */
-
-	if (!tedge) { /* Leaf/sink node; base case of the recursion. */
-		assert(tnode[inode].type == FF_CLOCK);
-		constrained_clocks[tnode[inode].clock_domain].fanout++;
-		return;
-	}
-
-	for (iedge = 0; iedge < tnode[inode].num_edges; iedge++) {	/* Go through each edge coming out from this tnode */
-		to_node = tedge[iedge].to_node;
-		/* Propagate clock skew forward along this clock net, adding the delay of the wires (edges) of the clock network. */ 
-		tnode[to_node].clock_skew = tnode[inode].clock_skew 
-#if 0
-			+ tedge[iedge].Tdel
-#endif
-			; 
-		/* Propagate clock domain forward unchanged */
-		tnode[to_node].clock_domain = tnode[inode].clock_domain;
-		/* Finally, call recursively on the destination tnode. */
-		propagate_clock_domain_and_skew(to_node);
 	}
 }
