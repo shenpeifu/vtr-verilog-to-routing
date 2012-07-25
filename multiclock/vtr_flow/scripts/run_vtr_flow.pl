@@ -82,7 +82,7 @@ while ( $token = shift(@ARGV) ) {
 	# $ext = ( $token =~ m/([^.]+)$/ )[0];
 	# if ( $ext eq "sdc" ) {
 	if ( $token eq "-sdc_file" ) {
-		$sdc_file_path = expand_user_path( $token );
+		$sdc_file_path = expand_user_path( shift(@ARGV) );
 	}
 	elsif ( $token eq "-starting_stage" ) {
 		$starting_stage = stage_index( shift(@ARGV) );
