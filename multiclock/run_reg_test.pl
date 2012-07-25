@@ -32,6 +32,7 @@ use strict;
 use Cwd;
 use File::Spec;
 use List::Util;
+use Scalar::Util;
 
 # Function Prototypes
 sub setup_single_test;
@@ -210,6 +211,7 @@ sub check_override {
 			print "=" x 116 . "\n";
 
 			my @data = (
+						"run"				,
 						"total_runtime"		,
 						"total_wirelength"	,
 						"num_clb"			,
@@ -218,45 +220,56 @@ sub check_override {
 						);
 			
 			my %units = (
-						"total_runtime" 	, " s ",
-						"total_wirelength" 	, " units ",
+						"run"				, ""		,
+						"total_runtime" 	, " s "		,
+						"total_wirelength" 	, " units "	,
 						"num_clb" 			, " blocks ",
 						"min_chan_width" 	, " tracks ",
 						"crit_path_delay" 	, " ns "
 						);
 
 			my %precision = (
+							"run" 				, "%.0f",
 							"total_runtime"		, "%.3f",
 							"total_wirelength" 	, "%.0f",
 							"num_clb" 			, "%.2f",
 							"min_chan_width" 	, "%.2f",
 							"crit_path_delay" 	, "%.3e"
 							);
-
+		
 			open( QOR_FILE, "$test_dir/qor_geomean.txt" );
 			my $output = <QOR_FILE>;
-
 			my @first_line = split( /\t/, trim($output) );			
-			my $last_line;
-			while(<QOR_FILE>) {
-				   $last_line = $_ if eof;
-			}
-			my @last_line = split( /\t/, trim($last_line) );			
-			my @new_last_line;
+			my @backwards = reverse <QOR_FILE>;
 
-			foreach my $param (@data) {
-				my $index = List::Util::first { @first_line[$_] eq $param } 0 .. $#first_line;
-			  	push( @new_last_line, sprintf( $precision{$param}, @last_line[$index] ) . $units{$param} );
-			}
-
-format STDOUT =
-| @||||||||||||||||||| | @||||||||||||||||||| | @||||||||||||||||||| | @||||||||||||||||||| | @||||||||||||||||||| |
+format STDOUT_TOP =
+| @||||||||||||||| | @||||||||||||||| | @||||||||||||||| | @||||||||||||||| | @||||||||||||||| | @||||||||||||||| |
 @data;
---------------------------------------------------------------------------------------------------------------------
-| @||||||||||||||||||| | @||||||||||||||||||| | @||||||||||||||||||| | @||||||||||||||||||| | @||||||||||||||||||| |
-@new_last_line;
-. 
+-------------------------------------------------------------------------------------------------------------------
+.
 write;
+
+			while( @backwards ) {		
+				my @last_line = split( /\t/, trim( shift(@backwards) ) );
+				my @new_last_line;
+
+				foreach my $param (@data) {
+					# Get column (index) of each qor metric
+					my $index = List::Util::first { @first_line[$_] eq $param } 0 .. $#first_line;
+					# If valid number, add it onto line to be printed with appropriate sig figs. and units
+					if ( Scalar::Util::looks_like_number(@last_line[$index]) ) {
+						push( @new_last_line, sprintf( $precision{$param}, @last_line[$index] ) . $units{$param} );
+					}
+				}
+ 
+format STDOUT =
+| @||||||||||||||| | @||||||||||||||| | @||||||||||||||| | @||||||||||||||| | @||||||||||||||| | @||||||||||||||| |
+@new_last_line;
+.
+write;
+			}
+
+			close( QOR_FILE );
 			exit "QoR results displayed";
 		}
 	}
