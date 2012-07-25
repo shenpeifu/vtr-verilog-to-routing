@@ -77,6 +77,7 @@ my $vpr_cluster_seed_type   = "";
 my $tech_file               = "";
 my $do_power                = 0;
 my $check_equivalent = "off";
+my $seed					= 1;
 
 while ( $token = shift(@ARGV) ) {
 	# $ext = ( $token =~ m/([^.]+)$/ )[0];
@@ -119,6 +120,9 @@ while ( $token = shift(@ARGV) ) {
 	}
 	elsif ( $token eq "-check_equivalent" ) {
 		$check_equivalent = "on";
+	}
+	elsif ( $token eq "-seed" ) {
+		$seed = shift(@ARGV);
 	}
 	else {
 		die "Error: Invalid argument ($token)\n";
@@ -474,6 +478,7 @@ if ( $ending_stage >= $stage_idx_vpr and !$error_code ) {
 			"--timing_driven_clustering", "$timing_driven",
 			"--cluster_seed_type",        "$vpr_cluster_seed_type",
 			"--sdc_file", 				  "$sdc_file_path",
+			"--seed",			 		  "$seed",
 			"--nodisp"
 		);
 		if ( $timing_driven eq "on" ) {
