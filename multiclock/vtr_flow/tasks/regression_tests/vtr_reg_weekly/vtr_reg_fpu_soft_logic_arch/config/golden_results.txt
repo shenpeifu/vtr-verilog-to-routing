@@ -6,17 +6,3 @@ soft_fpu_arch_timing.xml	fir.v	success	38.2606	65.46	1022.22	76.16	76.16	21351	2
 soft_fpu_arch_timing.xml	mm3.v	success	38.1086	35.32	540.54	64.78	64.78	15572	15604	11621	3911	193	32	-1	-1	
 soft_fpu_arch_timing.xml	ode.v	success	40.4711	24.46	341.73	50.15	50.15	12931	13003	9197	3190	130	72	-1	-1	
 soft_fpu_arch_timing.xml	syn2.v	success	36.6719	79.61	1225.83	107.41	107.41	22936	23064	16993	5769	161	128	-1	-1	
-
-																
-																
-																
-																
-																
-																
-																
-			
-			
-			
-			
-			
-			

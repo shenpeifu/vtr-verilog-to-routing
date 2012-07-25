@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <limits.h>
-
 #include "util.h"
 #include "vpr_types.h"
 #include "globals.h"
@@ -1620,8 +1619,7 @@ t_timing_stats * do_timing_analysis(t_slack * slacks, boolean is_prepacked, bool
 						if (fabs(tnode[to_node].T_arr - (tnode[inode].T_arr + tedge[iedge].Tdel)) < EQUAL_DEF) {
 							tnode[to_node].num_critical_input_paths += tnode[inode].num_critical_input_paths;
 						} else if (tnode[to_node].T_arr < (tnode[inode].T_arr + tedge[iedge].Tdel)) {
-						tnode[to_node].num_critical_input_paths =
-								tnode[inode].num_critical_input_paths;
+							tnode[to_node].num_critical_input_paths = tnode[inode].num_critical_input_paths;
 						}
 						if (tnode[to_node].num_critical_input_paths	> max_critical_input_paths) {
 							max_critical_input_paths = tnode[to_node].num_critical_input_paths;

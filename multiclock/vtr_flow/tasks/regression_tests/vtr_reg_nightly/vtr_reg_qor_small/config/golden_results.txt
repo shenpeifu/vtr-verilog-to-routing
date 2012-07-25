@@ -10,16 +10,3 @@ k6_N10_memDepth16384_memData64_40nm_timing.xml	mkSMAdapter4B.v	success	66	7.7200
 k6_N10_memDepth16384_memData64_40nm_timing.xml	raygentop.v	success	72	6.37828	336.27	26.88	23.91	2.06	4023	4139	2172	185	239	305	1	7	
 k6_N10_memDepth16384_memData64_40nm_timing.xml	sha.v	success	58	16.5339	341.11	15.7	45.06	1.39	3161	3197	1409	209	38	36	0	0	
 k6_N10_memDepth16384_memData64_40nm_timing.xml	stereovision0.v	success	62	4.47522	2355.18	167.91	300.56	7.8	25024	25221	8905	1128	157	197	0	0	
-
-																	
-																	
-																	
-				
-				
-				
-				
-				
-				
-				
-				
-				

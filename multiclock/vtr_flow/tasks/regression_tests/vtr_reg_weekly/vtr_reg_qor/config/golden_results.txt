@@ -16,23 +16,3 @@ k6_N10_memDepth16384_memData64_40nm_timing.xml	stereovision0.v	success	62	4.4752
 k6_N10_memDepth16384_memData64_40nm_timing.xml	stereovision1.v	success	94	6.01887	1544.36	189.11	209.98	15.04	24719	22584	11167	1004	133	145	0	38	
 k6_N10_memDepth16384_memData64_40nm_timing.xml	stereovision2.v	success	156	17.6299	6397.35	1015.29	93397.2	242.36	58571	49159	33056	2355	149	182	0	213
 k6_N10_memDepth16384_memData64_40nm_timing.xml	stereovision3.v	success	30	3.79014	4.66	0.58	0.42	0.04	286	316	137	15	10	30	0	0
-
-																
-																
-																
-																
-																
-																
-																
-																
-																
-																
-																
-																
-																
-				
-				
-				
-				
-				
-				
