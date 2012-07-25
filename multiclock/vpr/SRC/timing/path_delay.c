@@ -2345,6 +2345,7 @@ Marks unconstrained I/Os with a dummy clock domain (-1). */
 			} else if ((io_index = find_io(net_name)) != -1) {
 				/* We have a constrained non-clock inpad - find its associated virtual clock. */
 				clock_index = find_clock(constrained_ios[io_index].virtual_clock_name);
+				assert(clock_index != -1);
 				/* The clock domain for this input is that of its virtual clock */
 				tnode[inode].clock_domain = clock_index;
 				/* Increment the fanout of this virtual clock domain. */
@@ -2370,7 +2371,8 @@ Marks unconstrained I/Os with a dummy clock domain (-1). */
 			if (io_index != -1) {
 				/* tnode belongs to a constrained output, now find its associated virtual clock */
 				clock_index = find_clock(constrained_ios[io_index].virtual_clock_name);
-				/* The clock domain for this output is that of its virtual clock */
+				assert(clock_index != -1);
+				/* The clock doain for this output is that of its virtual clock */
 				tnode[inode].clock_domain = clock_index;
 				/* Increment the fanout of this virtual clock domain. */
 				constrained_clocks[clock_index].fanout++;

@@ -95,6 +95,7 @@ void read_sdc(char * sdc_file) {
 			/* Create one virtual clock called virtual_clock with period 0... */
 			timing_constraint = (float **) alloc_matrix(0, 0, 0, 0, sizeof(float));
 			timing_constraint[0][0] = 0.;
+			num_constrained_clocks = 1;
 			constrained_clocks = (t_clock *) my_malloc(sizeof(t_clock));
 			constrained_clocks[0].name = "virtual_clock";
 			constrained_clocks[0].is_netlist_clock = FALSE;
