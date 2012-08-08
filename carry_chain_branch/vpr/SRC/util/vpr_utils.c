@@ -536,7 +536,7 @@ void alloc_and_load_blk_pin_to_port_pin(int *** blk_pin_to_port, int *** blk_pin
 	int ** temp_blk_pin_to_port = NULL;
 	int ** temp_blk_pin_to_port_pin = NULL;
 	int itype, iblk, iblk_pin, iport, iport_pin;
-	int blk_pin_count, num_port_pins, num_ports, num_blk_pin, max_pins_per_clb;
+	int blk_pin_count, num_port_pins, num_ports, max_pins_per_clb;
 
 	/* Compute required size. */
 	max_pins_per_clb = 0;
@@ -560,6 +560,7 @@ void alloc_and_load_blk_pin_to_port_pin(int *** blk_pin_to_port, int *** blk_pin
 	/* Load the values */
 	for (iblk = 0; iblk < num_blocks; iblk++) {
 		blk_pin_count = 0;
+		num_ports = block[iblk].type->pb_type->num_ports;
 		for (iport = 0; iport < num_ports; iport++) {
 			num_port_pins = block[iblk].type->pb_type->ports->num_pins;
 			for (iport_pin = 0; iport_pin < num_port_pins; iport_pin++) {
@@ -585,8 +586,8 @@ int *** alloc_and_load_port_pin_to_blk_pin(void) {
 	 * Returns the pointer to the port_pin_to_block_pin 3D array.            */
 
 	int *** temp_port_pin_to_blk_pin = NULL;
-	int itype, iblk, iblk_pin, iport, iport_pin;
-	int blk_pin_count, num_port_pins, num_ports, num_blk_pin;
+	int itype, iblk, iport, iport_pin;
+	int blk_pin_count, num_port_pins, num_ports;
 	int max_ports_per_blk, max_pins_per_port;
 
 	/* Compute required size. */
@@ -620,6 +621,7 @@ int *** alloc_and_load_port_pin_to_blk_pin(void) {
 	/* Load the values */
 	for (iblk = 0; iblk < num_blocks; iblk++) {
 		blk_pin_count = 0;
+		num_ports = block[iblk].type->pb_type->num_ports;
 		for (iport = 0; iport < num_ports; iport++) {
 			num_port_pins = block[iblk].type->pb_type->ports->num_pins;
 			for (iport_pin = 0; iport_pin < num_port_pins; iport_pin++) {
@@ -655,9 +657,9 @@ void alloc_and_load_blk_pin_to_idirect(t_direct_inf* directs, int num_directs,
 	int ** temp_blk_pin_to_idirect, ** temp_blk_pin_to_direct_src_or_sink;
 
 	int iblk, iblk_pin, iport, iport_pin, idirect;
-	int num_ports, num_port_pins, num_blk_pins;
+	int num_ports, num_port_pins;
 
-	char *to_pb_type_name, *to_port_name, *from_pb_type_name, *from_port_name;
+	char *to_pb_type_name = NULL, *to_port_name = NULL, *from_pb_type_name = NULL, *from_port_name = NULL;
 	int to_start_pin_index = -1, to_end_pin_index = -1;
 	int from_start_pin_index = -1, from_end_pin_index = -1;
 	int match_count;

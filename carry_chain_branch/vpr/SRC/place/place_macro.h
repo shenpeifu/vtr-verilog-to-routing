@@ -26,6 +26,6 @@ typedef struct s_pl_macro{
 } t_pl_macro;
 
 /* These are the function declarations. */
-t_pl_macro * init_alloc_and_load_placement_macros(t_direct_inf* pl_directs, int num_directs);
+int alloc_and_load_placement_macros(t_direct_inf* directs, int num_directs, t_pl_macro ** chains);
 
 #endif

@@ -148,6 +148,10 @@ static struct s_bb *ts_bb_coord_new = NULL;
 static struct s_bb *ts_bb_edge_new = NULL;
 static int *ts_nets_to_update = NULL;
 
+
+static t_pl_macro * Chains = NULL;
+static int num_chains;
+
 /* Expected crossing counts for nets with different #'s of pins.  From *
  * ICCAD 94 pp. 690 - 695 (with linear interpolation applied by me).   *
  * Multiplied to bounding box of a net to better estimate wire length  *
@@ -350,7 +354,7 @@ void try_place(struct s_placer_opts placer_opts,
 			placer_opts.place_cost_exp,
 			&old_region_occ_x, &old_region_occ_y, placer_opts);
 
-	alloc_and_load_placement_macros(directs, num_directs);
+	num_chains = alloc_and_load_placement_macros(directs, num_directs, &Chains);
 
 	initial_placement(placer_opts.pad_loc_type, placer_opts.pad_loc_file);
 	init_draw_coords((float) width_fac);
@@ -2663,14 +2667,12 @@ static void free_try_swap_arrays(void) {
 		free(ts_bb_coord_new);
 		free(ts_bb_edge_new);
 		free(ts_nets_to_update);
-		free(ts_pins_to_nets);
 		free(blocks_affected.moved_blocks);
 		free(bb_updated_before);
 		
 		ts_bb_coord_new = NULL;
 		ts_bb_edge_new = NULL;
 		ts_nets_to_update = NULL;
-		ts_pins_to_nets = NULL;
 		blocks_affected.moved_blocks = NULL;
 		blocks_affected.num_moved_blocks = 0;
 		bb_updated_before = NULL;
