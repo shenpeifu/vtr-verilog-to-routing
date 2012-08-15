@@ -232,7 +232,7 @@
       <Filter>Source Files\timing</Filter>
     </ClCompile>
     <ClCompile Include="SRC\place\place_macro.c">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\place</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -414,7 +414,7 @@
       <Filter>Header Files\timing</Filter>
     </ClInclude>
     <ClInclude Include="SRC\place\place_macro.h">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\place</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

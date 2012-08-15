@@ -326,6 +326,7 @@ typedef struct s_tnode {
 	float T_req;
 	int block;
 	boolean used_on_this_traversal; /* Has this tnode been touched on this timing graph traversal? */
+	boolean has_valid_slack; /* Has this tnode been touched on the most recent call of do_timing_analysis? */
 
 	/* For flipflops and I/Os only. Clock_domain contains the index of the clock in netlist_clocks; clock_skew is the time taken for a clock signal to get to the flip-flop. */
 	int clock_domain; 
@@ -348,7 +349,7 @@ typedef struct s_tnode {
 
 typedef struct s_clock {
 	char * name;
-	boolean is_netlist_clock;
+	boolean is_netlist_clock; /* currently used only in timing stats */
 	int fanout;
 } t_clock;
 /* Stores the name and fanout (number of flip-flops in clock domain) of each clock,
@@ -440,12 +441,25 @@ typedef struct s_net {
 	boolean is_const_gen;
 } t_net;
 
-/* s_grid_tile is the minimum tile of the fpga                         
+/* s_grid_tile defines what can be legally placed at an (x,y) location
+ * in the FPGA, and what is currently placed there.  At a given 
+ * (x,y) location, we will place one *type* of block, but depending
+ * on the capacity of that physical block type, we may be able to 
+ * accomodate more than one netlist block (i.e. up to type->capacity
+ * blocks of that type can be placed there).
+ * Each clustered netlist block placed at an (x,y) location is put 
+ * in a different entry in the grid[x][y].block[z] array; i.e. each
+ * has a different z value.  z currently doesn't have any physical 
+ * meaning; it is just the index used to go through all blocks at that
+ * (x,y) location.
+ * Note that an (x,y) location defines the intersection of two routing
+ * channels, so this coordinate system is really routing-centric.
+ *
  * type:  Pointer to type descriptor, NULL for illegal, IO_TYPE for io 
  * offset: Number of grid tiles above the bottom location of a block 
  * usage: Number of blocks used in this grid tile
- * blocks[]: Array of logical blocks placed in a physical position, EMPTY means
- no block at that index */
+ * blocks[]: Array of logical blocks placed in a physical position, 
+ *     EMPTY means no block at that index. */
 typedef struct s_grid_tile {
 	t_type_ptr type;
 	int offset;

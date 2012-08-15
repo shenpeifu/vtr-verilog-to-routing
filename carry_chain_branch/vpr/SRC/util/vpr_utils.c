@@ -527,9 +527,11 @@ void alloc_and_load_blk_pin_to_port_pin(int *** blk_pin_to_port, int *** blk_pin
 	
 	 * blk_pin_to_port array allow us to quickly find what port a block pin  *
 	 * corresponds to.                                                       *
+	 * [0...num_blocks-1][0...max_pins_per_clb-1]                            *
 
 	 * blk_pin_to_port_pin array allow us to quickly find what port pin a    *
 	 * block pin corresponds to.                                             *
+	 * [0...num_blocks-1][0...max_pins_per_clb-1]                            *
 
 	 * Stores the pointers to the two 2D arrays in the addresses passed in.  */
 
@@ -582,6 +584,7 @@ int *** alloc_and_load_port_pin_to_blk_pin(void) {
 
 	 * port_pin_to_block_pin array allows us to quickly find what block pin  *
 	 * a port pin corresponds to.                                            *
+	 * [0...num_blocks-1][0...max_ports_per_blk-1][0...max_pins_per_port-1]  *
 
 	 * Returns the pointer to the port_pin_to_block_pin 3D array.            */
 

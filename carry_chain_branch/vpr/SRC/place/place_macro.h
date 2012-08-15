@@ -13,6 +13,7 @@ typedef struct s_pl_macro_member{
 	int blk_index;
 	int x_offset;
 	int y_offset;	 
+	int z_offset;
 } t_pl_macro_member;
 
 /* num_blocks: The number of blocks this macro contains.
@@ -22,10 +23,11 @@ typedef struct s_pl_macro_member{
 typedef struct s_pl_macro{
 	int num_blocks;
 	t_pl_macro_member* members;
-	int idirect;
 } t_pl_macro;
 
 /* These are the function declarations. */
 int alloc_and_load_placement_macros(t_direct_inf* directs, int num_directs, t_pl_macro ** chains);
+int get_chain_index(int blk_num);
+void free_placement_macros_structs(void);
 
 #endif

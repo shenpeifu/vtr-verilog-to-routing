@@ -1027,6 +1027,12 @@ static void Process_Fc(ezxml_t Node, t_type_descriptor * Type) {
 	int iport, iport_pin, curr_pin, port_found;
 	ezxml_t Child, Junk;
 	
+	for (ipin = 0; ipin < Type->num_pins; ipin++) {
+		Type->is_Fc_frac = (boolean *) my_malloc (Type->num_pins * sizeof(boolean));
+		Type->is_Fc_full_flex = (boolean *) my_malloc (Type->num_pins * sizeof(boolean));
+		Type->Fc = (float *) my_malloc (Type->num_pins * sizeof(float));
+	}
+
 	/* Load the default fc_in, if specified */
 	Prop = FindProperty(Node, "default_in_type", FALSE);
 	if (Prop != NULL){
@@ -1119,26 +1125,28 @@ static void Process_Fc(ezxml_t Node, t_type_descriptor * Type) {
 	Child = ezxml_child(Node, "pin");
 	while (Child != NULL) {
 		/* Get all the properties of the child first */
-		Prop = FindProperty(Child, "name", FALSE);
+		Prop = FindProperty(Child, "name", TRUE);
 		if (Prop == NULL){
 			vpr_printf(TIO_MESSAGE_ERROR, "[LINE %d] Pin child with no name "
-			"is not allowed.\n", Node->line);
+			"is not allowed.\n", Child->line);
 			exit(1);
 		}
-		Prop2 = FindProperty(Node, "fc_type", FALSE);
+		ezxml_set_attr(Child, "name", NULL);
+
+		Prop2 = FindProperty(Child, "fc_type", TRUE);
 		if (Prop2 != NULL){
-			if (0 == strcmp(Prop, "abs")) {
+			if (0 == strcmp(Prop2, "abs")) {
 				ovr_type = FC_ABS;
 			}
-			else if (0 == strcmp(Prop, "frac")) {
+			else if (0 == strcmp(Prop2, "frac")) {
 				ovr_type = FC_FRAC;
 			}
-			else if (0 == strcmp(Prop, "full")) {
+			else if (0 == strcmp(Prop2, "full")) {
 				ovr_type = FC_FULL;
 			}
 			else {
 				vpr_printf(TIO_MESSAGE_ERROR, "[LINE %d] Invalid type '%s' for Fc. Only abs, frac "
-				"and full are allowed.\n", Node->line, Prop);
+				"and full are allowed.\n", Child->line, Prop2);
 				exit(1);
 			}
 			switch (ovr_type) {
@@ -1147,20 +1155,20 @@ static void Process_Fc(ezxml_t Node, t_type_descriptor * Type) {
 					break;
 				case FC_ABS:
 				case FC_FRAC:
-					Prop2 = FindProperty(Node, "fc_val", TRUE);
+					Prop2 = FindProperty(Child, "fc_val", TRUE);
 					if (Prop2 == NULL){
 						vpr_printf(TIO_MESSAGE_ERROR, "[LINE %d] Pin child with no fc_val specified "
-						"is not allowed.\n", Node->line);
+						"is not allowed.\n", Child->line);
 						exit(1);
 					}
 					ovr_val = (float)atof(Prop2);
-					ezxml_set_attr(Node, "fc_val", NULL);
+					ezxml_set_attr(Child, "fc_val", NULL);
 					break;
 				default:
 					ovr_val = -1;
 			}
 			/* Release the property */
-			ezxml_set_attr(Node, "fc_type", NULL);
+			ezxml_set_attr(Child, "fc_type", NULL);
 
 			/* Search for the child pin in Type and overwrites the default values     */
 			/* Check whether the name is in the format of "<port_name>" or            *
@@ -1176,25 +1184,23 @@ static void Process_Fc(ezxml_t Node, t_type_descriptor * Type) {
 					vpr_printf(TIO_MESSAGE_ERROR, "[LINE %d] Invalid name for pin child, "
 							"name should be in the format \"port_name\" or "
 							"\"port_name [end_pin_index:start_pin_index]\", "
-							" The end_pin_index and start_pin_index can be the same.\n", Node->line);
+							" The end_pin_index and start_pin_index can be the same.\n", Child->line);
 					exit(1);
 				}
 				if (end_pin_index < 0 || start_pin_index < 0) {
 					vpr_printf(TIO_MESSAGE_ERROR, "[LINE %d] The pin_index should not "
-							"be a negative value.\n", Node->line);
+							"be a negative value.\n", Child->line);
 					exit(1);
 				}
 				if (end_pin_index < start_pin_index) {
 					vpr_printf(TIO_MESSAGE_ERROR, "[LINE %d] The end_pin_index should "
-							"be not be less than start_pin_index.\n", Node->line);
+							"be not be less than start_pin_index.\n", Child->line);
 					exit(1);
 				}
 			}
 			
 			/* Find the matching port_name in Type */
 			/* TODO: Check for pins assigned more than one override fc's - right now assigning the last value specified. */
-			Type->Fc;
-			Type->pb_type->ports->name;
 			iport_pin = 0;
 			port_found = FALSE;
 			for (iport = 0; ((iport < Type->pb_type->num_ports) && (port_found == FALSE)); iport++) {
@@ -1205,7 +1211,7 @@ static void Process_Fc(ezxml_t Node, t_type_descriptor * Type) {
 					if (end_pin_index > Type->pb_type->ports[iport].num_pins) {
 						vpr_printf(TIO_MESSAGE_ERROR, "[LINE %d] The end_pin_index for this port: %d "
 								"cannot be greater than the number of pins in this port: %d.\n", 
-								Node->line, end_pin_index, Type->pb_type->ports[iport].num_pins);
+								Child->line, end_pin_index, Type->pb_type->ports[iport].num_pins);
 						exit(1);
 					}
 
@@ -1224,8 +1230,8 @@ static void Process_Fc(ezxml_t Node, t_type_descriptor * Type) {
 
 						// Check whether the value had been overwritten
 						if (ovr_val != Type->Fc[iport_pin + curr_pin] 
-								&& Type->is_Fc_full_flex[iport_pin + curr_pin] != (ovr_type == FC_FULL) ? TRUE : FALSE
-								&& Type->is_Fc_frac[iport_pin + curr_pin] !=(ovr_type == FC_FRAC) ? TRUE : FALSE) {
+								|| Type->is_Fc_full_flex[iport_pin + curr_pin] != (ovr_type == FC_FULL) ? TRUE : FALSE
+								|| Type->is_Fc_frac[iport_pin + curr_pin] !=(ovr_type == FC_FRAC) ? TRUE : FALSE) {
 							Type->Fc[iport_pin + curr_pin] = ovr_val;
 							Type->is_Fc_full_flex[iport_pin + curr_pin] = (ovr_type == FC_FULL) ? TRUE : FALSE;
 							Type->is_Fc_frac[iport_pin + curr_pin] =(ovr_type == FC_FRAC) ? TRUE : FALSE;
@@ -1233,7 +1239,7 @@ static void Process_Fc(ezxml_t Node, t_type_descriptor * Type) {
 						} else {
 						
 							vpr_printf(TIO_MESSAGE_ERROR, "[LINE %d] Multiple Fc override detected!\n", 
-								Node->line);
+								Child->line);
 							exit(1);
 
 						}
@@ -1248,7 +1254,7 @@ static void Process_Fc(ezxml_t Node, t_type_descriptor * Type) {
 			/* The override pin child is not in any of the ports in pb_type. */
 			if (port_found == FALSE) {
 				vpr_printf(TIO_MESSAGE_ERROR, "[LINE %d] The port \"%s\" "
-							"cannot be found.\n", Node->line);
+							"cannot be found.\n", Child->line);
 				exit(1);
 			}
 
@@ -1256,7 +1262,7 @@ static void Process_Fc(ezxml_t Node, t_type_descriptor * Type) {
 		} else { 
 			/* fc_type of pin_child is not specified. Error out. */
 			vpr_printf(TIO_MESSAGE_ERROR, "[LINE %d] Pin child with no fc_type specified "
-			"is not allowed.\n", Node->line);
+			"is not allowed.\n", Child->line);
 			exit(1);
 		}
 		
@@ -2019,11 +2025,6 @@ static void ProcessComplexBlocks(INOUTP ezxml_t Node,
 		Type->num_receivers = Type->capacity * Type->pb_type->num_input_pins;
 		Type->num_drivers = Type->capacity * Type->pb_type->num_output_pins;
 
-		/* Load Fc */
-		Cur = FindElement(CurType, "fc", TRUE);
-		Process_Fc(Cur, Type);
-		FreeNode(Cur);
-		
 		/* Load pin names and classes and locations */
 		Cur = FindElement(CurType, "pinlocations", TRUE);
 		SetupPinLocationsAndPinClasses(Cur, Type);
@@ -2031,6 +2032,13 @@ static void ProcessComplexBlocks(INOUTP ezxml_t Node,
 		Cur = FindElement(CurType, "gridlocations", TRUE);
 		SetupGridLocations(Cur, Type);
 		FreeNode(Cur);
+
+		/* Load Fc */
+		Cur = FindElement(CurType, "fc", TRUE);
+		Process_Fc(Cur, Type);
+		FreeNode(Cur);
+		
+		
 #if 0
 		Cur = FindElement(CurType, "timing", timing_enabled);
 		if (Cur)
@@ -2494,8 +2502,10 @@ static void ProcessDirects(INOUTP ezxml_t Parent,
 		
 		(*Directs)[i].x_offset = GetIntProperty(Node, "x_offset", TRUE, 0);
 		(*Directs)[i].y_offset = GetIntProperty(Node, "y_offset", TRUE, 0);
+		(*Directs)[i].z_offset = GetIntProperty(Node, "z_offset", TRUE, 0);
 		ezxml_set_attr(Node, "x_offset", NULL);
 		ezxml_set_attr(Node, "y_offset", NULL);
+		ezxml_set_attr(Node, "z_offset", NULL);
 		
 		/* Check that the direct chain connection is not zero in both direction */
 		if ( (*Directs)[i].x_offset==0 && (*Directs)[i].y_offset==0 ) {

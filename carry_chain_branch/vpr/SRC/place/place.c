@@ -59,6 +59,9 @@ typedef struct s_pl_moved_block {
 	int xnew;
 	int yold;
 	int ynew;
+	int zold;
+	int znew;
+	int swapped_to_empty;
 }t_pl_moved_block;
 
 /* Stores the list of blocks to be moved in a swap during       *
@@ -148,8 +151,9 @@ static struct s_bb *ts_bb_coord_new = NULL;
 static struct s_bb *ts_bb_edge_new = NULL;
 static int *ts_nets_to_update = NULL;
 
-
-static t_pl_macro * Chains = NULL;
+/* The pl_chains array stores all the carry chains placement macros.   *
+ * [0...num_chains-1]                                                  */
+static t_pl_macro * pl_chains = NULL;
 static int num_chains;
 
 /* Expected crossing counts for nets with different #'s of pins.  From *
@@ -171,7 +175,8 @@ static const float cross_count[50] = { /* [0..49] */1.0, 1.0, 1.0, 1.0828, 1.153
 
 static void alloc_and_load_placement_structs(
 		float place_cost_exp, float ***old_region_occ_x,
-		float ***old_region_occ_y, struct s_placer_opts placer_opts);
+		float ***old_region_occ_y, struct s_placer_opts placer_opts,
+		t_direct_inf *directs, int num_directs);
 
 static void alloc_and_load_try_swap_structs();
 
@@ -352,9 +357,8 @@ void try_place(struct s_placer_opts placer_opts,
 
 	alloc_and_load_placement_structs(
 			placer_opts.place_cost_exp,
-			&old_region_occ_x, &old_region_occ_y, placer_opts);
-
-	num_chains = alloc_and_load_placement_macros(directs, num_directs, &Chains);
+			&old_region_occ_x, &old_region_occ_y, placer_opts,
+			directs, num_directs);
 
 	initial_placement(placer_opts.pad_loc_type, placer_opts.pad_loc_file);
 	init_draw_coords((float) width_fac);
@@ -1082,7 +1086,9 @@ static int try_swap(float t, float *cost, float *bb_cost, float *timing_cost,
 	int num_nets_affected;
 	float delta_c, bb_delta_c, timing_delta_c, delay_delta_c;
 	int iblk, bnum, iblk_pin, inet_affected;
-	
+	int ichain, imember, imoved_blk;
+	int x_swap_offset, y_swap_offset, z_swap_offset;
+
 	/* I'm using negative values of temp_net_cost as a flag, so DO NOT   *
 	 * use cost functions that can go negative.                          */
 
@@ -1103,7 +1109,7 @@ static int try_swap(float t, float *cost, float *bb_cost, float *timing_cost,
 	while (block[b_from].isFixed == TRUE) {
 		b_from = my_irand(num_blocks - 1);
 	}
-	
+
 	x_from = block[b_from].x;
 	y_from = block[b_from].y;
 	z_from = block[b_from].z;
@@ -1112,56 +1118,184 @@ static int try_swap(float t, float *cost, float *bb_cost, float *timing_cost,
 			&y_to))
 		return FALSE;
 
-	/* Make the switch in order to make computing the new bounding *
-	 * box simpler.  If the cost increase is too high, switch them *
-	 * back.  (block data structures switched, clbs not switched   *
-	 * until success of move is determined.)                       */
-	/* Also check that whether those are the only 2 blocks         *
-	 * to be moved - check for carry chains and other placement    *
-	 * macros.                                                     *
-	 * Only 2 blocks to be moved for now.                          *
-	 */
-		
 	z_to = 0;
 	if (grid[x_to][y_to].type->capacity > 1) {
 		z_to = my_irand(grid[x_to][y_to].type->capacity - 1);
 	}
-	if (grid[x_to][y_to].blocks[z_to] == EMPTY) { /* Moving to an empty location */
-		b_to = EMPTY;
-		block[b_from].x = x_to;
-		block[b_from].y = y_to;
-		block[b_from].z = z_to;
+
+	b_to = grid[x_to][y_to].blocks[z_to];
+
+	// Record down the relative position of the swap
+	x_swap_offset = block[b_from].x - block[b_to].x;
+	y_swap_offset = block[b_from].y - block[b_to].y;
+	z_swap_offset = block[b_from].z - block[b_to].z;
+
+	
+	/* Make the switch in order to make computing the new bounding *
+		* box simpler.  If the cost increase is too high, switch them *
+		* back.  (block data structures switched, clbs not switched   *
+		* until success of move is determined.)                       */
+	/* Also check that whether those are the only 2 blocks         *
+		* to be moved - check for carry chains and other placement    *
+		* macros.                                                     *
+		* Only 2 blocks to be moved for now.                          *
+		*/
+	
+#if 1
+
+	// Check whether the block is part of a chain
+	// probably should not check here, need to move up the hierarchy
+	// so that I could find the target location for every other block in the chain moved
+	
+	ichain = get_chain_index(b_from);
+	if ( ichain != -1) {
+
+		for (imember = 0; imember < pl_chains[ichain].num_blocks; imember++) {
+
+			// Gets the new from and to info for every block in the chain
+			// cannot use the old from and to info
+			b_from = pl_chains[ichain].members[imember].blk_index;
+			b_to = grid[block[b_from].x][block[b_from].y].blocks[block[b_from].z];
+			
+			x_from = block[b_from].x;
+			y_from = block[b_from].y;
+			z_from = block[b_from].z;
+
+			x_to = x_from + x_swap_offset;
+			y_to = y_from + y_swap_offset;
+			z_to = z_from + z_swap_offset;
+
+			// Does not allow chain to chain swap yet
+			// How do I abort the swap? 
+			
+			// Check whether the to_location is empty
+			if (b_to == EMPTY) {
+
+				// Swap the block, dont swap the nets yet
+				block[b_from].x = x_to;
+				block[b_from].y = y_to;
+				block[b_from].z = z_to;
+
+				// Sets up the blocks moved
+				imoved_blk = blocks_affected.num_moved_blocks;
+				blocks_affected.moved_blocks[imoved_blk].block_num = b_from;
+				blocks_affected.moved_blocks[imoved_blk].xold = x_from;
+				blocks_affected.moved_blocks[imoved_blk].xnew = x_to;
+				blocks_affected.moved_blocks[imoved_blk].yold = y_from;
+				blocks_affected.moved_blocks[imoved_blk].ynew = y_to;
+				blocks_affected.moved_blocks[imoved_blk].zold = z_from;
+				blocks_affected.moved_blocks[imoved_blk].znew = z_to;
+				blocks_affected.moved_blocks[imoved_blk].swapped_to_empty = TRUE;
+				blocks_affected.num_moved_blocks ++;
+				
+			} else {
+
+				assert (get_chain_index(b_to) == -1);
+				/* if (get_chain_index(b_to) == -1) ABORT SWAP */
+
+				// Swap the block, dont swap the nets yet
+				block[b_to].x = x_from;
+				block[b_to].y = y_from;
+				block[b_to].z = z_from;
+
+				block[b_from].x = x_to;
+				block[b_from].y = y_to;
+				block[b_from].z = z_to;
 		
-		blocks_affected.num_moved_blocks = 1;
-		blocks_affected.moved_blocks[0].block_num = b_from;
-		blocks_affected.moved_blocks[0].xold = x_from;
-		blocks_affected.moved_blocks[0].xnew = x_to;
-		blocks_affected.moved_blocks[0].yold = y_from;
-		blocks_affected.moved_blocks[0].ynew = y_to;
-	} else { /* Swapping two blocks */
-		b_to = grid[x_to][y_to].blocks[z_to];
-		block[b_to].x = x_from;
-		block[b_to].y = y_from;
-		block[b_to].z = z_from;
+				// Sets up the blocks moved
+				imoved_blk = blocks_affected.num_moved_blocks;
+				blocks_affected.moved_blocks[imoved_blk].block_num = b_from;
+				blocks_affected.moved_blocks[imoved_blk].xold = x_from;
+				blocks_affected.moved_blocks[imoved_blk].xnew = x_to;
+				blocks_affected.moved_blocks[imoved_blk].yold = y_from;
+				blocks_affected.moved_blocks[imoved_blk].ynew = y_to;
+				blocks_affected.moved_blocks[imoved_blk].zold = z_from;
+				blocks_affected.moved_blocks[imoved_blk].znew = z_to;
+				blocks_affected.moved_blocks[imoved_blk].swapped_to_empty = FALSE;
+				blocks_affected.num_moved_blocks ++;
+				
+				imoved_blk = blocks_affected.num_moved_blocks;
+				blocks_affected.moved_blocks[imoved_blk].block_num = b_to;
+				blocks_affected.moved_blocks[imoved_blk].xold = x_to;
+				blocks_affected.moved_blocks[imoved_blk].xnew = x_from;
+				blocks_affected.moved_blocks[imoved_blk].yold = y_to;
+				blocks_affected.moved_blocks[imoved_blk].ynew = y_from;
+				blocks_affected.moved_blocks[imoved_blk].zold = z_from;
+				blocks_affected.moved_blocks[imoved_blk].znew = z_to;
+				blocks_affected.moved_blocks[imoved_blk].swapped_to_empty = FALSE;
+				blocks_affected.num_moved_blocks ++;
 
-		block[b_from].x = x_to;
-		block[b_from].y = y_to;
-		block[b_from].z = z_to;
+			} // Finish swapping the blocks and setting up blocks_affected
+				
+		} // Finish going through all the blocks in the chain
+
+	} else { 
+		// This is not a chain - I could use the from and to info from before
 		
-		blocks_affected.num_moved_blocks = 2;
-		blocks_affected.moved_blocks[0].block_num = b_from;
-		blocks_affected.moved_blocks[0].xold = x_from;
-		blocks_affected.moved_blocks[0].xnew = x_to;
-		blocks_affected.moved_blocks[0].yold = y_from;
-		blocks_affected.moved_blocks[0].ynew = y_to;
+		// Check whether the to_location is empty
+		if (b_to == EMPTY) {
+			
+			// Swap the block, dont swap the nets yet
+			block[b_from].x = x_to;
+			block[b_from].y = y_to;
+			block[b_from].z = z_to;
+		
+			// Sets up the blocks moved
+			imoved_blk = blocks_affected.num_moved_blocks;
+			blocks_affected.moved_blocks[imoved_blk].block_num = b_from;
+			blocks_affected.moved_blocks[imoved_blk].xold = x_from;
+			blocks_affected.moved_blocks[imoved_blk].xnew = x_to;
+			blocks_affected.moved_blocks[imoved_blk].yold = y_from;
+			blocks_affected.moved_blocks[imoved_blk].ynew = y_to;
+			blocks_affected.moved_blocks[imoved_blk].zold = z_from;
+			blocks_affected.moved_blocks[imoved_blk].znew = z_to;
+			blocks_affected.moved_blocks[imoved_blk].swapped_to_empty = TRUE;
+			blocks_affected.num_moved_blocks++;
+		
+		} else {
+			
+			assert (get_chain_index(b_to) == -1);
+			/* if (get_chain_index(b_to) == -1) ABORT SWAP */
 
-		blocks_affected.moved_blocks[1].block_num = b_to;
-		blocks_affected.moved_blocks[1].xold = x_to;
-		blocks_affected.moved_blocks[1].xnew = x_from;
-		blocks_affected.moved_blocks[1].yold = y_to;
-		blocks_affected.moved_blocks[1].ynew = y_from;
-	}
+			// Swap the block, dont swap the nets yet
+			block[b_to].x = x_from;
+			block[b_to].y = y_from;
+			block[b_to].z = z_from;
 
+			block[b_from].x = x_to;
+			block[b_from].y = y_to;
+			block[b_from].z = z_to;
+		
+			// Sets up the blocks moved
+			imoved_blk = blocks_affected.num_moved_blocks;
+			blocks_affected.moved_blocks[imoved_blk].block_num = b_from;
+			blocks_affected.moved_blocks[imoved_blk].xold = x_from;
+			blocks_affected.moved_blocks[imoved_blk].xnew = x_to;
+			blocks_affected.moved_blocks[imoved_blk].yold = y_from;
+			blocks_affected.moved_blocks[imoved_blk].ynew = y_to;
+			blocks_affected.moved_blocks[imoved_blk].zold = z_from;
+			blocks_affected.moved_blocks[imoved_blk].znew = z_to;
+			blocks_affected.moved_blocks[imoved_blk].swapped_to_empty = FALSE;
+			blocks_affected.num_moved_blocks ++;
+			
+			imoved_blk = blocks_affected.num_moved_blocks;
+			blocks_affected.moved_blocks[imoved_blk].block_num = b_to;
+			blocks_affected.moved_blocks[imoved_blk].xold = x_to;
+			blocks_affected.moved_blocks[imoved_blk].xnew = x_from;
+			blocks_affected.moved_blocks[imoved_blk].yold = y_to;
+			blocks_affected.moved_blocks[imoved_blk].ynew = y_from;
+			blocks_affected.moved_blocks[imoved_blk].zold = z_from;
+			blocks_affected.moved_blocks[imoved_blk].znew = z_to;
+			blocks_affected.moved_blocks[imoved_blk].swapped_to_empty = FALSE;
+			blocks_affected.num_moved_blocks ++;
+
+		} // Finish swapping the blocks and setting up blocks_affected
+
+	} // Finish handling cases for blocks in chain and otherwise
+
+#endif
+
+	// Find all the nets affected by this swap
 	num_nets_affected = find_affected_nets(ts_nets_to_update);
 
 	/* Go through all the pins in all the blocks moved and update the bounding boxes.  *
@@ -1253,16 +1387,28 @@ static int try_swap(float t, float *cost, float *bb_cost, float *timing_cost,
 
 		/* Update clb data structures since we kept the move. */
 		/* Swap physical location */
-		grid[x_to][y_to].blocks[z_to] = b_from;
-		grid[x_from][y_from].blocks[z_from] = b_to;
+		for (iblk = 0; iblk < blocks_affected.num_moved_blocks; iblk++) {
 
-		if (EMPTY == b_to) { /* Moved to an empty location */
-			grid[x_to][y_to].usage++;
-			grid[x_from][y_from].usage--;
-		}
-	}
+			x_to = blocks_affected.moved_blocks[iblk].xnew;
+			y_to = blocks_affected.moved_blocks[iblk].ynew;
+			z_to = blocks_affected.moved_blocks[iblk].znew;
 
-	else { /* Move was rejected.  */
+			x_from = blocks_affected.moved_blocks[iblk].xold;
+			y_from = blocks_affected.moved_blocks[iblk].yold;
+			z_from = blocks_affected.moved_blocks[iblk].zold;
+
+			b_from = blocks_affected.moved_blocks[iblk].block_num;
+
+			grid[x_to][y_to].blocks[z_to] = b_from;
+
+			if (blocks_affected.moved_blocks[iblk].swapped_to_empty == TRUE) {
+				grid[x_to][y_to].usage++;
+				grid[x_from][y_from].usage--;
+			}
+			
+		} // Finish updating clb for all blocks
+
+	} else { /* Move was rejected.  */
 
 		/* Reset the net cost function flags first. */
 		for (inet_affected = 0; inet_affected < num_nets_affected; inet_affected++) {
@@ -1272,13 +1418,14 @@ static int try_swap(float t, float *cost, float *bb_cost, float *timing_cost,
 		}
 
 		/* Restore the block data structures to their state before the move. */
-		block[b_from].x = x_from;
-		block[b_from].y = y_from;
-		block[b_from].z = z_from;
-		if (b_to != EMPTY) {
-			block[b_to].x = x_to;
-			block[b_to].y = y_to;
-			block[b_to].z = z_to;
+		for (iblk = 0; iblk < blocks_affected.num_moved_blocks; iblk++) {
+
+			b_from = blocks_affected.moved_blocks[iblk].block_num;
+
+			block[b_from].x = blocks_affected.moved_blocks[iblk].xold;
+			block[b_from].y = blocks_affected.moved_blocks[iblk].yold;
+			block[b_from].z = blocks_affected.moved_blocks[iblk].zold;
+		
 		}
 	}
 
@@ -1743,7 +1890,7 @@ static void free_placement_structs(
 	/* Frees the major structures needed by the placer (and not needed       *
 	 * elsewhere).   */
 
-	int inet;
+	int inet, ichain;
 
 	free_legal_placements();
 	free_fast_cost_update();
@@ -1779,16 +1926,24 @@ static void free_placement_structs(
 	free(temp_net_cost);
 	free(bb_num_on_edges);
 	free(bb_coords);
+	
+	free_placement_structs();
 
+	for (ichain = 0; ichain < num_chains; ichain ++)
+		free(pl_chains[ichain].members);
+	free(pl_chains);
+	
 	net_cost = NULL; /* Defensive coding. */
 	temp_net_cost = NULL;
 	bb_num_on_edges = NULL;
 	bb_coords = NULL;
+	pl_chains = NULL;
 }
 
 static void alloc_and_load_placement_structs(
 		float place_cost_exp, float ***old_region_occ_x,
-		float ***old_region_occ_y, struct s_placer_opts placer_opts) {
+		float ***old_region_occ_y, struct s_placer_opts placer_opts,
+		t_direct_inf *directs, int num_directs) {
 
 	/* Allocates the major structures needed only by the placer, primarily for *
 	 * computing costs quickly and such.                                       */
@@ -1871,6 +2026,8 @@ static void alloc_and_load_placement_structs(
 	net_pin_index = alloc_and_load_net_pin_index();
 
 	alloc_and_load_try_swap_structs();
+
+	num_chains = alloc_and_load_placement_macros(directs, num_directs, &pl_chains);
 }
 
 static void alloc_and_load_try_swap_structs() {
@@ -2377,6 +2534,7 @@ static void initial_placement(enum e_pad_loc_type pad_loc_type,
 	/* Randomly places the blocks to create an initial placement.     */
 	int i, j, k, iblk, choice, type_index, x, y, z;
 	int *count; /* [0..num_types-1] */
+	int ichain, imember;
 
 	count = (int *) my_malloc(num_types * sizeof(int));
 	for(i = 0; i < num_types; i++) {
@@ -2386,18 +2544,27 @@ static void initial_placement(enum e_pad_loc_type pad_loc_type,
 	for (iblk = 0; iblk < num_blocks; iblk++) {
 		/* Don't do IOs if the user specifies IOs */
 		if (!(block[iblk].type == IO_TYPE && pad_loc_type == USER)) {
-			type_index = block[iblk].type->index;
-			assert(count[type_index] > 0);
-			choice = my_irand(count[type_index] - 1);
-			x = legal_pos[type_index][choice].x;
-			y = legal_pos[type_index][choice].y;
-			z = legal_pos[type_index][choice].z;
-			grid[x][y].blocks[z] = iblk;
-			grid[x][y].usage++;
 
-			/* Ensure randomizer doesn't pick this block again */
-			legal_pos[type_index][choice] = legal_pos[type_index][count[type_index] - 1]; /* overwrite used block position */
-			count[type_index]--;
+			ichain = get_chain_index(iblk);
+
+			if (ichain == -1) {
+				type_index = block[iblk].type->index;
+				assert(count[type_index] > 0);
+				choice = my_irand(count[type_index] - 1);
+				x = legal_pos[type_index][choice].x;
+				y = legal_pos[type_index][choice].y;
+				z = legal_pos[type_index][choice].z;
+				grid[x][y].blocks[z] = iblk;
+				grid[x][y].usage++;
+
+				/* Ensure randomizer doesn't pick this block again */
+				legal_pos[type_index][choice] = legal_pos[type_index][count[type_index] - 1]; /* overwrite used block position */
+				count[type_index]--;
+			} else {
+				// Go through this chain and place the members in the correct orientation
+				;
+
+			}
 		}
 	}
 

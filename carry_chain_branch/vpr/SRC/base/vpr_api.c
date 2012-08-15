@@ -55,7 +55,7 @@ static boolean has_printhandler_pre_vpr = FALSE;
 void vpr_print_title(void) {
 	vpr_printf(TIO_MESSAGE_INFO, "\n");
 	vpr_printf(TIO_MESSAGE_INFO, "VPR FPGA Placement and Routing.\n");
-	vpr_printf(TIO_MESSAGE_INFO, "Version: Version " VPR_VERSION);
+	vpr_printf(TIO_MESSAGE_INFO, "Version: Version " VPR_VERSION "\n");
 	vpr_printf(TIO_MESSAGE_INFO, "Compiled: " __DATE__ ".\n");
 	vpr_printf(TIO_MESSAGE_INFO, "Original VPR by V. Betz.\n");
 	vpr_printf(TIO_MESSAGE_INFO, "Timing-driven placement enhancements by A. Marquardt.\n");
@@ -397,7 +397,7 @@ void vpr_place_and_route(INP t_vpr_setup vpr_setup, INP t_arch arch) {
 	place_and_route(vpr_setup.Operation, vpr_setup.PlacerOpts, vpr_setup.FileNameOpts.PlaceFile,
 			vpr_setup.FileNameOpts.NetFile, vpr_setup.FileNameOpts.ArchFile, vpr_setup.FileNameOpts.RouteFile,
 			vpr_setup.AnnealSched, vpr_setup.RouterOpts, vpr_setup.RoutingArch, vpr_setup.Segments, vpr_setup.Timing, arch.Chans,
-			arch.models);
+			arch.models, arch.Directs, arch.num_directs);
 
 	fflush(stdout);
 
@@ -552,6 +552,10 @@ static void free_complex_block_types(void) {
 		free(type_descriptors[i].pin_class);
 		free(type_descriptors[i].grid_loc_def);
 
+		free(type_descriptors[i].is_Fc_frac);
+		free(type_descriptors[i].is_Fc_full_flex);
+		free(type_descriptors[i].Fc);
+		
 		free_pb_type(type_descriptors[i].pb_type);
 		free(type_descriptors[i].pb_type);		
 	}
