@@ -48,9 +48,6 @@ static int ** blk_pin_to_direct_src_or_sink = NULL;
 static t_pl_macro * pl_macro_chains = NULL;
 static int pl_macro_num_chains;
 
-/*** These are the file scope subroutines declarations. ***/
-static void free_placement_macros_structs(void);
-
 /*** These are the file scope subroutines defintions. ***/
 int alloc_and_load_placement_macros(t_direct_inf* directs, int num_directs, t_pl_macro ** chains){
 	

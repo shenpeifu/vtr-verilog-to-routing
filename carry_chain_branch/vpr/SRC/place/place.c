@@ -1927,7 +1927,7 @@ static void free_placement_structs(
 	free(bb_num_on_edges);
 	free(bb_coords);
 	
-	free_placement_structs();
+	free_placement_macros_structs();
 
 	for (ichain = 0; ichain < num_chains; ichain ++)
 		free(pl_chains[ichain].members);
@@ -2562,6 +2562,7 @@ static void initial_placement(enum e_pad_loc_type pad_loc_type,
 				count[type_index]--;
 			} else {
 				// Go through this chain and place the members in the correct orientation
+				for (imember = 0; imember < pl_chains[ichain].num_blocks; imember++)
 				;
 
 			}
