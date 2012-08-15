@@ -47,6 +47,8 @@ static void free_arch(t_arch* Arch);
 static void free_options(t_options *options);
 static void free_circuit(void);
 	
+static boolean has_printhandler_pre_vpr = FALSE;
+
 /* Local subroutines end */
 
 /* Display general VPR information */
@@ -140,8 +142,15 @@ void vpr_init(INP int argc, INP char **argv, OUTP t_options *options, OUTP t_vpr
 	unsigned long maxWarningCount = 1000;
 	unsigned long maxErrorCount = 1;
 
-	PrintHandlerNew( pszLogFileName );
-	PrintHandlerInit(enableTimeStamps, maxWarningCount, maxErrorCount );
+	if(PrintHandlerExists() == 1) {
+		has_printhandler_pre_vpr = TRUE;
+	} else {
+		has_printhandler_pre_vpr = FALSE;
+	}
+	if(has_printhandler_pre_vpr == FALSE) {
+		PrintHandlerNew( pszLogFileName );
+		PrintHandlerInit(enableTimeStamps, maxWarningCount, maxErrorCount );
+	}
 
 
 	/* Print title message */
@@ -388,7 +397,7 @@ void vpr_place_and_route(INP t_vpr_setup vpr_setup, INP t_arch arch) {
 	place_and_route(vpr_setup.Operation, vpr_setup.PlacerOpts, vpr_setup.FileNameOpts.PlaceFile,
 			vpr_setup.FileNameOpts.NetFile, vpr_setup.FileNameOpts.ArchFile, vpr_setup.FileNameOpts.RouteFile,
 			vpr_setup.AnnealSched, vpr_setup.RouterOpts, vpr_setup.RoutingArch, vpr_setup.Segments, vpr_setup.Timing, arch.Chans,
-			arch.models, arch.Directs, arch.num_directs);
+			arch.models);
 
 	fflush(stdout);
 
@@ -543,10 +552,6 @@ static void free_complex_block_types(void) {
 		free(type_descriptors[i].pin_class);
 		free(type_descriptors[i].grid_loc_def);
 
-		free(type_descriptors[i].is_Fc_frac);
-		free(type_descriptors[i].is_Fc_full_flex);
-		free(type_descriptors[i].Fc);
-		
 		free_pb_type(type_descriptors[i].pb_type);
 		free(type_descriptors[i].pb_type);		
 	}
@@ -689,7 +694,10 @@ void vpr_free_all(INOUTP t_arch Arch, INOUTP t_options options, INOUTP t_vpr_set
 	free_circuit();
 	free_arch(&Arch);	
 	free_echo_file_info();
-	PrintHandlerDelete( );
+	free_output_file_names();
+	if(has_printhandler_pre_vpr == FALSE) {
+		PrintHandlerDelete( );
+	}
 }
 
 
