@@ -39,12 +39,6 @@
  * Global data types and constants
  ******************************************************************************/
 
-#define CLUSTERER_CRITICALITY 'F'
-/* What should the clusterer use to calculate criticality?  Possible values:
-	'F' - Fancy: Uses normalized slack, T_arr and critical input/output paths.
-	'S' - Simple: Uses net_slack_ratio, like the placer and router.
-	'H' - Hybrid: Uses normalized values for block criticalities but net_slack_ratio for lengthgain. */
-
 #ifndef SPEC
 #define DEBUG 1			/* Echoes input & checks error conditions */
 /* Only causes about a 1% speed degradation in V 3.10 */
@@ -338,12 +332,12 @@ typedef struct s_tnode {
 
 	/* pre-packing timing graph */
 	int model_port, model_pin; /* technology mapped model port/pin */
-#if CLUSTERER_CRITICALITY != 'S'
+
 	long num_critical_input_paths, num_critical_output_paths; /* count of critical paths passing through this tnode */
 	float normalized_slack; /* slack (normalized with respect to max slack) */
 	float normalized_total_critical_paths; /* critical path count (normalized with respect to max count) */
 	float normalized_T_arr; /* arrival time (normalized with respect to max time) */
-#endif
+
 	int index;
 } t_tnode;
 
@@ -366,7 +360,7 @@ typedef struct s_io {
 
 typedef struct s_timing_stats {
 	float ** critical_path_delay; /* [0..num_netlist_clocks - 1 (source)][0..num_netlist_clocks - 1 (destination)] */
-	float * least_slack_in_domain; /* [0..num_netlist_clocks - 1] */
+	float ** least_slack_per_constraint; /* As above */
 } t_timing_stats;
 /* Timing statistics for final reporting. */
 
@@ -441,25 +435,12 @@ typedef struct s_net {
 	boolean is_const_gen;
 } t_net;
 
-/* s_grid_tile defines what can be legally placed at an (x,y) location
- * in the FPGA, and what is currently placed there.  At a given 
- * (x,y) location, we will place one *type* of block, but depending
- * on the capacity of that physical block type, we may be able to 
- * accomodate more than one netlist block (i.e. up to type->capacity
- * blocks of that type can be placed there).
- * Each clustered netlist block placed at an (x,y) location is put 
- * in a different entry in the grid[x][y].block[z] array; i.e. each
- * has a different z value.  z currently doesn't have any physical 
- * meaning; it is just the index used to go through all blocks at that
- * (x,y) location.
- * Note that an (x,y) location defines the intersection of two routing
- * channels, so this coordinate system is really routing-centric.
- *
+/* s_grid_tile is the minimum tile of the fpga                         
  * type:  Pointer to type descriptor, NULL for illegal, IO_TYPE for io 
  * offset: Number of grid tiles above the bottom location of a block 
  * usage: Number of blocks used in this grid tile
- * blocks[]: Array of logical blocks placed in a physical position, 
- *     EMPTY means no block at that index. */
+ * blocks[]: Array of logical blocks placed in a physical position, EMPTY means
+ no block at that index */
 typedef struct s_grid_tile {
 	t_type_ptr type;
 	int offset;
