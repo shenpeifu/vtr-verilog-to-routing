@@ -801,7 +801,9 @@ void alloc_and_load_blk_pin_to_idirect(t_direct_inf* directs, int num_directs,
 								iblk_pin = port_pin_to_blk_pin[iblk][iport][iport_pin];
 
 								// Check the fc for the pin, direct chain link only if fc == 0
-								if (block[iblk].type->Fc[iblk_pin] == 0) {
+								// AUG 16, 2012
+								// Disable for now - waiting for pin-based fc implementation by Nooruddin
+								//if (block[iblk].type->Fc[iblk_pin] == 0) {
 								
 									temp_blk_pin_to_idirect[iblk][iblk_pin] = idirect;
 							
@@ -815,7 +817,7 @@ void alloc_and_load_blk_pin_to_idirect(t_direct_inf* directs, int num_directs,
 										temp_blk_pin_to_direct_src_or_sink[iblk][iblk_pin] = SOURCE;
 									}
 
-								}
+								//}
 							} // Finish marking all the pins
 
 						} else {
@@ -826,7 +828,9 @@ void alloc_and_load_blk_pin_to_idirect(t_direct_inf* directs, int num_directs,
 								iblk_pin = port_pin_to_blk_pin[iblk][iport][iport_pin];
 
 								// Check the fc for the pin, direct chain link only if fc == 0
-								if (block[iblk].type->Fc[iblk_pin] == 0) {
+								// AUG 16, 2012
+								// Disable for now - waiting for pin-based fc implementation by Nooruddin
+								//if (block[iblk].type->Fc[iblk_pin] == 0) {
 								
 									temp_blk_pin_to_idirect[iblk][iblk_pin] = idirect;
 							
@@ -840,7 +844,7 @@ void alloc_and_load_blk_pin_to_idirect(t_direct_inf* directs, int num_directs,
 										temp_blk_pin_to_direct_src_or_sink[iblk][iblk_pin] = SOURCE;
 									}
 
-								}
+								//}
 							} // Finish marking all the pins
 
 						}
@@ -878,7 +882,9 @@ void alloc_and_load_blk_pin_to_idirect(t_direct_inf* directs, int num_directs,
 								iblk_pin = port_pin_to_blk_pin[iblk][iport][iport_pin];
 							
 								// Check the fc for the pin, direct chain link only if fc == 0
-								if (block[iblk].type->Fc[iblk_pin] == 0) {
+								// AUG 16, 2012
+								// Disable for now - waiting for pin-based fc implementation by Nooruddin
+								//if (block[iblk].type->Fc[iblk_pin] == 0) {
 								
 									temp_blk_pin_to_idirect[iblk][iblk_pin] = idirect;
 								
@@ -894,7 +900,7 @@ void alloc_and_load_blk_pin_to_idirect(t_direct_inf* directs, int num_directs,
 
 									// Only support chains with block height 1
 									assert(block[iblk].type->height == 1);
-								}
+								//}
 							} // Finish marking all the pins
 
 						} else {
@@ -905,7 +911,9 @@ void alloc_and_load_blk_pin_to_idirect(t_direct_inf* directs, int num_directs,
 								iblk_pin = port_pin_to_blk_pin[iblk][iport][iport_pin];
 							
 								// Check the fc for the pin, direct chain link only if fc == 0
-								if (block[iblk].type->Fc[iblk_pin] == 0) {
+								// AUG 16, 2012
+								// Disable for now - waiting for pin-based fc implementation by Nooruddin
+								//if (block[iblk].type->Fc[iblk_pin] == 0) {
 								
 									temp_blk_pin_to_idirect[iblk][iblk_pin] = idirect;
 								
@@ -921,7 +929,7 @@ void alloc_and_load_blk_pin_to_idirect(t_direct_inf* directs, int num_directs,
 									
 									// Only support chains with block height 1
 									assert(block[iblk].type->height == 1);
-								}
+								//}
 							} // Finish marking all the pins
 
 						}
