@@ -551,6 +551,7 @@ alloc_and_load_actual_fc(INP int L_num_types, INP t_type_ptr types,
 	int *Result = NULL;
 	int fac, num_sets;
 	float Fc;
+	int ipin, iclass;
 
 	*Fc_clipped = FALSE;
 
@@ -566,9 +567,7 @@ alloc_and_load_actual_fc(INP int L_num_types, INP t_type_ptr types,
 	Result = (int *) my_malloc(sizeof(int) * L_num_types);
 
 	for (i = 0; i < L_num_types; ++i) {
-		Fc =
-				(is_Fc_out ?
-						type_descriptors[i].Fc_out : type_descriptors[i].Fc_in);
+		Fc = type_descriptors[i].Fc[0];
 
 		if (type_descriptors[i].is_Fc_frac) {
 			Result[i] = fac * nint(num_sets * Fc);
@@ -576,7 +575,14 @@ alloc_and_load_actual_fc(INP int L_num_types, INP t_type_ptr types,
 			Result[i] = (int)Fc;
 		}
 
-		if (is_Fc_out && type_descriptors[i].is_Fc_out_full_flex) {
+		//Find the first output pin
+		for (ipin = 0; ipin < type_descriptors[i].num_pins; ipin++) {
+			iclass = type_descriptors[i].pin_class[ipin];
+			if (type_descriptors[i].class_inf[iclass].type == DRIVER)
+				break;
+		}
+
+		if (is_Fc_out && type_descriptors[i].is_Fc_full_flex[ipin]) {
 			Result[i] = nodes_per_chan;
 		}
 
