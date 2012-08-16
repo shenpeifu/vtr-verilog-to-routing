@@ -115,6 +115,9 @@ Architecture based off Stratix IV
 			<cb type="pattern">1 1 1 1</cb>
 			</segment>
 		</segmentlist>
+    <directlist>
+      <direct name="adder_carry" from_pin="adder.cout" to_pin="adder.cin" x_offset="0" y_offset="1" z_offset="0"/>
+    </directlist>
 
 		<complexblocklist>
       <!-- Capacity is a unique property of I/Os, it is the maximum number of I/Os that can be placed at the same (X,Y) location on the FPGA -->
@@ -146,8 +149,7 @@ Architecture based off Stratix IV
           </interconnect>
         </mode>
 
-        <fc_in type="frac">0.15</fc_in>
-        <fc_out type="frac">0.10</fc_out>
+        <fc default_in_type="frac" default_in_val="0.15" default_out_type="frac" default_out_val="0.10"/>
 
         <!-- IOs go on the periphery of the FPGA, for consistency, 
           make it physically equivalent on all sides so that only one definition of I/Os is needed.
@@ -236,9 +238,8 @@ Architecture based off Stratix IV
           </direct>
         </interconnect>
 
-        
-        <fc_in type="frac">0.15</fc_in>
-        <fc_out type="frac">0.1</fc_out>
+
+        <fc default_in_type="frac" default_in_val="0.15" default_out_type="frac" default_out_val="0.10"/>
 
         <pinlocations pattern="spread"/>
         <gridlocations>
@@ -369,8 +370,7 @@ Architecture based off Stratix IV
 
 
 
-        <fc_in type="frac">0.15</fc_in>
-        <fc_out type="frac">0.10</fc_out>
+        <fc default_in_type="frac" default_in_val="0.15" default_out_type="frac" default_out_val="0.10"/>
         <pinlocations pattern="spread"/>
 
         <gridlocations>
@@ -616,8 +616,7 @@ Architecture based off Stratix IV
             </interconnect>
           </mode>
 
-        <fc_in type="frac">0.15</fc_in>
-        <fc_out type="frac">0.10</fc_out>
+        <fc default_in_type="frac" default_in_val="0.15" default_out_type="frac" default_out_val="0.10"/>
         <pinlocations pattern="spread"/>
         <gridlocations>
           <loc type="col" start="2" repeat="8" priority="2"/>
@@ -699,9 +698,8 @@ Architecture based off Stratix IV
           <direct name="carry4" input="ble[3:3].cout" output="carry_chain_example.cout"/>
         </interconnect>
 
-        
-        <fc_in type="frac">0.15</fc_in>
-        <fc_out type="frac">0.1</fc_out>
+
+        <fc default_in_type="frac" default_in_val="0.15" default_out_type="frac" default_out_val="0.10"/>
 
         <pinlocations pattern="spread"/>
         <gridlocations>
@@ -748,8 +746,10 @@ Architecture based off Stratix IV
         </interconnect>
 	</mode>
 
-        <fc_in type="frac">0.15</fc_in>
-        <fc_out type="frac">0.10</fc_out>
+        <fc default_in_type="frac" default_in_val="0.15" default_out_type="frac" default_out_val="0.15">
+          <pin name="cin" fc_type="frac" fc_val="0"/>
+          <pin name="cout" fc_type="frac" fc_val="0"/>
+        </fc>
         <pinlocations pattern="spread"/>
 
         <gridlocations>
