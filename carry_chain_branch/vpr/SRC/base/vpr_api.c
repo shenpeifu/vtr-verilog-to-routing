@@ -397,7 +397,7 @@ void vpr_place_and_route(INP t_vpr_setup vpr_setup, INP t_arch arch) {
 	place_and_route(vpr_setup.Operation, vpr_setup.PlacerOpts, vpr_setup.FileNameOpts.PlaceFile,
 			vpr_setup.FileNameOpts.NetFile, vpr_setup.FileNameOpts.ArchFile, vpr_setup.FileNameOpts.RouteFile,
 			vpr_setup.AnnealSched, vpr_setup.RouterOpts, vpr_setup.RoutingArch, vpr_setup.Segments, vpr_setup.Timing, arch.Chans,
-			arch.models, arch.Directs, arch.num_directs);
+			arch.models);
 
 	fflush(stdout);
 
@@ -552,10 +552,6 @@ static void free_complex_block_types(void) {
 		free(type_descriptors[i].pin_class);
 		free(type_descriptors[i].grid_loc_def);
 
-		free(type_descriptors[i].is_Fc_frac);
-		free(type_descriptors[i].is_Fc_full_flex);
-		free(type_descriptors[i].Fc);
-		
 		free_pb_type(type_descriptors[i].pb_type);
 		free(type_descriptors[i].pb_type);		
 	}
@@ -768,7 +764,16 @@ void vpr_free_all(INOUTP t_arch Arch, INOUTP t_options options, INOUTP t_vpr_set
 		ShowSetup(options, vpr_setup);
 	}
 
-
+	/* Output file names management */
+	void vpr_alloc_and_load_output_file_names() {
+		alloc_and_load_output_file_names();
+	}
+	void vpr_set_output_file_name(enum e_output_files ename, const char *name) {
+		setOutputFileName(ename, name);
+	}
+	char *vpr_get_output_file_name(enum e_output_files ename) {
+		return getOutputFileName(ename);
+	}
 
 
 
