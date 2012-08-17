@@ -596,17 +596,6 @@ typedef struct s_direct_inf {
 	int line;
 }t_direct_inf;
 
-struct transistor_record {
-	float min_length;
-	float min_width;
-	float Vth;
-	float CJ;
-	float CJSW;
-	float CJSWG;
-	float CGDO;
-	float COX;
-	float EC;
-};
 /* Record for storing the technology parameters for NMOS and
  PMOS type of transistors
 
@@ -620,15 +609,26 @@ struct transistor_record {
  COX:        gate-oxide cpacitance per unit area
  EC:         contant for leakage current calculation
  */
-
-struct poly_record {
-	float Cpoly;
-	float poly_extension;
+struct transistor_record {
+	float min_length;
+	float min_width;
+	float Vth;
+	float CJ;
+	float CJSW;
+	float CJSWG;
+	float CGDO;
+	float COX;
+	float EC;
 };
+
 /* Record for Poly Data
  Cpoly: poly capacitance
  poly_extention: poly extention
  */
+struct poly_record {
+	float Cpoly;
+	float poly_extension;
+};
 
 /*   Detailed routing architecture */
 typedef struct s_arch t_arch;
