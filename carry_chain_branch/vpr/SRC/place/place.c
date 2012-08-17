@@ -272,27 +272,16 @@ void try_place(struct s_placer_opts placer_opts,
 	 * width should be taken to when calculating costs.  This allows a       *
 	 * greater bias for anisotropic architectures.                           */
 
-	int tot_iter, inner_iter, success_sum;
-	int move_lim, moves_since_cost_recompute, width_fac;
-	float t, success_rat, rlim;
-	float cost, timing_cost, bb_cost, new_bb_cost, new_timing_cost;
-	float delay_cost, new_delay_cost, place_delay_value;
-	float inverse_prev_bb_cost, inverse_prev_timing_cost;
-	float oldt;
-	double av_cost, av_bb_cost, av_timing_cost, av_delay_cost, sum_of_squares,
-			std_dev;
-	float **old_region_occ_x, **old_region_occ_y;
+	int tot_iter, inner_iter, success_sum, move_lim, moves_since_cost_recompute, width_fac,
+		num_connections, inet, ipin, outer_crit_iter_count, inner_crit_iter_count,
+		inner_recompute_limit;
+	float t, success_rat, rlim, cost, timing_cost, bb_cost, new_bb_cost, new_timing_cost,
+		delay_cost, new_delay_cost, place_delay_value, inverse_prev_bb_cost, inverse_prev_timing_cost,
+		oldt, **old_region_occ_x, **old_region_occ_y, **net_delay = NULL, crit_exponent,
+		first_rlim, final_rlim, inverse_delta_rlim, critical_path_delay,
+		**remember_net_delay_original_ptr; /*used to free net_delay if it is re-assigned */
+	double av_cost, av_bb_cost, av_timing_cost, av_delay_cost, sum_of_squares, std_dev;
 	char msg[BUFSIZE];
-	int num_connections;
-	int inet, ipin, outer_crit_iter_count, inner_crit_iter_count,
-			inner_recompute_limit;
-	float **net_delay = NULL;
-	float crit_exponent;
-	float first_rlim, final_rlim, inverse_delta_rlim;
-	float **remember_net_delay_original_ptr; /*used to free net_delay if it is re-assigned */
-
-	int i, j;
-	t_timing_stats * timing_stats;
 	t_slack * slacks = NULL;
 
 	/* Allocated here because it goes into timing critical code where each memory allocation is expensive */
@@ -326,13 +315,11 @@ void try_place(struct s_placer_opts placer_opts,
 
 		load_constant_net_delay(net_delay, place_delay_value);
 		load_timing_graph_net_delays(net_delay);
-		timing_stats = do_timing_analysis(slacks, FALSE, FALSE, TRUE);
+		do_timing_analysis(slacks, FALSE, FALSE, TRUE);
 
 		if (getEchoEnabled()) {
-			if (num_constrained_clocks == 1) {
-				if(isEchoFileEnabled(E_ECHO_PLACEMENT_CRITICAL_PATH))
-					print_critical_path(getEchoFileName(E_ECHO_PLACEMENT_CRITICAL_PATH));
-			}
+			if(isEchoFileEnabled(E_ECHO_PLACEMENT_CRITICAL_PATH))
+				print_critical_path(getEchoFileName(E_ECHO_PLACEMENT_CRITICAL_PATH));
 			if(isEchoFileEnabled(E_ECHO_PLACEMENT_LOWER_BOUND_SINK_DELAYS))
 				print_sink_delays(getEchoFileName(E_ECHO_PLACEMENT_LOWER_BOUND_SINK_DELAYS));
 			if(isEchoFileEnabled(E_ECHO_PLACEMENT_LOGIC_SINK_DELAYS))
@@ -344,8 +331,7 @@ void try_place(struct s_placer_opts placer_opts,
 
 		load_constant_net_delay(net_delay, 0);
 		load_timing_graph_net_delays(net_delay);
-		timing_stats = do_timing_analysis(slacks, FALSE, FALSE, TRUE);
-		free_timing_stats(timing_stats);
+		do_timing_analysis(slacks, FALSE, FALSE, TRUE);
 
 #endif
 
@@ -402,8 +388,7 @@ void try_place(struct s_placer_opts placer_opts,
 		}
 
 		load_timing_graph_net_delays(net_delay);
-		timing_stats = do_timing_analysis(slacks, FALSE, FALSE, FALSE);
-		free_timing_stats(timing_stats);
+		do_timing_analysis(slacks, FALSE, FALSE, FALSE);
 		load_criticalities(slacks->net_slack_ratio, crit_exponent);
 		if (getEchoEnabled()) {
 			if(isEchoFileEnabled(E_ECHO_INITIAL_PLACEMENT_TIMING_GRAPH))
@@ -523,8 +508,7 @@ void try_place(struct s_placer_opts placer_opts,
 				 *because it accesses point_to_point_delay array */
 
 				load_timing_graph_net_delays(net_delay);
-				timing_stats = do_timing_analysis(slacks, FALSE, FALSE, FALSE);
-				free_timing_stats(timing_stats);
+				do_timing_analysis(slacks, FALSE, FALSE, FALSE);
 				load_criticalities(slacks->net_slack_ratio, crit_exponent);
 				/*recompute costs from scratch, based on new criticalities */
 				comp_td_costs(&timing_cost, &delay_cost);
@@ -546,6 +530,8 @@ void try_place(struct s_placer_opts placer_opts,
 					old_region_occ_y, 
 					placer_opts.place_algorithm, placer_opts.timing_tradeoff,
 					inverse_prev_bb_cost, inverse_prev_timing_cost, &delay_cost) == 1) {
+
+				/* Move was accepted.  Update statistics that are useful for the annealing schedule. */
 				success_sum++;
 				av_cost += cost;
 				av_bb_cost += bb_cost;
@@ -558,6 +544,9 @@ void try_place(struct s_placer_opts placer_opts,
 					|| placer_opts.place_algorithm
 							== PATH_TIMING_DRIVEN_PLACE) {
 
+				/* Do we want to re-timing analyze the circuit to get updated slack and criticality values? 
+				 * We do this only once in a while, since it is expensive.
+				 */
 				if (inner_crit_iter_count >= inner_recompute_limit
 						&& inner_iter != move_lim - 1) { /*on last iteration don't recompute */
 
@@ -568,14 +557,20 @@ void try_place(struct s_placer_opts placer_opts,
 #endif
 					if (placer_opts.place_algorithm
 							== NET_TIMING_DRIVEN_PLACE) {
+					    /* Use a constant delay per connection as the delay estimate, rather than
+						 * estimating based on the current placement.  Not a great idea, but not the 
+						 * default.
+						 */
 						place_delay_value = delay_cost / num_connections;
 						load_constant_net_delay(net_delay, place_delay_value,
 								clb_net, num_nets);
 					}
 
+					/* Using the delays in net_delay, do a timing analysis to update slacks and
+					 * criticalities; then update the timing cost since it will change.
+					 */
 					load_timing_graph_net_delays(net_delay);
-					timing_stats = do_timing_analysis(slacks, FALSE, FALSE, FALSE);
-					free_timing_stats(timing_stats);
+					do_timing_analysis(slacks, FALSE, FALSE, FALSE);
 					load_criticalities(slacks->net_slack_ratio, crit_exponent);
 					comp_td_costs(&timing_cost, &delay_cost);
 				}
@@ -711,8 +706,7 @@ void try_place(struct s_placer_opts placer_opts,
 						num_nets);
 
 			load_timing_graph_net_delays(net_delay);
-			timing_stats = do_timing_analysis(slacks, FALSE, FALSE, FALSE);
-			free_timing_stats(timing_stats);
+			do_timing_analysis(slacks, FALSE, FALSE, FALSE);
 			load_criticalities(slacks->net_slack_ratio, crit_exponent);
 			/*recompute criticaliies */
 			comp_td_costs(&timing_cost, &delay_cost);
@@ -758,8 +752,7 @@ void try_place(struct s_placer_opts placer_opts,
 					}
 
 					load_timing_graph_net_delays(net_delay);
-					timing_stats = do_timing_analysis(slacks, FALSE, FALSE, FALSE);
-					free_timing_stats(timing_stats);
+					do_timing_analysis(slacks, FALSE, FALSE, FALSE);
 					load_criticalities(slacks->net_slack_ratio, crit_exponent);
 					comp_td_costs(&timing_cost, &delay_cost);
 				}
@@ -795,6 +788,12 @@ void try_place(struct s_placer_opts placer_opts,
 
 #endif
 
+	// Thien:  print a message about number of aborted moves.
+	// Thien:  please add some subroutine hierarchy!  Too big!
+	// Put statistics counters (av_cost, success_sum, etc.) in a struct so a 
+	// pointer to it can be passed around. 
+	// Clean up anything else you can think of!
+
 #ifdef VERBOSE
 	if (getEchoEnabled() && isEchoFileEnabled(E_ECHO_END_CLB_PLACEMENT)) {
 		print_clb_placement(getEchoFileName(E_ECHO_END_CLB_PLACEMENT));
@@ -820,7 +819,8 @@ void try_place(struct s_placer_opts placer_opts,
 		net_delay = point_to_point_delay_cost; /*this makes net_delay up to date with    *
 		 *the same values that the placer is using*/
 		load_timing_graph_net_delays(net_delay);
-		timing_stats = do_timing_analysis(slacks, FALSE, FALSE, TRUE);
+
+		do_timing_analysis(slacks, FALSE, FALSE, FALSE);
 
 		if (getEchoEnabled()) {
 			if(isEchoFileEnabled(E_ECHO_PLACEMENT_SINK_DELAYS))
@@ -831,28 +831,13 @@ void try_place(struct s_placer_opts placer_opts,
 				print_net_slack_ratio(slacks->net_slack_ratio, getEchoFileName(E_ECHO_FINAL_PLACEMENT_NET_SLACK_RATIO));
 			if(isEchoFileEnabled(E_ECHO_FINAL_PLACEMENT_TIMING_GRAPH))
 				print_timing_graph(getEchoFileName(E_ECHO_FINAL_PLACEMENT_TIMING_GRAPH));
-			if (num_constrained_clocks == 1) {
-				if(isEchoFileEnabled(E_ECHO_PLACEMENT_CRIT_PATH))
-					print_critical_path(getEchoFileName(E_ECHO_PLACEMENT_CRIT_PATH));
-			}
+			if(isEchoFileEnabled(E_ECHO_PLACEMENT_CRIT_PATH))
+				print_critical_path(getEchoFileName(E_ECHO_PLACEMENT_CRIT_PATH));
 		}
-		if (num_constrained_clocks == 1) {
-			vpr_printf(TIO_MESSAGE_INFO, "Placement estimated critical path delay: %g ns\n\n", timing_stats->critical_path_delay[0][0] * 1e9);
-		} else if (num_constrained_clocks > 1) {
-			vpr_printf(TIO_MESSAGE_INFO, "Placement estimated minimum possible clock period to meet each constraint (including skew effects):\n");
-			for (i = 0; i < num_constrained_clocks; i++) {
-				for (j = 0; j < num_constrained_clocks; j++) {
-					if (timing_constraint[i][j] > -0.01 && timing_stats->critical_path_delay[i][j] > HUGE_NEGATIVE_FLOAT + 1) { 
-					/* if timing constraint is not DO_NOT_ANALYSE and if there was at least one path analyzed */
-						/* convert to nanoseconds */
-						vpr_printf(TIO_MESSAGE_INFO, "%s to %s: %g ns\n", constrained_clocks[i].name, 
-							constrained_clocks[j].name, timing_stats->critical_path_delay[i][j] * 1e9);
-					}
-				}
-			}
-			vpr_printf(TIO_MESSAGE_INFO, "\n");
-		}
-		free_timing_stats(timing_stats);
+		
+		/* Print critical path delay */
+		critical_path_delay = get_critical_path_delay();
+		vpr_printf(TIO_MESSAGE_INFO, "\nPlacement estimated critical path delay: %g ns\n", critical_path_delay * 1e9);
 	}
 
 	sprintf(msg,
@@ -2531,41 +2516,179 @@ static void free_legal_placements() {
 static void initial_placement(enum e_pad_loc_type pad_loc_type,
 		char *pad_loc_file) {
 
-	/* Randomly places the blocks to create an initial placement.     */
+	/* Randomly places the blocks to create an initial placement. We rely on
+	 * the legal_pos array already being loaded.  That legal_pos[itype] is an 
+	 * array that gives every legal value of (x,y,z) that can accomodate a block.
+	 * The number of such locations is given by num_legal_pos[itype].
+	 */
 	int i, j, k, iblk, choice, type_index, x, y, z;
-	int *count; /* [0..num_types-1] */
-	int ichain, imember;
+	int *free_locations; /* [0..num_types-1]. 
+						  * Stores how many locations there are for this type that *might* still be free.
+						  * That is, this stores the number of entries in legal_pos[itype] that are worth considering
+						  * as you look for a free location.
+						  */
+	int ichain, imember, member_x, member_y, member_z;
+	int itry, chains_max_num_tries, chain_placed, chain_can_be_placed;
 
-	count = (int *) my_malloc(num_types * sizeof(int));
-	for(i = 0; i < num_types; i++) {
-		count[i] = num_legal_pos[i];
+	free_locations = (int *) my_malloc(num_types * sizeof(int));
+	for (type_index = 0; type_index < num_types; type_index++) {
+		free_locations[type_index] = num_legal_pos[type_index];
 	}
 	
+	/* We'll use the grid to record where everything goes. Initialize to the grid has no 
+	 * blocks placed anywhere.
+	 */
+	for (i = 0; i <= nx + 1; i++) {
+		for (j = 0; j <= ny + 1; j++) {
+			grid[i][j].usage = 0;
+			type_index = grid[i][j].type->index;
+			for (k = 0; k < type_descriptors[type_index].capacity; k++) {
+				grid[i][j].blocks[k] = OPEN;
+			}
+		}
+	}
+
+	/* Similarly, mark all blocks as not being placed yet. */
 	for (iblk = 0; iblk < num_blocks; iblk++) {
-		/* Don't do IOs if the user specifies IOs */
-		if (!(block[iblk].type == IO_TYPE && pad_loc_type == USER)) {
+		block[iblk].x = -1;
+		block[iblk].y = -1;
+		block[iblk].z = -1;
+	}
 
-			ichain = get_chain_index(iblk);
+	chains_max_num_tries = 3;
+	chain_placed = TRUE;
+	/* Chains are harder to place.  Do them first */
+	for (ichain = 0; ichain < num_chains; ichain++) {
+		
+		// Assume that all the blocks in the chain are of the same type
+		iblk = pl_chains[ichain].members[0].blk_index;
+		type_index = block[iblk].type->index;
+		if (free_locations[type_index] < pl_chains[ichain].num_blocks) {
+			vpr_printf (TIO_MESSAGE_ERROR, "Initial placement failed. Could not place "
+					"chain length %d with head block %s£¨#%d); not enough free locations of type %s (#%d).\n", 
+					pl_chains[ichain].num_blocks, block[iblk].name, iblk, type_descriptors[type_index].name, type_index);
+		}
 
-			if (ichain == -1) {
-				type_index = block[iblk].type->index;
-				assert(count[type_index] > 0);
-				choice = my_irand(count[type_index] - 1);
-				x = legal_pos[type_index][choice].x;
-				y = legal_pos[type_index][choice].y;
-				z = legal_pos[type_index][choice].z;
-				grid[x][y].blocks[z] = iblk;
-				grid[x][y].usage++;
+		// Try to place the chain first, if can be placed - place them, otherwise try again
+		for (itry = 0; itry < chains_max_num_tries && chain_placed == FALSE; itry++) {
+			
+			// Choose a random position for the head
+			choice = my_irand(free_locations[type_index] - 1);
+			x = legal_pos[type_index][choice].x;
+			y = legal_pos[type_index][choice].y;
+			z = legal_pos[type_index][choice].z;
+			
+			// Check whether all the members can be placed
+			chain_can_be_placed = TRUE;
+			for (imember = 0; imember < pl_chains[ichain].num_blocks; imember++) {
+				member_x = x + pl_chains[ichain].members[imember].x_offset;
+				member_y = y + pl_chains[ichain].members[imember].y_offset;
+				member_z = z + pl_chains[ichain].members[imember].z_offset;
 
-				/* Ensure randomizer doesn't pick this block again */
-				legal_pos[type_index][choice] = legal_pos[type_index][count[type_index] - 1]; /* overwrite used block position */
-				count[type_index]--;
-			} else {
-				// Go through this chain and place the members in the correct orientation
-				for (imember = 0; imember < pl_chains[ichain].num_blocks; imember++)
-				;
+				// Check whether the location could accept block of this type
+				// Then check whether the location could still accomodate more blocks
+				// Also check whether the member position is valid, that is the member's location
+				// still within the chip's dimemsion and the member_z is allowed at that location on the grid
+				if (grid[member_x][member_y].type->index == type_index
+						&& grid[member_x][member_y].usage < type_descriptors[type_index].capacity 
+						&& member_x <= nx && member_y <= ny
+						&& member_z < type_descriptors[type_index].height) {
+					// Can still accomodate blocks here, check the next position
+					continue;
+				} else {
+					// Cant be placed here - skip to the next try
+					chain_can_be_placed = FALSE;
+					break;
+				}
 
 			}
+
+			if (chain_can_be_placed == FALSE) {
+				// This try is unsuccessful, proceeed to the next try
+				chain_placed = FALSE;
+				continue;
+			} else {
+				// Place down the chain
+				chain_placed = TRUE;
+				for (imember = 0; imember < pl_chains[ichain].num_blocks; imember++) {
+					
+					member_x = x + pl_chains[ichain].members[imember].x_offset;
+					member_y = y + pl_chains[ichain].members[imember].y_offset;
+					member_z = z + pl_chains[ichain].members[imember].z_offset;
+					
+					grid[member_x][member_y].blocks[member_z] = pl_chains[ichain].members[imember].blk_index;
+					grid[member_x][member_y].usage++;
+
+					/* Ensure randomizer doesn't pick this location again, since it's occupied. Could shift all the 
+					 * legal positions in legal_pos to remove the entry (choice) we just used, but faster to 
+					 * just move the last entry in legal_pos to the spot we just used and decrement the 
+					 * count of free_locations.
+					 */
+					// How?
+					//legal_pos[type_index][choice] = legal_pos[type_index][free_locations[type_index] - 1]; /* overwrite used block position */
+					//free_locations[type_index]--;
+
+
+
+				} // Finish placing all the members in the chain
+			}
+
+		} // Finished all tries
+		
+		
+		if (chain_placed == FALSE){
+			// if a chain still could not be placed after chains_max_num_tries times, 
+			// go through the chip exhaustively to find a legal placement for the chain
+			// place the chain on the first location that is legal
+			// then set chain_placed = TRUE;
+			// if there are no legal positions, error out
+		} else {
+			// everything is okay at this point, proceed to place the next chain
+		}
+
+
+	}
+
+	/* Place blocks not in chains.
+	 * We'll randomly place each block in the clustered netlist, one by one. 
+	 */
+	for (iblk = 0; iblk < num_blocks; iblk++) {
+
+		if (block[iblk].x != -1) {
+			// block placed.
+			continue;
+		}
+		/* Don't do IOs if the user specifies IOs; we'll read those locations later. */
+		if (!(block[iblk].type == IO_TYPE && pad_loc_type == USER)) {
+
+		    /* Randomly select a free location of the appropriate type
+			 * for iblk.  We have a linearized list of all the free locations
+			 * that can accomodate a block of that type in free_locations[type_index].
+			 * Choose one randomly and put iblk there.  Then we don't want to pick that
+			 * location again, so remove it from the free_locations array.
+			 */
+			type_index = block[iblk].type->index;
+			if (free_locations[type_index] <= 0) {
+				vpr_printf (TIO_MESSAGE_ERROR, "Initial placement failed. Could not place "
+						"block %s£¨#%d); no free locations of type %s (#%d).\n", 
+						block[iblk].name, iblk, type_descriptors[type_index].name, type_index);
+			}
+
+			choice = my_irand(free_locations[type_index] - 1);
+			x = legal_pos[type_index][choice].x;
+			y = legal_pos[type_index][choice].y;
+			z = legal_pos[type_index][choice].z;
+			grid[x][y].blocks[z] = iblk;
+			grid[x][y].usage++;
+
+			/* Ensure randomizer doesn't pick this location again, since it's occupied. Could shift all the 
+				* legal positions in legal_pos to remove the entry (choice) we just used, but faster to 
+				* just move the last entry in legal_pos to the spot we just used and decrement the 
+				* count of free_locations.
+				*/
+			legal_pos[type_index][choice] = legal_pos[type_index][free_locations[type_index] - 1]; /* overwrite used block position */
+			free_locations[type_index]--;
+			
 		}
 	}
 
@@ -2600,7 +2723,7 @@ static void initial_placement(enum e_pad_loc_type pad_loc_type,
 		print_clb_placement(getEchoFileName(E_ECHO_INITIAL_CLB_PLACEMENT));
 	}
 #endif
-	free(count);
+	free(free_locations);
 }
 
 static void free_fast_cost_update(void) {

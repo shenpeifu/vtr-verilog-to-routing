@@ -51,7 +51,6 @@ static struct s_type_descriptor *cb_type_descriptors;
 
 /* Function prototypes */
 /*   Populate data */
-static void ParseFc(ezxml_t Node, enum Fc_type *Fc, float *Val);
 static void SetupEmptyType(void);
 static void SetupPinLocationsAndPinClasses(ezxml_t Locations,
 		t_type_descriptor * Type);
@@ -106,46 +105,6 @@ static void SyncModelsPbTypes_rec(INOUTP struct s_arch *arch,
 static void PrintPb_types_rec(INP FILE * Echo, INP const t_pb_type * pb_type,
 		int level);
 
-/* Figures out the Fc type and value for the given node. Unlinks the 
- * type and value. */
-static void ParseFc(ezxml_t Node, enum Fc_type *Fc, float *Val) {
-	const char *Prop;
-
-	Prop = FindProperty(Node, "type", TRUE);
-	if (0 == strcmp(Prop, "abs")) {
-		*Fc = FC_ABS;
-	}
-
-	else if (0 == strcmp(Prop, "frac")) {
-		*Fc = FC_FRAC;
-	}
-
-	else if (0 == strcmp(Prop, "full")) {
-		*Fc = FC_FULL;
-	}
-
-	else {
-		vpr_printf(TIO_MESSAGE_ERROR, "[LINE %d] Invalid type '%s' for Fc. Only abs, frac "
-		"and full are allowed.\n", Node->line, Prop);
-		exit(1);
-	}
-	switch (*Fc) {
-	case FC_FULL:
-		*Val = 0.0;
-		break;
-	case FC_ABS:
-	case FC_FRAC:
-		*Val = (float)atof(Node->txt);
-		ezxml_set_attr(Node, "type", NULL);
-		ezxml_set_txt(Node, "");
-		break;
-	default:
-		assert(0);
-	}
-
-	/* Release the property */
-	ezxml_set_attr(Node, "type", NULL);
-}
 
 /* Sets up the pinloc map and pin classes for the type. Unlinks the loc nodes
  * from the XML tree.
