@@ -23,6 +23,7 @@
 /************** Types and defines local to place.c ***************************/
 
 #define SMALL_NET 4		/* Cut off for incremental bounding box updates. */
+#define MAX_NUM_TRIES_TO_PLACE_CHAINS_RANDOMLY 4
 
 /* 4 is fastest -- I checked.                    */
 
@@ -258,6 +259,8 @@ static void get_bb_from_scratch(int inet, struct s_bb *coords,
 static double get_net_wirelength_estimate(int inet, struct s_bb *bbptr);
 
 static void free_try_swap_arrays(void);
+
+static void init_place_carry_chains(int chains_max_num_tries, int * free_locations);
 
 /*****************************************************************************/
 /* RESEARCH TODO: Bounding Box and rlim need to be redone for heterogeneous to prevent a QoR penalty */
@@ -2521,14 +2524,12 @@ static void initial_placement(enum e_pad_loc_type pad_loc_type,
 	 * array that gives every legal value of (x,y,z) that can accomodate a block.
 	 * The number of such locations is given by num_legal_pos[itype].
 	 */
-	int i, j, k, iblk, choice, type_index, x, y, z;
+	int i, j, k, iblk, choice, type_index, x, y, z, ichoice;
 	int *free_locations; /* [0..num_types-1]. 
 						  * Stores how many locations there are for this type that *might* still be free.
 						  * That is, this stores the number of entries in legal_pos[itype] that are worth considering
 						  * as you look for a free location.
 						  */
-	int ichain, imember, member_x, member_y, member_z;
-	int itry, chains_max_num_tries, chain_placed, chain_can_be_placed;
 
 	free_locations = (int *) my_malloc(num_types * sizeof(int));
 	for (type_index = 0; type_index < num_types; type_index++) {
@@ -2555,101 +2556,26 @@ static void initial_placement(enum e_pad_loc_type pad_loc_type,
 		block[iblk].z = -1;
 	}
 
-	chains_max_num_tries = 3;
-	chain_placed = TRUE;
-	/* Chains are harder to place.  Do them first */
-	for (ichain = 0; ichain < num_chains; ichain++) {
-		
-		// Assume that all the blocks in the chain are of the same type
-		iblk = pl_chains[ichain].members[0].blk_index;
-		type_index = block[iblk].type->index;
-		if (free_locations[type_index] < pl_chains[ichain].num_blocks) {
-			vpr_printf (TIO_MESSAGE_ERROR, "Initial placement failed. Could not place "
-					"chain length %d with head block %s£¨#%d); not enough free locations of type %s (#%d).\n", 
-					pl_chains[ichain].num_blocks, block[iblk].name, iblk, type_descriptors[type_index].name, type_index);
-		}
-
-		// Try to place the chain first, if can be placed - place them, otherwise try again
-		for (itry = 0; itry < chains_max_num_tries && chain_placed == FALSE; itry++) {
+	init_place_carry_chains(MAX_NUM_TRIES_TO_PLACE_CHAINS_RANDOMLY, free_locations);
+	
+	// All the chains are placed, update the legal_pos[][] array
+	for (type_index = 0; type_index < num_types; type_index++) {
+		assert (free_locations[type_index] > 0);
+		for (ichoice = 0; ichoice < free_locations[type_index]; ichoice++) {
+			x = legal_pos[type_index][ichoice].x;
+			y = legal_pos[type_index][ichoice].y;
+			z = legal_pos[type_index][ichoice].z;
 			
-			// Choose a random position for the head
-			choice = my_irand(free_locations[type_index] - 1);
-			x = legal_pos[type_index][choice].x;
-			y = legal_pos[type_index][choice].y;
-			z = legal_pos[type_index][choice].z;
-			
-			// Check whether all the members can be placed
-			chain_can_be_placed = TRUE;
-			for (imember = 0; imember < pl_chains[ichain].num_blocks; imember++) {
-				member_x = x + pl_chains[ichain].members[imember].x_offset;
-				member_y = y + pl_chains[ichain].members[imember].y_offset;
-				member_z = z + pl_chains[ichain].members[imember].z_offset;
-
-				// Check whether the location could accept block of this type
-				// Then check whether the location could still accomodate more blocks
-				// Also check whether the member position is valid, that is the member's location
-				// still within the chip's dimemsion and the member_z is allowed at that location on the grid
-				if (grid[member_x][member_y].type->index == type_index
-						&& grid[member_x][member_y].usage < type_descriptors[type_index].capacity 
-						&& member_x <= nx && member_y <= ny
-						&& member_z < type_descriptors[type_index].height) {
-					// Can still accomodate blocks here, check the next position
-					continue;
-				} else {
-					// Cant be placed here - skip to the next try
-					chain_can_be_placed = FALSE;
-					break;
-				}
-
-			}
-
-			if (chain_can_be_placed == FALSE) {
-				// This try is unsuccessful, proceeed to the next try
-				chain_placed = FALSE;
+			// Check if that location is occupied.  If it is, remove from legal_pos
+			if (grid[x][y].blocks[z] != OPEN) {
+				legal_pos[type_index][ichoice] = legal_pos[type_index][free_locations[type_index] - 1];
+				free_locations[type_index]--;
 				continue;
-			} else {
-				// Place down the chain
-				chain_placed = TRUE;
-				for (imember = 0; imember < pl_chains[ichain].num_blocks; imember++) {
-					
-					member_x = x + pl_chains[ichain].members[imember].x_offset;
-					member_y = y + pl_chains[ichain].members[imember].y_offset;
-					member_z = z + pl_chains[ichain].members[imember].z_offset;
-					
-					grid[member_x][member_y].blocks[member_z] = pl_chains[ichain].members[imember].blk_index;
-					grid[member_x][member_y].usage++;
-
-					/* Ensure randomizer doesn't pick this location again, since it's occupied. Could shift all the 
-					 * legal positions in legal_pos to remove the entry (choice) we just used, but faster to 
-					 * just move the last entry in legal_pos to the spot we just used and decrement the 
-					 * count of free_locations.
-					 */
-					// How?
-					//legal_pos[type_index][choice] = legal_pos[type_index][free_locations[type_index] - 1]; /* overwrite used block position */
-					//free_locations[type_index]--;
-
-
-
-				} // Finish placing all the members in the chain
 			}
-
-		} // Finished all tries
-		
-		
-		if (chain_placed == FALSE){
-			// if a chain still could not be placed after chains_max_num_tries times, 
-			// go through the chip exhaustively to find a legal placement for the chain
-			// place the chain on the first location that is legal
-			// then set chain_placed = TRUE;
-			// if there are no legal positions, error out
-		} else {
-			// everything is okay at this point, proceed to place the next chain
 		}
+	} // Finish updating the legal_pos[][] and free_locations[] array
 
-
-	}
-
-	/* Place blocks not in chains.
+	/* Place blocks that are NOT a part of any chain.
 	 * We'll randomly place each block in the clustered netlist, one by one. 
 	 */
 	for (iblk = 0; iblk < num_blocks; iblk++) {
@@ -2678,6 +2604,9 @@ static void initial_placement(enum e_pad_loc_type pad_loc_type,
 			x = legal_pos[type_index][choice].x;
 			y = legal_pos[type_index][choice].y;
 			z = legal_pos[type_index][choice].z;
+
+			assert (grid[x][y].blocks[z] != OPEN);
+
 			grid[x][y].blocks[z] = iblk;
 			grid[x][y].usage++;
 
@@ -2970,3 +2899,185 @@ static void free_try_swap_arrays(void) {
 	}
 }
 
+static void init_place_carry_chains(int chains_max_num_tries, int * free_locations) {
+
+	int chain_can_be_placed, chain_placed, choice;
+	int x, y, z, member_x, member_y, member_z;
+	int ichain, iblk, type_index, itry, imember, ichoice;
+
+	chain_placed = TRUE;
+	/* Chains are harder to place.  Do them first */
+	for (ichain = 0; ichain < num_chains; ichain++) {
+		
+		// Assume that all the blocks in the chain are of the same type
+		iblk = pl_chains[ichain].members[0].blk_index;
+		type_index = block[iblk].type->index;
+		if (free_locations[type_index] < pl_chains[ichain].num_blocks) {
+			vpr_printf (TIO_MESSAGE_ERROR, "Initial placement failed. Could not place "
+					"chain length %d with head block %s£¨#%d); not enough free locations of type %s (#%d).\n", 
+					pl_chains[ichain].num_blocks, block[iblk].name, iblk, type_descriptors[type_index].name, type_index);
+		}
+
+		// Try to place the chain first, if can be placed - place them, otherwise try again
+		for (itry = 0; itry < chains_max_num_tries && chain_placed == FALSE; itry++) {
+			
+			// Choose a random position for the head
+			choice = my_irand(free_locations[type_index] - 1);
+			x = legal_pos[type_index][choice].x;
+			y = legal_pos[type_index][choice].y;
+			z = legal_pos[type_index][choice].z;
+			
+			// Check if that location is occupied.  If it is, remove from legal_pos
+			if (grid[x][y].blocks[z] != OPEN) {
+				legal_pos[type_index][choice] = legal_pos[type_index][free_locations[type_index] - 1];
+				free_locations[type_index]--;
+				chain_can_be_placed = FALSE;
+				break;
+			}
+			
+			// Check whether all the members can be placed
+			chain_can_be_placed = TRUE;
+			for (imember = 0; imember < pl_chains[ichain].num_blocks; imember++) {
+				member_x = x + pl_chains[ichain].members[imember].x_offset;
+				member_y = y + pl_chains[ichain].members[imember].y_offset;
+				member_z = z + pl_chains[ichain].members[imember].z_offset;
+
+				// Check whether the location could accept block of this type
+				// Then check whether the location could still accomodate more blocks
+				// Also check whether the member position is valid, that is the member's location
+				// still within the chip's dimemsion and the member_z is allowed at that location on the grid
+				if (grid[member_x][member_y].type->index == type_index
+						&& grid[member_x][member_y].blocks[member_z] == OPEN
+						&& member_x <= nx && member_y <= ny) {
+					// Can still accomodate blocks here, check the next position
+					continue;
+				} else {
+					// Cant be placed here - skip to the next try
+					chain_can_be_placed = FALSE;
+					break;
+				}
+
+			}
+
+			if (chain_can_be_placed == FALSE) {
+				// This try is unsuccessful, proceeed to the next try
+				chain_placed = FALSE;
+				continue;
+			} else {
+				// Place down the chain
+				chain_placed = TRUE;
+				for (imember = 0; imember < pl_chains[ichain].num_blocks; imember++) {
+					
+					member_x = x + pl_chains[ichain].members[imember].x_offset;
+					member_y = y + pl_chains[ichain].members[imember].y_offset;
+					member_z = z + pl_chains[ichain].members[imember].z_offset;
+					
+					grid[member_x][member_y].blocks[member_z] = pl_chains[ichain].members[imember].blk_index;
+					grid[member_x][member_y].usage++;
+
+					// Could not ensure that the randomiser would not pick this location again
+					// So, would have to do a lazy removal - whenever I come across a block that could not be placed, 
+					// go ahead and remove it from the legal_pos[][] array
+
+				} // Finish placing all the members in the chain
+			}
+
+		} // Finished all tries
+		
+		
+		if (chain_placed == FALSE){
+			// if a chain still could not be placed after chains_max_num_tries times, 
+			// go through the chip exhaustively to find a legal placement for the chain
+			// place the chain on the first location that is legal
+			// then set chain_placed = TRUE;
+			// if there are no legal positions, error out
+
+			// Exhaustive placement of carry chains
+			for (ichoice = 0; ichoice < free_locations[type_index]; ichoice++) {
+				
+				// Choose a random position for the head
+				x = legal_pos[type_index][ichoice].x;
+				y = legal_pos[type_index][ichoice].y;
+				z = legal_pos[type_index][ichoice].z;
+			
+				// Check if that location is occupied.  If it is, remove from legal_pos
+				if (grid[x][y].blocks[z] != OPEN) {
+					legal_pos[type_index][ichoice] = legal_pos[type_index][free_locations[type_index] - 1];
+					free_locations[type_index]--;
+					chain_can_be_placed = FALSE;
+					continue;
+				}
+				
+				// Check whether all the members can be placed
+				chain_can_be_placed = TRUE;
+				for (imember = 0; imember < pl_chains[ichain].num_blocks; imember++) {
+					member_x = x + pl_chains[ichain].members[imember].x_offset;
+					member_y = y + pl_chains[ichain].members[imember].y_offset;
+					member_z = z + pl_chains[ichain].members[imember].z_offset;
+
+					// Check if that location is occupied.  If it is, remove from legal_pos
+					if (grid[member_x][member_y].blocks[member_z] != OPEN) {
+						legal_pos[type_index][ichoice] = legal_pos[type_index][free_locations[type_index] - 1];
+						free_locations[type_index]--;
+						chain_can_be_placed = FALSE;
+						continue;
+					}
+					
+					// This location is OPEN
+					// Check whether the location could accept block of this type
+					// Also check whether the member position is valid, that is the member's location
+					// still within the chip's dimemsion and the member_z is allowed at that location on the grid
+					if (grid[member_x][member_y].type->index == type_index
+							&& member_x <= nx && member_y <= ny) {
+						// Can still accomodate blocks here, check the next position
+						continue;
+					} else {
+						// Cant be placed here - skip to the next try
+						chain_can_be_placed = FALSE;
+						continue;
+					}
+
+				}
+
+				if (chain_can_be_placed == FALSE) {
+					// This try is unsuccessful, proceeed to the next try
+					chain_placed = FALSE;
+					continue;
+				} else {
+					// Place down the chain
+					chain_placed = TRUE;
+					for (imember = 0; imember < pl_chains[ichain].num_blocks; imember++) {
+					
+						member_x = x + pl_chains[ichain].members[imember].x_offset;
+						member_y = y + pl_chains[ichain].members[imember].y_offset;
+						member_z = z + pl_chains[ichain].members[imember].z_offset;
+					
+						grid[member_x][member_y].blocks[member_z] = pl_chains[ichain].members[imember].blk_index;
+						grid[member_x][member_y].usage++;
+
+						// Could not ensure that the randomiser would not pick this location again
+						// So, would have to do a lazy removal - whenever I come across a block that could not be placed, 
+						// go ahead and remove it from the legal_pos[][] array
+						
+					} // Finish placing all the members in the chain
+
+					// Do not need to explore other legal position once this chain is placed
+					break;
+				} // End of this choice of legal_pos
+
+			} // Exhausted all the legal placement position for this chain
+
+			// If chain could not be placed after exhaustive placement, error out
+			if (chain_placed == FALSE) {
+				// Error out
+				vpr_printf (TIO_MESSAGE_ERROR, "Initial placement failed. Could not place "
+					"chain length %d with head block %s£¨#%d); not enough free locations of type %s (#%d).\n", 
+					pl_chains[ichain].num_blocks, block[iblk].name, iblk, type_descriptors[type_index].name, type_index);
+			}
+
+		} else {
+			// This chain has been placed successfully, proceed to place the next chain
+			continue;
+		}
+	} // Finish placing all the carry chains successfully
+}
