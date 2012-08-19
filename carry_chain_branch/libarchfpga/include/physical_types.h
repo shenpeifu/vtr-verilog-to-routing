@@ -594,7 +594,7 @@ typedef struct s_direct_inf {
 	int y_offset;
 	int z_offset;
 	int line;
-}t_direct_inf;
+} t_direct_inf;
 
 /* Record for storing the technology parameters for NMOS and
  PMOS type of transistors

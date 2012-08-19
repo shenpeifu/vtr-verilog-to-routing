@@ -596,7 +596,7 @@ int *** alloc_and_load_port_pin_to_blk_pin(void) {
 	/* Compute required size. */
 	max_ports_per_blk = 0;
 	max_pins_per_port = 0;
-	for (itype = 0; itype < num_types; itype++) {
+	for (itype = 1; itype < num_types; itype++) {
 		max_ports_per_blk = max(max_ports_per_blk, type_descriptors[itype].pb_type->num_ports);
 		for (iport = 0; iport < type_descriptors[itype].pb_type->num_ports; iport++) {
 			max_pins_per_port = max(max_pins_per_port, type_descriptors[itype].pb_type->ports->num_pins);
@@ -607,7 +607,7 @@ int *** alloc_and_load_port_pin_to_blk_pin(void) {
 	temp_port_pin_to_blk_pin = (int ***) my_malloc(num_blocks * sizeof(int**));
 	for (iblk = 0; iblk < num_blocks; iblk++) {
 		temp_port_pin_to_blk_pin[iblk] = (int **) my_malloc(max_ports_per_blk * sizeof(int*));
-		for (iport = 0; iport < type_descriptors[itype].pb_type->num_ports; iport++) {
+		for (iport = 0; iport < max_ports_per_blk; iport++) {
 			temp_port_pin_to_blk_pin[iblk][iport] = (int *) my_malloc(max_pins_per_port * sizeof(int));
 		}
 	}
@@ -707,7 +707,7 @@ void alloc_and_load_blk_pin_to_idirect(t_direct_inf* directs, int num_directs,
 			/* Format "pb_type_name.port_name [end_pin_index:start_pin_index]" */
 			match_count = sscanf(directs[idirect].from_pin, "%s.%s [%d:%d]", 
 									from_pb_type_name, from_port_name, 
-									from_end_pin_index, from_start_pin_index);
+									&from_end_pin_index, &from_start_pin_index);
 			if (match_count != 3){
 				vpr_printf(TIO_MESSAGE_ERROR, "[LINE %d] Invalid from_pin - %s, "
 						"name should be in the format \"pb_type_name\".\"port_name\" or "
@@ -748,7 +748,7 @@ void alloc_and_load_blk_pin_to_idirect(t_direct_inf* directs, int num_directs,
 			/* Format "pb_type_name.port_name [end_pin_index:start_pin_index]" */
 			match_count = sscanf(directs[idirect].to_pin, "%s.%s [%d:%d]", 
 									to_pb_type_name, to_port_name, 
-									to_end_pin_index, to_start_pin_index);
+									&to_end_pin_index, &to_start_pin_index);
 			if (match_count != 3){
 				vpr_printf(TIO_MESSAGE_ERROR, "[LINE %d] Invalid to_pin - %s, "
 						"name should be in the format \"pb_type_name\".\"port_name\" or "
@@ -803,7 +803,7 @@ void alloc_and_load_blk_pin_to_idirect(t_direct_inf* directs, int num_directs,
 								// Check the fc for the pin, direct chain link only if fc == 0
 								// AUG 16, 2012
 								// Disable for now - waiting for pin-based fc implementation by Nooruddin
-								//if (block[iblk].type->Fc[iblk_pin] == 0) {
+								if (block[iblk].type->Fc[iblk_pin] == 0) {
 								
 									temp_blk_pin_to_idirect[iblk][iblk_pin] = idirect;
 							
@@ -817,7 +817,7 @@ void alloc_and_load_blk_pin_to_idirect(t_direct_inf* directs, int num_directs,
 										temp_blk_pin_to_direct_src_or_sink[iblk][iblk_pin] = SOURCE;
 									}
 
-								//}
+								}
 							} // Finish marking all the pins
 
 						} else {
@@ -830,7 +830,7 @@ void alloc_and_load_blk_pin_to_idirect(t_direct_inf* directs, int num_directs,
 								// Check the fc for the pin, direct chain link only if fc == 0
 								// AUG 16, 2012
 								// Disable for now - waiting for pin-based fc implementation by Nooruddin
-								//if (block[iblk].type->Fc[iblk_pin] == 0) {
+								if (block[iblk].type->Fc[iblk_pin] == 0) {
 								
 									temp_blk_pin_to_idirect[iblk][iblk_pin] = idirect;
 							
@@ -844,7 +844,7 @@ void alloc_and_load_blk_pin_to_idirect(t_direct_inf* directs, int num_directs,
 										temp_blk_pin_to_direct_src_or_sink[iblk][iblk_pin] = SOURCE;
 									}
 
-								//}
+								}
 							} // Finish marking all the pins
 
 						}
@@ -884,7 +884,7 @@ void alloc_and_load_blk_pin_to_idirect(t_direct_inf* directs, int num_directs,
 								// Check the fc for the pin, direct chain link only if fc == 0
 								// AUG 16, 2012
 								// Disable for now - waiting for pin-based fc implementation by Nooruddin
-								//if (block[iblk].type->Fc[iblk_pin] == 0) {
+								if (block[iblk].type->Fc[iblk_pin] == 0) {
 								
 									temp_blk_pin_to_idirect[iblk][iblk_pin] = idirect;
 								
@@ -900,7 +900,7 @@ void alloc_and_load_blk_pin_to_idirect(t_direct_inf* directs, int num_directs,
 
 									// Only support chains with block height 1
 									assert(block[iblk].type->height == 1);
-								//}
+								}
 							} // Finish marking all the pins
 
 						} else {
@@ -913,7 +913,7 @@ void alloc_and_load_blk_pin_to_idirect(t_direct_inf* directs, int num_directs,
 								// Check the fc for the pin, direct chain link only if fc == 0
 								// AUG 16, 2012
 								// Disable for now - waiting for pin-based fc implementation by Nooruddin
-								//if (block[iblk].type->Fc[iblk_pin] == 0) {
+								if (block[iblk].type->Fc[iblk_pin] == 0) {
 								
 									temp_blk_pin_to_idirect[iblk][iblk_pin] = idirect;
 								
@@ -929,7 +929,7 @@ void alloc_and_load_blk_pin_to_idirect(t_direct_inf* directs, int num_directs,
 									
 									// Only support chains with block height 1
 									assert(block[iblk].type->height == 1);
-								//}
+								}
 							} // Finish marking all the pins
 
 						}

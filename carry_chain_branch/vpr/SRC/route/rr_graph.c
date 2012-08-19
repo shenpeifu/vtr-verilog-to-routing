@@ -566,7 +566,9 @@ alloc_and_load_actual_fc(INP int L_num_types, INP t_type_ptr types,
 
 	Result = (int *) my_malloc(sizeof(int) * L_num_types);
 
-	for (i = 0; i < L_num_types; ++i) {
+	// Empty block has Fc of NULL; start at i = 1
+	Result[0] = NULL;
+	for (i = 1; i < L_num_types; ++i) {
 		Fc = type_descriptors[i].Fc[0];
 
 		if (type_descriptors[i].is_Fc_frac) {
