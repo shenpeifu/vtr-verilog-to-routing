@@ -36,6 +36,10 @@ enum cost_methods {
 	NORMAL, CHECK
 };
 
+enum swap_result {
+	REJECTED, ACCEPTED, ABORTED
+};
+
 /* Flags for the states of the bounding box. */
 /* Stores as char for memory efficiency. */
 #define NOT_UPDATED_YET 'N'
@@ -157,6 +161,13 @@ static int *ts_nets_to_update = NULL;
 static t_pl_macro * pl_chains = NULL;
 static int num_chains;
 
+/* These file-scoped variables keep track of the number of swaps       *
+ * rejected, accepted or aborted. The total number of swap attempts    *
+ * is the sum of the three number.                                     */
+static int num_swap_rejected = 0;
+static int num_swap_accepted = 0;
+static int num_swap_aborted = 0;
+
 /* Expected crossing counts for nets with different #'s of pins.  From *
  * ICCAD 94 pp. 690 - 695 (with linear interpolation applied by me).   *
  * Multiplied to bounding box of a net to better estimate wire length  *
@@ -199,7 +210,7 @@ static void initial_placement(enum e_pad_loc_type pad_loc_type,
 
 static float comp_bb_cost(enum cost_methods method);
 
-static int try_swap(float t, float *cost, float *bb_cost, float *timing_cost,
+static enum swap_result try_swap(float t, float *cost, float *bb_cost, float *timing_cost,
 		float rlim, float **old_region_occ_x,
 		float **old_region_occ_y,
 		enum e_place_algorithm place_algorithm, float timing_tradeoff,
@@ -277,7 +288,7 @@ void try_place(struct s_placer_opts placer_opts,
 
 	int tot_iter, inner_iter, success_sum, move_lim, moves_since_cost_recompute, width_fac,
 		num_connections, inet, ipin, outer_crit_iter_count, inner_crit_iter_count,
-		inner_recompute_limit;
+		inner_recompute_limit, swap_result;
 	float t, success_rat, rlim, cost, timing_cost, bb_cost, new_bb_cost, new_timing_cost,
 		delay_cost, new_delay_cost, place_delay_value, inverse_prev_bb_cost, inverse_prev_timing_cost,
 		oldt, **old_region_occ_x, **old_region_occ_y, **net_delay = NULL, crit_exponent,
@@ -528,11 +539,12 @@ void try_place(struct s_placer_opts placer_opts,
 		inner_crit_iter_count = 1;
 
 		for (inner_iter = 0; inner_iter < move_lim; inner_iter++) {
-			if (try_swap(t, &cost, &bb_cost, &timing_cost, rlim,
+			swap_result = try_swap(t, &cost, &bb_cost, &timing_cost, rlim,
 					old_region_occ_x,
 					old_region_occ_y, 
 					placer_opts.place_algorithm, placer_opts.timing_tradeoff,
-					inverse_prev_bb_cost, inverse_prev_timing_cost, &delay_cost) == 1) {
+					inverse_prev_bb_cost, inverse_prev_timing_cost, &delay_cost);
+			if (swap_result == ACCEPTED) {
 
 				/* Move was accepted.  Update statistics that are useful for the annealing schedule. */
 				success_sum++;
@@ -541,7 +553,13 @@ void try_place(struct s_placer_opts placer_opts,
 				av_timing_cost += timing_cost;
 				av_delay_cost += delay_cost;
 				sum_of_squares += cost * cost;
+				num_swap_accepted++;
+			} else if (swap_result == ABORTED) {
+				num_swap_aborted++;
+			} else {
+				num_swap_rejected++;
 			}
+
 
 			if (placer_opts.place_algorithm == NET_TIMING_DRIVEN_PLACE
 					|| placer_opts.place_algorithm
@@ -724,10 +742,12 @@ void try_place(struct s_placer_opts placer_opts,
 	inner_crit_iter_count = 1;
 
 	for (inner_iter = 0; inner_iter < move_lim; inner_iter++) {
-		if (try_swap(t, &cost, &bb_cost, &timing_cost, rlim,
+		swap_result = try_swap(t, &cost, &bb_cost, &timing_cost, rlim,
 				old_region_occ_x, old_region_occ_y,
 				placer_opts.place_algorithm, placer_opts.timing_tradeoff,
-				inverse_prev_bb_cost, inverse_prev_timing_cost, &delay_cost) == 1) {
+				inverse_prev_bb_cost, inverse_prev_timing_cost, &delay_cost);
+		
+		if (swap_result == ACCEPTED) {
 			success_sum++;
 			av_cost += cost;
 			av_bb_cost += bb_cost;
@@ -761,7 +781,13 @@ void try_place(struct s_placer_opts placer_opts,
 				}
 				inner_crit_iter_count++;
 			}
+			num_swap_accepted++;
+		} else if (swap_result == ABORTED) {
+			num_swap_aborted++;
+		} else {
+			num_swap_rejected++;
 		}
+
 #ifdef VERBOSE
 		vpr_printf(TIO_MESSAGE_INFO, "t = %g  cost = %g   move = %d\n", t, cost, tot_iter);
 #endif
@@ -849,6 +875,16 @@ void try_place(struct s_placer_opts placer_opts,
 	vpr_printf(TIO_MESSAGE_INFO, "Placement. Cost: %g  bb_cost: %g  td_cost: %g  delay_cost: %g.\n",
 			cost, bb_cost, timing_cost, delay_cost);
 	update_screen(MAJOR, msg, PLACEMENT, FALSE);
+
+	// Print out swap statistics
+	int total_swap_attempts = num_swap_rejected + num_swap_accepted + num_swap_aborted;
+	float reject_rate = num_swap_rejected / total_swap_attempts;
+	float accept_rate = num_swap_accepted / total_swap_attempts;
+	float abort_rate = num_swap_aborted / total_swap_attempts;
+	vpr_printf(TIO_MESSAGE_INFO, "Placement - Total number of swap attempts: %g.\n"
+			"\tSwap reject rate: %g\n\tSwap accept rate: %g\n\tSwap abort rate: %g\n",
+			total_swap_attempts, reject_rate, accept_rate, abort_rate);
+	
 
 #ifdef SPEC
 	vpr_printf(TIO_MESSAGE_INFO, "Total moves attempted: %d.0\n", tot_iter);
@@ -1007,7 +1043,7 @@ static float starting_t(float *cost_ptr, float *bb_cost_ptr,
 
 	/* Finds the starting temperature (hot condition).              */
 
-	int i, num_accepted, move_lim;
+	int i, num_accepted, move_lim, swap_result;
 	double std_dev, av, sum_of_squares; /* Double important to avoid round off */
 
 	if (annealing_sched.type == USER_SCHED)
@@ -1022,13 +1058,20 @@ static float starting_t(float *cost_ptr, float *bb_cost_ptr,
 	/* Try one move per block.  Set t high so essentially all accepted. */
 
 	for (i = 0; i < move_lim; i++) {
-		if (try_swap(HUGE_POSITIVE_FLOAT, cost_ptr, bb_cost_ptr, timing_cost_ptr, rlim,
+		swap_result = try_swap(HUGE_POSITIVE_FLOAT, cost_ptr, bb_cost_ptr, timing_cost_ptr, rlim,
 				old_region_occ_x, old_region_occ_y,
 				place_algorithm, timing_tradeoff,
-				inverse_prev_bb_cost, inverse_prev_timing_cost, delay_cost_ptr) == 1) {
+				inverse_prev_bb_cost, inverse_prev_timing_cost, delay_cost_ptr);
+		
+		if (swap_result == ACCEPTED) {
 			num_accepted++;
 			av += *cost_ptr;
 			sum_of_squares += *cost_ptr * (*cost_ptr);
+			num_swap_accepted++;
+		} else if (swap_result == ABORTED) {
+			num_swap_aborted++;
+		} else {
+			num_swap_rejected++;
 		}
 	}
 
@@ -1056,7 +1099,7 @@ static float starting_t(float *cost_ptr, float *bb_cost_ptr,
 	return (20. * std_dev);
 }
 
-static int try_swap(float t, float *cost, float *bb_cost, float *timing_cost,
+static enum swap_result try_swap(float t, float *cost, float *bb_cost, float *timing_cost,
 		float rlim, float **old_region_occ_x,
 		float **old_region_occ_y, 
 		enum e_place_algorithm place_algorithm, float timing_tradeoff,
@@ -1076,6 +1119,7 @@ static int try_swap(float t, float *cost, float *bb_cost, float *timing_cost,
 	int iblk, bnum, iblk_pin, inet_affected;
 	int ichain, imember, imoved_blk;
 	int x_swap_offset, y_swap_offset, z_swap_offset;
+	int abort_swap = FALSE;
 
 	/* I'm using negative values of temp_net_cost as a flag, so DO NOT   *
 	 * use cost functions that can go negative.                          */
@@ -1104,7 +1148,7 @@ static int try_swap(float t, float *cost, float *bb_cost, float *timing_cost,
 
 	if (!find_to(x_from, y_from, block[b_from].type, rlim, &x_to,
 			&y_to))
-		return FALSE;
+		return REJECTED;
 
 	z_to = 0;
 	if (grid[x_to][y_to].type->capacity > 1) {
@@ -1154,7 +1198,8 @@ static int try_swap(float t, float *cost, float *bb_cost, float *timing_cost,
 			z_to = z_from + z_swap_offset;
 
 			// Does not allow chain to chain swap yet
-			// How do I abort the swap? 
+			// How do I abort the swap?
+			abort_swap = TRUE;
 			
 			// Check whether the to_location is empty
 			if (b_to == EMPTY) {
@@ -1283,127 +1328,147 @@ static int try_swap(float t, float *cost, float *bb_cost, float *timing_cost,
 
 #endif
 
-	// Find all the nets affected by this swap
-	num_nets_affected = find_affected_nets(ts_nets_to_update);
+	if (abort_swap == FALSE) {
 
-	/* Go through all the pins in all the blocks moved and update the bounding boxes.  *
-	 * Do not update the net cost here since it should only be updated once per net,   *
-	 * not once per pin                                                                */
-	for (iblk = 0; iblk < blocks_affected.num_moved_blocks; iblk++)
-	{
-		bnum = blocks_affected.moved_blocks[iblk].block_num;
+		// Find all the nets affected by this swap
+		num_nets_affected = find_affected_nets(ts_nets_to_update);
 
-		/* Go through all the pins in the moved block */
-		for (iblk_pin = 0; iblk_pin < block[bnum].type->num_pins; iblk_pin++)
+		/* Go through all the pins in all the blocks moved and update the bounding boxes.  *
+		 * Do not update the net cost here since it should only be updated once per net,   *
+		 * not once per pin                                                                */
+		for (iblk = 0; iblk < blocks_affected.num_moved_blocks; iblk++)
 		{
-			inet = block[bnum].nets[iblk_pin];
-			if (inet == OPEN)
-				continue;
-			if (clb_net[inet].is_global)
-				continue;
+			bnum = blocks_affected.moved_blocks[iblk].block_num;
+
+			/* Go through all the pins in the moved block */
+			for (iblk_pin = 0; iblk_pin < block[bnum].type->num_pins; iblk_pin++)
+			{
+				inet = block[bnum].nets[iblk_pin];
+				if (inet == OPEN)
+					continue;
+				if (clb_net[inet].is_global)
+					continue;
 			
-			if (clb_net[inet].num_sinks < SMALL_NET) {
-				if(bb_updated_before[inet] == NOT_UPDATED_YET)
-					/* Brute force bounding box recomputation, once only for speed. */
-					get_non_updateable_bb(inet, &ts_bb_coord_new[inet]);
-			} else {
-				update_bb(inet, &ts_bb_coord_new[inet],
-						&ts_bb_edge_new[inet], 
-						blocks_affected.moved_blocks[iblk].xold, 
-						blocks_affected.moved_blocks[iblk].yold + block[bnum].type->pin_height[iblk_pin],
-						blocks_affected.moved_blocks[iblk].xnew, 
-						blocks_affected.moved_blocks[iblk].ynew + block[bnum].type->pin_height[iblk_pin]);
+				if (clb_net[inet].num_sinks < SMALL_NET) {
+					if(bb_updated_before[inet] == NOT_UPDATED_YET)
+						/* Brute force bounding box recomputation, once only for speed. */
+						get_non_updateable_bb(inet, &ts_bb_coord_new[inet]);
+				} else {
+					update_bb(inet, &ts_bb_coord_new[inet],
+							&ts_bb_edge_new[inet], 
+							blocks_affected.moved_blocks[iblk].xold, 
+							blocks_affected.moved_blocks[iblk].yold + block[bnum].type->pin_height[iblk_pin],
+							blocks_affected.moved_blocks[iblk].xnew, 
+							blocks_affected.moved_blocks[iblk].ynew + block[bnum].type->pin_height[iblk_pin]);
+				}
 			}
 		}
-	}
 			
-	/* Now update the cost function. The cost is only updated once for every net  *
-	 * May have to do major optimizations here later.                             */
-	for (inet_affected = 0; inet_affected < num_nets_affected; inet_affected++) {
-		inet = ts_nets_to_update[inet_affected];
+		/* Now update the cost function. The cost is only updated once for every net  *
+		 * May have to do major optimizations here later.                             */
+		for (inet_affected = 0; inet_affected < num_nets_affected; inet_affected++) {
+			inet = ts_nets_to_update[inet_affected];
 
-		temp_net_cost[inet] = get_net_cost(inet, &ts_bb_coord_new[inet]);
-		bb_delta_c += temp_net_cost[inet] - net_cost[inet];
-	}
+			temp_net_cost[inet] = get_net_cost(inet, &ts_bb_coord_new[inet]);
+			bb_delta_c += temp_net_cost[inet] - net_cost[inet];
+		}
 
-	if (place_algorithm == NET_TIMING_DRIVEN_PLACE
-			|| place_algorithm == PATH_TIMING_DRIVEN_PLACE) {
-		/*in this case we redefine delta_c as a combination of timing and bb.  *
-		 *additionally, we normalize all values, therefore delta_c is in       *
-		 *relation to 1*/
-
-		comp_delta_td_cost(&timing_delta_c, &delay_delta_c);
-
-		delta_c = (1 - timing_tradeoff) * bb_delta_c * inverse_prev_bb_cost
-				+ timing_tradeoff * timing_delta_c * inverse_prev_timing_cost;
-	} else {
-		delta_c = bb_delta_c;
-	}
-
-	keep_switch = assess_swap(delta_c, t);
-
-	/* 1 -> move accepted, 0 -> rejected. */
-
-	if (keep_switch) {
-		*cost = *cost + delta_c;
-		*bb_cost = *bb_cost + bb_delta_c;
-	
 		if (place_algorithm == NET_TIMING_DRIVEN_PLACE
 				|| place_algorithm == PATH_TIMING_DRIVEN_PLACE) {
-			/*update the point_to_point_timing_cost and point_to_point_delay_cost 
-			 * values from the temporary values */
-			*timing_cost = *timing_cost + timing_delta_c;
-			*delay_cost = *delay_cost + delay_delta_c;
+			/*in this case we redefine delta_c as a combination of timing and bb.  *
+			 *additionally, we normalize all values, therefore delta_c is in       *
+			 *relation to 1*/
 
-			update_td_cost();
+			comp_delta_td_cost(&timing_delta_c, &delay_delta_c);
+
+			delta_c = (1 - timing_tradeoff) * bb_delta_c * inverse_prev_bb_cost
+					+ timing_tradeoff * timing_delta_c * inverse_prev_timing_cost;
+		} else {
+			delta_c = bb_delta_c;
 		}
 
-		/* update net cost functions and reset flags. */
-		for (inet_affected = 0; inet_affected < num_nets_affected; inet_affected++) {
-			inet = ts_nets_to_update[inet_affected];
+		keep_switch = assess_swap(delta_c, t);
 
-			bb_coords[inet] = ts_bb_coord_new[inet];
-			if (clb_net[inet].num_sinks >= SMALL_NET)
-				bb_num_on_edges[inet] = ts_bb_edge_new[inet];
-			
-			net_cost[inet] = temp_net_cost[inet];
+		/* 1 -> move accepted, 0 -> rejected. */
 
-			/* negative temp_net_cost value is acting as a flag. */
-			temp_net_cost[inet] = -1;
-			bb_updated_before[inet] = NOT_UPDATED_YET;
-		}
+		if (keep_switch) {
+			*cost = *cost + delta_c;
+			*bb_cost = *bb_cost + bb_delta_c;
+	
+			if (place_algorithm == NET_TIMING_DRIVEN_PLACE
+					|| place_algorithm == PATH_TIMING_DRIVEN_PLACE) {
+				/*update the point_to_point_timing_cost and point_to_point_delay_cost 
+				 * values from the temporary values */
+				*timing_cost = *timing_cost + timing_delta_c;
+				*delay_cost = *delay_cost + delay_delta_c;
 
-		/* Update clb data structures since we kept the move. */
-		/* Swap physical location */
-		for (iblk = 0; iblk < blocks_affected.num_moved_blocks; iblk++) {
-
-			x_to = blocks_affected.moved_blocks[iblk].xnew;
-			y_to = blocks_affected.moved_blocks[iblk].ynew;
-			z_to = blocks_affected.moved_blocks[iblk].znew;
-
-			x_from = blocks_affected.moved_blocks[iblk].xold;
-			y_from = blocks_affected.moved_blocks[iblk].yold;
-			z_from = blocks_affected.moved_blocks[iblk].zold;
-
-			b_from = blocks_affected.moved_blocks[iblk].block_num;
-
-			grid[x_to][y_to].blocks[z_to] = b_from;
-
-			if (blocks_affected.moved_blocks[iblk].swapped_to_empty == TRUE) {
-				grid[x_to][y_to].usage++;
-				grid[x_from][y_from].usage--;
+				update_td_cost();
 			}
+
+			/* update net cost functions and reset flags. */
+			for (inet_affected = 0; inet_affected < num_nets_affected; inet_affected++) {
+				inet = ts_nets_to_update[inet_affected];
+
+				bb_coords[inet] = ts_bb_coord_new[inet];
+				if (clb_net[inet].num_sinks >= SMALL_NET)
+					bb_num_on_edges[inet] = ts_bb_edge_new[inet];
 			
-		} // Finish updating clb for all blocks
+				net_cost[inet] = temp_net_cost[inet];
 
-	} else { /* Move was rejected.  */
+				/* negative temp_net_cost value is acting as a flag. */
+				temp_net_cost[inet] = -1;
+				bb_updated_before[inet] = NOT_UPDATED_YET;
+			}
 
-		/* Reset the net cost function flags first. */
-		for (inet_affected = 0; inet_affected < num_nets_affected; inet_affected++) {
-			inet = ts_nets_to_update[inet_affected];
-			temp_net_cost[inet] = -1;
-			bb_updated_before[inet] = NOT_UPDATED_YET;
+			/* Update clb data structures since we kept the move. */
+			/* Swap physical location */
+			for (iblk = 0; iblk < blocks_affected.num_moved_blocks; iblk++) {
+
+				x_to = blocks_affected.moved_blocks[iblk].xnew;
+				y_to = blocks_affected.moved_blocks[iblk].ynew;
+				z_to = blocks_affected.moved_blocks[iblk].znew;
+
+				x_from = blocks_affected.moved_blocks[iblk].xold;
+				y_from = blocks_affected.moved_blocks[iblk].yold;
+				z_from = blocks_affected.moved_blocks[iblk].zold;
+
+				b_from = blocks_affected.moved_blocks[iblk].block_num;
+
+				grid[x_to][y_to].blocks[z_to] = b_from;
+
+				if (blocks_affected.moved_blocks[iblk].swapped_to_empty == TRUE) {
+					grid[x_to][y_to].usage++;
+					grid[x_from][y_from].usage--;
+				}
+			
+			} // Finish updating clb for all blocks
+
+		} else { /* Move was rejected.  */
+
+			/* Reset the net cost function flags first. */
+			for (inet_affected = 0; inet_affected < num_nets_affected; inet_affected++) {
+				inet = ts_nets_to_update[inet_affected];
+				temp_net_cost[inet] = -1;
+				bb_updated_before[inet] = NOT_UPDATED_YET;
+			}
+
+			/* Restore the block data structures to their state before the move. */
+			for (iblk = 0; iblk < blocks_affected.num_moved_blocks; iblk++) {
+
+				b_from = blocks_affected.moved_blocks[iblk].block_num;
+
+				block[b_from].x = blocks_affected.moved_blocks[iblk].xold;
+				block[b_from].y = blocks_affected.moved_blocks[iblk].yold;
+				block[b_from].z = blocks_affected.moved_blocks[iblk].zold;
+		
+			}
 		}
+
+		/* Resets the num_moved_blocks, but do not free blocks_moved array. Defensive Coding */
+		blocks_affected.num_moved_blocks = 0;
+
+		return (keep_switch == 1) ? ACCEPTED : REJECTED;
+	} else {
 
 		/* Restore the block data structures to their state before the move. */
 		for (iblk = 0; iblk < blocks_affected.num_moved_blocks; iblk++) {
@@ -1415,12 +1480,9 @@ static int try_swap(float t, float *cost, float *bb_cost, float *timing_cost,
 			block[b_from].z = blocks_affected.moved_blocks[iblk].zold;
 		
 		}
+
+		return ABORTED;
 	}
-
-	/* Resets the num_moved_blocks, but do not free blocks_moved array. Defensive Coding */
-	blocks_affected.num_moved_blocks = 0;
-
-	return (keep_switch);
 }
 
 static int find_affected_nets(int *nets_to_update) {
