@@ -567,7 +567,7 @@ void alloc_and_load_blk_pin_to_port_pin(int *** blk_pin_to_port, int *** blk_pin
 		blk_pin_count = 0;
 		num_ports = block[iblk].type->pb_type->num_ports;
 		for (iport = 0; iport < num_ports; iport++) {
-			num_port_pins = block[iblk].type->pb_type->ports->num_pins;
+			num_port_pins = block[iblk].type->pb_type->ports[iport].num_pins;
 			for (iport_pin = 0; iport_pin < num_port_pins; iport_pin++) {
 				temp_blk_pin_to_port[iblk][blk_pin_count] = iport;
 				temp_blk_pin_to_port_pin[iblk][blk_pin_count] = iport_pin;
@@ -629,7 +629,7 @@ int *** alloc_and_load_port_pin_to_blk_pin(void) {
 		blk_pin_count = 0;
 		num_ports = block[iblk].type->pb_type->num_ports;
 		for (iport = 0; iport < num_ports; iport++) {
-			num_port_pins = block[iblk].type->pb_type->ports->num_pins;
+			num_port_pins = block[iblk].type->pb_type->ports[iport].num_pins;
 			for (iport_pin = 0; iport_pin < num_port_pins; iport_pin++) {
 				temp_port_pin_to_blk_pin[iblk][iport][iport_pin] = blk_pin_count;
 				blk_pin_count++;
@@ -811,7 +811,7 @@ void alloc_and_load_blk_pin_to_idirect(t_direct_inf* directs, int num_directs,
 				num_ports = block[iblk].type->pb_type->num_ports;
 				for (iport = 0; iport < num_ports; iport++) {
 					// Find ports with the same name as from_port_name
-					if (strcmp(block[iblk].type->pb_type->ports[iport].name, from_pb_type_name) == 0) {
+					if (strcmp(block[iblk].type->pb_type->ports[iport].name, from_port_name) == 0) {
 						
 						num_port_pins = block[iblk].type->pb_type->ports[iport].num_pins;
 
@@ -828,7 +828,7 @@ void alloc_and_load_blk_pin_to_idirect(t_direct_inf* directs, int num_directs,
 						if (from_start_pin_index >= 0 || from_end_pin_index >= 0) {
 
 							// Mark pins with indices from from_start_pin_index to from_end_pin_index, inclusive
-							for (iport_pin = from_start_pin_index; iport_pin <= from_end_pin_index; iport++) {
+							for (iport_pin = from_start_pin_index; iport_pin <= from_end_pin_index; iport_pin++) {
 
 								iblk_pin = port_pin_to_blk_pin[iblk][iport][iport_pin];
 
@@ -855,7 +855,7 @@ void alloc_and_load_blk_pin_to_idirect(t_direct_inf* directs, int num_directs,
 						} else {
 
 							// Mark all the pins in this port
-							for (iport_pin = 0; iport_pin < num_port_pins; iport++) {
+							for (iport_pin = 0; iport_pin < num_port_pins; iport_pin++) {
 
 								iblk_pin = port_pin_to_blk_pin[iblk][iport][iport_pin];
 
@@ -892,7 +892,7 @@ void alloc_and_load_blk_pin_to_idirect(t_direct_inf* directs, int num_directs,
 				num_ports = block[iblk].type->pb_type->num_ports;
 				for (iport = 0; iport < num_ports; iport++) {
 					// Find ports with the same name as to_port_name
-					if (strcmp(block[iblk].type->pb_type->ports[iport].name, to_pb_type_name) == 0) {
+					if (strcmp(block[iblk].type->pb_type->ports[iport].name, to_port_name) == 0) {
 						
 						num_port_pins = block[iblk].type->pb_type->ports[iport].num_pins;
 
@@ -909,7 +909,7 @@ void alloc_and_load_blk_pin_to_idirect(t_direct_inf* directs, int num_directs,
 						if (from_start_pin_index >= 0 || from_end_pin_index >= 0) {
 
 							// Mark pins with indices from to_start_pin_index to to_end_pin_index, inclusive
-							for (iport_pin = to_start_pin_index; iport_pin <= to_end_pin_index; iport++) {
+							for (iport_pin = to_start_pin_index; iport_pin <= to_end_pin_index; iport_pin++) {
 
 								iblk_pin = port_pin_to_blk_pin[iblk][iport][iport_pin];
 							
@@ -938,7 +938,7 @@ void alloc_and_load_blk_pin_to_idirect(t_direct_inf* directs, int num_directs,
 						} else {
 
 							// Mark all the pins in this port
-							for (iport_pin = 0; iport_pin < num_port_pins; iport++) {
+							for (iport_pin = 0; iport_pin < num_port_pins; iport_pin++) {
 
 								iblk_pin = port_pin_to_blk_pin[iblk][iport][iport_pin];
 							
