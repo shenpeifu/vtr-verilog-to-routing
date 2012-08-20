@@ -2560,7 +2560,7 @@ static void initial_placement(enum e_pad_loc_type pad_loc_type,
 	
 	// All the chains are placed, update the legal_pos[][] array
 	for (type_index = 0; type_index < num_types; type_index++) {
-		assert (free_locations[type_index] > 0);
+		assert (free_locations[type_index] >= 0);
 		for (ichoice = 0; ichoice < free_locations[type_index]; ichoice++) {
 			x = legal_pos[type_index][ichoice].x;
 			y = legal_pos[type_index][ichoice].y;
@@ -2605,7 +2605,8 @@ static void initial_placement(enum e_pad_loc_type pad_loc_type,
 			y = legal_pos[type_index][choice].y;
 			z = legal_pos[type_index][choice].z;
 
-			assert (grid[x][y].blocks[z] != OPEN);
+			// Make sure that the position is OPEN before placing the block down
+			assert (grid[x][y].blocks[z] == OPEN);
 
 			grid[x][y].blocks[z] = iblk;
 			grid[x][y].usage++;

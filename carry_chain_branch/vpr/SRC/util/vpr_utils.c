@@ -7,9 +7,12 @@
 #include "vpr_utils.h"
 #include "cluster_placement.h"
 #include "place_macro.h"
+#include "string.h"
 
 /* This module contains subroutines that are used in several unrelated parts *
  * of VPR.  They are VPR-specific utility routines.                          */
+
+#define MAX_STRING_LEN 128
 
 /******************** Subroutine definitions ********************************/
 
@@ -659,10 +662,13 @@ void alloc_and_load_blk_pin_to_idirect(t_direct_inf* directs, int num_directs,
 	int itype, max_pins_per_clb;
 	int ** temp_blk_pin_to_idirect, ** temp_blk_pin_to_direct_src_or_sink;
 
-	int iblk, iblk_pin, iport, iport_pin, idirect;
+	int iblk, iblk_pin, iport, iport_pin, idirect, ichar;
 	int num_ports, num_port_pins;
 
-	char *to_pb_type_name = NULL, *to_port_name = NULL, *from_pb_type_name = NULL, *from_port_name = NULL;
+	char to_pb_type_name[MAX_STRING_LEN], to_port_name[MAX_STRING_LEN], 
+			from_pb_type_name[MAX_STRING_LEN], from_port_name[MAX_STRING_LEN], 
+			source_string[MAX_STRING_LEN];
+	char * find_format = NULL;
 	int to_start_pin_index = -1, to_end_pin_index = -1;
 	int from_start_pin_index = -1, from_end_pin_index = -1;
 	int match_count;
@@ -690,11 +696,18 @@ void alloc_and_load_blk_pin_to_idirect(t_direct_inf* directs, int num_directs,
 	// Go through directs and find pins with possible direct connections
 	for (idirect = 0; idirect < num_directs; idirect++) {
 		// parse out the pb_type and port name, possibly pin_indices from from_pin
-		from_pb_type_name = strstr(directs[idirect].from_pin,"[");
-		if (from_pb_type_name == NULL) {
+		find_format = strstr(directs[idirect].from_pin,"[");
+		if (find_format == NULL) {
 			/* Format "pb_type_name.port_name" */
 			from_start_pin_index = from_end_pin_index = -1;
-			match_count = sscanf(directs[idirect].from_pin, "%s.%s", from_pb_type_name, from_port_name);
+			
+			strcpy (source_string, directs[idirect].from_pin);
+			for (ichar = 0; ichar < (int)(strlen(source_string)); ichar++) {
+				if (source_string[ichar] == '.')
+					source_string[ichar] = ' ';
+			}
+
+			match_count = sscanf(source_string, "%s %s", from_pb_type_name, from_port_name);
 			if (match_count != 2){
 				vpr_printf(TIO_MESSAGE_ERROR, "[LINE %d] Invalid from_pin - %s, "
 						"name should be in the format \"pb_type_name\".\"port_name\" or "
@@ -705,10 +718,16 @@ void alloc_and_load_blk_pin_to_idirect(t_direct_inf* directs, int num_directs,
 			}
 		} else {
 			/* Format "pb_type_name.port_name [end_pin_index:start_pin_index]" */
-			match_count = sscanf(directs[idirect].from_pin, "%s.%s [%d:%d]", 
+			strcpy (source_string, directs[idirect].from_pin);
+			for (ichar = 0; ichar < (int)(strlen(source_string)); ichar++) {
+				if (source_string[ichar] == '.')
+					source_string[ichar] = ' ';
+			}
+
+			match_count = sscanf(source_string, "%s %s [%d:%d]", 
 									from_pb_type_name, from_port_name, 
 									&from_end_pin_index, &from_start_pin_index);
-			if (match_count != 3){
+			if (match_count != 4){
 				vpr_printf(TIO_MESSAGE_ERROR, "[LINE %d] Invalid from_pin - %s, "
 						"name should be in the format \"pb_type_name\".\"port_name\" or "
 						"\"pb_type_name\".\"port_name [end_pin_index:start_pin_index]\". "
@@ -731,11 +750,18 @@ void alloc_and_load_blk_pin_to_idirect(t_direct_inf* directs, int num_directs,
 		}
 			
 		// parse out the pb_type and port name, possibly pin_indices from to_pin
-		to_pb_type_name = strstr(directs[idirect].to_pin,"[");
-		if (to_pb_type_name == NULL) {
+		find_format = strstr(directs[idirect].to_pin,"[");
+		if (find_format == NULL) {
 			/* Format "pb_type_name.port_name" */
 			to_start_pin_index = to_end_pin_index = -1;
-			match_count = sscanf(directs[idirect].to_pin, "%s.%s", to_pb_type_name, to_port_name);
+			
+			strcpy (source_string, directs[idirect].to_pin);
+			for (ichar = 0; ichar < (int)(strlen(source_string)); ichar++) {
+				if (source_string[ichar] == '.')
+					source_string[ichar] = ' ';
+			}
+
+			match_count = sscanf(source_string, "%s %s", to_pb_type_name, to_port_name);
 			if (match_count != 2){
 				vpr_printf(TIO_MESSAGE_ERROR, "[LINE %d] Invalid to_pin - %s, "
 						"name should be in the format \"pb_type_name\".\"port_name\" or "
@@ -746,10 +772,16 @@ void alloc_and_load_blk_pin_to_idirect(t_direct_inf* directs, int num_directs,
 			}
 		} else {
 			/* Format "pb_type_name.port_name [end_pin_index:start_pin_index]" */
-			match_count = sscanf(directs[idirect].to_pin, "%s.%s [%d:%d]", 
+			strcpy (source_string, directs[idirect].to_pin);
+			for (ichar = 0; ichar < (int)(strlen(source_string)); ichar++) {
+				if (source_string[ichar] == '.')
+					source_string[ichar] = ' ';
+			}
+
+			match_count = sscanf(source_string, "%s %s [%d:%d]", 
 									to_pb_type_name, to_port_name, 
 									&to_end_pin_index, &to_start_pin_index);
-			if (match_count != 3){
+			if (match_count != 4){
 				vpr_printf(TIO_MESSAGE_ERROR, "[LINE %d] Invalid to_pin - %s, "
 						"name should be in the format \"pb_type_name\".\"port_name\" or "
 						"\"pb_type_name\".\"port_name [end_pin_index:start_pin_index]\". "
