@@ -833,8 +833,6 @@ void alloc_and_load_blk_pin_to_idirect(t_direct_inf* directs, int num_directs,
 								iblk_pin = port_pin_to_blk_pin[iblk][iport][iport_pin];
 
 								// Check the fc for the pin, direct chain link only if fc == 0
-								// AUG 16, 2012
-								// Disable for now - waiting for pin-based fc implementation by Nooruddin
 								if (block[iblk].type->Fc[iblk_pin] == 0) {
 								
 									temp_blk_pin_to_idirect[iblk][iblk_pin] = idirect;
@@ -860,8 +858,6 @@ void alloc_and_load_blk_pin_to_idirect(t_direct_inf* directs, int num_directs,
 								iblk_pin = port_pin_to_blk_pin[iblk][iport][iport_pin];
 
 								// Check the fc for the pin, direct chain link only if fc == 0
-								// AUG 16, 2012
-								// Disable for now - waiting for pin-based fc implementation by Nooruddin
 								if (block[iblk].type->Fc[iblk_pin] == 0) {
 								
 									temp_blk_pin_to_idirect[iblk][iblk_pin] = idirect;
@@ -914,8 +910,6 @@ void alloc_and_load_blk_pin_to_idirect(t_direct_inf* directs, int num_directs,
 								iblk_pin = port_pin_to_blk_pin[iblk][iport][iport_pin];
 							
 								// Check the fc for the pin, direct chain link only if fc == 0
-								// AUG 16, 2012
-								// Disable for now - waiting for pin-based fc implementation by Nooruddin
 								if (block[iblk].type->Fc[iblk_pin] == 0) {
 								
 									temp_blk_pin_to_idirect[iblk][iblk_pin] = idirect;
@@ -943,8 +937,6 @@ void alloc_and_load_blk_pin_to_idirect(t_direct_inf* directs, int num_directs,
 								iblk_pin = port_pin_to_blk_pin[iblk][iport][iport_pin];
 							
 								// Check the fc for the pin, direct chain link only if fc == 0
-								// AUG 16, 2012
-								// Disable for now - waiting for pin-based fc implementation by Nooruddin
 								if (block[iblk].type->Fc[iblk_pin] == 0) {
 								
 									temp_blk_pin_to_idirect[iblk][iblk_pin] = idirect;
