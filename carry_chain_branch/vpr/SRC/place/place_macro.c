@@ -62,12 +62,13 @@ int alloc_and_load_placement_macros(t_direct_inf* directs, int num_directs, t_pl
 	 *       structures before freeing them.                           */
 
 	/* Declaration of local variables */
-	int iblk, from_iblk_pin, to_iblk_pin, from_inet, to_inet, from_idirect, to_idirect;
-	int from_src_or_sink, to_src_or_sink, next_iblk, next_iblk_pin, next_inet, next_src_or_sink;
+	int iblk, from_iblk_pin, to_iblk_pin, from_inet, to_inet, from_idirect, to_idirect, 
+			from_src_or_sink, to_src_or_sink;
+	int next_iblk, curr_iblk, next_inet, curr_inet;
 	int num_blk_pins, num_chain; 
-	int *pl_macro_idirect, *pl_macro_num_members, **pl_macro_member_blk_num;
 	int ichain, imember;
-
+	int *pl_macro_idirect, *pl_macro_num_members, **pl_macro_member_blk_num;
+	
 	t_pl_macro * chain = NULL;
 	
 	/* Sets up the required variables. */
@@ -78,7 +79,6 @@ int alloc_and_load_placement_macros(t_direct_inf* directs, int num_directs, t_pl
 			&blk_pin_to_idirect, &blk_pin_to_direct_src_or_sink);
 
 	/* Allocate maximum memory for temporary variables. */
-	num_chain = 0;
 	pl_macro_num_members = (int *) my_calloc (num_blocks , sizeof(int));
 	pl_macro_idirect = (int *) my_calloc (num_blocks , sizeof(int));
 	pl_macro_member_blk_num = (int **) my_calloc (num_blocks , sizeof(int*));
@@ -89,73 +89,76 @@ int alloc_and_load_placement_macros(t_direct_inf* directs, int num_directs, t_pl
 	 * Go through all the pins with possible direct connections in           *
 	 * blk_pin_to_idirect. Count the number of heads (which is the same      *
 	 * as the number chains) and also the length of each chain               *
-	 * Head - blocks with from_pin OPEN and to_pin connected                 *
-	 * Tail - blocks with from_pin connected and to_pin OPEN                 */
+	 * Head - blocks with to_pin OPEN and from_pin connected                 *
+	 * Tail - blocks with to_pin connected and from_pin OPEN                 */
+	num_chain = 0;
 	for (iblk = 0; iblk < num_blocks; iblk++) {
 
 		num_blk_pins = block[iblk].type->num_pins;
-		for (from_iblk_pin = 0; from_iblk_pin < num_blk_pins; from_iblk_pin++) {
+		for (to_iblk_pin = 0; to_iblk_pin < num_blk_pins; to_iblk_pin++) {
 			
-			from_inet = block[iblk].nets[from_iblk_pin];
-			from_idirect = blk_pin_to_idirect[iblk][from_iblk_pin];
-			from_src_or_sink = blk_pin_to_direct_src_or_sink[iblk][from_iblk_pin];
+			to_inet = block[iblk].nets[to_iblk_pin];
+			to_idirect = blk_pin_to_idirect[iblk][to_iblk_pin];
+			to_src_or_sink = blk_pin_to_direct_src_or_sink[iblk][to_iblk_pin];
 			
-			// Find from_pins with possible direct connection, make sure that it is not 
+			// Find to_pins (SINKs) with possible direct connection but are not 
 			// connected to any net
-			if ( from_src_or_sink == SOURCE && from_idirect != OPEN && from_inet == OPEN ) {
+			if ( to_src_or_sink == SINK && to_idirect != OPEN && to_inet == OPEN ) {
 
-				for (to_iblk_pin = 0; to_iblk_pin < num_blk_pins; to_iblk_pin++) {
-					to_inet = block[iblk].nets[to_iblk_pin];
-					to_idirect = blk_pin_to_idirect[iblk][to_iblk_pin];
-					to_src_or_sink = blk_pin_to_direct_src_or_sink[iblk][to_iblk_pin];
+				for (from_iblk_pin = 0; from_iblk_pin < num_blk_pins; from_iblk_pin++) {
+					from_inet = block[iblk].nets[from_iblk_pin];
+					from_idirect = blk_pin_to_idirect[iblk][from_iblk_pin];
+					from_src_or_sink = blk_pin_to_direct_src_or_sink[iblk][from_iblk_pin];
 
-					// Find to_pins with the same possible direct connection.
-					if ( to_src_or_sink == SINK && to_idirect == from_idirect && to_inet != OPEN) {
+					// Find from_pins with the same possible direct connection that are connected.
+					if ( from_src_or_sink == SOURCE && to_idirect == from_idirect && from_inet != OPEN) {
 						
-						// Mark down the first block in the chain
+						// Mark down that this is the first block in the chain
 						pl_macro_member_blk_num[num_chain][0] = iblk;
 						pl_macro_idirect[num_chain] = to_idirect;
 						
-						// Also find out how many members are in the macros, there are at 
-						// least 2 members - 1 head and 1 tail.
-						next_inet = to_inet;
-						do {
+						// Increment the num_member count.
+						pl_macro_num_members[num_chain]++;
 						
-							// Make sure that it is connected to a net and only has 1 
-							// sink - direct chain connection.
-							assert(clb_net[next_inet].num_sinks == 1);
+						// Also find out how many members are in the macros, 
+						// there are at least 2 members - 1 head and 1 tail.
+						
+						// Initialize the variables
+						next_inet = from_inet;
+						next_iblk = iblk;
+
+						// Start finding the other members
+						while (next_inet != OPEN) {
+
+							curr_iblk = next_iblk;
+							curr_inet = next_inet;
 							
+							// Assume that carry chains only has 1 sink - direct connection
+							assert(clb_net[curr_inet].num_sinks == 1);
+							next_iblk = clb_net[curr_inet].node_block[1];
+							
+							// Assume that the from_iblk_pin index is the same for the next block
+							assert (blk_pin_to_idirect[next_iblk][from_iblk_pin] == from_idirect
+									&& blk_pin_to_direct_src_or_sink[next_iblk][from_iblk_pin] == SOURCE);
+							next_inet = block[next_iblk].nets[from_iblk_pin];
+
+							// Mark down this block as a member of the chain
+							imember = pl_macro_num_members[num_chain];
+							pl_macro_member_blk_num[num_chain][imember] = next_iblk;
+
 							// Increment the num_member count.
 							pl_macro_num_members[num_chain]++;
-							
-							// Find the next block, make sure that they are consistent :-
-							// 1) from the coord offsets specified in the arch file.
-							// 2) from the netlist specified in the blif file.
 
-							next_iblk = clb_net[next_inet].node_block[1];
-							next_iblk_pin = clb_net[next_inet].node_block_pin[1];
-							
-							// Assert that the block connected next is indeed the block at the right offset.
-							assert ( next_iblk == 
-									grid[block[pl_macro_member_blk_num[num_chain][0]].x + directs[to_idirect].x_offset]
-									[block[pl_macro_member_blk_num[num_chain][0]].y + directs[to_idirect].y_offset].blocks
-									[block[pl_macro_member_blk_num[num_chain][0]].z + directs[to_idirect].z_offset]);
-							
-							// Find the following block connected.
-							next_src_or_sink = blk_pin_to_direct_src_or_sink[next_iblk][next_iblk_pin];
-							next_inet = block[next_iblk].nets[next_iblk_pin];
-							
-							// Mark down the next blk in the chain
-							pl_macro_member_blk_num[num_chain][pl_macro_num_members[num_chain]] = next_iblk;
+						} // Found all the members of this chain at this point
 
-						} while(next_src_or_sink != OPEN);
 
+						// Increment the chain count
 						num_chain ++;
 
-					} // Do nothing if the to_pins does not have same possible direct connection.
-				} // Finish going through all the pins for to_pins.
-			} // Do nothing if the from_pins does not have same possible direct connection.
-		} // Finish going through all the pins for from_pins.
+					} // Do nothing if the from_pins does not have same possible direct connection.
+				} // Finish going through all the pins for from_pins.
+			} // Do nothing if the to_pins does not have same possible direct connection.
+		} // Finish going through all the pins for to_pins.
 	} // Finish going through all blocks.
 	// Now, all the data is readily stored in the temporary data structures.
 
@@ -171,7 +174,7 @@ int alloc_and_load_placement_macros(t_direct_inf* directs, int num_directs, t_pl
 										(chain[ichain].num_blocks * sizeof(t_pl_macro_member));
 
 		/* Load the values for each member of the chain */
-		for (imember = 0; imember < chain[ichain].num_blocks; ) {
+		for (imember = 0; imember < chain[ichain].num_blocks; imember++) {
 			chain[ichain].members[imember].x_offset = imember * directs[pl_macro_idirect[ichain]].x_offset;
 			chain[ichain].members[imember].y_offset = imember * directs[pl_macro_idirect[ichain]].y_offset;
 			chain[ichain].members[imember].z_offset = directs[pl_macro_idirect[ichain]].z_offset;

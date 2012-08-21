@@ -9,17 +9,16 @@
  top^d~10 top^d~11 top^d~12 top^d~13 top^d~14 top^d~15
 
 .names unconn
-.names gnd
 
 .subckt adder a[0]=top^a~0 a[1]=top^a~1 a[2]=top^a~2 a[3]=top^a~3 b[0]=top^b~0\
- b[1]=top^b~1 b[2]=top^b~2 b[3]=top^b~3 cin[0]=gnd sumout[0]=top^ADD~0-0[0]\
+ b[1]=top^b~1 b[2]=top^b~2 b[3]=top^b~3 cin[0]=unconn sumout[0]=top^ADD~0-0[0]\
  sumout[1]=top^ADD~0-0[1] sumout[2]=top^ADD~0-0[2] sumout[3]=top^ADD~0-0[3]\
  cout[0]=top^ADD~0-0[4]
 
 
 .subckt adder a[0]=top^ADD~0-0[0] a[1]=top^ADD~0-0[1] a[2]=top^ADD~0-0[2]\
  a[3]=top^ADD~0-0[3] b[0]=top^b~0 b[1]=top^b~1 b[2]=top^b~2 b[3]=top^b~3\
- cin[0]=gnd sumout[0]=top^ADD~17-0[0] sumout[1]=top^ADD~17-0[1]\
+ cin[0]=unconn sumout[0]=top^ADD~17-0[0] sumout[1]=top^ADD~17-0[1]\
  sumout[2]=top^ADD~17-0[2] sumout[3]=top^ADD~17-0[3] cout[0]=top^ADD~17-0[4]
 
 
