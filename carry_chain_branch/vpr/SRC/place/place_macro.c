@@ -203,8 +203,6 @@ int get_chain_index(int blk_num) {
 
 	int ichain, imember, chain_index = -1;
 
-	if (blk_num >= num_blocks || blk_num < 0)
-
 	for (ichain = 0; ichain < pl_macro_num_chains; ichain ++) {
 		for (imember = 0; imember < pl_macro_chains[ichain].num_blocks; imember++) {
 			if (pl_macro_chains[ichain].members[imember].blk_index == blk_num)

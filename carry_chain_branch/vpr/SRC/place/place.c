@@ -36,7 +36,7 @@ enum cost_methods {
 	NORMAL, CHECK
 };
 
-enum swap_result {
+static enum swap_result {
 	REJECTED, ACCEPTED, ABORTED
 };
 
@@ -556,7 +556,7 @@ void try_place(struct s_placer_opts placer_opts,
 				num_swap_accepted++;
 			} else if (swap_result == ABORTED) {
 				num_swap_aborted++;
-			} else {
+			} else { // swap_result == REJECTED
 				num_swap_rejected++;
 			}
 
@@ -1182,12 +1182,13 @@ static enum swap_result try_swap(float t, float *cost, float *bb_cost, float *ti
 	ichain = get_chain_index(b_from);
 	if ( ichain != -1) {
 
+		// b_from is part of a chain, I need to swap the whole chain
+
 		for (imember = 0; imember < pl_chains[ichain].num_blocks; imember++) {
 
 			// Gets the new from and to info for every block in the chain
 			// cannot use the old from and to info
 			b_from = pl_chains[ichain].members[imember].blk_index;
-			b_to = grid[block[b_from].x][block[b_from].y].blocks[block[b_from].z];
 			
 			x_from = block[b_from].x;
 			y_from = block[b_from].y;
@@ -1197,9 +1198,13 @@ static enum swap_result try_swap(float t, float *cost, float *bb_cost, float *ti
 			y_to = y_from + y_swap_offset;
 			z_to = z_from + z_swap_offset;
 
-			// Does not allow chain to chain swap yet
-			// How do I abort the swap?
-			abort_swap = TRUE;
+			// Make sure that the swap_to location is still on the chip
+			if (x_to < 1 || x_to > nx+1 || y_to < 1 || y_to > ny+1 || z_to < 0) {
+				abort_swap = TRUE;
+				break;
+			}
+
+			b_to = grid[x_to][y_to].blocks[z_to];
 			
 			// Check whether the to_location is empty
 			if (b_to == EMPTY) {
@@ -1223,8 +1228,11 @@ static enum swap_result try_swap(float t, float *cost, float *bb_cost, float *ti
 				
 			} else {
 
-				assert (get_chain_index(b_to) == -1);
-				/* if (get_chain_index(b_to) == -1) ABORT SWAP */
+				// Does not allow a swap with a carry chain yet
+				if (get_chain_index(b_to) != -1) {
+					abort_swap = TRUE;
+					break;
+				}
 
 				// Swap the block, dont swap the nets yet
 				block[b_to].x = x_from;
@@ -1287,8 +1295,9 @@ static enum swap_result try_swap(float t, float *cost, float *bb_cost, float *ti
 		
 		} else {
 			
-			assert (get_chain_index(b_to) == -1);
-			/* if (get_chain_index(b_to) == -1) ABORT SWAP */
+			// Does not allow a swap with a carry chain yet
+			if (get_chain_index(b_to) != -1)
+				abort_swap = TRUE;
 
 			// Swap the block, dont swap the nets yet
 			block[b_to].x = x_from;
