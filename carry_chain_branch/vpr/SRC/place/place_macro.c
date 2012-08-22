@@ -1,4 +1,3 @@
-//#if 0
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
@@ -253,5 +252,3 @@ void free_placement_macros_structs(void) {
 
 
 }
-
-//#endif

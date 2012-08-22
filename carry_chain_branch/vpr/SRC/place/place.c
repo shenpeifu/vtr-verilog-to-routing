@@ -2632,6 +2632,9 @@ static void initial_placement(enum e_pad_loc_type pad_loc_type,
 			if (grid[x][y].blocks[z] != OPEN) {
 				legal_pos[type_index][ichoice] = legal_pos[type_index][free_locations[type_index] - 1];
 				free_locations[type_index]--;
+
+				// After the move, I need to check this particular entry again
+				ichoice--;
 				continue;
 			}
 		}
@@ -2660,6 +2663,7 @@ static void initial_placement(enum e_pad_loc_type pad_loc_type,
 				vpr_printf (TIO_MESSAGE_ERROR, "Initial placement failed. Could not place "
 						"block %s£¨#%d); no free locations of type %s (#%d).\n", 
 						block[iblk].name, iblk, type_descriptors[type_index].name, type_index);
+				exit(1);
 			}
 
 			choice = my_irand(free_locations[type_index] - 1);
@@ -2672,6 +2676,10 @@ static void initial_placement(enum e_pad_loc_type pad_loc_type,
 
 			grid[x][y].blocks[z] = iblk;
 			grid[x][y].usage++;
+
+			block[iblk].x = x;
+			block[iblk].y = y;
+			block[iblk].z = z;
 
 			/* Ensure randomizer doesn't pick this location again, since it's occupied. Could shift all the 
 				* legal positions in legal_pos to remove the entry (choice) we just used, but faster to 
@@ -2686,24 +2694,6 @@ static void initial_placement(enum e_pad_loc_type pad_loc_type,
 
 	if (pad_loc_type == USER) {
 		read_user_pad_loc(pad_loc_file);
-	}
-
-	/* All the blocks are placed now.  Make the block array agree with the    *
-	 * clb array.                                                             */
-
-	for (i = 0; i <= (nx + 1); i++) {
-		for (j = 0; j <= (ny + 1); j++) {
-			for (k = 0; k < grid[i][j].type->capacity; k++) {
-				assert(grid[i][j].blocks != NULL);
-				iblk = grid[i][j].blocks[k];
-
-				if (iblk != EMPTY) {
-					block[iblk].x = i;
-					block[iblk].y = j;
-					block[iblk].z = k;
-				}
-			}
-		}
 	}
 
 	/* Restore legal_pos */
@@ -2968,9 +2958,11 @@ static void init_place_carry_chains(int chains_max_num_tries, int * free_locatio
 	int x, y, z, member_x, member_y, member_z;
 	int ichain, iblk, type_index, itry, imember, ichoice;
 
-	chain_placed = TRUE;
 	/* Chains are harder to place.  Do them first */
 	for (ichain = 0; ichain < num_chains; ichain++) {
+		
+		// Every chain are not placed in the beginnning
+		chain_placed = FALSE;
 		
 		// Assume that all the blocks in the chain are of the same type
 		iblk = pl_chains[ichain].members[0].blk_index;
@@ -2979,10 +2971,14 @@ static void init_place_carry_chains(int chains_max_num_tries, int * free_locatio
 			vpr_printf (TIO_MESSAGE_ERROR, "Initial placement failed. Could not place "
 					"chain length %d with head block %s£¨#%d); not enough free locations of type %s (#%d).\n", 
 					pl_chains[ichain].num_blocks, block[iblk].name, iblk, type_descriptors[type_index].name, type_index);
+			exit(1);
 		}
 
 		// Try to place the chain first, if can be placed - place them, otherwise try again
 		for (itry = 0; itry < chains_max_num_tries && chain_placed == FALSE; itry++) {
+			
+			// Every chain cannot be placed until proven otherwise
+			chain_can_be_placed = TRUE;
 			
 			// Choose a random position for the head
 			choice = my_irand(free_locations[type_index] - 1);
@@ -2995,11 +2991,10 @@ static void init_place_carry_chains(int chains_max_num_tries, int * free_locatio
 				legal_pos[type_index][choice] = legal_pos[type_index][free_locations[type_index] - 1];
 				free_locations[type_index]--;
 				chain_can_be_placed = FALSE;
-				break;
+				continue;
 			}
 			
 			// Check whether all the members can be placed
-			chain_can_be_placed = TRUE;
 			for (imember = 0; imember < pl_chains[ichain].num_blocks; imember++) {
 				member_x = x + pl_chains[ichain].members[imember].x_offset;
 				member_y = y + pl_chains[ichain].members[imember].y_offset;
@@ -3034,7 +3029,11 @@ static void init_place_carry_chains(int chains_max_num_tries, int * free_locatio
 					member_x = x + pl_chains[ichain].members[imember].x_offset;
 					member_y = y + pl_chains[ichain].members[imember].y_offset;
 					member_z = z + pl_chains[ichain].members[imember].z_offset;
-					
+
+					block[pl_chains[ichain].members[imember].blk_index].x = member_x;
+					block[pl_chains[ichain].members[imember].blk_index].y = member_y;
+					block[pl_chains[ichain].members[imember].blk_index].z = member_z;
+
 					grid[member_x][member_y].blocks[member_z] = pl_chains[ichain].members[imember].blk_index;
 					grid[member_x][member_y].usage++;
 
@@ -3115,6 +3114,10 @@ static void init_place_carry_chains(int chains_max_num_tries, int * free_locatio
 						member_y = y + pl_chains[ichain].members[imember].y_offset;
 						member_z = z + pl_chains[ichain].members[imember].z_offset;
 					
+						block[pl_chains[ichain].members[imember].blk_index].x = member_x;
+						block[pl_chains[ichain].members[imember].blk_index].y = member_y;
+						block[pl_chains[ichain].members[imember].blk_index].z = member_z;
+
 						grid[member_x][member_y].blocks[member_z] = pl_chains[ichain].members[imember].blk_index;
 						grid[member_x][member_y].usage++;
 
@@ -3136,6 +3139,7 @@ static void init_place_carry_chains(int chains_max_num_tries, int * free_locatio
 				vpr_printf (TIO_MESSAGE_ERROR, "Initial placement failed. Could not place "
 					"chain length %d with head block %s£¨#%d); not enough free locations of type %s (#%d).\n", 
 					pl_chains[ichain].num_blocks, block[iblk].name, iblk, type_descriptors[type_index].name, type_index);
+				exit(1);
 			}
 
 		} else {
