@@ -408,9 +408,9 @@ void try_place(struct s_placer_opts placer_opts,
 			if(isEchoFileEnabled(E_ECHO_INITIAL_PLACEMENT_TIMING_GRAPH))
 				print_timing_graph(getEchoFileName(E_ECHO_INITIAL_PLACEMENT_TIMING_GRAPH));
 			if(isEchoFileEnabled(E_ECHO_INITIAL_PLACEMENT_NET_SLACK))
-				print_net_slack(slacks->net_slack, getEchoFileName(E_ECHO_INITIAL_PLACEMENT_NET_SLACK));
+				print_net_slack(slacks->net_slack, FALSE, getEchoFileName(E_ECHO_INITIAL_PLACEMENT_NET_SLACK));
 			if(isEchoFileEnabled(E_ECHO_INITIAL_PLACEMENT_NET_SLACK_RATIO))
-				print_net_slack_ratio(slacks->net_slack_ratio, getEchoFileName(E_ECHO_INITIAL_PLACEMENT_NET_SLACK_RATIO));
+				print_net_slack_ratio(slacks->net_slack_ratio, FALSE, getEchoFileName(E_ECHO_INITIAL_PLACEMENT_NET_SLACK_RATIO));
 			if(isEchoFileEnabled(E_ECHO_INITIAL_PLACEMENT_CRITICALITY))
 				print_timing_place_crit(timing_place_crit, getEchoFileName(E_ECHO_INITIAL_PLACEMENT_CRITICALITY));
 		}
@@ -855,9 +855,9 @@ void try_place(struct s_placer_opts placer_opts,
 			if(isEchoFileEnabled(E_ECHO_PLACEMENT_SINK_DELAYS))
 				print_sink_delays(getEchoFileName(E_ECHO_PLACEMENT_SINK_DELAYS));
 			if(isEchoFileEnabled(E_ECHO_FINAL_PLACEMENT_NET_SLACK))
-				print_net_slack(slacks->net_slack, getEchoFileName(E_ECHO_FINAL_PLACEMENT_NET_SLACK));
+				print_net_slack(slacks->net_slack, FALSE, getEchoFileName(E_ECHO_FINAL_PLACEMENT_NET_SLACK));
 			if(isEchoFileEnabled(E_ECHO_FINAL_PLACEMENT_NET_SLACK_RATIO))
-				print_net_slack_ratio(slacks->net_slack_ratio, getEchoFileName(E_ECHO_FINAL_PLACEMENT_NET_SLACK_RATIO));
+				print_net_slack_ratio(slacks->net_slack_ratio, FALSE, getEchoFileName(E_ECHO_FINAL_PLACEMENT_NET_SLACK_RATIO));
 			if(isEchoFileEnabled(E_ECHO_FINAL_PLACEMENT_TIMING_GRAPH))
 				print_timing_graph(getEchoFileName(E_ECHO_FINAL_PLACEMENT_TIMING_GRAPH));
 			if(isEchoFileEnabled(E_ECHO_PLACEMENT_CRIT_PATH))
