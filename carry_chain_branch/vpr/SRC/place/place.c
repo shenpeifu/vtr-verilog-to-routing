@@ -2830,6 +2830,7 @@ static void check_place(float bb_cost, float timing_cost,
 	float bb_cost_check;
 	int usage_check;
 	float timing_cost_check, delay_cost_check;
+	int ichain, imember, head_iblk, member_iblk, member_x, member_y, member_z;
 
 	bb_cost_check = comp_bb_cost(CHECK);
 	vpr_printf(TIO_MESSAGE_INFO, "bb_cost recomputed from scratch is %g.\n", bb_cost_check);
@@ -2910,6 +2911,38 @@ static void check_place(float bb_cost, float timing_cost,
 			error++;
 		}
 	free(bdone);
+	
+	/* Check the carry chain placement are legal - blocks are in the proper relative position. */
+	for (ichain = 0; ichain < num_chains; ichain++) {
+		
+		head_iblk = pl_chains[ichain].members[0].blk_index;
+		
+		for (imember = 0; imember < pl_chains[ichain].num_blocks; imember++) {
+			
+			member_iblk = pl_chains[ichain].members[imember].blk_index;
+
+			// Compute the suppossed member's x,y,z location
+			member_x = block[head_iblk].x + pl_chains[ichain].members[imember].x_offset;
+			member_y = block[head_iblk].y + pl_chains[ichain].members[imember].y_offset;
+			member_z = block[head_iblk].z + pl_chains[ichain].members[imember].z_offset;
+
+			// Check the block data structure first
+			if (block[member_iblk].x != member_x 
+					|| block[member_iblk].y != member_y 
+					|| block[member_iblk].z != member_z) {
+				vpr_printf(TIO_MESSAGE_ERROR, "Block %d in carry chain #%d is not placed "
+					" in the proper orientation.\n", member_iblk, ichain);
+				error++;
+			}
+
+			// Then check the grid data structure
+			if (grid[member_x][member_y].blocks[member_z] != member_iblk) {
+				vpr_printf(TIO_MESSAGE_ERROR, "Block %d in carry chain #%d is not placed "
+					" in the proper orientation.\n", member_iblk, ichain);
+				error++;
+			}
+		} // Finish going through all the members
+	} // Finish going through all the chains
 
 	if (error == 0) {
 		vpr_printf(TIO_MESSAGE_INFO, "\nCompleted placement consistency check successfully.\n\n");
@@ -2922,6 +2955,7 @@ static void check_place(float bb_cost, float timing_cost,
 		vpr_printf(TIO_MESSAGE_INFO, "Aborting program.\n");
 		exit(1);
 	}
+
 }
 
 #ifdef VERBOSE
