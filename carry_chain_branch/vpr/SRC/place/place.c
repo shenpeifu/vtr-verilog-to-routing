@@ -600,7 +600,7 @@ void try_place(struct s_placer_opts placer_opts,
 #ifdef VERBOSE
 			vpr_printf
 			(TIO_MESSAGE_TRACE, "t = %g  cost = %g   bb_cost = %g timing_cost = %g move = %d dmax = %g\n",
-					t, cost, bb_cost, timing_cost, inner_iter, d_max);
+					t, cost, bb_cost, timing_cost, inner_iter, delay_cost);
 			if (fabs
 					(bb_cost -
 							comp_bb_cost(CHECK)) >
@@ -2670,7 +2670,7 @@ static void initial_placement(enum e_pad_loc_type pad_loc_type,
 			type_index = block[iblk].type->index;
 			if (free_locations[type_index] <= 0) {
 				vpr_printf (TIO_MESSAGE_ERROR, "Initial placement failed. Could not place "
-						"block %s£¨#%d); no free locations of type %s (#%d).\n", 
+						"block %sÂ£Â¨#%d); no free locations of type %s (#%d).\n", 
 						block[iblk].name, iblk, type_descriptors[type_index].name, type_index);
 				exit(1);
 			}
@@ -2964,13 +2964,13 @@ static void print_clb_placement(const char *fname) {
 	/* Prints out the clb placements to a file.  */
 
 	FILE *fp;
-	int i;
+	int i = 0;
 	
 	fp = my_fopen(fname, "w", 0);
 	fprintf(fp, "Complex Block Placements:\n\n");
 
 	fprintf(fp, "Block #\tName\t(X, Y, Z).\n", i, block[i].name, block[i].x, block[i].y, block[i].z);
-	for(i = 0; i < num_blocks; i++) {
+	for(i = 1; i < num_blocks; i++) {
 		fprintf(fp, "#%d\t%s\t(%d, %d, %d).\n", i, block[i].name, block[i].x, block[i].y, block[i].z);
 	}
 	
@@ -3012,7 +3012,7 @@ static void init_place_carry_chains(int chains_max_num_tries, int * free_locatio
 		type_index = block[iblk].type->index;
 		if (free_locations[type_index] < pl_chains[ichain].num_blocks) {
 			vpr_printf (TIO_MESSAGE_ERROR, "Initial placement failed. Could not place "
-					"chain length %d with head block %s£¨#%d); not enough free locations of type %s (#%d).\n", 
+					"chain length %d with head block %sÂ£Â¨#%d); not enough free locations of type %s (#%d).\n", 
 					pl_chains[ichain].num_blocks, block[iblk].name, iblk, type_descriptors[type_index].name, type_index);
 			exit(1);
 		}
@@ -3180,7 +3180,7 @@ static void init_place_carry_chains(int chains_max_num_tries, int * free_locatio
 			if (chain_placed == FALSE) {
 				// Error out
 				vpr_printf (TIO_MESSAGE_ERROR, "Initial placement failed. Could not place "
-					"chain length %d with head block %s£¨#%d); not enough free locations of type %s (#%d).\n", 
+					"chain length %d with head block %sÂ£Â¨#%d); not enough free locations of type %s (#%d).\n", 
 					pl_chains[ichain].num_blocks, block[iblk].name, iblk, type_descriptors[type_index].name, type_index);
 				exit(1);
 			}

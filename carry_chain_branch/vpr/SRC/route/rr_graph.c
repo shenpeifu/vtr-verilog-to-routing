@@ -278,18 +278,17 @@ void build_rr_graph(INP t_graph_type graph_type, INP int L_num_types,
 #ifdef VERBOSE
 		for (i = 1; i < L_num_types; ++i)
 		{ /* Skip "<EMPTY>" */
-			if (type_descriptors[i].is_Fc_out_full_flex)
+			if (type_descriptors[i].is_Fc_full_flex)
 			{
-				vpr_printf
-				("Fc Actual Values: Type = %s, Fc_out = full, Fc_in = %d.\n",
-						type_descriptors[i].name, Fc_input[i]);
+				vpr_printf(TIO_MESSAGE_INFO,
+					"Fc Actual Values: Type = %s, Fc_out = full, Fc_in = %d.\n",
+					type_descriptors[i].name, Fc_in[i]);
 			}
 			else
 			{
-				vpr_printf
-				("Fc Actual Values: Type = %s, Fc_out = %d, Fc_in = %d.\n",
-						type_descriptors[i].name, Fc_output[i],
-						Fc_input[i]);
+				vpr_printf(TIO_MESSAGE_INFO,
+					"Fc Actual Values: Type = %s, Fc_out = %d, Fc_in = %d.\n",
+					type_descriptors[i].name, Fc_out[i], Fc_in[i]);
 			}
 		}
 #endif /* VERBOSE */
