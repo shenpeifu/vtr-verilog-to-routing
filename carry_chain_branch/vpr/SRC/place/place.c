@@ -36,7 +36,7 @@ enum cost_methods {
 	NORMAL, CHECK
 };
 
-static enum swap_result {
+enum swap_result {
 	REJECTED, ACCEPTED, ABORTED
 };
 
@@ -2964,13 +2964,13 @@ static void print_clb_placement(const char *fname) {
 	/* Prints out the clb placements to a file.  */
 
 	FILE *fp;
-	int i = 0;
+	int i;
 	
 	fp = my_fopen(fname, "w", 0);
 	fprintf(fp, "Complex Block Placements:\n\n");
 
-	fprintf(fp, "Block #\tName\t(X, Y, Z).\n", i, block[i].name, block[i].x, block[i].y, block[i].z);
-	for(i = 1; i < num_blocks; i++) {
+	fprintf(fp, "Block #\tName\t(X, Y, Z).\n");
+	for(i = 0; i < num_blocks; i++) {
 		fprintf(fp, "#%d\t%s\t(%d, %d, %d).\n", i, block[i].name, block[i].x, block[i].y, block[i].z);
 	}
 	

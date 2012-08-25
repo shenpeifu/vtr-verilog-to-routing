@@ -458,7 +458,7 @@ struct s_type_descriptor /* TODO rename this.  maybe physical type descriptor or
 
 	boolean *is_Fc_frac; /* [0..num_pins-1] */
 	boolean *is_Fc_full_flex; /* [0..num_pins-1] */
-	float* Fc; /* [0..num_pins-1] */
+	float *Fc; /* [0..num_pins-1] */
 
 	/* Clustering info */
 	struct s_pb_type *pb_type;
