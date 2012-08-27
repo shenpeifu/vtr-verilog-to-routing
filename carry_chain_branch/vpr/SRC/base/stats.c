@@ -92,10 +92,14 @@ void routing_stats(boolean full_stats, enum e_route_type route_type,
 					print_net_delay(net_delay, getEchoFileName(E_ECHO_NET_DELAY));
 				if(isEchoFileEnabled(E_ECHO_LUT_REMAPPING))
 					print_lut_remapping(getEchoFileName(E_ECHO_LUT_REMAPPING));
+#ifdef PATH_COUNTING
+				if(isEchoFileEnabled(E_ECHO_PATH_WEIGHT))
+					print_path_weight(slacks->path_weight, getEchoFileName(E_ECHO_PATH_WEIGHT));
+#endif
 			}
 
-			print_net_slack(slacks->net_slack, TRUE, getOutputFileName(E_NET_SLACK_FILE));
-			print_net_slack_ratio(slacks->net_slack_ratio, TRUE, getOutputFileName(E_NET_SLACK_RATIO_FILE));
+			print_slack(slacks->slack, TRUE, getOutputFileName(E_SLACK_FILE));
+			print_criticality(slacks->criticality, TRUE, getOutputFileName(E_CRITICALITY_FILE));
 			print_critical_path(getOutputFileName(E_CRIT_PATH_FILE));
 
 			print_timing_stats();

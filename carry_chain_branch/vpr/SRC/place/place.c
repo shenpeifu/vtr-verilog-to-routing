@@ -292,7 +292,7 @@ void try_place(struct s_placer_opts placer_opts,
 	float t, success_rat, rlim, cost, timing_cost, bb_cost, new_bb_cost, new_timing_cost,
 		delay_cost, new_delay_cost, place_delay_value, inverse_prev_bb_cost, inverse_prev_timing_cost,
 		oldt, **old_region_occ_x, **old_region_occ_y, **net_delay = NULL, crit_exponent,
-		first_rlim, final_rlim, inverse_delta_rlim, critical_path_delay,
+		first_rlim, final_rlim, inverse_delta_rlim, critical_path_delay = UNDEFINED,
 		**remember_net_delay_original_ptr; /*used to free net_delay if it is re-assigned */
 	double av_cost, av_bb_cost, av_timing_cost, av_delay_cost, sum_of_squares, std_dev;
 	char msg[BUFSIZE];
@@ -403,16 +403,18 @@ void try_place(struct s_placer_opts placer_opts,
 
 		load_timing_graph_net_delays(net_delay);
 		do_timing_analysis(slacks, FALSE, FALSE, FALSE);
-		load_criticalities(slacks->net_slack_ratio, crit_exponent);
+		load_criticalities(slacks->criticality, crit_exponent);
 		if (getEchoEnabled()) {
 			if(isEchoFileEnabled(E_ECHO_INITIAL_PLACEMENT_TIMING_GRAPH))
 				print_timing_graph(getEchoFileName(E_ECHO_INITIAL_PLACEMENT_TIMING_GRAPH));
-			if(isEchoFileEnabled(E_ECHO_INITIAL_PLACEMENT_NET_SLACK))
-				print_net_slack(slacks->net_slack, FALSE, getEchoFileName(E_ECHO_INITIAL_PLACEMENT_NET_SLACK));
-			if(isEchoFileEnabled(E_ECHO_INITIAL_PLACEMENT_NET_SLACK_RATIO))
-				print_net_slack_ratio(slacks->net_slack_ratio, FALSE, getEchoFileName(E_ECHO_INITIAL_PLACEMENT_NET_SLACK_RATIO));
+			if(isEchoFileEnabled(E_ECHO_INITIAL_PLACEMENT_SLACK))
+				print_slack(slacks->slack, FALSE, getEchoFileName(E_ECHO_INITIAL_PLACEMENT_SLACK));
 			if(isEchoFileEnabled(E_ECHO_INITIAL_PLACEMENT_CRITICALITY))
-				print_timing_place_crit(timing_place_crit, getEchoFileName(E_ECHO_INITIAL_PLACEMENT_CRITICALITY));
+				print_criticality(slacks->criticality, FALSE, getEchoFileName(E_ECHO_INITIAL_PLACEMENT_CRITICALITY));
+#ifdef PATH_COUNTING
+			if(isEchoFileEnabled(E_ECHO_INITIAL_PLACEMENT_PATH_WEIGHT))
+				print_path_weight(slacks->path_weight, getEchoFileName(E_ECHO_INITIAL_PLACEMENT_PATH_WEIGHT));
+#endif	
 		}
 		outer_crit_iter_count = 1;
 
@@ -523,7 +525,7 @@ void try_place(struct s_placer_opts placer_opts,
 
 				load_timing_graph_net_delays(net_delay);
 				do_timing_analysis(slacks, FALSE, FALSE, FALSE);
-				load_criticalities(slacks->net_slack_ratio, crit_exponent);
+				load_criticalities(slacks->criticality, crit_exponent);
 				/*recompute costs from scratch, based on new criticalities */
 				comp_td_costs(&timing_cost, &delay_cost);
 				outer_crit_iter_count = 0;
@@ -592,7 +594,7 @@ void try_place(struct s_placer_opts placer_opts,
 					 */
 					load_timing_graph_net_delays(net_delay);
 					do_timing_analysis(slacks, FALSE, FALSE, FALSE);
-					load_criticalities(slacks->net_slack_ratio, crit_exponent);
+					load_criticalities(slacks->criticality, crit_exponent);
 					comp_td_costs(&timing_cost, &delay_cost);
 				}
 				inner_crit_iter_count++;
@@ -667,10 +669,11 @@ void try_place(struct s_placer_opts placer_opts,
 		std_dev = get_std_dev(success_sum, sum_of_squares, av_cost);
 
 #ifndef SPEC
+		critical_path_delay = get_critical_path_delay();
 		vpr_printf(TIO_MESSAGE_INFO, 
-				"%11.5g  %10.6g %11.6g  %11.6g  %11.6g %11.6g %9.4g %8.3g  %7.4g  %7.4g  %10d  ",
+				"%11.5g  %10.6g %11.6g  %11.6g  %11.6g %11.6g %11.4g %9.4g %8.3g  %7.4g  %7.4g  %10d  ",
 				t, av_cost, av_bb_cost, av_timing_cost, av_delay_cost,
-				place_delay_value, success_rat, std_dev, rlim,
+				place_delay_value, critical_path_delay, success_rat, std_dev, rlim,
 				crit_exponent, tot_iter);
 #endif
 
@@ -728,7 +731,7 @@ void try_place(struct s_placer_opts placer_opts,
 
 			load_timing_graph_net_delays(net_delay);
 			do_timing_analysis(slacks, FALSE, FALSE, FALSE);
-			load_criticalities(slacks->net_slack_ratio, crit_exponent);
+			load_criticalities(slacks->criticality, crit_exponent);
 			/*recompute criticaliies */
 			comp_td_costs(&timing_cost, &delay_cost);
 			outer_crit_iter_count = 0;
@@ -776,7 +779,7 @@ void try_place(struct s_placer_opts placer_opts,
 
 					load_timing_graph_net_delays(net_delay);
 					do_timing_analysis(slacks, FALSE, FALSE, FALSE);
-					load_criticalities(slacks->net_slack_ratio, crit_exponent);
+					load_criticalities(slacks->criticality, crit_exponent);
 					comp_td_costs(&timing_cost, &delay_cost);
 				}
 				inner_crit_iter_count++;
@@ -817,11 +820,11 @@ void try_place(struct s_placer_opts placer_opts,
 
 #endif
 
-	// Thien:  print a message about number of aborted moves.
-	// Thien:  please add some subroutine hierarchy!  Too big!
-	// Put statistics counters (av_cost, success_sum, etc.) in a struct so a 
+	// TODO:  
+	// 1. print a message about number of aborted moves.
+	// 2. add some subroutine hierarchy!  Too big!
+	// 3. put statistics counters (av_cost, success_sum, etc.) in a struct so a 
 	// pointer to it can be passed around. 
-	// Clean up anything else you can think of!
 
 #ifdef VERBOSE
 	if (getEchoEnabled() && isEchoFileEnabled(E_ECHO_END_CLB_PLACEMENT)) {
@@ -854,10 +857,14 @@ void try_place(struct s_placer_opts placer_opts,
 		if (getEchoEnabled()) {
 			if(isEchoFileEnabled(E_ECHO_PLACEMENT_SINK_DELAYS))
 				print_sink_delays(getEchoFileName(E_ECHO_PLACEMENT_SINK_DELAYS));
-			if(isEchoFileEnabled(E_ECHO_FINAL_PLACEMENT_NET_SLACK))
-				print_net_slack(slacks->net_slack, FALSE, getEchoFileName(E_ECHO_FINAL_PLACEMENT_NET_SLACK));
-			if(isEchoFileEnabled(E_ECHO_FINAL_PLACEMENT_NET_SLACK_RATIO))
-				print_net_slack_ratio(slacks->net_slack_ratio, FALSE, getEchoFileName(E_ECHO_FINAL_PLACEMENT_NET_SLACK_RATIO));
+			if(isEchoFileEnabled(E_ECHO_FINAL_PLACEMENT_SLACK))
+				print_slack(slacks->slack, FALSE, getEchoFileName(E_ECHO_FINAL_PLACEMENT_SLACK));
+			if(isEchoFileEnabled(E_ECHO_FINAL_PLACEMENT_CRITICALITY))
+				print_criticality(slacks->criticality, FALSE, getEchoFileName(E_ECHO_FINAL_PLACEMENT_CRITICALITY));
+#ifdef PATH_COUNTING
+			if(isEchoFileEnabled(E_ECHO_FINAL_PLACEMENT_PATH_WEIGHT))
+				print_path_weight(slacks->path_weight, getEchoFileName(E_ECHO_FINAL_PLACEMENT_PATH_WEIGHT));
+#endif	
 			if(isEchoFileEnabled(E_ECHO_FINAL_PLACEMENT_TIMING_GRAPH))
 				print_timing_graph(getEchoFileName(E_ECHO_FINAL_PLACEMENT_TIMING_GRAPH));
 			if(isEchoFileEnabled(E_ECHO_PLACEMENT_CRIT_PATH))
@@ -866,7 +873,7 @@ void try_place(struct s_placer_opts placer_opts,
 		
 		/* Print critical path delay */
 		critical_path_delay = get_critical_path_delay();
-		vpr_printf(TIO_MESSAGE_INFO, "\nPlacement estimated critical path delay: %g ns\n", critical_path_delay * 1e9);
+		vpr_printf(TIO_MESSAGE_INFO, "\nPlacement estimated critical path delay: %g ns\n", critical_path_delay);
 	}
 
 	sprintf(msg,
@@ -1490,6 +1497,9 @@ static enum swap_result try_swap(float t, float *cost, float *bb_cost, float *ti
 		
 		}
 
+		/* Resets the num_moved_blocks, but do not free blocks_moved array. Defensive Coding */
+		blocks_affected.num_moved_blocks = 0;
+
 		return ABORTED;
 	}
 }
@@ -1819,15 +1829,10 @@ static void comp_delta_td_cost(float *delta_timing, float *delta_delay) {
 					temp_delay = comp_td_point_to_point_delay(inet, net_pin);
 					temp_point_to_point_delay_cost[inet][net_pin] = temp_delay;
 
-					if (timing_place_crit[inet][net_pin] < HUGE_NEGATIVE_FLOAT + 1) {
-						temp_point_to_point_timing_cost[inet][net_pin] = 0;
-					} else {
-						temp_point_to_point_timing_cost[inet][net_pin] =
-							timing_place_crit[inet][net_pin] * temp_delay;
-						delta_timing_cost += temp_point_to_point_timing_cost[inet][net_pin]
-							- point_to_point_timing_cost[inet][net_pin];
-					}
-
+					temp_point_to_point_timing_cost[inet][net_pin] =
+						timing_place_crit[inet][net_pin] * temp_delay;
+					delta_timing_cost += temp_point_to_point_timing_cost[inet][net_pin]
+						- point_to_point_timing_cost[inet][net_pin];
 					delta_delay_cost += temp_point_to_point_delay_cost[inet][net_pin]
 							- point_to_point_delay_cost[inet][net_pin];
 				}
@@ -1837,14 +1842,10 @@ static void comp_delta_td_cost(float *delta_timing, float *delta_delay) {
 					temp_delay = comp_td_point_to_point_delay(inet, ipin);
 					temp_point_to_point_delay_cost[inet][ipin] = temp_delay;
 
-					if (timing_place_crit[inet][ipin] < HUGE_NEGATIVE_FLOAT + 1) {
-						temp_point_to_point_timing_cost[inet][ipin] = 0;
-					} else {
-						temp_point_to_point_timing_cost[inet][ipin] =
-							timing_place_crit[inet][ipin] * temp_delay;
-						delta_timing_cost += temp_point_to_point_timing_cost[inet][ipin]
-							- point_to_point_timing_cost[inet][ipin];
-					}
+					temp_point_to_point_timing_cost[inet][ipin] =
+						timing_place_crit[inet][ipin] * temp_delay;
+					delta_timing_cost += temp_point_to_point_timing_cost[inet][ipin]
+						- point_to_point_timing_cost[inet][ipin];
 					delta_delay_cost += temp_point_to_point_delay_cost[inet][ipin]
 							- point_to_point_delay_cost[inet][ipin];
 
@@ -1875,12 +1876,8 @@ static void comp_td_costs(float *timing_cost, float *connection_delay_sum) {
 			for (ipin = 1; ipin <= clb_net[inet].num_sinks; ipin++) {
 
 				temp_delay_cost = comp_td_point_to_point_delay(inet, ipin);
-				if (timing_place_crit[inet][ipin] < HUGE_NEGATIVE_FLOAT + 1)  {
-					/* We didn't analyze this connection, so it contributes no timing cost. */
-					temp_timing_cost = 0;
-				} else {
-					temp_timing_cost = temp_delay_cost * timing_place_crit[inet][ipin];
-				}
+				temp_timing_cost = temp_delay_cost * timing_place_crit[inet][ipin];
+
 				loc_connection_delay_sum += temp_delay_cost;
 				point_to_point_delay_cost[inet][ipin] = temp_delay_cost;
 				temp_point_to_point_delay_cost[inet][ipin] = -1; /* Undefined */

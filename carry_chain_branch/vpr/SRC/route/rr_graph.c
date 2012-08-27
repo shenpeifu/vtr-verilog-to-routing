@@ -353,7 +353,6 @@ void build_rr_graph(INP t_graph_type graph_type, INP int L_num_types,
 		track_to_ipin_lookup[i] = alloc_and_load_track_to_pin_lookup(
 			ipin_to_track_map[i], Fc_in[i], types[i].height,
 			types[i].num_pins, nodes_per_chan);
-		}
 	}
 	/* END IPINP MAP */
 
@@ -1800,7 +1799,7 @@ static void build_unidir_rr_opins(INP int i, INP int j,
 	 * free_matrix. */
 
 	t_type_ptr type;
-	int ipin, iclass, ofs, chan, seg, max_len, inode, max_Fc;
+	int ipin, iclass, ofs, chan, seg, max_len, inode, max_Fc = -1;
 	enum e_side side;
 	t_rr_type chan_type;
 	t_linked_edge *edge_list = NULL, *next;

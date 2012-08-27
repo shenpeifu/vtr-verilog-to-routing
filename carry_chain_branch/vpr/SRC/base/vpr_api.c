@@ -38,6 +38,7 @@ June 21, 2012
 #include "route_common.h"
 #include "timing_place_lookup.h"
 #include "vpr_api.h"
+#include "read_sdc.h"
 
 /* Local subroutines */
 static void free_pb_type(t_pb_type *pb_type);
@@ -80,7 +81,7 @@ void vpr_print_usage(void) {
 			"\t[--fast] [--full_stats] [--timing_analysis on | off] [--outfile_prefix <string>]\n");
 	vpr_printf(TIO_MESSAGE_INFO, 
 			"\t[--blif_file <string>][--net_file <string>][--place_file <string>]\n");
-	vpr_printf(TIO_MESSAGE_INFO, "\t[--route_file <string>][--echo_file on | off]\n");
+	vpr_printf(TIO_MESSAGE_INFO, "\t[--route_file <string>][--sdc_file <string>][--echo_file on | off]\n");
 	vpr_printf(TIO_MESSAGE_INFO, "\n");
 	vpr_printf(TIO_MESSAGE_INFO, "Packer Options:\n");
 	/*    vpr_printf(TIO_MESSAGE_INFO, "\t[-global_clocks on|off]\n");
@@ -692,6 +693,7 @@ void vpr_free_vpr_data_structures(INOUTP t_arch Arch, INOUTP t_options options, 
 	free_echo_file_info();
 	free_output_file_names();
 	free_timing_stats();
+	free_sdc_related_structs();
 }
 
 
