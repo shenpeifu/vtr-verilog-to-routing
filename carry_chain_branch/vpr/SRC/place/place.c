@@ -263,7 +263,7 @@ static void comp_delta_td_cost(float *delta_timing, float *delta_delay);
 
 static void comp_td_costs(float *timing_cost, float *connection_delay_sum);
 
-static int assess_swap(float delta_c, float t);
+static enum swap_result assess_swap(float delta_c, float t);
 
 static boolean find_to(int x_from, int y_from, t_type_ptr type, float rlim, int *x_to, int *y_to);
 
@@ -643,8 +643,7 @@ void try_place(struct s_placer_opts placer_opts,
 					|| placer_opts.place_algorithm
 							== PATH_TIMING_DRIVEN_PLACE) {
 				comp_td_costs(&new_timing_cost, &new_delay_cost);
-				if (fabs(new_timing_cost - timing_cost) >
-				timing_cost * ERROR_TOL) {
+				if (fabs(new_timing_cost - timing_cost) > timing_cost * ERROR_TOL) {
 					vpr_printf(TIO_MESSAGE_ERROR, 
 							"in try_place:  new_timing_cost = %g, old timing_cost = %g.\n",
 							new_timing_cost, timing_cost);
@@ -1131,11 +1130,11 @@ static enum swap_result try_swap(float t, float *cost, float *bb_cost, float *ti
 	 * accepted return 1.  Pass back the new value of the cost function. * 
 	 * rlim is the range limiter.                                                                            */
 
+	enum swap_result keep_switch;
 	int b_from, x_to, y_to, z_to, x_from, y_from, z_from, b_to;
-	int inet, keep_switch;
 	int num_nets_affected;
 	float delta_c, bb_delta_c, timing_delta_c, delay_delta_c;
-	int iblk, bnum, iblk_pin, inet_affected;
+	int inet, iblk, bnum, iblk_pin, inet_affected;
 	int ichain, imember, imoved_blk;
 	int x_swap_offset, y_swap_offset, z_swap_offset;
 	int abort_swap = FALSE;
@@ -1176,33 +1175,29 @@ static enum swap_result try_swap(float t, float *cost, float *bb_cost, float *ti
 
 	b_to = grid[x_to][y_to].blocks[z_to];
 
-	// Record down the relative position of the swap
-	x_swap_offset = block[b_from].x - block[b_to].x;
-	y_swap_offset = block[b_from].y - block[b_to].y;
-	z_swap_offset = block[b_from].z - block[b_to].z;
-
-	
 	/* Make the switch in order to make computing the new bounding *
-		* box simpler.  If the cost increase is too high, switch them *
-		* back.  (block data structures switched, clbs not switched   *
-		* until success of move is determined.)                       */
-	/* Also check that whether those are the only 2 blocks         *
-		* to be moved - check for carry chains and other placement    *
-		* macros.                                                     *
-		* Only 2 blocks to be moved for now.                          *
-		*/
+	 * box simpler.  If the cost increase is too high, switch them *
+	 * back.  (block data structures switched, clbs not switched   *
+	 * until success of move is determined.)                       *
+	 * Also check that whether those are the only 2 blocks         *
+	 * to be moved - check for carry chains and other placement    *
+	 * macros.                                                     */
 	
-#if 1
-
-	// Check whether the block is part of a chain
-	// probably should not check here, need to move up the hierarchy
-	// so that I could find the target location for every other block in the chain moved
+	/* Check whether the from_block is part of a chain first.      *
+	 * If it is, the whole chain has to be moved. Calculate the    *
+	 * x, y, z offsets of the swap to maintain relative placements *
+	 * of the blocks. Abort the swap if the to_block is part of a  *
+	 * chain (not supported yet).                                  */
 	
 	ichain = get_chain_index(b_from);
 	if ( ichain != -1) {
-
 		// b_from is part of a chain, I need to swap the whole chain
-
+		
+		// Record down the relative position of the swap
+		x_swap_offset = x_to - x_from;
+		y_swap_offset = y_to - y_from;
+		z_swap_offset = z_to - z_from;
+		
 		for (imember = 0; imember < pl_chains[ichain].num_blocks; imember++) {
 
 			// Gets the new from and to info for every block in the chain
@@ -1216,7 +1211,7 @@ static enum swap_result try_swap(float t, float *cost, float *bb_cost, float *ti
 			x_to = x_from + x_swap_offset;
 			y_to = y_from + y_swap_offset;
 			z_to = z_from + z_swap_offset;
-
+			
 			// Make sure that the swap_to location is still on the chip
 			if (x_to < 1 || x_to > nx+1 || y_to < 1 || y_to > ny+1 || z_to < 0) {
 				abort_swap = TRUE;
@@ -1317,49 +1312,44 @@ static enum swap_result try_swap(float t, float *cost, float *bb_cost, float *ti
 			// Does not allow a swap with a carry chain yet
 			if (get_chain_index(b_to) != -1)
 				abort_swap = TRUE;
+			else {
+				// Swap the block, dont swap the nets yet
+				block[b_to].x = x_from;
+				block[b_to].y = y_from;
+				block[b_to].z = z_from;
 
-			// Swap the block, dont swap the nets yet
-			block[b_to].x = x_from;
-			block[b_to].y = y_from;
-			block[b_to].z = z_from;
-
-			block[b_from].x = x_to;
-			block[b_from].y = y_to;
-			block[b_from].z = z_to;
+				block[b_from].x = x_to;
+				block[b_from].y = y_to;
+				block[b_from].z = z_to;
 		
-			// Sets up the blocks moved
-			imoved_blk = blocks_affected.num_moved_blocks;
-			blocks_affected.moved_blocks[imoved_blk].block_num = b_from;
-			blocks_affected.moved_blocks[imoved_blk].xold = x_from;
-			blocks_affected.moved_blocks[imoved_blk].xnew = x_to;
-			blocks_affected.moved_blocks[imoved_blk].yold = y_from;
-			blocks_affected.moved_blocks[imoved_blk].ynew = y_to;
-			blocks_affected.moved_blocks[imoved_blk].zold = z_from;
-			blocks_affected.moved_blocks[imoved_blk].znew = z_to;
-			blocks_affected.moved_blocks[imoved_blk].swapped_to_empty = FALSE;
-			blocks_affected.num_moved_blocks ++;
+				// Sets up the blocks moved
+				imoved_blk = blocks_affected.num_moved_blocks;
+				blocks_affected.moved_blocks[imoved_blk].block_num = b_from;
+				blocks_affected.moved_blocks[imoved_blk].xold = x_from;
+				blocks_affected.moved_blocks[imoved_blk].xnew = x_to;
+				blocks_affected.moved_blocks[imoved_blk].yold = y_from;
+				blocks_affected.moved_blocks[imoved_blk].ynew = y_to;
+				blocks_affected.moved_blocks[imoved_blk].zold = z_from;
+				blocks_affected.moved_blocks[imoved_blk].znew = z_to;
+				blocks_affected.moved_blocks[imoved_blk].swapped_to_empty = FALSE;
+				blocks_affected.num_moved_blocks ++;
 			
-			imoved_blk = blocks_affected.num_moved_blocks;
-			blocks_affected.moved_blocks[imoved_blk].block_num = b_to;
-			blocks_affected.moved_blocks[imoved_blk].xold = x_to;
-			blocks_affected.moved_blocks[imoved_blk].xnew = x_from;
-			blocks_affected.moved_blocks[imoved_blk].yold = y_to;
-			blocks_affected.moved_blocks[imoved_blk].ynew = y_from;
-			blocks_affected.moved_blocks[imoved_blk].zold = z_from;
-			blocks_affected.moved_blocks[imoved_blk].znew = z_to;
-			blocks_affected.moved_blocks[imoved_blk].swapped_to_empty = FALSE;
-			blocks_affected.num_moved_blocks ++;
-
+				imoved_blk = blocks_affected.num_moved_blocks;
+				blocks_affected.moved_blocks[imoved_blk].block_num = b_to;
+				blocks_affected.moved_blocks[imoved_blk].xold = x_to;
+				blocks_affected.moved_blocks[imoved_blk].xnew = x_from;
+				blocks_affected.moved_blocks[imoved_blk].yold = y_to;
+				blocks_affected.moved_blocks[imoved_blk].ynew = y_from;
+				blocks_affected.moved_blocks[imoved_blk].zold = z_from;
+				blocks_affected.moved_blocks[imoved_blk].znew = z_to;
+				blocks_affected.moved_blocks[imoved_blk].swapped_to_empty = FALSE;
+				blocks_affected.num_moved_blocks ++;
+			} // Not swappping with a carry chain
 		} // Finish swapping the blocks and setting up blocks_affected
 
 	} // Finish handling cases for blocks in chain and otherwise
 
-#endif
-
 	if (abort_swap == FALSE) {
-
-		// Find all the nets affected by this swap
-		num_nets_affected = find_affected_nets(ts_nets_to_update);
 
 		/* Go through all the pins in all the blocks moved and update the bounding boxes.  *
 		 * Do not update the net cost here since it should only be updated once per net,   *
@@ -1392,6 +1382,9 @@ static enum swap_result try_swap(float t, float *cost, float *bb_cost, float *ti
 			}
 		}
 			
+		// Find all the nets affected by this swap
+		num_nets_affected = find_affected_nets(ts_nets_to_update);
+
 		/* Now update the cost function. The cost is only updated once for every net  *
 		 * May have to do major optimizations here later.                             */
 		for (inet_affected = 0; inet_affected < num_nets_affected; inet_affected++) {
@@ -1415,11 +1408,10 @@ static enum swap_result try_swap(float t, float *cost, float *bb_cost, float *ti
 			delta_c = bb_delta_c;
 		}
 
-		keep_switch = assess_swap(delta_c, t);
-
 		/* 1 -> move accepted, 0 -> rejected. */
-
-		if (keep_switch) {
+		keep_switch = assess_swap(delta_c, t);
+		
+		if (keep_switch == ACCEPTED) {
 			*cost = *cost + delta_c;
 			*bb_cost = *bb_cost + bb_delta_c;
 	
@@ -1495,7 +1487,7 @@ static enum swap_result try_swap(float t, float *cost, float *bb_cost, float *ti
 		/* Resets the num_moved_blocks, but do not free blocks_moved array. Defensive Coding */
 		blocks_affected.num_moved_blocks = 0;
 
-		return (keep_switch == 1) ? ACCEPTED : REJECTED;
+		return (keep_switch);
 	} else {
 
 		/* Restore the block data structures to their state before the move. */
@@ -1635,11 +1627,11 @@ static boolean find_to(int x_from, int y_from, t_type_ptr type, float rlim, int 
 	return TRUE;
 }
 
-static int assess_swap(float delta_c, float t) {
+static enum swap_result assess_swap(float delta_c, float t) {
 
 	/* Returns: 1 -> move accepted, 0 -> rejected. */
 
-	int accept;
+	enum swap_result accept;
 	float prob_fac, fnum;
 
 	if (delta_c <= 0) {
@@ -1648,19 +1640,19 @@ static int assess_swap(float delta_c, float t) {
 		fnum = my_frand();
 #endif
 
-		accept = 1;
+		accept = ACCEPTED;
 		return (accept);
 	}
 
 	if (t == 0.)
-		return (0);
+		return (REJECTED);
 
 	fnum = my_frand();
 	prob_fac = exp(-delta_c / t);
 	if (prob_fac > fnum) {
-		accept = 1;
+		accept = ACCEPTED;
 	} else {
-		accept = 0;
+		accept = REJECTED;
 	}
 	return (accept);
 }
