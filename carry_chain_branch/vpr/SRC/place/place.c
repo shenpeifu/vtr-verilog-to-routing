@@ -28,7 +28,7 @@
 
 /* This defines the error tolerance for floating points variables used in *
  * cost computation. 0.01 means that there is a 1% error tolerance.       */
-#define ERROR_TOL .01
+#define ERROR_TOL .000001
 
 /* This defines the maximum number of swap attempts before invoking the   *
  * once-in-a-while placement legality check as well as floating point     *
@@ -1175,6 +1175,19 @@ static enum swap_result try_swap(float t, float *cost, float *bb_cost, float *ti
 
 	b_to = grid[x_to][y_to].blocks[z_to];
 
+	
+
+
+
+
+	int chosen_from, chosen_to;
+	chosen_from = b_from; chosen_to = b_to;
+
+
+
+
+
+
 	/* Make the switch in order to make computing the new bounding *
 	 * box simpler.  If the cost increase is too high, switch them *
 	 * back.  (block data structures switched, clbs not switched   *
@@ -1378,6 +1391,25 @@ static enum swap_result try_swap(float t, float *cost, float *bb_cost, float *ti
 							blocks_affected.moved_blocks[iblk].yold + block[bnum].type->pin_height[iblk_pin],
 							blocks_affected.moved_blocks[iblk].xnew, 
 							blocks_affected.moved_blocks[iblk].ynew + block[bnum].type->pin_height[iblk_pin]);
+
+
+
+
+
+					struct s_bb bb_coord_new, bb_edge_new;
+					get_bb_from_scratch(inet, &bb_coord_new, &bb_edge_new);
+					if (bb_coord_new.xmax != ts_bb_coord_new[inet].xmax
+						|| bb_coord_new.ymax != ts_bb_coord_new[inet].ymax
+						|| bb_coord_new.xmin != ts_bb_coord_new[inet].xmin
+						|| bb_coord_new.ymin != ts_bb_coord_new[inet].ymin
+						|| bb_edge_new.xmax != ts_bb_edge_new[inet].xmax
+						|| bb_edge_new.ymax != ts_bb_edge_new[inet].ymax
+						|| bb_edge_new.xmin != ts_bb_edge_new[inet].xmin
+						|| bb_edge_new.ymin != ts_bb_edge_new[inet].ymin)
+						exit(1);
+
+
+
 				}
 			}
 		}
@@ -1462,6 +1494,19 @@ static enum swap_result try_swap(float t, float *cost, float *bb_cost, float *ti
 				}
 			
 			} // Finish updating clb for all blocks
+
+
+			/*
+			float new_bb_cost = comp_bb_cost(NORMAL);
+			if (fabs(new_bb_cost - *bb_cost) > *bb_cost * ERROR_TOL)
+				exit(1);
+			*/
+
+
+
+
+
+
 
 		} else { /* Move was rejected.  */
 

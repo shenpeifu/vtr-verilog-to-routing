@@ -897,6 +897,12 @@ void alloc_and_load_blk_pin_to_idirect(t_direct_inf* directs, int num_directs,
 			}
 		}
 		
+		if ((from_end_pin_index - from_start_pin_index) != (to_end_pin_index - to_start_pin_index)) {
+				vpr_printf(TIO_MESSAGE_ERROR, "[LINE %d] Invalid to_pin and from_pin width, the 2 widths has to "
+					"be the same.\n", directs[idirect].line);
+				exit(1);
+		}
+
 		// Now I have all the data that I need, I could find mark down blocks having possible connections
 		for (iblk = 0; iblk < num_blocks; iblk++) {
 			// Find blocks with the same name as from_pb_type_name

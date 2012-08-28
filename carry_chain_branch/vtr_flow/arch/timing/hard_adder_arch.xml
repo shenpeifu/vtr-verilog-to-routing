@@ -18,6 +18,34 @@ Architecture based off Stratix IV
            conclusion - just take the 600 MHz as is, and Quartus II logiclock hasn't fixed the bug that I've seen it do to registers when I worked at Altera (ie. eject without warning)
 
   NOTE: Area numbers for hard blocks unknown!
+    
+    
+    
+    Y.G.Thien, 28 AUG 2012
+    For carry chain support, added in a new child in <layout> called <directlist>. <directlist> specifies a list of available direct connections on
+        the FPGA chip that are necessary for direct carry chain connections. These direct connections would be treated specially in routing if the 
+        fc_value for the pins is specified as 0. Note that only direct connections that has fc_value 0 could be used as a carry chain.
+    
+    A <directlist> may have more than 1 child called <direct>. For each <direct>, there are the following fields:
+        1) name:  This specifies the name given to this particular direct connection.
+        2) from_pin:  This specifies the SOURCEs for this direct connection. The format could be as following:
+                       a) type_name.port_name, for all the pins in this port.
+                       b) type_name.port_name [end_pin_index:start_pin_index], for a single pin, the end_pin_index and start_pin_index could be the same.
+        3) to_pin:  This specifies the SINKs for this direct connection. The format is the same as from_pin. 
+                    Note that the width of the from_pin and to_pin has to match.
+        4) x_offset: This specifies the x direction that this connection is going from SOURCEs to SINKs.
+        5) y_offset: This specifies the y direction that this connection is going from SOURCEs to SINKs. 
+                     Note that the x_offset and y_offset could not both be 0.
+        6) z_offset: This specifies the z sublocations that all the blocks in this direct connection to be at.
+    
+    The example of a direct connection specification below shows a possible carry chain connection going north on the FPGA chip:
+     __________________________________________________________________________________________________________________
+    | <directlist>                                                                                                     |
+    |   <direct name="adder_carry" from_pin="adder.cout" to_pin="adder.cin" x_offset="0" y_offset="1" z_offset="0"/>   |
+    | </directlist>                                                                                                    |
+    |__________________________________________________________________________________________________________________|
+    A corresponding blif file that uses this direct connection is adder.blif
+    
 -->
 
 <architecture>
