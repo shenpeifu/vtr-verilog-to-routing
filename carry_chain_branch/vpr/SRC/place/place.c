@@ -61,6 +61,12 @@ enum swap_result {
 	REJECTED, ACCEPTED, ABORTED
 };
 
+#if 0
+#define MIN_TIMING_COST 1.e-12 
+/* Stops timing cost from going to 0 with very lax timing constraints. 
+This would cause division by 0 when auto-normalizing. */
+#endif
+
 /********************** Data Sturcture Definition ***************************/
 /* Stores the information of the move for a block that is       *
  * moved during placement                                       *
@@ -548,6 +554,8 @@ void try_place(struct s_placer_opts placer_opts,
 			/*for normalizing the tradeoff between timing and wirelength (bb)  */
 			inverse_prev_bb_cost = 1 / bb_cost;
 			inverse_prev_timing_cost = 1 / timing_cost;
+			/* Make sure timing_cost is non-zero. */
+			assert(timing_cost > 1e-60);
 		}
 
 		inner_crit_iter_count = 1;
@@ -1984,6 +1992,11 @@ static void free_placement_structs(
 	bb_num_on_edges = NULL;
 	bb_coords = NULL;
 	pl_chains = NULL;
+
+	/* Frees up all the data structure used in vpr_utils. */
+	free_port_pin_from_blk_pin();
+	free_blk_pin_from_port_pin();
+
 }
 
 static void alloc_and_load_placement_structs(

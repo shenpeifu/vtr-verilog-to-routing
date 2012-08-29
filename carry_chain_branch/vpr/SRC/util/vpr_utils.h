@@ -25,11 +25,28 @@ float compute_primitive_base_cost(INP t_pb_graph_node *primitive);
 int num_ext_inputs_logical_block(int iblk);
 
 int ** alloc_and_load_net_pin_index();
-void alloc_and_load_blk_pin_to_port_pin(int *** blk_pin_to_port, int *** blk_pin_to_port_pin);
-int *** alloc_and_load_port_pin_to_blk_pin(void);
-void alloc_and_load_blk_pin_to_idirect(t_direct_inf* directs, int num_directs, 
-		int *** port_pin_to_blk_pin, 
-		int *** blk_pin_to_idirect, int *** blk_pin_to_direct_src_or_sink);
+
+
+
+
+
+
+void get_port_pin_from_blk_pin(int blk_type_index, int blk_pin, int * port,
+		int * port_pin);
+void free_port_pin_from_blk_pin(void);
+
+void get_blk_pin_from_port_pin(int blk_type_index, int port,int port_pin, 
+		int * blk_pin);
+void free_blk_pin_from_port_pin(void);
+
+
+
+void alloc_and_load_idirect_from_blk_pin(t_direct_inf* directs, int num_directs, 
+		int *** idirect_from_blk_pin, int *** direct_type_from_blk_pin);
+
+
+
+
 
 void free_cb(t_pb *pb);
 void free_pb_stats(t_pb *pb);
