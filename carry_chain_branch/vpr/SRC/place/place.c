@@ -5,7 +5,6 @@
 #include "util.h"
 #include "vpr_types.h"
 #include "globals.h"
-#include "mst.h"
 #include "place.h"
 #include "read_place.h"
 #include "draw.h"
@@ -292,7 +291,7 @@ void try_place(struct s_placer_opts placer_opts,
 		struct s_annealing_sched annealing_sched,
 		t_chan_width_dist chan_width_dist, struct s_router_opts router_opts,
 		struct s_det_routing_arch det_routing_arch, t_segment_inf * segment_inf,
-		t_timing_inf timing_inf, t_mst_edge *** mst, t_direct_inf *directs, int num_directs) {
+		t_timing_inf timing_inf, t_direct_inf *directs, int num_directs) {
 
 	/* Does almost all the work of placing a circuit.  Width_fac gives the   *
 	 * width of the widest channel.  Place_cost_exp says what exponent the   *
@@ -416,17 +415,17 @@ void try_place(struct s_placer_opts placer_opts,
 
 		load_timing_graph_net_delays(net_delay);
 		do_timing_analysis(slacks, FALSE, FALSE, FALSE);
-		load_criticalities(slacks->criticality, crit_exponent);
+		load_criticalities(slacks, crit_exponent);
 		if (getEchoEnabled()) {
 			if(isEchoFileEnabled(E_ECHO_INITIAL_PLACEMENT_TIMING_GRAPH))
 				print_timing_graph(getEchoFileName(E_ECHO_INITIAL_PLACEMENT_TIMING_GRAPH));
 			if(isEchoFileEnabled(E_ECHO_INITIAL_PLACEMENT_SLACK))
 				print_slack(slacks->slack, FALSE, getEchoFileName(E_ECHO_INITIAL_PLACEMENT_SLACK));
 			if(isEchoFileEnabled(E_ECHO_INITIAL_PLACEMENT_CRITICALITY))
-				print_criticality(slacks->criticality, FALSE, getEchoFileName(E_ECHO_INITIAL_PLACEMENT_CRITICALITY));
+				print_criticality(slacks->timing_criticality, FALSE, getEchoFileName(E_ECHO_INITIAL_PLACEMENT_CRITICALITY));
 #ifdef PATH_COUNTING
 			if(isEchoFileEnabled(E_ECHO_INITIAL_PLACEMENT_PATH_WEIGHT))
-				print_path_weight(slacks->path_weight, getEchoFileName(E_ECHO_INITIAL_PLACEMENT_PATH_WEIGHT));
+				print_path_criticality(slacks->path_criticality, getEchoFileName(E_ECHO_INITIAL_PLACEMENT_PATH_WEIGHT));
 #endif	
 		}
 		outer_crit_iter_count = 1;
@@ -538,7 +537,7 @@ void try_place(struct s_placer_opts placer_opts,
 
 				load_timing_graph_net_delays(net_delay);
 				do_timing_analysis(slacks, FALSE, FALSE, FALSE);
-				load_criticalities(slacks->criticality, crit_exponent);
+				load_criticalities(slacks, crit_exponent);
 				/*recompute costs from scratch, based on new criticalities */
 				comp_td_costs(&timing_cost, &delay_cost);
 				outer_crit_iter_count = 0;
@@ -607,7 +606,7 @@ void try_place(struct s_placer_opts placer_opts,
 					 */
 					load_timing_graph_net_delays(net_delay);
 					do_timing_analysis(slacks, FALSE, FALSE, FALSE);
-					load_criticalities(slacks->criticality, crit_exponent);
+					load_criticalities(slacks, crit_exponent);
 					comp_td_costs(&timing_cost, &delay_cost);
 				}
 				inner_crit_iter_count++;
@@ -743,7 +742,7 @@ void try_place(struct s_placer_opts placer_opts,
 
 			load_timing_graph_net_delays(net_delay);
 			do_timing_analysis(slacks, FALSE, FALSE, FALSE);
-			load_criticalities(slacks->criticality, crit_exponent);
+			load_criticalities(slacks, crit_exponent);
 			/*recompute criticaliies */
 			comp_td_costs(&timing_cost, &delay_cost);
 			outer_crit_iter_count = 0;
@@ -791,7 +790,7 @@ void try_place(struct s_placer_opts placer_opts,
 
 					load_timing_graph_net_delays(net_delay);
 					do_timing_analysis(slacks, FALSE, FALSE, FALSE);
-					load_criticalities(slacks->criticality, crit_exponent);
+					load_criticalities(slacks, crit_exponent);
 					comp_td_costs(&timing_cost, &delay_cost);
 				}
 				inner_crit_iter_count++;
@@ -872,10 +871,10 @@ void try_place(struct s_placer_opts placer_opts,
 			if(isEchoFileEnabled(E_ECHO_FINAL_PLACEMENT_SLACK))
 				print_slack(slacks->slack, FALSE, getEchoFileName(E_ECHO_FINAL_PLACEMENT_SLACK));
 			if(isEchoFileEnabled(E_ECHO_FINAL_PLACEMENT_CRITICALITY))
-				print_criticality(slacks->criticality, FALSE, getEchoFileName(E_ECHO_FINAL_PLACEMENT_CRITICALITY));
+				print_criticality(slacks->timing_criticality, FALSE, getEchoFileName(E_ECHO_FINAL_PLACEMENT_CRITICALITY));
 #ifdef PATH_COUNTING
 			if(isEchoFileEnabled(E_ECHO_FINAL_PLACEMENT_PATH_WEIGHT))
-				print_path_weight(slacks->path_weight, getEchoFileName(E_ECHO_FINAL_PLACEMENT_PATH_WEIGHT));
+				print_path_criticality(slacks->path_criticality, getEchoFileName(E_ECHO_FINAL_PLACEMENT_PATH_WEIGHT));
 #endif	
 			if(isEchoFileEnabled(E_ECHO_FINAL_PLACEMENT_TIMING_GRAPH))
 				print_timing_graph(getEchoFileName(E_ECHO_FINAL_PLACEMENT_TIMING_GRAPH));
@@ -920,20 +919,6 @@ void try_place(struct s_placer_opts placer_opts,
 		free_lookups_and_criticalities(&net_delay, slacks);
 	}
 
-	/* placement is done - find mst of all nets.
-	 * creating mst for each net; this gives me an ordering of sinks 
-	 * by which I will direct search (A*) for. */
-	if (*mst) {
-		for (inet = 0; inet < num_nets; inet++) {
-			assert((*mst)[inet]);
-			free((*mst)[inet]);
-		}
-		free(*mst);
-	}
-	*mst = (t_mst_edge **) my_malloc(sizeof(t_mst_edge *) * num_nets);
-	for (inet = 0; inet < num_nets; inet++) {
-		(*mst)[inet] = get_mst_of_net(inet);
-	}
 	free_try_swap_arrays();
 }
 

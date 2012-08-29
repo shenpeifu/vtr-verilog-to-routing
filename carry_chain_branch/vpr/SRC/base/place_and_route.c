@@ -7,7 +7,6 @@
 #include "vpr_utils.h"
 #include "globals.h"
 #include "place_and_route.h"
-#include "mst.h"
 #include "place.h"
 #include "read_place.h"
 #include "route_export.h"
@@ -32,7 +31,7 @@ static int binary_search_place_and_route(struct s_placer_opts placer_opts,
 		struct s_router_opts router_opts,
 		struct s_det_routing_arch det_routing_arch, t_segment_inf * segment_inf,
 		t_timing_inf timing_inf, t_chan_width_dist chan_width_dist,
-		t_mst_edge ** mst, t_model *models, t_direct_inf *directs, int num_directs);
+		t_model *models, t_direct_inf *directs, int num_directs);
 
 static float comp_width(t_chan * chan, float x, float separation);
 
@@ -63,7 +62,6 @@ void place_and_route(enum e_operation operation,
 
 	/*struct s_linked_vptr *net_delay_chunk_list_head;*/
 	t_ivec **clb_opins_used_locally = NULL; /* [0..num_blocks-1][0..num_class-1] */
-	t_mst_edge **mst = NULL; /* Make sure mst is never undefined */
 	int max_pins_per_clb;
 	clock_t begin, end;
 
@@ -85,7 +83,7 @@ void place_and_route(enum e_operation operation,
 				(PLACE_ONCE == placer_opts.place_freq) || (PLACE_ALWAYS == placer_opts.place_freq));
 		begin = clock();
 		try_place(placer_opts, annealing_sched, chan_width_dist, router_opts,
-				det_routing_arch, segment_inf, timing_inf, &mst, directs, num_directs);
+				det_routing_arch, segment_inf, timing_inf, directs, num_directs);
 		print_place(place_file, net_file, arch_file);
 		end = clock();
 #ifdef CLOCKS_PER_SEC
@@ -100,24 +98,8 @@ void place_and_route(enum e_operation operation,
 
 	fflush(stdout);
 
-	/* reset mst */
-	if (mst) {
-		for (inet = 0; inet < num_nets; inet++) {
-			if (mst[inet]) {
-				free(mst[inet]);
-			}
-		}
-		free(mst);
-	}
-	mst = NULL;
-
 	if (!router_opts.doRouting)
 		return;
-
-	mst = (t_mst_edge **) my_malloc(sizeof(t_mst_edge *) * num_nets);
-	for (inet = 0; inet < num_nets; inet++) {
-		mst[inet] = get_mst_of_net(inet);
-	}
 
 	width_fac = router_opts.fixed_channel_width;
 
@@ -126,7 +108,7 @@ void place_and_route(enum e_operation operation,
 		binary_search_place_and_route(placer_opts, place_file, net_file,
 				arch_file, route_file, router_opts.full_stats,
 				router_opts.verify_binary_search, annealing_sched, router_opts,
-				det_routing_arch, segment_inf, timing_inf, chan_width_dist, mst,
+				det_routing_arch, segment_inf, timing_inf, chan_width_dist,
 				models, directs, num_directs);
 	} else {
 		if (det_routing_arch.directionality == UNI_DIRECTIONAL) {
@@ -151,7 +133,7 @@ void place_and_route(enum e_operation operation,
 
 		success = try_route(width_fac, router_opts, det_routing_arch,
 				segment_inf, timing_inf, net_delay, slacks, chan_width_dist,
-				clb_opins_used_locally, mst, &Fc_clipped);
+				clb_opins_used_locally, &Fc_clipped);
 
 		if (Fc_clipped) {
 			vpr_printf(TIO_MESSAGE_WARNING, 
@@ -237,18 +219,6 @@ void place_and_route(enum e_operation operation,
 		free(g_trace_free_head);
 	if (g_linked_f_pointer_free_head)
 		free(g_linked_f_pointer_free_head);*/
-
-	if (mst) {
-		for (inet = 0; inet < num_nets; inet++) {
-			if (!mst[inet]) {
-				vpr_printf(TIO_MESSAGE_INFO, "no mst for net %s #%d\n", clb_net[inet].name, inet);
-			}
-			assert(mst[inet]);
-			free(mst[inet]);
-		}
-		free(mst);
-		mst = NULL;
-	}
 }
 
 static int binary_search_place_and_route(struct s_placer_opts placer_opts,
@@ -258,7 +228,7 @@ static int binary_search_place_and_route(struct s_placer_opts placer_opts,
 		struct s_router_opts router_opts,
 		struct s_det_routing_arch det_routing_arch, t_segment_inf * segment_inf,
 		t_timing_inf timing_inf, t_chan_width_dist chan_width_dist,
-		t_mst_edge ** mst, t_model *models, t_direct_inf *directs, int num_directs) {
+		 t_model *models, t_direct_inf *directs, int num_directs) {
 
 	/* This routine performs a binary search to find the minimum number of      *
 	 * tracks per channel required to successfully route a circuit, and returns *
@@ -379,11 +349,11 @@ static int binary_search_place_and_route(struct s_placer_opts placer_opts,
 			placer_opts.place_chan_width = current;
 			try_place(placer_opts, annealing_sched, chan_width_dist,
 					router_opts, det_routing_arch, segment_inf, timing_inf,
-					&mst, directs, num_directs);
+					directs, num_directs);
 		}
 		success = try_route(current, router_opts, det_routing_arch, segment_inf,
 				timing_inf, net_delay, slacks, chan_width_dist,
-				clb_opins_used_locally, mst, &Fc_clipped);
+				clb_opins_used_locally, &Fc_clipped);
 		attempt_count++;
 		fflush(stdout);
 #if 1
@@ -488,12 +458,12 @@ static int binary_search_place_and_route(struct s_placer_opts placer_opts,
 				placer_opts.place_chan_width = current;
 				try_place(placer_opts, annealing_sched, chan_width_dist,
 						router_opts, det_routing_arch, segment_inf, timing_inf,
-						&mst, directs, num_directs);
+						directs, num_directs);
 			}
 
 			success = try_route(current, router_opts, det_routing_arch,
 					segment_inf, timing_inf, net_delay, slacks,
-					chan_width_dist, clb_opins_used_locally, mst, &Fc_clipped);
+					chan_width_dist, clb_opins_used_locally, &Fc_clipped);
 
 			if (success && Fc_clipped == FALSE) {
 				final = current;
@@ -525,7 +495,7 @@ static int binary_search_place_and_route(struct s_placer_opts placer_opts,
 		placer_opts.place_chan_width = final;
 		read_place(place_file, net_file, arch_file, placer_opts,
 				router_opts, chan_width_dist, det_routing_arch,
-				segment_inf, timing_inf, &mst);
+				segment_inf, timing_inf);
 	}
 #endif
 	free_rr_graph();

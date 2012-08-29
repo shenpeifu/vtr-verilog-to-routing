@@ -1,9 +1,10 @@
 #include <stdio.h>
 #include <math.h>
+#include <time.h>
+
 #include "util.h"
 #include "vpr_types.h"
 #include "globals.h"
-#include "mst.h"
 #include "route_export.h"
 #include "route_common.h"
 #include "route_tree_timing.h"
@@ -41,7 +42,7 @@ static int mark_node_expansion_by_bin(int inet, int target_node,
 /************************ Subroutine definitions *****************************/
 
 boolean try_timing_driven_route(struct s_router_opts router_opts,
-		float **net_delay, t_slack * slacks, t_ivec ** clb_opins_used_locally) {
+		float **net_delay, t_slack * slacks, t_ivec ** clb_opins_used_locally, boolean timing_analysis_enabled) {
 
 	/* Timing-driven routing algorithm.  The timing graph (includes slack)   *
 	 * must have already been allocated, and net_delay must have been allocated. *
@@ -53,7 +54,7 @@ boolean try_timing_driven_route(struct s_router_opts router_opts,
 	float *pin_criticality /* [1..max_pins_per_net-1] */, pres_fac, *sinks, 
 		critical_path_delay;
 	t_rt_node **rt_node_of_sink; /* [1..max_pins_per_net-1] */
-
+	clock_t begin,end;
 	sinks = (float*)my_malloc(sizeof(float) * num_nets);
 	net_index = (int*)my_malloc(sizeof(int) * num_nets);
 
@@ -66,13 +67,16 @@ boolean try_timing_driven_route(struct s_router_opts router_opts,
 	alloc_timing_driven_route_structs(&pin_criticality, &sink_order,
 			&rt_node_of_sink);
 
-	/* First do one routing iteration ignoring congestion and marking all sinks  *
-	 * on each net as critical to get reasonable net delay estimates.            */
-
+	/* When timing analysis is turned on, first do one routing iteration 	*
+	 * ignoring congestion and marking all sinks on each net as critical to	*
+	 * get reasonable net delay estimates. If timing analysis is turned 	*
+	 * off, the criticalities should always be equal to 1			*
+	 * meaning that total wirelength should be optimized.			*/
+		
 	for (inet = 0; inet < num_nets; inet++) {
 		if (clb_net[inet].is_global == FALSE) {
 			for (ipin = 1; ipin <= clb_net[inet].num_sinks; ipin++)
-				slacks->criticality[inet][ipin] = 1.;
+				slacks->timing_criticality[inet][ipin] = 1.;
 		} else { /* Set delay of global signals to zero. */
 			for (ipin = 1; ipin <= clb_net[inet].num_sinks; ipin++)
 				net_delay[inet][ipin] = 0.;
@@ -82,6 +86,8 @@ boolean try_timing_driven_route(struct s_router_opts router_opts,
 	pres_fac = router_opts.first_iter_pres_fac; /* Typically 0 -> ignore cong. */
 
 	for (itry = 1; itry <= router_opts.max_router_iterations; itry++) {
+		begin = clock();
+		vpr_printf(TIO_MESSAGE_INFO, "routing iteration %d\n", itry);
 
 		for (i = 0; i < num_nets; i++) {
 			inet = net_index[i];
@@ -91,7 +97,7 @@ boolean try_timing_driven_route(struct s_router_opts router_opts,
 						router_opts.max_criticality,
 						router_opts.criticality_exp, router_opts.astar_fac,
 						router_opts.bend_cost, pin_criticality,
-						sink_order, rt_node_of_sink, net_delay[inet], slacks->criticality[inet]);
+						sink_order, rt_node_of_sink, net_delay[inet], slacks);
 
 				/* Impossible to route? (disconnected rr_graph) */
 
@@ -187,22 +193,47 @@ boolean try_timing_driven_route(struct s_router_opts router_opts,
 			pathfinder_update_cost(pres_fac, router_opts.acc_fac);
 		}
 
-		/* Update slack values by doing another timing analysis.                 *
-		 * Timing_driven_route_net updated the net delay values.                 */
+		
+		if(timing_analysis_enabled)
+		{		
+			/* Update slack values by doing another timing analysis.                 *
+			 * Timing_driven_route_net updated the net delay values.                 */
 
-		load_timing_graph_net_delays(net_delay);
+			load_timing_graph_net_delays(net_delay);
 
-#ifdef HACK_LUT_PIN_SWAPPING
-		do_timing_analysis(slacks, FALSE, TRUE, FALSE);
-#else
-		do_timing_analysis(slacks, FALSE, FALSE, FALSE);
-#endif
+	#ifdef HACK_LUT_PIN_SWAPPING
+			do_timing_analysis(slacks, FALSE, TRUE, FALSE);
+	#else
+			do_timing_analysis(slacks, FALSE, FALSE, FALSE);
+	#endif
 
-		/* Print critical path delay */
-		critical_path_delay = get_critical_path_delay();
-		vpr_printf(TIO_MESSAGE_INFO, "\nCrit. path: %g ns\n", critical_path_delay);
-		/* Deliberately abbreviated so parsing for "Critical path" will not pick this up. */
-
+			/* Print critical path delay */
+			critical_path_delay = get_critical_path_delay();
+			vpr_printf(TIO_MESSAGE_INFO, "\nCrit. path: %g ns\n", critical_path_delay);
+			/* Deliberately abbreviated so parsing for "Critical path" will not pick this up. */
+		}
+		else 
+		{
+			/* If timing analysis is not enabled, make sure that the criticalities stay as	*
+			 * 1. Also, make sure that the net_delay is always 0. This is to optimize 	*
+			 * wirelength									*/
+			for (inet = 0; inet < num_nets; inet++) {
+				for (ipin = 1; ipin <= clb_net[inet].num_sinks; ipin++)
+				{
+					slacks->timing_criticality[inet][ipin] = 1.;
+					net_delay[inet][ipin] = 0.;
+				}
+			}
+		}
+		
+		end = clock();
+		#ifdef CLOCKS_PER_SEC
+				vpr_printf(TIO_MESSAGE_INFO, "routing iteration took %g seconds\n",
+						(float) (end - begin) / CLOCKS_PER_SEC);
+		#else
+				vpr_printf(TIO_MESSAGE_INFO, "routing iteration took %g seconds\n", (float)(end - begin) / CLK_PER_SEC);
+		#endif
+		
 		fflush(stdout);
 	}
 
@@ -271,16 +302,21 @@ static int get_max_pins_per_net(void) {
 boolean timing_driven_route_net(int inet, float pres_fac, float max_criticality,
 		float criticality_exp, float astar_fac, float bend_cost,
 		float *pin_criticality, int *sink_order,
-		t_rt_node ** rt_node_of_sink, float *net_delay, float *criticality) {
+		t_rt_node ** rt_node_of_sink, float *net_delay, t_slack * slacks) {
 
 	/* Returns TRUE as long is found some way to hook up this net, even if that *
 	 * way resulted in overuse of resources (congestion).  If there is no way   *
 	 * to route this net, even ignoring congestion, it returns FALSE.  In this  *
-	 * case the rr_graph is disconnected and you can give up.                   */
+	 * case the rr_graph is disconnected and you can give up. If slacks = NULL, *
+	 * give each net a dummy criticality of 1.									*/
 
 	int ipin, num_sinks, itarget, target_pin, target_node, inode;
-	float target_criticality, old_tcost, new_tcost, largest_criticality;
-	float old_back_cost, new_back_cost;
+	float target_criticality, old_tcost, new_tcost, largest_criticality,
+		old_back_cost, new_back_cost;
+	float timing_criticality, criticality;
+#ifdef PATH_COUNTING
+	float path_criticality;
+#endif
 	t_rt_node *rt_root;
 	struct s_heap *current;
 	struct s_trace *new_route_start_tptr;
@@ -290,18 +326,39 @@ boolean timing_driven_route_net(int inet, float pres_fac, float max_criticality,
 
 	pathfinder_update_one_cost(trace_head[inet], -1, pres_fac);
 	free_traceback(inet);
-
+	
 	for (ipin = 1; ipin <= clb_net[inet].num_sinks; ipin++) { 
-		/* For all analysed pins, set pin_criticality to (max_criticality - slack ratio)^criticality_exp, 
-		but cut off at max_criticality. Slack ratio is 1 - criticality, excluding path weighting. */
-		if (criticality[ipin] > HUGE_NEGATIVE_FLOAT + 1) {
-			pin_criticality[ipin] = pow(max_criticality - (1 - criticality[ipin]), criticality_exp);
-			if (pin_criticality[ipin] > max_criticality) {
-				pin_criticality[ipin] = max_criticality;
+		if (!slacks) {
+			/* Use dummy criticality of 1. */
+			pin_criticality[ipin] = 1.;
+
+		} 
+		else { 
+			timing_criticality = slacks->timing_criticality[inet][ipin]; 
+			if (timing_criticality < HUGE_NEGATIVE_FLOAT + 1) {
+				/* Pin was not analysed - non-critical. */
+				pin_criticality[ipin] = 0.;
+
+			} else {
+				/* For all analysed pins, set pin_criticality to (max_criticality - 
+				slack ratio)^criticality_exp, but cut off at max_criticality.  
+				Slack ratio is 1 - criticality, but what to use for criticality? */	
+#ifdef PATH_COUNTING
+				/* Use a weighted sum of timing and path criticalities. */
+				path_criticality = slacks->path_criticality[inet][ipin];
+				criticality =	  ROUTE_PATH_WEIGHT  * path_criticality
+						   + (1 - ROUTE_PATH_WEIGHT) * timing_criticality; 
+#else
+				/* Use only timing criticality. */
+				criticality = timing_criticality;
+#endif
+				pin_criticality[ipin] = pow(max_criticality - (1 - criticality), criticality_exp);
+
+				/* Update the max criticality over all pins. */
+				if (pin_criticality[ipin] > max_criticality) {
+					pin_criticality[ipin] = max_criticality;
+				}
 			}
-		} else {
-			/* Pin was not analysed - non-critical. */
-			pin_criticality[ipin] = 0;
 		}
 	}
 
