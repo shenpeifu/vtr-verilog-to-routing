@@ -1179,7 +1179,7 @@ static enum swap_result try_swap(float t, float *cost, float *bb_cost, float *ti
 	 * of the blocks. Abort the swap if the to_block is part of a  *
 	 * chain (not supported yet).                                  */
 	
-	ichain = get_chain_index(b_from);
+	get_imacro_from_iblk(&ichain, b_from, pl_macros, num_pl_macros);
 	if ( ichain != -1) {
 		// b_from is part of a chain, I need to swap the whole chain
 		
@@ -1233,7 +1233,8 @@ static enum swap_result try_swap(float t, float *cost, float *bb_cost, float *ti
 			} else {
 
 				// Does not allow a swap with a carry chain yet
-				if (get_chain_index(b_to) != -1) {
+				get_imacro_from_iblk(&ichain, b_from, pl_macros, num_pl_macros);
+				if (ichain != -1) {
 					abort_swap = TRUE;
 					break;
 				}
@@ -1300,9 +1301,10 @@ static enum swap_result try_swap(float t, float *cost, float *bb_cost, float *ti
 		} else {
 			
 			// Does not allow a swap with a carry chain yet
-			if (get_chain_index(b_to) != -1)
+			get_imacro_from_iblk(&ichain, b_from, pl_macros, num_pl_macros);
+			if (ichain != -1) {
 				abort_swap = TRUE;
-			else {
+			} else {
 				// Swap the block, dont swap the nets yet
 				block[b_to].x = x_from;
 				block[b_to].y = y_from;
@@ -1981,7 +1983,7 @@ static void free_placement_structs(
 	free(bb_coords);
 	
 	free_placement_macros_structs();
-
+	
 	for (ichain = 0; ichain < num_pl_macros; ichain ++)
 		free(pl_macros[ichain].members);
 	free(pl_macros);

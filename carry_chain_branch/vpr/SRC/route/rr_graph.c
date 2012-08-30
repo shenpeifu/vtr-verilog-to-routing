@@ -773,8 +773,9 @@ void free_rr_graph(void) {
 	/* Before adding any more free calls here, be sure the data is NOT chunk *
 	 * allocated, as ALL the chunk allocated data is already free!           */
 
-	free(net_rr_terminals);
-
+	if(net_rr_terminals != NULL) {
+		free(net_rr_terminals);
+	}
 	for (i = 0; i < num_rr_nodes; i++) {
 		if (rr_node[i].edges != NULL) {
 			free(rr_node[i].edges);
