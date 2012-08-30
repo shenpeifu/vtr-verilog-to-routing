@@ -61,11 +61,9 @@ enum swap_result {
 	REJECTED, ACCEPTED, ABORTED
 };
 
-#if 0
-#define MIN_TIMING_COST 1.e-12 
-/* Stops timing cost from going to 0 with very lax timing constraints. 
-This would cause division by 0 when auto-normalizing. */
-#endif
+#define MIN_TIMING_COST 1.e-10
+/* Stops timing cost from going to 0 with very lax timing constraints, which 
+avoids multiplying by a gigantic inverse_prev_timing_cost when auto-normalizing. */
 
 /********************** Data Sturcture Definition ***************************/
 /* Stores the information of the move for a block that is       *
@@ -554,8 +552,6 @@ void try_place(struct s_placer_opts placer_opts,
 			/*for normalizing the tradeoff between timing and wirelength (bb)  */
 			inverse_prev_bb_cost = 1 / bb_cost;
 			inverse_prev_timing_cost = 1 / timing_cost;
-			/* Make sure timing_cost is non-zero. */
-			assert(timing_cost > 1e-60);
 		}
 
 		inner_crit_iter_count = 1;
@@ -1886,7 +1882,10 @@ static void comp_td_costs(float *timing_cost, float *connection_delay_sum) {
 			}
 		}
 	}
-	*timing_cost = loc_timing_cost;
+
+	/* Make sure timing cost does not go above MIN_TIMING_COST. */
+	*timing_cost = max(loc_timing_cost, MIN_TIMING_COST);
+
 	*connection_delay_sum = loc_connection_delay_sum;
 }
 
