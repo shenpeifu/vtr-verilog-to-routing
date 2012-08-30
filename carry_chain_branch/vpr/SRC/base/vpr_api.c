@@ -131,7 +131,7 @@ void vpr_print_usage(void) {
 	vpr_printf(TIO_MESSAGE_INFO, "\t[--bend_cost <float>] [--route_type global | detailed]\n");
 	vpr_printf(TIO_MESSAGE_INFO, "\t[--verify_binary_search] [--route_chan_width <int>]\n");
 	vpr_printf(TIO_MESSAGE_INFO, 
-			"\t[--router_algorithm breadth_first | timing_driven | directed_search]\n");
+			"\t[--router_algorithm breadth_first | timing_driven]\n");
 	vpr_printf(TIO_MESSAGE_INFO, 
 			"\t[--base_cost_type intrinsic_delay | delay_normalized | demand_only]\n");
 	vpr_printf(TIO_MESSAGE_INFO, "\n");

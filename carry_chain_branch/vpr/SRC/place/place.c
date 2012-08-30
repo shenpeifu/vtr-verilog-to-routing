@@ -38,7 +38,7 @@
 /* The maximum number of tries when trying to place a carry chain at a    *
  * random location before trying exhaustive placement - find the fist     *
  * legal position and place it during initial placement.                  */
-#define MAX_NUM_TRIES_TO_PLACE_CHAINS_RANDOMLY 4
+#define MAX_NUM_TRIES_TO_PLACE_MACROS_RANDOMLY 4
 
 /* Flags for the states of the bounding box.                              *
  * Stored as char for memory efficiency.                                  */
@@ -105,11 +105,13 @@ typedef struct s_pl_blocks_to_be_moved {
 static float *net_cost = NULL, *temp_net_cost = NULL; /* [0..num_nets-1] */
 
 /* legal positions for type */
-static struct s_legal_pos {
+typedef struct s_legal_pos {
 	int x;
 	int y;
 	int z;
-}**legal_pos = NULL; /* [0..num_types-1][0..type_tsize - 1] */
+}t_legal_pos;
+
+static t_legal_pos **legal_pos = NULL; /* [0..num_types-1][0..type_tsize - 1] */
 static int *num_legal_pos = NULL; /* [0..num_legal_pos-1] */
 
 /* [0...num_nets-1]                                                              *
@@ -221,6 +223,14 @@ static void load_legal_placements();
 
 static void free_legal_placements();
 
+static int check_macro_can_be_placed(int imacro, int itype, int x, int y, int z);
+
+static int try_place_macro(int itype, int ichoice, int imacro, int * free_locations);
+
+static void initial_placement_pl_macros(int macros_max_num_tries, int * free_locations);
+
+static void initial_placement_blocks(int * free_locations, enum e_pad_loc_type pad_loc_type);
+
 static void initial_placement(enum e_pad_loc_type pad_loc_type,
 		char *pad_loc_file);
 
@@ -287,7 +297,6 @@ static double get_net_wirelength_estimate(int inet, struct s_bb *bbptr);
 
 static void free_try_swap_arrays(void);
 
-static void init_place_carry_chains(int chains_max_num_tries, int * free_locations);
 
 /*****************************************************************************/
 /* RESEARCH TODO: Bounding Box and rlim need to be redone for heterogeneous to prevent a QoR penalty */
@@ -1125,7 +1134,7 @@ static enum swap_result try_swap(float t, float *cost, float *bb_cost, float *ti
 	int num_nets_affected;
 	float delta_c, bb_delta_c, timing_delta_c, delay_delta_c;
 	int inet, iblk, bnum, iblk_pin, inet_affected;
-	int ichain, imember, imoved_blk;
+	int imacro, imember, imoved_blk;
 	int x_swap_offset, y_swap_offset, z_swap_offset;
 	int abort_swap = FALSE;
 
@@ -1173,26 +1182,26 @@ static enum swap_result try_swap(float t, float *cost, float *bb_cost, float *ti
 	 * to be moved - check for carry chains and other placement    *
 	 * macros.                                                     */
 	
-	/* Check whether the from_block is part of a chain first.      *
-	 * If it is, the whole chain has to be moved. Calculate the    *
+	/* Check whether the from_block is part of a macro first.      *
+	 * If it is, the whole macro has to be moved. Calculate the    *
 	 * x, y, z offsets of the swap to maintain relative placements *
 	 * of the blocks. Abort the swap if the to_block is part of a  *
-	 * chain (not supported yet).                                  */
+	 * macro (not supported yet).                                  */
 	
-	get_imacro_from_iblk(&ichain, b_from, pl_macros, num_pl_macros);
-	if ( ichain != -1) {
-		// b_from is part of a chain, I need to swap the whole chain
+	get_imacro_from_iblk(&imacro, b_from, pl_macros, num_pl_macros);
+	if ( imacro != -1) {
+		// b_from is part of a macro, I need to swap the whole macro
 		
 		// Record down the relative position of the swap
 		x_swap_offset = x_to - x_from;
 		y_swap_offset = y_to - y_from;
 		z_swap_offset = z_to - z_from;
 		
-		for (imember = 0; imember < pl_macros[ichain].num_blocks; imember++) {
+		for (imember = 0; imember < pl_macros[imacro].num_blocks; imember++) {
 
-			// Gets the new from and to info for every block in the chain
+			// Gets the new from and to info for every block in the macro
 			// cannot use the old from and to info
-			b_from = pl_macros[ichain].members[imember].blk_index;
+			b_from = pl_macros[imacro].members[imember].blk_index;
 			
 			x_from = block[b_from].x;
 			y_from = block[b_from].y;
@@ -1232,9 +1241,9 @@ static enum swap_result try_swap(float t, float *cost, float *bb_cost, float *ti
 				
 			} else {
 
-				// Does not allow a swap with a carry chain yet
-				get_imacro_from_iblk(&ichain, b_from, pl_macros, num_pl_macros);
-				if (ichain != -1) {
+				// Does not allow a swap with a macro yet
+				get_imacro_from_iblk(&imacro, b_from, pl_macros, num_pl_macros);
+				if (imacro != -1) {
 					abort_swap = TRUE;
 					break;
 				}
@@ -1273,10 +1282,10 @@ static enum swap_result try_swap(float t, float *cost, float *bb_cost, float *ti
 
 			} // Finish swapping the blocks and setting up blocks_affected
 				
-		} // Finish going through all the blocks in the chain
+		} // Finish going through all the blocks in the macro
 
 	} else { 
-		// This is not a chain - I could use the from and to info from before
+		// This is not a macro - I could use the from and to info from before
 		
 		// Check whether the to_location is empty
 		if (b_to == EMPTY) {
@@ -1300,9 +1309,9 @@ static enum swap_result try_swap(float t, float *cost, float *bb_cost, float *ti
 		
 		} else {
 			
-			// Does not allow a swap with a carry chain yet
-			get_imacro_from_iblk(&ichain, b_from, pl_macros, num_pl_macros);
-			if (ichain != -1) {
+			// Does not allow a swap with a macro yet
+			get_imacro_from_iblk(&imacro, b_from, pl_macros, num_pl_macros);
+			if (imacro != -1) {
 				abort_swap = TRUE;
 			} else {
 				// Swap the block, dont swap the nets yet
@@ -1336,10 +1345,10 @@ static enum swap_result try_swap(float t, float *cost, float *bb_cost, float *ti
 				blocks_affected.moved_blocks[imoved_blk].znew = z_to;
 				blocks_affected.moved_blocks[imoved_blk].swapped_to_empty = FALSE;
 				blocks_affected.num_moved_blocks ++;
-			} // Not swappping with a carry chain
+			} // Not swappping with a macro
 		} // Finish swapping the blocks and setting up blocks_affected
 
-	} // Finish handling cases for blocks in chain and otherwise
+	} // Finish handling cases for blocks in macro and otherwise
 
 	if (abort_swap == FALSE) {
 
@@ -1945,7 +1954,7 @@ static void free_placement_structs(
 	/* Frees the major structures needed by the placer (and not needed       *
 	 * elsewhere).   */
 
-	int inet, ichain;
+	int inet, imacro;
 
 	free_legal_placements();
 	free_fast_cost_update();
@@ -1984,8 +1993,8 @@ static void free_placement_structs(
 	
 	free_placement_macros_structs();
 	
-	for (ichain = 0; ichain < num_pl_macros; ichain ++)
-		free(pl_macros[ichain].members);
+	for (imacro = 0; imacro < num_pl_macros; imacro ++)
+		free(pl_macros[imacro].members);
 	free(pl_macros);
 	
 	net_cost = NULL; /* Defensive coding. */
@@ -2535,7 +2544,7 @@ static void update_bb(int inet, struct s_bb *bb_coord_new,
 static void alloc_legal_placements() {
 	int i, j, k;
 
-	legal_pos = (struct s_legal_pos **) my_malloc(num_types * sizeof(struct s_legal_pos *));
+	legal_pos = (t_legal_pos **) my_malloc(num_types * sizeof(t_legal_pos *));
 	num_legal_pos = (int *) my_calloc(num_types, sizeof(int));
 	
 	/* Initialize all occupancy to zero. */
@@ -2553,12 +2562,12 @@ static void alloc_legal_placements() {
 	}
 
 	for (i = 0; i < num_types; i++) {
-		legal_pos[i] = (struct s_legal_pos *) my_malloc(num_legal_pos[i] * sizeof(struct s_legal_pos));
+		legal_pos[i] = (t_legal_pos *) my_malloc(num_legal_pos[i] * sizeof(t_legal_pos));
 	}
 }
 
 static void load_legal_placements() {
-	int i, j, k, type_index;
+	int i, j, k, itype;
 	int *index;
 
 	index = (int *) my_calloc(num_types, sizeof(int));
@@ -2567,11 +2576,11 @@ static void load_legal_placements() {
 		for (j = 0; j <= ny + 1; j++) {
 			for (k = 0; k < grid[i][j].type->capacity; k++) {
 				if (grid[i][j].offset == 0) {
-					type_index = grid[i][j].type->index;
-					legal_pos[type_index][index[type_index]].x = i;
-					legal_pos[type_index][index[type_index]].y = j;
-					legal_pos[type_index][index[type_index]].z = k;
-					index[type_index]++;
+					itype = grid[i][j].type->index;
+					legal_pos[itype][index[itype]].x = i;
+					legal_pos[itype][index[itype]].y = j;
+					legal_pos[itype][index[itype]].z = k;
+					index[itype]++;
 				}
 			}
 		}
@@ -2588,71 +2597,163 @@ static void free_legal_placements() {
 	free(num_legal_pos);
 }
 
-static void initial_placement(enum e_pad_loc_type pad_loc_type,
-		char *pad_loc_file) {
 
-	/* Randomly places the blocks to create an initial placement. We rely on
-	 * the legal_pos array already being loaded.  That legal_pos[itype] is an 
-	 * array that gives every legal value of (x,y,z) that can accomodate a block.
-	 * The number of such locations is given by num_legal_pos[itype].
-	 */
-	int i, j, k, iblk, choice, type_index, x, y, z, ichoice;
-	int *free_locations; /* [0..num_types-1]. 
-						  * Stores how many locations there are for this type that *might* still be free.
-						  * That is, this stores the number of entries in legal_pos[itype] that are worth considering
-						  * as you look for a free location.
-						  */
 
-	free_locations = (int *) my_malloc(num_types * sizeof(int));
-	for (type_index = 0; type_index < num_types; type_index++) {
-		free_locations[type_index] = num_legal_pos[type_index];
-	}
-	
-	/* We'll use the grid to record where everything goes. Initialize to the grid has no 
-	 * blocks placed anywhere.
-	 */
-	for (i = 0; i <= nx + 1; i++) {
-		for (j = 0; j <= ny + 1; j++) {
-			grid[i][j].usage = 0;
-			type_index = grid[i][j].type->index;
-			for (k = 0; k < type_descriptors[type_index].capacity; k++) {
-				grid[i][j].blocks[k] = OPEN;
-			}
+static int check_macro_can_be_placed(int imacro, int itype, int x, int y, int z) {
+
+	int imember;
+	int member_x, member_y, member_z;
+
+	// Every macro can be placed until proven otherwise
+	int macro_can_be_placed = TRUE;
+
+	// Check whether all the members can be placed
+	for (imember = 0; imember < pl_macros[imacro].num_blocks; imember++) {
+		member_x = x + pl_macros[imacro].members[imember].x_offset;
+		member_y = y + pl_macros[imacro].members[imember].y_offset;
+		member_z = z + pl_macros[imacro].members[imember].z_offset;
+
+		// Check whether the location could accept block of this type
+		// Then check whether the location could still accomodate more blocks
+		// Also check whether the member position is valid, that is the member's location
+		// still within the chip's dimemsion and the member_z is allowed at that location on the grid
+		if (member_x <= nx+1 && member_y <= ny+1
+				&& grid[member_x][member_y].type->index == itype
+				&& grid[member_x][member_y].blocks[member_z] == OPEN) {
+			// Can still accomodate blocks here, check the next position
+			continue;
+		} else {
+			// Cant be placed here - skip to the next try
+			macro_can_be_placed = FALSE;
+			break;
 		}
 	}
-
-	/* Similarly, mark all blocks as not being placed yet. */
-	for (iblk = 0; iblk < num_blocks; iblk++) {
-		block[iblk].x = -1;
-		block[iblk].y = -1;
-		block[iblk].z = -1;
-	}
-
-	init_place_carry_chains(MAX_NUM_TRIES_TO_PLACE_CHAINS_RANDOMLY, free_locations);
 	
-	// All the chains are placed, update the legal_pos[][] array
-	for (type_index = 0; type_index < num_types; type_index++) {
-		assert (free_locations[type_index] >= 0);
-		for (ichoice = 0; ichoice < free_locations[type_index]; ichoice++) {
-			x = legal_pos[type_index][ichoice].x;
-			y = legal_pos[type_index][ichoice].y;
-			z = legal_pos[type_index][ichoice].z;
+	return (macro_can_be_placed);
+}
+
+
+static int try_place_macro(int itype, int ichoice, int imacro, int * free_locations){
+
+	int x, y, z, member_x, member_y, member_z, imember;
+
+	int macro_placed = FALSE;
+
+	// Choose a random position for the head
+	x = legal_pos[itype][ichoice].x;
+	y = legal_pos[itype][ichoice].y;
+	z = legal_pos[itype][ichoice].z;
 			
-			// Check if that location is occupied.  If it is, remove from legal_pos
-			if (grid[x][y].blocks[z] != OPEN) {
-				legal_pos[type_index][ichoice] = legal_pos[type_index][free_locations[type_index] - 1];
-				free_locations[type_index]--;
+	// If that location is occupied, do nothing.
+	if (grid[x][y].blocks[z] != OPEN) {
+		return (macro_placed);
+	} 
+	
+	int macro_can_be_placed = check_macro_can_be_placed(imacro, itype, x, y, z);
 
-				// After the move, I need to check this particular entry again
-				ichoice--;
-				continue;
-			}
+	if (macro_can_be_placed == TRUE) {
+		
+		// Place down the macro
+		macro_placed = TRUE;
+		for (imember = 0; imember < pl_macros[imacro].num_blocks; imember++) {
+					
+			member_x = x + pl_macros[imacro].members[imember].x_offset;
+			member_y = y + pl_macros[imacro].members[imember].y_offset;
+			member_z = z + pl_macros[imacro].members[imember].z_offset;
+					
+			block[pl_macros[imacro].members[imember].blk_index].x = member_x;
+			block[pl_macros[imacro].members[imember].blk_index].y = member_y;
+			block[pl_macros[imacro].members[imember].blk_index].z = member_z;
+
+			grid[member_x][member_y].blocks[member_z] = pl_macros[imacro].members[imember].blk_index;
+			grid[member_x][member_y].usage++;
+
+			// Could not ensure that the randomiser would not pick this location again
+			// So, would have to do a lazy removal - whenever I come across a block that could not be placed, 
+			// go ahead and remove it from the legal_pos[][] array
+						
+		} // Finish placing all the members in the macro
+
+	} // End of this choice of legal_pos
+
+	return (macro_placed);
+
+}
+
+
+static void initial_placement_pl_macros(int macros_max_num_tries, int * free_locations) {
+
+	int macro_placed;
+	int imacro, iblk, itype, itry, ichoice;
+
+	/* Macros are harder to place.  Do them first */
+	for (imacro = 0; imacro < num_pl_macros; imacro++) {
+		
+		// Every macro are not placed in the beginnning
+		macro_placed = FALSE;
+		
+		// Assume that all the blocks in the macro are of the same type
+		iblk = pl_macros[imacro].members[0].blk_index;
+		itype = block[iblk].type->index;
+		if (free_locations[itype] < pl_macros[imacro].num_blocks) {
+			vpr_printf (TIO_MESSAGE_ERROR, "Initial placement failed. Could not place "
+					"macro length %d with head block %s£¨#%d); not enough free locations of type %s (#%d).\n", 
+					pl_macros[imacro].num_blocks, block[iblk].name, iblk, type_descriptors[itype].name, itype);
+			exit(1);
 		}
-	} // Finish updating the legal_pos[][] and free_locations[] array
 
-	/* Place blocks that are NOT a part of any chain.
+		// Try to place the macro first, if can be placed - place them, otherwise try again
+		for (itry = 0; itry < macros_max_num_tries && macro_placed == FALSE; itry++) {
+			
+			// Choose a random position for the head
+			ichoice = my_irand(free_locations[itype] - 1);
+
+			// Try to place the macro
+			macro_placed = try_place_macro(itype, ichoice, imacro, free_locations);
+
+		} // Finished all tries
+		
+		
+		if (macro_placed == FALSE){
+			// if a macro still could not be placed after macros_max_num_tries times, 
+			// go through the chip exhaustively to find a legal placement for the macro
+			// place the macro on the first location that is legal
+			// then set macro_placed = TRUE;
+			// if there are no legal positions, error out
+
+			// Exhaustive placement of carry macros
+			for (ichoice = 0; ichoice < free_locations[itype] && macro_placed == FALSE; ichoice++) {
+
+				// Try to place the macro
+				macro_placed = try_place_macro(itype, ichoice, imacro, free_locations);
+
+			} // Exhausted all the legal placement position for this macro
+
+			// If macro could not be placed after exhaustive placement, error out
+			if (macro_placed == FALSE) {
+				// Error out
+				vpr_printf (TIO_MESSAGE_ERROR, "Initial placement failed. Could not place "
+					"macro length %d with head block %s£¨#%d); not enough free locations of type %s (#%d).\n", 
+					pl_macros[imacro].num_blocks, block[iblk].name, iblk, type_descriptors[itype].name, itype);
+				exit(1);
+			}
+
+		} else {
+			// This macro has been placed successfully, proceed to place the next macro
+			continue;
+		}
+	} // Finish placing all the pl_macros successfully
+}
+
+static void initial_placement_blocks(int * free_locations, enum e_pad_loc_type pad_loc_type) {
+
+	/* Place blocks that are NOT a part of any macro.
 	 * We'll randomly place each block in the clustered netlist, one by one. 
 	 */
+
+	int iblk, itype;
+	int ichoice, x, y, z;
+
 	for (iblk = 0; iblk < num_blocks; iblk++) {
 
 		if (block[iblk].x != -1) {
@@ -2664,22 +2765,22 @@ static void initial_placement(enum e_pad_loc_type pad_loc_type,
 
 		    /* Randomly select a free location of the appropriate type
 			 * for iblk.  We have a linearized list of all the free locations
-			 * that can accomodate a block of that type in free_locations[type_index].
+			 * that can accomodate a block of that type in free_locations[itype].
 			 * Choose one randomly and put iblk there.  Then we don't want to pick that
 			 * location again, so remove it from the free_locations array.
 			 */
-			type_index = block[iblk].type->index;
-			if (free_locations[type_index] <= 0) {
+			itype = block[iblk].type->index;
+			if (free_locations[itype] <= 0) {
 				vpr_printf (TIO_MESSAGE_ERROR, "Initial placement failed. Could not place "
 						"block %s£¨#%d); no free locations of type %s (#%d).\n", 
-						block[iblk].name, iblk, type_descriptors[type_index].name, type_index);
+						block[iblk].name, iblk, type_descriptors[itype].name, itype);
 				exit(1);
 			}
 
-			choice = my_irand(free_locations[type_index] - 1);
-			x = legal_pos[type_index][choice].x;
-			y = legal_pos[type_index][choice].y;
-			z = legal_pos[type_index][choice].z;
+			ichoice = my_irand(free_locations[itype] - 1);
+			x = legal_pos[itype][ichoice].x;
+			y = legal_pos[itype][ichoice].y;
+			z = legal_pos[itype][ichoice].z;
 
 			// Make sure that the position is OPEN before placing the block down
 			assert (grid[x][y].blocks[z] == OPEN);
@@ -2696,11 +2797,76 @@ static void initial_placement(enum e_pad_loc_type pad_loc_type,
 				* just move the last entry in legal_pos to the spot we just used and decrement the 
 				* count of free_locations.
 				*/
-			legal_pos[type_index][choice] = legal_pos[type_index][free_locations[type_index] - 1]; /* overwrite used block position */
-			free_locations[type_index]--;
+			legal_pos[itype][ichoice] = legal_pos[itype][free_locations[itype] - 1]; /* overwrite used block position */
+			free_locations[itype]--;
 			
 		}
 	}
+}
+
+static void initial_placement(enum e_pad_loc_type pad_loc_type,
+		char *pad_loc_file) {
+
+	/* Randomly places the blocks to create an initial placement. We rely on
+	 * the legal_pos array already being loaded.  That legal_pos[itype] is an 
+	 * array that gives every legal value of (x,y,z) that can accomodate a block.
+	 * The number of such locations is given by num_legal_pos[itype].
+	 */
+	int i, j, k, iblk, itype, x, y, z, ichoice;
+	int *free_locations; /* [0..num_types-1]. 
+						  * Stores how many locations there are for this type that *might* still be free.
+						  * That is, this stores the number of entries in legal_pos[itype] that are worth considering
+						  * as you look for a free location.
+						  */
+
+	free_locations = (int *) my_malloc(num_types * sizeof(int));
+	for (itype = 0; itype < num_types; itype++) {
+		free_locations[itype] = num_legal_pos[itype];
+	}
+	
+	/* We'll use the grid to record where everything goes. Initialize to the grid has no 
+	 * blocks placed anywhere.
+	 */
+	for (i = 0; i <= nx + 1; i++) {
+		for (j = 0; j <= ny + 1; j++) {
+			grid[i][j].usage = 0;
+			itype = grid[i][j].type->index;
+			for (k = 0; k < type_descriptors[itype].capacity; k++) {
+				grid[i][j].blocks[k] = OPEN;
+			}
+		}
+	}
+
+	/* Similarly, mark all blocks as not being placed yet. */
+	for (iblk = 0; iblk < num_blocks; iblk++) {
+		block[iblk].x = -1;
+		block[iblk].y = -1;
+		block[iblk].z = -1;
+	}
+
+	initial_placement_pl_macros(MAX_NUM_TRIES_TO_PLACE_MACROS_RANDOMLY, free_locations);
+	
+	// All the macros are placed, update the legal_pos[][] array
+	for (itype = 0; itype < num_types; itype++) {
+		assert (free_locations[itype] >= 0);
+		for (ichoice = 0; ichoice < free_locations[itype]; ichoice++) {
+			x = legal_pos[itype][ichoice].x;
+			y = legal_pos[itype][ichoice].y;
+			z = legal_pos[itype][ichoice].z;
+			
+			// Check if that location is occupied.  If it is, remove from legal_pos
+			if (grid[x][y].blocks[z] != OPEN) {
+				legal_pos[itype][ichoice] = legal_pos[itype][free_locations[itype] - 1];
+				free_locations[itype]--;
+
+				// After the move, I need to check this particular entry again
+				ichoice--;
+				continue;
+			}
+		}
+	} // Finish updating the legal_pos[][] and free_locations[] array
+
+	initial_placement_blocks(free_locations, pad_loc_type);
 
 	if (pad_loc_type == USER) {
 		read_user_pad_loc(pad_loc_file);
@@ -2831,7 +2997,7 @@ static void check_place(float bb_cost, float timing_cost,
 	float bb_cost_check;
 	int usage_check;
 	float timing_cost_check, delay_cost_check;
-	int ichain, imember, head_iblk, member_iblk, member_x, member_y, member_z;
+	int imacro, imember, head_iblk, member_iblk, member_x, member_y, member_z;
 
 	bb_cost_check = comp_bb_cost(CHECK);
 	vpr_printf(TIO_MESSAGE_INFO, "bb_cost recomputed from scratch is %g.\n", bb_cost_check);
@@ -2913,37 +3079,37 @@ static void check_place(float bb_cost, float timing_cost,
 		}
 	free(bdone);
 	
-	/* Check the carry chain placement are legal - blocks are in the proper relative position. */
-	for (ichain = 0; ichain < num_pl_macros; ichain++) {
+	/* Check the pl_macro placement are legal - blocks are in the proper relative position. */
+	for (imacro = 0; imacro < num_pl_macros; imacro++) {
 		
-		head_iblk = pl_macros[ichain].members[0].blk_index;
+		head_iblk = pl_macros[imacro].members[0].blk_index;
 		
-		for (imember = 0; imember < pl_macros[ichain].num_blocks; imember++) {
+		for (imember = 0; imember < pl_macros[imacro].num_blocks; imember++) {
 			
-			member_iblk = pl_macros[ichain].members[imember].blk_index;
+			member_iblk = pl_macros[imacro].members[imember].blk_index;
 
 			// Compute the suppossed member's x,y,z location
-			member_x = block[head_iblk].x + pl_macros[ichain].members[imember].x_offset;
-			member_y = block[head_iblk].y + pl_macros[ichain].members[imember].y_offset;
-			member_z = block[head_iblk].z + pl_macros[ichain].members[imember].z_offset;
+			member_x = block[head_iblk].x + pl_macros[imacro].members[imember].x_offset;
+			member_y = block[head_iblk].y + pl_macros[imacro].members[imember].y_offset;
+			member_z = block[head_iblk].z + pl_macros[imacro].members[imember].z_offset;
 
 			// Check the block data structure first
 			if (block[member_iblk].x != member_x 
 					|| block[member_iblk].y != member_y 
 					|| block[member_iblk].z != member_z) {
-				vpr_printf(TIO_MESSAGE_ERROR, "Block %d in carry chain #%d is not placed "
-					" in the proper orientation.\n", member_iblk, ichain);
+				vpr_printf(TIO_MESSAGE_ERROR, "Block %d in pl_macro #%d is not placed "
+					" in the proper orientation.\n", member_iblk, imacro);
 				error++;
 			}
 
 			// Then check the grid data structure
 			if (grid[member_x][member_y].blocks[member_z] != member_iblk) {
-				vpr_printf(TIO_MESSAGE_ERROR, "Block %d in carry chain #%d is not placed "
-					" in the proper orientation.\n", member_iblk, ichain);
+				vpr_printf(TIO_MESSAGE_ERROR, "Block %d in pl_macro #%d is not placed "
+					" in the proper orientation.\n", member_iblk, imacro);
 				error++;
 			}
 		} // Finish going through all the members
-	} // Finish going through all the chains
+	} // Finish going through all the macros
 
 	if (error == 0) {
 		vpr_printf(TIO_MESSAGE_INFO, "\nCompleted placement consistency check successfully.\n\n");
@@ -2996,199 +3162,3 @@ static void free_try_swap_arrays(void) {
 	}
 }
 
-static void init_place_carry_chains(int chains_max_num_tries, int * free_locations) {
-
-	int chain_can_be_placed, chain_placed, choice;
-	int x, y, z, member_x, member_y, member_z;
-	int ichain, iblk, type_index, itry, imember, ichoice;
-
-	/* Chains are harder to place.  Do them first */
-	for (ichain = 0; ichain < num_pl_macros; ichain++) {
-		
-		// Every chain are not placed in the beginnning
-		chain_placed = FALSE;
-		
-		// Assume that all the blocks in the chain are of the same type
-		iblk = pl_macros[ichain].members[0].blk_index;
-		type_index = block[iblk].type->index;
-		if (free_locations[type_index] < pl_macros[ichain].num_blocks) {
-			vpr_printf (TIO_MESSAGE_ERROR, "Initial placement failed. Could not place "
-					"chain length %d with head block %s£¨#%d); not enough free locations of type %s (#%d).\n", 
-					pl_macros[ichain].num_blocks, block[iblk].name, iblk, type_descriptors[type_index].name, type_index);
-			exit(1);
-		}
-
-		// Try to place the chain first, if can be placed - place them, otherwise try again
-		for (itry = 0; itry < chains_max_num_tries && chain_placed == FALSE; itry++) {
-			
-			// Every chain cannot be placed until proven otherwise
-			chain_can_be_placed = TRUE;
-			
-			// Choose a random position for the head
-			choice = my_irand(free_locations[type_index] - 1);
-			x = legal_pos[type_index][choice].x;
-			y = legal_pos[type_index][choice].y;
-			z = legal_pos[type_index][choice].z;
-			
-			// Check if that location is occupied.  If it is, remove from legal_pos
-			if (grid[x][y].blocks[z] != OPEN) {
-				legal_pos[type_index][choice] = legal_pos[type_index][free_locations[type_index] - 1];
-				free_locations[type_index]--;
-				chain_can_be_placed = FALSE;
-				continue;
-			}
-			
-			// Check whether all the members can be placed
-			for (imember = 0; imember < pl_macros[ichain].num_blocks; imember++) {
-				member_x = x + pl_macros[ichain].members[imember].x_offset;
-				member_y = y + pl_macros[ichain].members[imember].y_offset;
-				member_z = z + pl_macros[ichain].members[imember].z_offset;
-
-				// Check whether the location could accept block of this type
-				// Then check whether the location could still accomodate more blocks
-				// Also check whether the member position is valid, that is the member's location
-				// still within the chip's dimemsion and the member_z is allowed at that location on the grid
-				if (grid[member_x][member_y].type->index == type_index
-						&& grid[member_x][member_y].blocks[member_z] == OPEN
-						&& member_x <= nx && member_y <= ny) {
-					// Can still accomodate blocks here, check the next position
-					continue;
-				} else {
-					// Cant be placed here - skip to the next try
-					chain_can_be_placed = FALSE;
-					break;
-				}
-
-			}
-
-			if (chain_can_be_placed == FALSE) {
-				// This try is unsuccessful, proceeed to the next try
-				chain_placed = FALSE;
-				continue;
-			} else {
-				// Place down the chain
-				chain_placed = TRUE;
-				for (imember = 0; imember < pl_macros[ichain].num_blocks; imember++) {
-					
-					member_x = x + pl_macros[ichain].members[imember].x_offset;
-					member_y = y + pl_macros[ichain].members[imember].y_offset;
-					member_z = z + pl_macros[ichain].members[imember].z_offset;
-
-					block[pl_macros[ichain].members[imember].blk_index].x = member_x;
-					block[pl_macros[ichain].members[imember].blk_index].y = member_y;
-					block[pl_macros[ichain].members[imember].blk_index].z = member_z;
-
-					grid[member_x][member_y].blocks[member_z] = pl_macros[ichain].members[imember].blk_index;
-					grid[member_x][member_y].usage++;
-
-					// Could not ensure that the randomiser would not pick this location again
-					// So, would have to do a lazy removal - whenever I come across a block that could not be placed, 
-					// go ahead and remove it from the legal_pos[][] array
-
-				} // Finish placing all the members in the chain
-			}
-
-		} // Finished all tries
-		
-		
-		if (chain_placed == FALSE){
-			// if a chain still could not be placed after chains_max_num_tries times, 
-			// go through the chip exhaustively to find a legal placement for the chain
-			// place the chain on the first location that is legal
-			// then set chain_placed = TRUE;
-			// if there are no legal positions, error out
-
-			// Exhaustive placement of carry chains
-			for (ichoice = 0; ichoice < free_locations[type_index]; ichoice++) {
-				
-				// Choose a random position for the head
-				x = legal_pos[type_index][ichoice].x;
-				y = legal_pos[type_index][ichoice].y;
-				z = legal_pos[type_index][ichoice].z;
-			
-				// Check if that location is occupied.  If it is, remove from legal_pos
-				if (grid[x][y].blocks[z] != OPEN) {
-					legal_pos[type_index][ichoice] = legal_pos[type_index][free_locations[type_index] - 1];
-					free_locations[type_index]--;
-					chain_can_be_placed = FALSE;
-					continue;
-				}
-				
-				// Check whether all the members can be placed
-				chain_can_be_placed = TRUE;
-				for (imember = 0; imember < pl_macros[ichain].num_blocks; imember++) {
-					member_x = x + pl_macros[ichain].members[imember].x_offset;
-					member_y = y + pl_macros[ichain].members[imember].y_offset;
-					member_z = z + pl_macros[ichain].members[imember].z_offset;
-
-					// Check if that location is occupied.  If it is, remove from legal_pos
-					if (grid[member_x][member_y].blocks[member_z] != OPEN) {
-						legal_pos[type_index][ichoice] = legal_pos[type_index][free_locations[type_index] - 1];
-						free_locations[type_index]--;
-						chain_can_be_placed = FALSE;
-						continue;
-					}
-					
-					// This location is OPEN
-					// Check whether the location could accept block of this type
-					// Also check whether the member position is valid, that is the member's location
-					// still within the chip's dimemsion and the member_z is allowed at that location on the grid
-					if (grid[member_x][member_y].type->index == type_index
-							&& member_x <= nx && member_y <= ny) {
-						// Can still accomodate blocks here, check the next position
-						continue;
-					} else {
-						// Cant be placed here - skip to the next try
-						chain_can_be_placed = FALSE;
-						continue;
-					}
-
-				}
-
-				if (chain_can_be_placed == FALSE) {
-					// This try is unsuccessful, proceeed to the next try
-					chain_placed = FALSE;
-					continue;
-				} else {
-					// Place down the chain
-					chain_placed = TRUE;
-					for (imember = 0; imember < pl_macros[ichain].num_blocks; imember++) {
-					
-						member_x = x + pl_macros[ichain].members[imember].x_offset;
-						member_y = y + pl_macros[ichain].members[imember].y_offset;
-						member_z = z + pl_macros[ichain].members[imember].z_offset;
-					
-						block[pl_macros[ichain].members[imember].blk_index].x = member_x;
-						block[pl_macros[ichain].members[imember].blk_index].y = member_y;
-						block[pl_macros[ichain].members[imember].blk_index].z = member_z;
-
-						grid[member_x][member_y].blocks[member_z] = pl_macros[ichain].members[imember].blk_index;
-						grid[member_x][member_y].usage++;
-
-						// Could not ensure that the randomiser would not pick this location again
-						// So, would have to do a lazy removal - whenever I come across a block that could not be placed, 
-						// go ahead and remove it from the legal_pos[][] array
-						
-					} // Finish placing all the members in the chain
-
-					// Do not need to explore other legal position once this chain is placed
-					break;
-				} // End of this choice of legal_pos
-
-			} // Exhausted all the legal placement position for this chain
-
-			// If chain could not be placed after exhaustive placement, error out
-			if (chain_placed == FALSE) {
-				// Error out
-				vpr_printf (TIO_MESSAGE_ERROR, "Initial placement failed. Could not place "
-					"chain length %d with head block %s£¨#%d); not enough free locations of type %s (#%d).\n", 
-					pl_macros[ichain].num_blocks, block[iblk].name, iblk, type_descriptors[type_index].name, type_index);
-				exit(1);
-			}
-
-		} else {
-			// This chain has been placed successfully, proceed to place the next chain
-			continue;
-		}
-	} // Finish placing all the carry chains successfully
-}
