@@ -39,12 +39,11 @@ void get_blk_pin_from_port_pin(int blk_type_index, int port,int port_pin,
 		int * blk_pin);
 void free_blk_pin_from_port_pin(void);
 
-
-
 void alloc_and_load_idirect_from_blk_pin(t_direct_inf* directs, int num_directs, 
 		int *** idirect_from_blk_pin, int *** direct_type_from_blk_pin);
 
-
+void free_idirect_from_blk_pin(int *** idirect_from_blk_pin, 
+	int *** direct_type_from_blk_pin);
 
 
 

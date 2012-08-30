@@ -172,10 +172,10 @@ static struct s_bb *ts_bb_coord_new = NULL;
 static struct s_bb *ts_bb_edge_new = NULL;
 static int *ts_nets_to_update = NULL;
 
-/* The pl_chains array stores all the carry chains placement macros.   *
- * [0...num_chains-1]                                                  */
-static t_pl_macro * pl_chains = NULL;
-static int num_chains;
+/* The pl_macros array stores all the carry chains placement macros.   *
+ * [0...num_pl_macros-1]                                                  */
+static t_pl_macro * pl_macros = NULL;
+static int num_pl_macros;
 
 /* These file-scoped variables keep track of the number of swaps       *
  * rejected, accepted or aborted. The total number of swap attempts    *
@@ -1188,11 +1188,11 @@ static enum swap_result try_swap(float t, float *cost, float *bb_cost, float *ti
 		y_swap_offset = y_to - y_from;
 		z_swap_offset = z_to - z_from;
 		
-		for (imember = 0; imember < pl_chains[ichain].num_blocks; imember++) {
+		for (imember = 0; imember < pl_macros[ichain].num_blocks; imember++) {
 
 			// Gets the new from and to info for every block in the chain
 			// cannot use the old from and to info
-			b_from = pl_chains[ichain].members[imember].blk_index;
+			b_from = pl_macros[ichain].members[imember].blk_index;
 			
 			x_from = block[b_from].x;
 			y_from = block[b_from].y;
@@ -1982,15 +1982,15 @@ static void free_placement_structs(
 	
 	free_placement_macros_structs();
 
-	for (ichain = 0; ichain < num_chains; ichain ++)
-		free(pl_chains[ichain].members);
-	free(pl_chains);
+	for (ichain = 0; ichain < num_pl_macros; ichain ++)
+		free(pl_macros[ichain].members);
+	free(pl_macros);
 	
 	net_cost = NULL; /* Defensive coding. */
 	temp_net_cost = NULL;
 	bb_num_on_edges = NULL;
 	bb_coords = NULL;
-	pl_chains = NULL;
+	pl_macros = NULL;
 
 	/* Frees up all the data structure used in vpr_utils. */
 	free_port_pin_from_blk_pin();
@@ -2085,7 +2085,7 @@ static void alloc_and_load_placement_structs(
 
 	alloc_and_load_try_swap_structs();
 
-	num_chains = alloc_and_load_placement_macros(directs, num_directs, &pl_chains);
+	num_pl_macros = alloc_and_load_placement_macros(directs, num_directs, &pl_macros);
 }
 
 static void alloc_and_load_try_swap_structs() {
@@ -2912,18 +2912,18 @@ static void check_place(float bb_cost, float timing_cost,
 	free(bdone);
 	
 	/* Check the carry chain placement are legal - blocks are in the proper relative position. */
-	for (ichain = 0; ichain < num_chains; ichain++) {
+	for (ichain = 0; ichain < num_pl_macros; ichain++) {
 		
-		head_iblk = pl_chains[ichain].members[0].blk_index;
+		head_iblk = pl_macros[ichain].members[0].blk_index;
 		
-		for (imember = 0; imember < pl_chains[ichain].num_blocks; imember++) {
+		for (imember = 0; imember < pl_macros[ichain].num_blocks; imember++) {
 			
-			member_iblk = pl_chains[ichain].members[imember].blk_index;
+			member_iblk = pl_macros[ichain].members[imember].blk_index;
 
 			// Compute the suppossed member's x,y,z location
-			member_x = block[head_iblk].x + pl_chains[ichain].members[imember].x_offset;
-			member_y = block[head_iblk].y + pl_chains[ichain].members[imember].y_offset;
-			member_z = block[head_iblk].z + pl_chains[ichain].members[imember].z_offset;
+			member_x = block[head_iblk].x + pl_macros[ichain].members[imember].x_offset;
+			member_y = block[head_iblk].y + pl_macros[ichain].members[imember].y_offset;
+			member_z = block[head_iblk].z + pl_macros[ichain].members[imember].z_offset;
 
 			// Check the block data structure first
 			if (block[member_iblk].x != member_x 
@@ -3001,18 +3001,18 @@ static void init_place_carry_chains(int chains_max_num_tries, int * free_locatio
 	int ichain, iblk, type_index, itry, imember, ichoice;
 
 	/* Chains are harder to place.  Do them first */
-	for (ichain = 0; ichain < num_chains; ichain++) {
+	for (ichain = 0; ichain < num_pl_macros; ichain++) {
 		
 		// Every chain are not placed in the beginnning
 		chain_placed = FALSE;
 		
 		// Assume that all the blocks in the chain are of the same type
-		iblk = pl_chains[ichain].members[0].blk_index;
+		iblk = pl_macros[ichain].members[0].blk_index;
 		type_index = block[iblk].type->index;
-		if (free_locations[type_index] < pl_chains[ichain].num_blocks) {
+		if (free_locations[type_index] < pl_macros[ichain].num_blocks) {
 			vpr_printf (TIO_MESSAGE_ERROR, "Initial placement failed. Could not place "
 					"chain length %d with head block %s£¨#%d); not enough free locations of type %s (#%d).\n", 
-					pl_chains[ichain].num_blocks, block[iblk].name, iblk, type_descriptors[type_index].name, type_index);
+					pl_macros[ichain].num_blocks, block[iblk].name, iblk, type_descriptors[type_index].name, type_index);
 			exit(1);
 		}
 
@@ -3037,10 +3037,10 @@ static void init_place_carry_chains(int chains_max_num_tries, int * free_locatio
 			}
 			
 			// Check whether all the members can be placed
-			for (imember = 0; imember < pl_chains[ichain].num_blocks; imember++) {
-				member_x = x + pl_chains[ichain].members[imember].x_offset;
-				member_y = y + pl_chains[ichain].members[imember].y_offset;
-				member_z = z + pl_chains[ichain].members[imember].z_offset;
+			for (imember = 0; imember < pl_macros[ichain].num_blocks; imember++) {
+				member_x = x + pl_macros[ichain].members[imember].x_offset;
+				member_y = y + pl_macros[ichain].members[imember].y_offset;
+				member_z = z + pl_macros[ichain].members[imember].z_offset;
 
 				// Check whether the location could accept block of this type
 				// Then check whether the location could still accomodate more blocks
@@ -3066,17 +3066,17 @@ static void init_place_carry_chains(int chains_max_num_tries, int * free_locatio
 			} else {
 				// Place down the chain
 				chain_placed = TRUE;
-				for (imember = 0; imember < pl_chains[ichain].num_blocks; imember++) {
+				for (imember = 0; imember < pl_macros[ichain].num_blocks; imember++) {
 					
-					member_x = x + pl_chains[ichain].members[imember].x_offset;
-					member_y = y + pl_chains[ichain].members[imember].y_offset;
-					member_z = z + pl_chains[ichain].members[imember].z_offset;
+					member_x = x + pl_macros[ichain].members[imember].x_offset;
+					member_y = y + pl_macros[ichain].members[imember].y_offset;
+					member_z = z + pl_macros[ichain].members[imember].z_offset;
 
-					block[pl_chains[ichain].members[imember].blk_index].x = member_x;
-					block[pl_chains[ichain].members[imember].blk_index].y = member_y;
-					block[pl_chains[ichain].members[imember].blk_index].z = member_z;
+					block[pl_macros[ichain].members[imember].blk_index].x = member_x;
+					block[pl_macros[ichain].members[imember].blk_index].y = member_y;
+					block[pl_macros[ichain].members[imember].blk_index].z = member_z;
 
-					grid[member_x][member_y].blocks[member_z] = pl_chains[ichain].members[imember].blk_index;
+					grid[member_x][member_y].blocks[member_z] = pl_macros[ichain].members[imember].blk_index;
 					grid[member_x][member_y].usage++;
 
 					// Could not ensure that the randomiser would not pick this location again
@@ -3114,10 +3114,10 @@ static void init_place_carry_chains(int chains_max_num_tries, int * free_locatio
 				
 				// Check whether all the members can be placed
 				chain_can_be_placed = TRUE;
-				for (imember = 0; imember < pl_chains[ichain].num_blocks; imember++) {
-					member_x = x + pl_chains[ichain].members[imember].x_offset;
-					member_y = y + pl_chains[ichain].members[imember].y_offset;
-					member_z = z + pl_chains[ichain].members[imember].z_offset;
+				for (imember = 0; imember < pl_macros[ichain].num_blocks; imember++) {
+					member_x = x + pl_macros[ichain].members[imember].x_offset;
+					member_y = y + pl_macros[ichain].members[imember].y_offset;
+					member_z = z + pl_macros[ichain].members[imember].z_offset;
 
 					// Check if that location is occupied.  If it is, remove from legal_pos
 					if (grid[member_x][member_y].blocks[member_z] != OPEN) {
@@ -3150,17 +3150,17 @@ static void init_place_carry_chains(int chains_max_num_tries, int * free_locatio
 				} else {
 					// Place down the chain
 					chain_placed = TRUE;
-					for (imember = 0; imember < pl_chains[ichain].num_blocks; imember++) {
+					for (imember = 0; imember < pl_macros[ichain].num_blocks; imember++) {
 					
-						member_x = x + pl_chains[ichain].members[imember].x_offset;
-						member_y = y + pl_chains[ichain].members[imember].y_offset;
-						member_z = z + pl_chains[ichain].members[imember].z_offset;
+						member_x = x + pl_macros[ichain].members[imember].x_offset;
+						member_y = y + pl_macros[ichain].members[imember].y_offset;
+						member_z = z + pl_macros[ichain].members[imember].z_offset;
 					
-						block[pl_chains[ichain].members[imember].blk_index].x = member_x;
-						block[pl_chains[ichain].members[imember].blk_index].y = member_y;
-						block[pl_chains[ichain].members[imember].blk_index].z = member_z;
+						block[pl_macros[ichain].members[imember].blk_index].x = member_x;
+						block[pl_macros[ichain].members[imember].blk_index].y = member_y;
+						block[pl_macros[ichain].members[imember].blk_index].z = member_z;
 
-						grid[member_x][member_y].blocks[member_z] = pl_chains[ichain].members[imember].blk_index;
+						grid[member_x][member_y].blocks[member_z] = pl_macros[ichain].members[imember].blk_index;
 						grid[member_x][member_y].usage++;
 
 						// Could not ensure that the randomiser would not pick this location again
@@ -3180,7 +3180,7 @@ static void init_place_carry_chains(int chains_max_num_tries, int * free_locatio
 				// Error out
 				vpr_printf (TIO_MESSAGE_ERROR, "Initial placement failed. Could not place "
 					"chain length %d with head block %s£¨#%d); not enough free locations of type %s (#%d).\n", 
-					pl_chains[ichain].num_blocks, block[iblk].name, iblk, type_descriptors[type_index].name, type_index);
+					pl_macros[ichain].num_blocks, block[iblk].name, iblk, type_descriptors[type_index].name, type_index);
 				exit(1);
 			}
 

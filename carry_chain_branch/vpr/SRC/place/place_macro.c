@@ -89,10 +89,10 @@ static int ** idirect_from_blk_pin = NULL;
  * [0...num_types-1][0...num_blk_pins-1]                             */
 static int ** direct_type_from_blk_pin = NULL;
 
-/* The pl_macro_chains array stores all the carry chains.                *
+/* The pl_macros array stores all the carry chains.                *
  * [0...num_chains-1]                                                    */
-static t_pl_macro * pl_macro_chains = NULL;
-static int pl_macro_num_chains;
+static t_pl_macro * pl_macros = NULL;
+static int num_pl_macros;
 
 /*** These are the file scope subroutines defintions. ***/
 int alloc_and_load_placement_macros(t_direct_inf* directs, int num_directs, t_pl_macro ** chains){
@@ -105,7 +105,9 @@ int alloc_and_load_placement_macros(t_direct_inf* directs, int num_directs, t_pl
 	 *      the amount of memory required for the actual variables.    *
 	 *   2) Allocate the actual variables with the exact amount of     *
 	 *      memory. Then loads the data from the temporary data        *
-	 *       structures before freeing them.                           */
+	 *       structures before freeing them.                           *
+	 *                                                                 *
+	 * The placement macro array is freed by the caller(s).            */
 
 	/* Declaration of local variables */
 	int iblk, from_iblk_pin, to_iblk_pin, from_inet, to_inet, from_idirect, to_idirect, 
@@ -231,8 +233,8 @@ int alloc_and_load_placement_macros(t_direct_inf* directs, int num_directs, t_pl
 	free(pl_macro_member_blk_num);
 	
 	/* Keeps a static pointer to the chain. */
-	pl_macro_chains = chain;
-	pl_macro_num_chains = num_chain;
+	pl_macros = chain;
+	num_pl_macros = num_chain;
 	
 	/* Returns the pointer to the chain. */
 	*chains = chain;
@@ -247,9 +249,9 @@ int get_chain_index(int blk_num) {
 
 	int ichain, imember, chain_index = -1;
 
-	for (ichain = 0; ichain < pl_macro_num_chains; ichain ++) {
-		for (imember = 0; imember < pl_macro_chains[ichain].num_blocks; imember++) {
-			if (pl_macro_chains[ichain].members[imember].blk_index == blk_num)
+	for (ichain = 0; ichain < num_pl_macros; ichain ++) {
+		for (imember = 0; imember < pl_macros[ichain].num_blocks; imember++) {
+			if (pl_macros[ichain].members[imember].blk_index == blk_num)
 				chain_index = ichain;
 		}
 	}
@@ -261,26 +263,16 @@ void free_placement_macros_structs(void) {
 
 	/* This function frees up all the static data structures used. */
 
-	int itype, ichain;
+	int ichain;
 
-	// Calculate the size.
-	int max_ports_per_blk = 0;
-	for (itype = 0; itype < num_types; itype++) {
-		max_ports_per_blk = max(max_ports_per_blk, type_descriptors[itype].pb_type->num_ports);
-	}
-	
-	free_matrix(idirect_from_blk_pin, 0, num_types-1, 0, sizeof(int));
-	free_matrix(direct_type_from_blk_pin, 0, num_types-1, 0, sizeof(int));
+	// This frees up the two arrays and set the pointers to NULL
+	free_idirect_from_blk_pin(&idirect_from_blk_pin, &direct_type_from_blk_pin);
 	
 	// Special handling to free t_pl_macro array.
-	for (ichain = 0; ichain < pl_macro_num_chains; ichain ++)
-		free(pl_macro_chains[ichain].members);
-	free(pl_macro_chains);
-	
+	for (ichain = 0; ichain < num_pl_macros; ichain ++)
+		free(pl_macros[ichain].members);
+	free(pl_macros);
 	// Set to NULL - defensive coding.
-	pl_macro_chains = NULL;
-	idirect_from_blk_pin = NULL;
-	direct_type_from_blk_pin = NULL;
-
+	pl_macros = NULL;
 
 }

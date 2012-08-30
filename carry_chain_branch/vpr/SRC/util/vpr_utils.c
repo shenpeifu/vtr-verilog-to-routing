@@ -679,12 +679,16 @@ int ** alloc_and_load_net_pin_index() {
 	return temp_net_pin_index;
 }
 
-/****************************************************************************************
+/***************************************************************************************
   Y.G.THIEN
   29 AUG 2012
 
-  The following functions 
-****************************************************************************************/
+ * The following functions maps the block pins indices for all block types to the      *
+ * corresponding port indices and port_pin indices. This is necessary since there are  *
+ * different netlist conventions - in the cluster level, ports and port pins are used  *
+ * while in the post-pack level, block pins are used.                                  *
+ *                                                                                     *
+ ***************************************************************************************/
 
 void get_port_pin_from_blk_pin(int blk_type_index, int blk_pin, int * port,
 		int * port_pin) {
@@ -692,7 +696,8 @@ void get_port_pin_from_blk_pin(int blk_type_index, int blk_pin, int * port,
 	/* These two mappings are needed since there are two different netlist   *
 	 * conventions - in the cluster level, ports and port pins are used      *
 	 * while in the post-pack level, block pins are used. The reason block   *
-	 * type is used instead of blocks is to save memories.                   *
+	 * type is used instead of blocks is that the mapping is the same for    *
+	 * blocks belonging to the same block type.                              *
 	 *                                                                       *
 	 * f_port_from_blk_pin array allow us to quickly find what port a        *
 	 * block pin corresponds to.                                             *
@@ -805,7 +810,7 @@ static void alloc_and_load_port_pin_from_blk_pin(void) {
 void get_blk_pin_from_port_pin(int blk_type_index, int port,int port_pin, 
 		int * blk_pin) {
 
-	/* These mappings are needed since there are two different netlist       *
+	/* This mapping is needed since there are two different netlist          *
 	 * conventions - in the cluster level, ports and port pins are used      *
 	 * while in the post-pack level, block pins are used. The reason block   *
 	 * type is used instead of blocks is to save memories.                   *
@@ -892,6 +897,23 @@ static void alloc_and_load_blk_pin_from_port_pin(void) {
 	f_blk_pin_from_port_pin = temp_blk_pin_from_port_pin;
 }
 
+
+/***************************************************************************************
+  Y.G.THIEN
+  30 AUG 2012
+
+ * The following functions parses the direct connections' information obtained from    *
+ * the arch file. Then, the functions map the block pins indices for all block types   *
+ * to the corresponding idirect (the index of the direct connection as specified in    *
+ * the arch file) and direct type (whether this pin is a SOURCE or a SINK for the      *
+ * direct connection). If a pin is not part of any direct connections, the value       *
+ * OPEN (-1) is stored in both entries.                                                *
+ *                                                                                     *
+ * The mapping arrays are freed by the caller. Currently, this mapping is only used to *
+ * load placement macros in place_macro.c                                              *
+ *                                                                                     *
+ ***************************************************************************************/
+
 static void parse_direct_pin_name(char * src_string, int line, int * start_pin_index, 
 		int * end_pin_index, char * pb_type_name, char * port_name){
 
@@ -958,7 +980,6 @@ static void parse_direct_pin_name(char * src_string, int line, int * start_pin_i
 	}
 }
 
-
 static void mark_direct_of_pins(int start_pin_index, int end_pin_index, int itype, 
 		int iport, int ** idirect_from_blk_pin, int idirect, 
 		int ** direct_type_from_blk_pin, int direct_type, int line, char * src_string) {
@@ -980,7 +1001,7 @@ static void mark_direct_of_pins(int start_pin_index, int end_pin_index, int ityp
 			// Check whether the pins are marked, errors out if so
 			if (direct_type_from_blk_pin[itype][iblk_pin] != OPEN) {
 				vpr_printf(TIO_MESSAGE_ERROR, "[LINE %d] Invalid pin - %s, "
-					"this pin is already in more than one direct connection.\n", line, 
+					"this pin is in more than one direct connection.\n", line, 
 					src_string);
 				exit(1);
 			} else {
@@ -1045,20 +1066,21 @@ void alloc_and_load_idirect_from_blk_pin(t_direct_inf* directs, int num_directs,
 		int *** idirect_from_blk_pin, int *** direct_type_from_blk_pin) {
 
 	/* Allocates and loads idirect_from_blk_pin and direct_type_from_blk_pin arrays.    *
-	 
+	 *                                                                                  *
 	 * For a bus (multiple bits) direct connection, all the pins in the bus are marked. *
-
+	 *                                                                                  *
 	 * idirect_from_blk_pin array allow us to quickly find pins that could be in a      *
 	 * direct connection. Values stored is the index of the possible direct connection  *
 	 * as specified in the arch file, OPEN (-1) is stored for pins that could not be    *
 	 * part of a direct chain conneciton.                                               *
-
+	 *                                                                                  *
 	 * direct_type_from_blk_pin array stores the value SOURCE if the pin is the         *
 	 * from_pin, SINK if the pin is the to_pin in the direct connection as specified in *
 	 * the arch file, OPEN (-1) is stored for pins that could not be part of a direct   *
 	 * chain conneciton.                                                                *
-	 
+	 *                                                                                  *
 	 * Stores the pointers to the two 2D arrays in the addresses passed in.             *
+	 *                                                                                  *
 	 * The two arrays are freed by the caller(s).                                       */
 
 	int itype, iblk_pin, idirect, num_type_pins;
@@ -1118,8 +1140,29 @@ void alloc_and_load_idirect_from_blk_pin(t_direct_inf* directs, int num_directs,
 
 	} // Finish going through all the directs
 
-	/* Returns the pointer to the 2D arrays. */
+	/* Returns the pointer to the 2D arrays by reference. */
 	*idirect_from_blk_pin = temp_idirect_from_blk_pin;
 	*direct_type_from_blk_pin = temp_direct_type_from_blk_pin;
+
+}
+
+void free_idirect_from_blk_pin(int *** idirect_from_blk_pin, 
+	int *** direct_type_from_blk_pin) {
+
+	/* Frees up the idirect_from_blk_pin and direct_type_from_blk_pin arrays, if they   *
+	 * are loaded.                                                                      *
+	 *                                                                                  *
+	 * This routine is called by the caller(s) that loaded the two arrays when they are *
+	 * done with it. Currently, it is only called in free_placement_macros_structs().   */
+
+	if ( *idirect_from_blk_pin != NULL ) {
+		free_matrix(*idirect_from_blk_pin, 0, num_types-1, 0, sizeof(int));
+		*idirect_from_blk_pin = NULL;
+	}
+
+	if ( *direct_type_from_blk_pin != NULL ) {
+		free_matrix(*direct_type_from_blk_pin, 0, num_types-1, 0, sizeof(int));
+		*direct_type_from_blk_pin = NULL;
+	}
 
 }
