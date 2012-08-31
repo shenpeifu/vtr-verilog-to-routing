@@ -24,7 +24,7 @@
 /* Cut off for incremental bounding box updates.                          *
  * 4 is fastest -- I checked.                                             */
 /* To turn off incremental bounding box updates, set this to a huge value */
-#define SMALL_NET 4
+#define SMALL_NET 4000
 
 /* This defines the error tolerance for floating points variables used in *
  * cost computation. 0.01 means that there is a 1% error tolerance.       */
@@ -187,6 +187,7 @@ static int num_pl_macros;
 static int num_swap_rejected = 0;
 static int num_swap_accepted = 0;
 static int num_swap_aborted = 0;
+static int num_ts_called = 0;
 
 /* Expected crossing counts for nets with different #'s of pins.  From *
  * ICCAD 94 pp. 690 - 695 (with linear interpolation applied by me).   *
@@ -1186,8 +1187,8 @@ static int setup_blocks_affected(int b_from, int x_to, int y_to, int z_to) {
 		blocks_affected.moved_blocks[imoved_blk].xnew = x_from;
 		blocks_affected.moved_blocks[imoved_blk].yold = y_to;
 		blocks_affected.moved_blocks[imoved_blk].ynew = y_from;
-		blocks_affected.moved_blocks[imoved_blk].zold = z_from;
-		blocks_affected.moved_blocks[imoved_blk].znew = z_to;
+		blocks_affected.moved_blocks[imoved_blk].zold = z_to;
+		blocks_affected.moved_blocks[imoved_blk].znew = z_from;
 		blocks_affected.moved_blocks[imoved_blk].swapped_to_empty = FALSE;
 		blocks_affected.num_moved_blocks ++;
 
@@ -1276,6 +1277,8 @@ static enum swap_result try_swap(float t, float *cost, float *bb_cost, float *ti
 	float delta_c, bb_delta_c, timing_delta_c, delay_delta_c;
 	int inet, iblk, bnum, iblk_pin, inet_affected;
 	int abort_swap = FALSE;
+
+	num_ts_called ++;
 
 	/* I'm using negative values of temp_net_cost as a flag, so DO NOT   *
 	 * use cost functions that can go negative.                          */
@@ -1437,6 +1440,7 @@ static enum swap_result try_swap(float t, float *cost, float *bb_cost, float *ti
 				if (blocks_affected.moved_blocks[iblk].swapped_to_empty == TRUE) {
 					grid[x_to][y_to].usage++;
 					grid[x_from][y_from].usage--;
+					grid[x_from][y_from].blocks[z_from] = -1;
 				}
 			
 			} // Finish updating clb for all blocks
@@ -1463,6 +1467,8 @@ static enum swap_result try_swap(float t, float *cost, float *bb_cost, float *ti
 		/* Resets the num_moved_blocks, but do not free blocks_moved array. Defensive Coding */
 		blocks_affected.num_moved_blocks = 0;
 
+		//check_place(*bb_cost, *timing_cost, place_algorithm, *delay_cost);
+
 		return (keep_switch);
 	} else {
 
@@ -1477,7 +1483,7 @@ static enum swap_result try_swap(float t, float *cost, float *bb_cost, float *ti
 
 		/* Resets the num_moved_blocks, but do not free blocks_moved array. Defensive Coding */
 		blocks_affected.num_moved_blocks = 0;
-
+		
 		return ABORTED;
 	}
 }
@@ -3086,6 +3092,9 @@ static void check_place(float bb_cost, float timing_cost,
 
 	if (error == 0) {
 		vpr_printf(TIO_MESSAGE_INFO, "\nCompleted placement consistency check successfully.\n\n");
+
+		vpr_printf(TIO_MESSAGE_INFO, "\nSwaps called = %d.\n\n", num_ts_called);
+
 #ifdef PRINT_REL_POS_DISTR
 		print_relative_pos_distr(void);
 #endif

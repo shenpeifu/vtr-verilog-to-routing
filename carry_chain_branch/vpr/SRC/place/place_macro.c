@@ -53,9 +53,81 @@
   (3) Placement macros that span longer or wider than the chip would cause an error. 
       In the future, we *might* expand the size of the chip to accommodate such 
 	  placement macros that are crucial.
-  (4) For carry chain swap routine, the to_block could not be part of a placement macro.
-      There is no limitation on the from_block. Currently, the carry chain swap routine
-	  still has a bug in it.
+
+    In order for the carry chain support to work, two changes are required in the 
+  arch file. 
+  (1) For carry chain support, added in a new child in <layout> called <directlist>. 
+      <directlist> specifies a list of available direct connections on the FPGA chip 
+	  that are necessary for direct carry chain connections. These direct connections 
+	  would be treated specially in routing if the fc_value for the pins is specified 
+	  as 0. Note that only direct connections that has fc_value 0 could be used as a 
+	  carry chain.
+    
+      A <directlist> may have 0 or more children called <direct>. For each <direct>, 
+	  there are the following fields:
+        1) name:  This specifies the name given to this particular direct connection.
+        2) from_pin:  This specifies the SOURCEs for this direct connection. The format 
+		              could be as following:
+                       a) type_name.port_name, for all the pins in this port.
+                       b) type_name.port_name [end_pin_index:start_pin_index], for a 
+					      single pin, the end_pin_index and start_pin_index could be 
+						  the same.
+        3) to_pin:  This specifies the SINKs for this direct connection. The format is 
+		            the same as from_pin. 
+                    Note that the width of the from_pin and to_pin has to match.
+        4) x_offset: This specifies the x direction that this connection is going from 
+		             SOURCEs to SINKs.
+        5) y_offset: This specifies the y direction that this connection is going from 
+		             SOURCEs to SINKs. 
+                     Note that the x_offset and y_offset could not both be 0.
+        6) z_offset: This specifies the z sublocations that all the blocks in this 
+		             direct connection to be at.
+    
+      The example of a direct connection specification below shows a possible carry chain 
+	  connection going north on the FPGA chip:
+       _______________________________________________________________________________
+      | <directlist>                                                                  |
+      |   <direct name="adder_carry" from_pin="adder.cout" to_pin="adder.cin"         |
+	  |           x_offset="0" y_offset="1" z_offset="0"/>                            |
+      | </directlist>                                                                 |
+      |_______________________________________________________________________________|
+	  A corresponding arch file that has this direct connection is sample_adder_arch.xml
+      A corresponding blif file that uses this direct connection is adder.blif
+
+  (2) As mentioned in (1), carry chain connections using the directs would only be 
+      recognized if the pin's fc_value is 0. In order to achieve this, pin-based fc_value
+	  is required. Hence, the new <fc> tag replaces both <fc_in> and <fc_out> tags.
+	  
+	  A <fc> tag may have 0 or more children called <pin>. For each <fc>, there are the 
+	  following fields:
+	    1) default_in_type: This specifies the default fc_type for input pins. They could
+		                    be "frac", "abs" or "full".
+		2) default_in_val: This specifies the default fc_value for input pins.
+		3) default_out_type: This specifies the default fc_type for output pins. They could
+		                     be "frac", "abs" or "full".
+		4) default_out_val: This specifies the default fc_value for output pins.
+
+	  As for the <pin> children, there are the following fields:
+	    1) name: This specifies the name of the port/pin that the fc_type and fc_value 
+		         apply to. The name have to be in the format "port_name" or 
+				 "port_name [end_pin_index:start_pin_index]" where port_name is the name
+				 of the port it apply to while end_pin_index and start_pin_index could
+				 be specified to apply the fc_type and fc_value that follows to part of
+				 a bus (multi-pin) port.
+	    2) fc_type: This specifies the fc_type that would be applied to the specified pins.
+		3) fc_val: This specifies the fc_value that would be applied to the specified pins.
+
+	  The example of a pin-based fc_value specification below shows that the fc_values for
+	  the cout and the cin ports are 0:
+	   _______________________________________________________________________________
+      | <fc default_in_type="frac" default_in_val="0.15" default_out_type="frac"      |
+	  |     default_out_val="0.15">                                                   |
+      |    <pin name="cin" fc_type="frac" fc_val="0"/>                                |
+      |    <pin name="cout" fc_type="frac" fc_val="0"/>                               |
+      | </fc>                                                                         |
+	  |_______________________________________________________________________________|
+      A corresponding arch file that has this direct connection is sample_adder_arch.xml
+      A corresponding blif file that uses this direct connection is adder.blif
 
 ****************************************************************************************/
 
@@ -347,8 +419,23 @@ void free_placement_macros_structs(void) {
 	/* This function frees up all the static data structures used. */
 
 	// This frees up the two arrays and set the pointers to NULL
-	free_idirect_from_blk_pin(&f_idirect_from_blk_pin, &f_direct_type_from_blk_pin);
-	
+	int itype;
+	if ( f_idirect_from_blk_pin != NULL ) {
+		for (itype = 1; itype < num_types; itype++) {
+			free(f_idirect_from_blk_pin[itype]);
+		}
+		free(f_idirect_from_blk_pin);
+		f_idirect_from_blk_pin = NULL;
+	}
+
+	if ( f_direct_type_from_blk_pin != NULL ) {
+		for (itype = 1; itype < num_types; itype++) {
+			free(f_direct_type_from_blk_pin[itype]);
+		}
+		free(f_direct_type_from_blk_pin);
+		f_direct_type_from_blk_pin = NULL;
+	}
+
 	// This frees up the imacro from iblk mapping array.
 	free_imacro_from_iblk();
 	

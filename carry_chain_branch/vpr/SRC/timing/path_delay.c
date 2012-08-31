@@ -463,6 +463,7 @@ void print_slack(float ** slack, boolean slack_is_normalized, const char *fname)
 				if (slk < HUGE_POSITIVE_FLOAT - 1) {
 					/* We have to watch out for the special case where slack = max_slack, in which case ibucket = NUM_BUCKETS and we go out of bounds of the array. */
 					ibucket = min(NUM_BUCKETS - 1, (int) ((slk - min_slack)/bucket_size));
+					assert(ibucket >= 0 && ibucket < NUM_BUCKETS);
 					slacks_in_bucket[ibucket]++;
 				}
 			}
@@ -562,9 +563,9 @@ static void print_global_criticality_stats(FILE * fp, float ** criticality, cons
 	including maximum criticality, minimum criticality, total criticality in the design,
 	and the number of criticalities within various ranges, or buckets. */
 
-	int inet, iedge, num_edges, ibucket, bucket_size, criticalities_in_bucket[NUM_BUCKETS];
+	int inet, iedge, num_edges, ibucket, criticalities_in_bucket[NUM_BUCKETS];
 	float crit, max_criticality = HUGE_NEGATIVE_FLOAT, min_criticality = HUGE_POSITIVE_FLOAT, 
-		total_criticality = 0;
+		total_criticality = 0, bucket_size;
 
 	/* Go through criticality once to get the largest and smallest timing criticality, 
 	both for reporting and so that we can delimit the buckets. */
@@ -572,11 +573,9 @@ static void print_global_criticality_stats(FILE * fp, float ** criticality, cons
 		num_edges = timing_nets[inet].num_sinks;
 		for (iedge = 0; iedge < num_edges; iedge++) { 
 			crit = criticality[inet][iedge + 1];
-			if (crit > HUGE_NEGATIVE_FLOAT + 1) { /* if criticality was analysed */
-				max_criticality = max(max_criticality, crit);
-				min_criticality = min(min_criticality, crit);
-				total_criticality += crit;
-			}
+			max_criticality = max(max_criticality, crit);
+			min_criticality = min(min_criticality, crit);
+			total_criticality += crit;
 		}
 	}
 
@@ -600,11 +599,10 @@ static void print_global_criticality_stats(FILE * fp, float ** criticality, cons
 			num_edges = timing_nets[inet].num_sinks;
 			for (iedge = 0; iedge < num_edges; iedge++) { 
 				crit = criticality[inet][iedge + 1];
-				if (crit > HUGE_NEGATIVE_FLOAT + 1) {
-					/* We have to watch out for the special case where criticality = max_criticality, in which case ibucket = NUM_BUCKETS and we go out of bounds of the array. */
-					ibucket = min(NUM_BUCKETS - 1, (int) ((crit - min_criticality)/bucket_size));
-					criticalities_in_bucket[ibucket]++;
-				}
+				/* We have to watch out for the special case where criticality = max_criticality, in which case ibucket = NUM_BUCKETS and we go out of bounds of the array. */
+				ibucket = min(NUM_BUCKETS - 1, (int) ((crit - min_criticality)/bucket_size));
+				assert(ibucket >= 0 && ibucket < NUM_BUCKETS);
+				criticalities_in_bucket[ibucket]++;
 			}
 		}
 

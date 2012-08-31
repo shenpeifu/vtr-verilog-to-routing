@@ -1156,24 +1156,3 @@ void alloc_and_load_idirect_from_blk_pin(t_direct_inf* directs, int num_directs,
 	*direct_type_from_blk_pin = temp_direct_type_from_blk_pin;
 
 }
-
-void free_idirect_from_blk_pin(int *** idirect_from_blk_pin, 
-	int *** direct_type_from_blk_pin) {
-
-	/* Frees up the idirect_from_blk_pin and direct_type_from_blk_pin arrays, if they   *
-	 * are loaded.                                                                      *
-	 *                                                                                  *
-	 * This routine is called by the caller(s) that loaded the two arrays when they are *
-	 * done with it. Currently, it is only called in free_placement_macros_structs().   */
-
-	if ( *idirect_from_blk_pin != NULL ) {
-		free_matrix(*idirect_from_blk_pin, 0, num_types-1, 0, sizeof(int));
-		*idirect_from_blk_pin = NULL;
-	}
-
-	if ( *direct_type_from_blk_pin != NULL ) {
-		free_matrix(*direct_type_from_blk_pin, 0, num_types-1, 0, sizeof(int));
-		*direct_type_from_blk_pin = NULL;
-	}
-
-}
