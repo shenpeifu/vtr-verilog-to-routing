@@ -228,6 +228,9 @@
     <ClCompile Include="SRC\place\place_macro.c">
       <Filter>Source Files\place</Filter>
     </ClCompile>
+    <ClCompile Include="SRC\base\verilog_writer.c">
+      <Filter>Source Files\base</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="SRC\base\check_netlist.h">
@@ -403,6 +406,9 @@
     </ClInclude>
     <ClInclude Include="SRC\place\place_macro.h">
       <Filter>Header Files\place</Filter>
+    </ClInclude>
+    <ClInclude Include="SRC\base\verilog_writer.h">
+      <Filter>Header Files\base</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

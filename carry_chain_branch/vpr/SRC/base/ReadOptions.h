@@ -21,7 +21,7 @@ struct s_options {
 	float constant_net_delay;
 	boolean TimingAnalysis;
 	boolean CreateEchoFile;
-
+  boolean Generate_Post_Synthesis_Netlist;
 	/* Clustering options */
 	boolean global_clocks;
 	int cluster_size;
@@ -94,17 +94,11 @@ enum e_echo_files {
 	E_ECHO_INITIAL_PLACEMENT_TIMING_GRAPH,
 	E_ECHO_INITIAL_PLACEMENT_SLACK,
 	E_ECHO_INITIAL_PLACEMENT_CRITICALITY,
-#ifdef PATH_COUNTING
-	E_ECHO_INITIAL_PLACEMENT_PATH_WEIGHT,
-#endif
 	E_ECHO_END_CLB_PLACEMENT,
 	E_ECHO_PLACEMENT_SINK_DELAYS,
 	E_ECHO_FINAL_PLACEMENT_TIMING_GRAPH,
 	E_ECHO_FINAL_PLACEMENT_SLACK,
 	E_ECHO_FINAL_PLACEMENT_CRITICALITY,
-#ifdef PATH_COUNTING
-	E_ECHO_FINAL_PLACEMENT_PATH_WEIGHT,
-#endif
 	E_ECHO_PLACEMENT_CRIT_PATH,
 	E_ECHO_PB_GRAPH,
 	E_ECHO_ARCH,
@@ -121,9 +115,6 @@ enum e_echo_files {
 	E_ECHO_CLUSTERING_TIMING_INFO,
 	E_ECHO_PRE_PACKING_SLACK,
 	E_ECHO_PRE_PACKING_CRITICALITY,
-#ifdef PATH_COUNTING
-	E_ECHO_PRE_PACKING_PATH_WEIGHT,
-#endif
 	E_ECHO_CLUSTERING_BLOCK_CRITICALITIES,
 	E_ECHO_PRE_PACKING_MOLECULES_AND_PATTERNS,
 	E_ECHO_MEM,
@@ -132,9 +123,6 @@ enum e_echo_files {
 	E_ECHO_CRITICAL_PATH,
 	E_ECHO_SLACK,
 	E_ECHO_CRITICALITY,
-#ifdef PATH_COUNTING
-	E_ECHO_PATH_WEIGHT,
-#endif
 	E_ECHO_COMPLETE_NET_TRACE,
 	E_ECHO_END_TOKEN
 };
@@ -173,7 +161,10 @@ void free_output_file_names();
 boolean IsTimingEnabled(INP t_options *Options);
 boolean IsEchoEnabled(INP t_options *Options);
 
+boolean GetPostSynthesisOption(void);
+void SetPostSynthesisOption(boolean post_synthesis_enabled);
 
+boolean IsPostSynthesisEnabled(INP t_options *Options);
 #endif
 
 

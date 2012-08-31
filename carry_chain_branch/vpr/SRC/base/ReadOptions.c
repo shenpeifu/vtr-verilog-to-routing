@@ -11,6 +11,8 @@
 
 static boolean EchoEnabled;
 
+static boolean Generate_PostSynthesis_Netlist;
+
 static boolean *echoFileEnabled = NULL;
 static char **echoFileNames = NULL;
 
@@ -75,6 +77,23 @@ void setEchoEnabled(boolean echo_enabled) {
 	}
 }
 
+boolean GetPostSynthesisOption(void){
+  return Generate_PostSynthesis_Netlist;
+}
+
+void SetPostSynthesisOption(boolean post_synthesis_enabled){
+  Generate_PostSynthesis_Netlist = post_synthesis_enabled;
+}
+
+boolean IsPostSynthesisEnabled(INP t_options *Options) {
+  /* First priority to the '--generate_postsynthesis_netlist' flag */
+  if (Options->Count[OT_GENERATE_POST_SYNTHESIS_NETLIST]) {
+    return Options->Generate_Post_Synthesis_Netlist;
+  }
+  return FALSE;
+}
+
+
 void setAllEchoFileEnabled(boolean value) {
 	int i;
 	for(i = 0; i < (int) E_ECHO_END_TOKEN; i++) {
@@ -114,17 +133,11 @@ void alloc_and_load_echo_file_info() {
 	setEchoFileName(E_ECHO_INITIAL_PLACEMENT_TIMING_GRAPH, "initial_placement_timing_graph.echo");
 	setEchoFileName(E_ECHO_INITIAL_PLACEMENT_SLACK, "initial_placement_slack.echo");
 	setEchoFileName(E_ECHO_INITIAL_PLACEMENT_CRITICALITY, "initial_placement_criticality.echo");
-#ifdef PATH_COUNTING
-	setEchoFileName(E_ECHO_INITIAL_PLACEMENT_PATH_WEIGHT, "initial_placement_path_criticality.echo");
-#endif
 	setEchoFileName(E_ECHO_END_CLB_PLACEMENT, "end_clb_placement.echo");
 	setEchoFileName(E_ECHO_PLACEMENT_SINK_DELAYS, "placement_sink_delays.echo");
 	setEchoFileName(E_ECHO_FINAL_PLACEMENT_TIMING_GRAPH, "final_placement_timing_graph.echo");
 	setEchoFileName(E_ECHO_FINAL_PLACEMENT_SLACK, "final_placement_slack.echo");
 	setEchoFileName(E_ECHO_FINAL_PLACEMENT_CRITICALITY, "final_placement_criticality.echo");
-#ifdef PATH_COUNTING
-	setEchoFileName(E_ECHO_FINAL_PLACEMENT_PATH_WEIGHT, "final_placement_path_criticality.echo");
-#endif
 	setEchoFileName(E_ECHO_PLACEMENT_CRIT_PATH, "placement_crit_path.echo");
 	setEchoFileName(E_ECHO_PB_GRAPH, "pb_graph.echo");
 	setEchoFileName(E_ECHO_ARCH, "arch.echo");
@@ -141,20 +154,14 @@ void alloc_and_load_echo_file_info() {
 	setEchoFileName(E_ECHO_CLUSTERING_TIMING_INFO, "clustering_timing_info.echo");
 	setEchoFileName(E_ECHO_PRE_PACKING_SLACK, "pre_packing_slack.echo");
 	setEchoFileName(E_ECHO_PRE_PACKING_CRITICALITY, "pre_packing_criticality.echo");
-#ifdef PATH_COUNTING
-	setEchoFileName(E_ECHO_PRE_PACKING_PATH_WEIGHT, "pre_packing_path_criticality.echo");
-#endif
 	setEchoFileName(E_ECHO_CLUSTERING_BLOCK_CRITICALITIES, "clustering_block_criticalities.echo");
 	setEchoFileName(E_ECHO_PRE_PACKING_MOLECULES_AND_PATTERNS, "pre_packing_molecules_and_patterns.echo");
 	setEchoFileName(E_ECHO_MEM, "mem.echo");
 	setEchoFileName(E_ECHO_RR_GRAPH, "rr_graph.echo");
-	setEchoFileName(E_ECHO_TIMING_CONSTRAINTS, "g_timing_constraints.echo");	
+	setEchoFileName(E_ECHO_TIMING_CONSTRAINTS, "timing_constraints.echo");	
 	setEchoFileName(E_ECHO_CRITICAL_PATH, "critical_path.echo");	
 	setEchoFileName(E_ECHO_SLACK, "slack.echo");	
 	setEchoFileName(E_ECHO_CRITICALITY, "criticality.echo");
-#ifdef PATH_COUNTING
-	setEchoFileName(E_ECHO_PATH_WEIGHT, "path_criticality.echo");
-#endif
 	setEchoFileName(E_ECHO_COMPLETE_NET_TRACE, "complete_net_trace.echo");
 }
 
@@ -226,7 +233,7 @@ void free_output_file_names() {
 void ReadOptions(INP int argc, INP char **argv, OUTP t_options * Options) {
 	char **Args, **head;
 	int offset;
-
+	
 	/* Clear values and pointers to zero */
 	memset(Options, 0, sizeof(t_options));
 
@@ -295,7 +302,7 @@ ProcessOption(INP char **Args, INOUTP t_options * Options) {
 
 	PrevArgs = Args;
 	Args = ReadBaseToken(Args, &Token);
-
+	
 	if (Token < OT_BASE_UNKNOWN) {
 		/* If this was previously set by a lower priority source
 		 * (ie. a settings file), reset the provenance and the
@@ -343,7 +350,9 @@ ProcessOption(INP char **Args, INOUTP t_options * Options) {
 		return ReadString(Args, &Options->out_file_prefix);
 	case OT_CREATE_ECHO_FILE:
 		return ReadOnOff(Args, &Options->CreateEchoFile);
-
+	case OT_GENERATE_POST_SYNTHESIS_NETLIST:
+          
+	  return ReadOnOff(Args, &Options->Generate_Post_Synthesis_Netlist);
 		/* Clustering Options */
 	case OT_GLOBAL_CLOCKS:
 		return ReadOnOff(Args, &Options->global_clocks);

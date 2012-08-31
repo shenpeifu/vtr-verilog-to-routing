@@ -61,9 +61,11 @@ enum swap_result {
 	REJECTED, ACCEPTED, ABORTED
 };
 
-#define MIN_TIMING_COST 1.e-10
+#define MIN_TIMING_COST 1.e-9
 /* Stops timing cost from going to 0 with very lax timing constraints, which 
-avoids multiplying by a gigantic inverse_prev_timing_cost when auto-normalizing. */
+avoids multiplying by a gigantic inverse_prev_timing_cost when auto-normalizing. 
+The exact value of this cost has relatively little impact, but should not be
+large enough to be on the order of timing costs for normal constraints. */
 
 /********************** Data Sturcture Definition ***************************/
 /* Stores the information of the move for a block that is       *
@@ -439,11 +441,7 @@ void try_place(struct s_placer_opts placer_opts,
 			if(isEchoFileEnabled(E_ECHO_INITIAL_PLACEMENT_SLACK))
 				print_slack(slacks->slack, FALSE, getEchoFileName(E_ECHO_INITIAL_PLACEMENT_SLACK));
 			if(isEchoFileEnabled(E_ECHO_INITIAL_PLACEMENT_CRITICALITY))
-				print_criticality(slacks->timing_criticality, FALSE, getEchoFileName(E_ECHO_INITIAL_PLACEMENT_CRITICALITY));
-#ifdef PATH_COUNTING
-			if(isEchoFileEnabled(E_ECHO_INITIAL_PLACEMENT_PATH_WEIGHT))
-				print_path_criticality(slacks->path_criticality, getEchoFileName(E_ECHO_INITIAL_PLACEMENT_PATH_WEIGHT));
-#endif	
+				print_criticality(slacks, FALSE, getEchoFileName(E_ECHO_INITIAL_PLACEMENT_CRITICALITY));
 		}
 		outer_crit_iter_count = 1;
 
@@ -888,18 +886,14 @@ void try_place(struct s_placer_opts placer_opts,
 			if(isEchoFileEnabled(E_ECHO_FINAL_PLACEMENT_SLACK))
 				print_slack(slacks->slack, FALSE, getEchoFileName(E_ECHO_FINAL_PLACEMENT_SLACK));
 			if(isEchoFileEnabled(E_ECHO_FINAL_PLACEMENT_CRITICALITY))
-				print_criticality(slacks->timing_criticality, FALSE, getEchoFileName(E_ECHO_FINAL_PLACEMENT_CRITICALITY));
-#ifdef PATH_COUNTING
-			if(isEchoFileEnabled(E_ECHO_FINAL_PLACEMENT_PATH_WEIGHT))
-				print_path_criticality(slacks->path_criticality, getEchoFileName(E_ECHO_FINAL_PLACEMENT_PATH_WEIGHT));
-#endif	
+				print_criticality(slacks, FALSE, getEchoFileName(E_ECHO_FINAL_PLACEMENT_CRITICALITY));
 			if(isEchoFileEnabled(E_ECHO_FINAL_PLACEMENT_TIMING_GRAPH))
 				print_timing_graph(getEchoFileName(E_ECHO_FINAL_PLACEMENT_TIMING_GRAPH));
 			if(isEchoFileEnabled(E_ECHO_PLACEMENT_CRIT_PATH))
 				print_critical_path(getEchoFileName(E_ECHO_PLACEMENT_CRIT_PATH));
 		}
-		
-		/* Print critical path delay */
+
+		/* Print critical path delay. */
 		critical_path_delay = get_critical_path_delay();
 		vpr_printf(TIO_MESSAGE_INFO, "\nPlacement estimated critical path delay: %g ns\n", critical_path_delay);
 	}

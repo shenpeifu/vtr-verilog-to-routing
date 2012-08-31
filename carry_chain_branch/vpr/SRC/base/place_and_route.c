@@ -21,6 +21,7 @@
 #include "ReadOptions.h"
 #include "route_common.h"
 #include "place_macro.h"
+#include "verilog_writer.h"
 
 /******************* Subroutines local to this module ************************/
 
@@ -125,11 +126,9 @@ void place_and_route(enum e_operation operation,
 
 		clb_opins_used_locally = alloc_route_structs();
 
-		if (timing_inf.timing_analysis_enabled) {
-			slacks = alloc_and_load_timing_graph(timing_inf);
-			net_delay = alloc_net_delay(&net_delay_ch, clb_net,
+		slacks = alloc_and_load_timing_graph(timing_inf);
+		net_delay = alloc_net_delay(&net_delay_ch, clb_net,
 					num_nets);
-		}
 
 		success = try_route(width_fac, router_opts, det_routing_arch,
 				segment_inf, timing_inf, net_delay, slacks, chan_width_dist,
@@ -204,6 +203,12 @@ void place_and_route(enum e_operation operation,
 		clb_opins_used_locally = NULL;
 	}
 
+	if(GetPostSynthesisOption())
+          {
+            verilog_writer();
+          }
+
+
 	end = clock();
 #ifdef CLOCKS_PER_SEC
 	vpr_printf(TIO_MESSAGE_INFO, "Routing took %g seconds\n", (float) (end - begin) / CLOCKS_PER_SEC);
@@ -273,10 +278,8 @@ static int binary_search_place_and_route(struct s_placer_opts placer_opts,
 	best_routing = alloc_saved_routing(clb_opins_used_locally,
 			&saved_clb_opins_used_locally);
 
-	if (timing_inf.timing_analysis_enabled) {
-		slacks = alloc_and_load_timing_graph(timing_inf);
-		net_delay = alloc_net_delay(&net_delay_ch, clb_net, num_nets);
-	}
+	slacks = alloc_and_load_timing_graph(timing_inf);
+	net_delay = alloc_net_delay(&net_delay_ch, clb_net, num_nets);
 
 	/* UDSD by AY Start */
 	if (det_routing_arch.directionality == BI_DIRECTIONAL)
@@ -460,7 +463,6 @@ static int binary_search_place_and_route(struct s_placer_opts placer_opts,
 						router_opts, det_routing_arch, segment_inf, timing_inf,
 						directs, num_directs);
 			}
-
 			success = try_route(current, router_opts, det_routing_arch,
 					segment_inf, timing_inf, net_delay, slacks,
 					chan_width_dist, clb_opins_used_locally, &Fc_clipped);

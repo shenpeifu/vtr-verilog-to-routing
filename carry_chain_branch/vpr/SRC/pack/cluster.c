@@ -265,6 +265,7 @@ void do_clustering(const t_arch *arch, t_pack_molecule *molecule_head,
 #ifdef PATH_COUNTING
 	int inet, ipin;
 #else
+	int inode;
 	float num_paths_scaling, distance_scaling;
 #endif
 
@@ -347,17 +348,14 @@ void do_clustering(const t_arch *arch, t_pack_molecule *molecule_head,
 		if (getEchoEnabled()) {
 			if(isEchoFileEnabled(E_ECHO_PRE_PACKING_TIMING_GRAPH))
 				print_timing_graph(getEchoFileName(E_ECHO_PRE_PACKING_TIMING_GRAPH));
-#ifdef PATH_COUNTING
-			if(isEchoFileEnabled(E_ECHO_PRE_PACKING_PATH_WEIGHT))
-				print_path_criticality(slacks->path_criticality, getEchoFileName(E_ECHO_PRE_PACKING_PATH_WEIGHT));
-#else
+#ifndef PATH_COUNTING
 			if(isEchoFileEnabled(E_ECHO_CLUSTERING_TIMING_INFO))
 				print_clustering_timing_info(getEchoFileName(E_ECHO_CLUSTERING_TIMING_INFO));
 #endif
 			if(isEchoFileEnabled(E_ECHO_PRE_PACKING_SLACK))
 				print_slack(slacks->slack, FALSE, getEchoFileName(E_ECHO_PRE_PACKING_SLACK));
 			if(isEchoFileEnabled(E_ECHO_PRE_PACKING_CRITICALITY))
-				print_criticality(slacks->timing_criticality, FALSE, getEchoFileName(E_ECHO_PRE_PACKING_CRITICALITY));
+				print_criticality(slacks, FALSE, getEchoFileName(E_ECHO_PRE_PACKING_CRITICALITY));
 		}
 
 		block_criticality = (float*) my_calloc(num_logical_blocks, sizeof(float));
@@ -374,37 +372,35 @@ void do_clustering(const t_arch *arch, t_pack_molecule *molecule_head,
 		for (inet = 0; inet < num_logical_nets; inet++) { 
 			for (ipin = 1; ipin <= vpack_net[inet].num_sinks; ipin++) { 
 			
-				/* Only consider this pin in the block criticality calculation if its slack is valid. */
-				if (slacks->timing_criticality[inet][ipin] > HUGE_NEGATIVE_FLOAT + 1) {
-				
-					/* Find the logical block iblk which this pin is a sink on. */
-					iblk = vpack_net[inet].node_block[ipin];
+				/* Find the logical block iblk which this pin is a sink on. */
+				iblk = vpack_net[inet].node_block[ipin];
 					
-					/* The criticality of this pin is a sum of its timing and path criticalities. */
-					crit =		PACK_PATH_WEIGHT  * slacks->path_criticality[inet][ipin] 
-						 + (1 - PACK_PATH_WEIGHT) * slacks->timing_criticality[inet][ipin]; 
+				/* The criticality of this pin is a sum of its timing and path criticalities. */
+				crit =		PACK_PATH_WEIGHT  * slacks->path_criticality[inet][ipin] 
+					 + (1 - PACK_PATH_WEIGHT) * slacks->timing_criticality[inet][ipin]; 
 
-					/* The criticality of each block is the maximum of the criticalities of all its pins. */
-					if (block_criticality[iblk] < crit) {
-						block_criticality[iblk] = crit;
-					}
+				/* The criticality of each block is the maximum of the criticalities of all its pins. */
+				if (block_criticality[iblk] < crit) {
+					block_criticality[iblk] = crit;
 				}
 			}
 		}
 
 #else
 		/* Calculate criticality based on slacks and tie breakers (# paths, distance from source) */
-		for (i = 0; i < num_tnodes; i++) {
-			/* Only calculate for tnodes which have valid arrival and required times.  
+		for (inode = 0; inode < num_tnodes; inode++) {
+			/* Only calculate for tnodes which have valid normalized values.
+			Either all values will be accurate or none will, so we only have
+			to check whether one particular value (normalized_T_arr) is valid 
 			Tnodes that do not have both times valid were not part of the analysis. 
 			Because we calloc-ed the array criticality, such nodes will have criticality 0, the lowest possible value. */
-			if (tnode[i].has_valid_slack) {
-				iblk = tnode[i].block;
+			if (has_valid_normalized_T_arr(inode)) {
+				iblk = tnode[inode].block;
 				num_paths_scaling = SCALE_NUM_PATHS
-						* (float) tnode[i].normalized_total_critical_paths;
+						* (float) tnode[inode].prepacked_data->normalized_total_critical_paths;
 				distance_scaling = SCALE_DISTANCE_VAL
-						* (float) tnode[i].normalized_T_arr;
-				crit = (1 - tnode[i].normalized_slack) + num_paths_scaling
+						* (float) tnode[inode].prepacked_data->normalized_T_arr;
+				crit = (1 - tnode[inode].prepacked_data->normalized_slack) + num_paths_scaling
 						+ distance_scaling;
 				if (block_criticality[iblk] < crit) {
 					block_criticality[iblk] = crit;
