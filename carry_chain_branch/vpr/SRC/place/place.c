@@ -1159,7 +1159,7 @@ static int setup_blocks_affected(int b_from, int x_to, int y_to, int z_to) {
 	} else {
 
 		// Does not allow a swap with a macro yet
-		get_imacro_from_iblk(&imacro, b_from, pl_macros, num_pl_macros);
+		get_imacro_from_iblk(&imacro, b_to, pl_macros, num_pl_macros);
 		if (imacro != -1) {
 			abort_swap = TRUE;
 			return (abort_swap);
@@ -1335,6 +1335,9 @@ static enum swap_result try_swap(float t, float *cost, float *bb_cost, float *ti
 
 	if (abort_swap == FALSE) {
 
+		// Find all the nets affected by this swap
+		num_nets_affected = find_affected_nets(ts_nets_to_update);
+
 		/* Go through all the pins in all the blocks moved and update the bounding boxes.  *
 		 * Do not update the net cost here since it should only be updated once per net,   *
 		 * not once per pin                                                                */
@@ -1366,9 +1369,6 @@ static enum swap_result try_swap(float t, float *cost, float *bb_cost, float *ti
 			}
 		}
 			
-		// Find all the nets affected by this swap
-		num_nets_affected = find_affected_nets(ts_nets_to_update);
-
 		/* Now update the cost function. The cost is only updated once for every net  *
 		 * May have to do major optimizations here later.                             */
 		for (inet_affected = 0; inet_affected < num_nets_affected; inet_affected++) {
