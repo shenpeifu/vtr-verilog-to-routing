@@ -236,6 +236,10 @@ static void initial_placement(enum e_pad_loc_type pad_loc_type,
 
 static float comp_bb_cost(enum cost_methods method);
 
+static int setup_blocks_affected(int b_from, int x_to, int y_to, int z_to);
+
+static int find_affected_blocks(int b_from, int x_to, int y_to, int z_to);
+
 static enum swap_result try_swap(float t, float *cost, float *bb_cost, float *timing_cost,
 		float rlim, float **old_region_occ_x,
 		float **old_region_occ_y,
@@ -1116,6 +1120,149 @@ static float starting_t(float *cost_ptr, float *bb_cost_ptr,
 	return (20. * std_dev);
 }
 
+
+static int setup_blocks_affected(int b_from, int x_to, int y_to, int z_to) {
+
+	/* Find all the blocks affected when b_from is swapped with b_to. 
+	 * Returns abort_swap.                  */
+
+	int imoved_blk, imacro;
+	int x_from, y_from, z_from, b_to;
+	int abort_swap = FALSE;
+
+	x_from = block[b_from].x;
+	y_from = block[b_from].y;
+	z_from = block[b_from].z;
+
+	b_to = grid[x_to][y_to].blocks[z_to];
+
+	// Check whether the to_location is empty
+	if (b_to == EMPTY) {
+
+		// Swap the block, dont swap the nets yet
+		block[b_from].x = x_to;
+		block[b_from].y = y_to;
+		block[b_from].z = z_to;
+
+		// Sets up the blocks moved
+		imoved_blk = blocks_affected.num_moved_blocks;
+		blocks_affected.moved_blocks[imoved_blk].block_num = b_from;
+		blocks_affected.moved_blocks[imoved_blk].xold = x_from;
+		blocks_affected.moved_blocks[imoved_blk].xnew = x_to;
+		blocks_affected.moved_blocks[imoved_blk].yold = y_from;
+		blocks_affected.moved_blocks[imoved_blk].ynew = y_to;
+		blocks_affected.moved_blocks[imoved_blk].zold = z_from;
+		blocks_affected.moved_blocks[imoved_blk].znew = z_to;
+		blocks_affected.moved_blocks[imoved_blk].swapped_to_empty = TRUE;
+		blocks_affected.num_moved_blocks ++;
+				
+	} else {
+
+		// Does not allow a swap with a macro yet
+		get_imacro_from_iblk(&imacro, b_from, pl_macros, num_pl_macros);
+		if (imacro != -1) {
+			abort_swap = TRUE;
+			return (abort_swap);
+		}
+
+		// Swap the block, dont swap the nets yet
+		block[b_to].x = x_from;
+		block[b_to].y = y_from;
+		block[b_to].z = z_from;
+
+		block[b_from].x = x_to;
+		block[b_from].y = y_to;
+		block[b_from].z = z_to;
+		
+		// Sets up the blocks moved
+		imoved_blk = blocks_affected.num_moved_blocks;
+		blocks_affected.moved_blocks[imoved_blk].block_num = b_from;
+		blocks_affected.moved_blocks[imoved_blk].xold = x_from;
+		blocks_affected.moved_blocks[imoved_blk].xnew = x_to;
+		blocks_affected.moved_blocks[imoved_blk].yold = y_from;
+		blocks_affected.moved_blocks[imoved_blk].ynew = y_to;
+		blocks_affected.moved_blocks[imoved_blk].zold = z_from;
+		blocks_affected.moved_blocks[imoved_blk].znew = z_to;
+		blocks_affected.moved_blocks[imoved_blk].swapped_to_empty = FALSE;
+		blocks_affected.num_moved_blocks ++;
+				
+		imoved_blk = blocks_affected.num_moved_blocks;
+		blocks_affected.moved_blocks[imoved_blk].block_num = b_to;
+		blocks_affected.moved_blocks[imoved_blk].xold = x_to;
+		blocks_affected.moved_blocks[imoved_blk].xnew = x_from;
+		blocks_affected.moved_blocks[imoved_blk].yold = y_to;
+		blocks_affected.moved_blocks[imoved_blk].ynew = y_from;
+		blocks_affected.moved_blocks[imoved_blk].zold = z_from;
+		blocks_affected.moved_blocks[imoved_blk].znew = z_to;
+		blocks_affected.moved_blocks[imoved_blk].swapped_to_empty = FALSE;
+		blocks_affected.num_moved_blocks ++;
+
+	} // Finish swapping the blocks and setting up blocks_affected
+			
+	return (abort_swap);
+
+}
+
+static int find_affected_blocks(int b_from, int x_to, int y_to, int z_to) {
+
+	/* Finds and set ups the affected_blocks array. 
+	 * Returns abort_swap. */
+
+	int imacro, imember;
+	int x_swap_offset, y_swap_offset, z_swap_offset, x_from, y_from, z_from, b_to;
+	int curr_b_from, curr_x_from, curr_y_from, curr_z_from, curr_b_to, curr_x_to, curr_y_to, curr_z_to;
+	int abort_swap = FALSE;
+	
+	x_from = block[b_from].x;
+	y_from = block[b_from].y;
+	z_from = block[b_from].z;
+
+	b_to = grid[x_to][y_to].blocks[z_to];
+
+	get_imacro_from_iblk(&imacro, b_from, pl_macros, num_pl_macros);
+	if ( imacro != -1) {
+		// b_from is part of a macro, I need to swap the whole macro
+		
+		// Record down the relative position of the swap
+		x_swap_offset = x_to - x_from;
+		y_swap_offset = y_to - y_from;
+		z_swap_offset = z_to - z_from;
+		
+		for (imember = 0; imember < pl_macros[imacro].num_blocks && abort_swap == FALSE; imember++) {
+
+			// Gets the new from and to info for every block in the macro
+			// cannot use the old from and to info
+			curr_b_from = pl_macros[imacro].members[imember].blk_index;
+			
+			curr_x_from = block[curr_b_from].x;
+			curr_y_from = block[curr_b_from].y;
+			curr_z_from = block[curr_b_from].z;
+
+			curr_x_to = curr_x_from + x_swap_offset;
+			curr_y_to = curr_y_from + y_swap_offset;
+			curr_z_to = curr_z_from + z_swap_offset;
+			
+			// Make sure that the swap_to location is still on the chip
+			if (curr_x_to < 1 || curr_x_to > nx+1 || curr_y_to < 1 || curr_y_to > ny+1 || curr_z_to < 0) {
+				abort_swap = TRUE;
+			} else {
+				curr_b_to = grid[curr_x_to][curr_y_to].blocks[curr_z_to];
+				abort_swap = setup_blocks_affected(curr_b_from, curr_x_to, curr_y_to, curr_z_to);
+			}
+
+		} // Finish going through all the blocks in the macro
+
+	} else { 
+		
+		// This is not a macro - I could use the from and to info from before
+		abort_swap = setup_blocks_affected(b_from, x_to, y_to, z_to);
+
+	} // Finish handling cases for blocks in macro and otherwise
+
+	return (abort_swap);
+
+}
+
 static enum swap_result try_swap(float t, float *cost, float *bb_cost, float *timing_cost,
 		float rlim, float **old_region_occ_x,
 		float **old_region_occ_y, 
@@ -1127,15 +1274,13 @@ static enum swap_result try_swap(float t, float *cost, float *bb_cost, float *ti
 	 * occupied, switch the blocks.  Assess the change in cost function  *
 	 * and accept or reject the move.  If rejected, return 0.  If        *
 	 * accepted return 1.  Pass back the new value of the cost function. * 
-	 * rlim is the range limiter.                                                                            */
+	 * rlim is the range limiter.                                        */
 
 	enum swap_result keep_switch;
-	int b_from, x_to, y_to, z_to, x_from, y_from, z_from, b_to;
+	int b_from, x_from, y_from, z_from, x_to, y_to, z_to;
 	int num_nets_affected;
 	float delta_c, bb_delta_c, timing_delta_c, delay_delta_c;
 	int inet, iblk, bnum, iblk_pin, inet_affected;
-	int imacro, imember, imoved_blk;
-	int x_swap_offset, y_swap_offset, z_swap_offset;
 	int abort_swap = FALSE;
 
 	/* I'm using negative values of temp_net_cost as a flag, so DO NOT   *
@@ -1172,8 +1317,6 @@ static enum swap_result try_swap(float t, float *cost, float *bb_cost, float *ti
 		z_to = my_irand(grid[x_to][y_to].type->capacity - 1);
 	}
 
-	b_to = grid[x_to][y_to].blocks[z_to];
-
 	/* Make the switch in order to make computing the new bounding *
 	 * box simpler.  If the cost increase is too high, switch them *
 	 * back.  (block data structures switched, clbs not switched   *
@@ -1188,167 +1331,7 @@ static enum swap_result try_swap(float t, float *cost, float *bb_cost, float *ti
 	 * of the blocks. Abort the swap if the to_block is part of a  *
 	 * macro (not supported yet).                                  */
 	
-	get_imacro_from_iblk(&imacro, b_from, pl_macros, num_pl_macros);
-	if ( imacro != -1) {
-		// b_from is part of a macro, I need to swap the whole macro
-		
-		// Record down the relative position of the swap
-		x_swap_offset = x_to - x_from;
-		y_swap_offset = y_to - y_from;
-		z_swap_offset = z_to - z_from;
-		
-		for (imember = 0; imember < pl_macros[imacro].num_blocks; imember++) {
-
-			// Gets the new from and to info for every block in the macro
-			// cannot use the old from and to info
-			b_from = pl_macros[imacro].members[imember].blk_index;
-			
-			x_from = block[b_from].x;
-			y_from = block[b_from].y;
-			z_from = block[b_from].z;
-
-			x_to = x_from + x_swap_offset;
-			y_to = y_from + y_swap_offset;
-			z_to = z_from + z_swap_offset;
-			
-			// Make sure that the swap_to location is still on the chip
-			if (x_to < 1 || x_to > nx+1 || y_to < 1 || y_to > ny+1 || z_to < 0) {
-				abort_swap = TRUE;
-				break;
-			}
-
-			b_to = grid[x_to][y_to].blocks[z_to];
-			
-			// Check whether the to_location is empty
-			if (b_to == EMPTY) {
-
-				// Swap the block, dont swap the nets yet
-				block[b_from].x = x_to;
-				block[b_from].y = y_to;
-				block[b_from].z = z_to;
-
-				// Sets up the blocks moved
-				imoved_blk = blocks_affected.num_moved_blocks;
-				blocks_affected.moved_blocks[imoved_blk].block_num = b_from;
-				blocks_affected.moved_blocks[imoved_blk].xold = x_from;
-				blocks_affected.moved_blocks[imoved_blk].xnew = x_to;
-				blocks_affected.moved_blocks[imoved_blk].yold = y_from;
-				blocks_affected.moved_blocks[imoved_blk].ynew = y_to;
-				blocks_affected.moved_blocks[imoved_blk].zold = z_from;
-				blocks_affected.moved_blocks[imoved_blk].znew = z_to;
-				blocks_affected.moved_blocks[imoved_blk].swapped_to_empty = TRUE;
-				blocks_affected.num_moved_blocks ++;
-				
-			} else {
-
-				// Does not allow a swap with a macro yet
-				get_imacro_from_iblk(&imacro, b_from, pl_macros, num_pl_macros);
-				if (imacro != -1) {
-					abort_swap = TRUE;
-					break;
-				}
-
-				// Swap the block, dont swap the nets yet
-				block[b_to].x = x_from;
-				block[b_to].y = y_from;
-				block[b_to].z = z_from;
-
-				block[b_from].x = x_to;
-				block[b_from].y = y_to;
-				block[b_from].z = z_to;
-		
-				// Sets up the blocks moved
-				imoved_blk = blocks_affected.num_moved_blocks;
-				blocks_affected.moved_blocks[imoved_blk].block_num = b_from;
-				blocks_affected.moved_blocks[imoved_blk].xold = x_from;
-				blocks_affected.moved_blocks[imoved_blk].xnew = x_to;
-				blocks_affected.moved_blocks[imoved_blk].yold = y_from;
-				blocks_affected.moved_blocks[imoved_blk].ynew = y_to;
-				blocks_affected.moved_blocks[imoved_blk].zold = z_from;
-				blocks_affected.moved_blocks[imoved_blk].znew = z_to;
-				blocks_affected.moved_blocks[imoved_blk].swapped_to_empty = FALSE;
-				blocks_affected.num_moved_blocks ++;
-				
-				imoved_blk = blocks_affected.num_moved_blocks;
-				blocks_affected.moved_blocks[imoved_blk].block_num = b_to;
-				blocks_affected.moved_blocks[imoved_blk].xold = x_to;
-				blocks_affected.moved_blocks[imoved_blk].xnew = x_from;
-				blocks_affected.moved_blocks[imoved_blk].yold = y_to;
-				blocks_affected.moved_blocks[imoved_blk].ynew = y_from;
-				blocks_affected.moved_blocks[imoved_blk].zold = z_from;
-				blocks_affected.moved_blocks[imoved_blk].znew = z_to;
-				blocks_affected.moved_blocks[imoved_blk].swapped_to_empty = FALSE;
-				blocks_affected.num_moved_blocks ++;
-
-			} // Finish swapping the blocks and setting up blocks_affected
-				
-		} // Finish going through all the blocks in the macro
-
-	} else { 
-		// This is not a macro - I could use the from and to info from before
-		
-		// Check whether the to_location is empty
-		if (b_to == EMPTY) {
-			
-			// Swap the block, dont swap the nets yet
-			block[b_from].x = x_to;
-			block[b_from].y = y_to;
-			block[b_from].z = z_to;
-		
-			// Sets up the blocks moved
-			imoved_blk = blocks_affected.num_moved_blocks;
-			blocks_affected.moved_blocks[imoved_blk].block_num = b_from;
-			blocks_affected.moved_blocks[imoved_blk].xold = x_from;
-			blocks_affected.moved_blocks[imoved_blk].xnew = x_to;
-			blocks_affected.moved_blocks[imoved_blk].yold = y_from;
-			blocks_affected.moved_blocks[imoved_blk].ynew = y_to;
-			blocks_affected.moved_blocks[imoved_blk].zold = z_from;
-			blocks_affected.moved_blocks[imoved_blk].znew = z_to;
-			blocks_affected.moved_blocks[imoved_blk].swapped_to_empty = TRUE;
-			blocks_affected.num_moved_blocks++;
-		
-		} else {
-			
-			// Does not allow a swap with a macro yet
-			get_imacro_from_iblk(&imacro, b_from, pl_macros, num_pl_macros);
-			if (imacro != -1) {
-				abort_swap = TRUE;
-			} else {
-				// Swap the block, dont swap the nets yet
-				block[b_to].x = x_from;
-				block[b_to].y = y_from;
-				block[b_to].z = z_from;
-
-				block[b_from].x = x_to;
-				block[b_from].y = y_to;
-				block[b_from].z = z_to;
-		
-				// Sets up the blocks moved
-				imoved_blk = blocks_affected.num_moved_blocks;
-				blocks_affected.moved_blocks[imoved_blk].block_num = b_from;
-				blocks_affected.moved_blocks[imoved_blk].xold = x_from;
-				blocks_affected.moved_blocks[imoved_blk].xnew = x_to;
-				blocks_affected.moved_blocks[imoved_blk].yold = y_from;
-				blocks_affected.moved_blocks[imoved_blk].ynew = y_to;
-				blocks_affected.moved_blocks[imoved_blk].zold = z_from;
-				blocks_affected.moved_blocks[imoved_blk].znew = z_to;
-				blocks_affected.moved_blocks[imoved_blk].swapped_to_empty = FALSE;
-				blocks_affected.num_moved_blocks ++;
-			
-				imoved_blk = blocks_affected.num_moved_blocks;
-				blocks_affected.moved_blocks[imoved_blk].block_num = b_to;
-				blocks_affected.moved_blocks[imoved_blk].xold = x_to;
-				blocks_affected.moved_blocks[imoved_blk].xnew = x_from;
-				blocks_affected.moved_blocks[imoved_blk].yold = y_to;
-				blocks_affected.moved_blocks[imoved_blk].ynew = y_from;
-				blocks_affected.moved_blocks[imoved_blk].zold = z_from;
-				blocks_affected.moved_blocks[imoved_blk].znew = z_to;
-				blocks_affected.moved_blocks[imoved_blk].swapped_to_empty = FALSE;
-				blocks_affected.num_moved_blocks ++;
-			} // Not swappping with a macro
-		} // Finish swapping the blocks and setting up blocks_affected
-
-	} // Finish handling cases for blocks in macro and otherwise
+	abort_swap = find_affected_blocks(b_from, x_to, y_to, z_to);
 
 	if (abort_swap == FALSE) {
 
@@ -1475,13 +1458,11 @@ static enum swap_result try_swap(float t, float *cost, float *bb_cost, float *ti
 
 			/* Restore the block data structures to their state before the move. */
 			for (iblk = 0; iblk < blocks_affected.num_moved_blocks; iblk++) {
-
 				b_from = blocks_affected.moved_blocks[iblk].block_num;
 
 				block[b_from].x = blocks_affected.moved_blocks[iblk].xold;
 				block[b_from].y = blocks_affected.moved_blocks[iblk].yold;
 				block[b_from].z = blocks_affected.moved_blocks[iblk].zold;
-		
 			}
 		}
 
@@ -1493,13 +1474,11 @@ static enum swap_result try_swap(float t, float *cost, float *bb_cost, float *ti
 
 		/* Restore the block data structures to their state before the move. */
 		for (iblk = 0; iblk < blocks_affected.num_moved_blocks; iblk++) {
-
 			b_from = blocks_affected.moved_blocks[iblk].block_num;
 
 			block[b_from].x = blocks_affected.moved_blocks[iblk].xold;
 			block[b_from].y = blocks_affected.moved_blocks[iblk].yold;
 			block[b_from].z = blocks_affected.moved_blocks[iblk].zold;
-		
 		}
 
 		/* Resets the num_moved_blocks, but do not free blocks_moved array. Defensive Coding */
