@@ -106,6 +106,7 @@ extern char *my_strtok(char *ptr, char *tokens, FILE * fp, char *buf);
 
 extern FILE* my_fopen(const char *fname, const char *flag, int prompt);
 extern char *my_fgets(char *buf, int max_size, FILE * fp);
+extern boolean file_exists(const char * filename);
 
 /*********************** Portable random number generators *******************/
 extern void my_srandom(int seed);

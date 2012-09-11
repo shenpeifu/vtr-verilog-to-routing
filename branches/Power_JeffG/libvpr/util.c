@@ -728,3 +728,18 @@ float my_frand(void) {
 	return (fval);
 }
 
+
+boolean file_exists(const char * filename) {
+	FILE * file;
+
+	if (filename == NULL) {
+		return FALSE;
+	}
+
+	file = fopen(filename, "r");
+	if (file) {
+		fclose(file);
+		return TRUE;
+	}
+	return FALSE;
+}

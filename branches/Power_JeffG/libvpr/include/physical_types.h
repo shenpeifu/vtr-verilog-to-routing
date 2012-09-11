@@ -17,9 +17,11 @@
 #include "logic_types.h"
 #include "util.h"
 
-/* Typedefs */
-typedef struct s_power_usage t_power_usage;
 typedef struct s_mux_node t_mux_node;
+typedef struct s_mux_arch t_mux_arch;
+typedef struct s_power_usage t_power_usage;
+typedef struct s_clocks t_clocks;
+typedef struct s_clock_inf t_clock_inf;
 typedef struct s_power_arch t_power_arch;
 
 /*************************************************************************************************/
@@ -120,13 +122,43 @@ struct s_clb_grid {
 	int H;
 };
 
-/*************************************************************************************************/
-/* FPGA Physical Logic Blocks data types                                                         */
-/*************************************************************************************************/
+/************************* POWER ***********************************/
 struct s_power_usage {
 	float dynamic;
 	float leakage;
 };
+
+ struct s_mux_arch {
+	int levels;
+	int num_inputs;
+	float * transistor_sizes; /* [0..levels] */
+	enum e_encoding_type * encoding_types;
+	t_mux_node * mux_graph_head;
+} ;
+
+
+ struct s_clocks {
+ 	int num_global_clock;
+ 	t_clock_inf *clock_inf; /* Details about the clock network */
+ };
+
+ struct s_clock_inf {
+ 	float density;
+ 	float prob;
+ 	boolean autosize_buffer;
+ 	float buffer_size;
+ 	float C_wire;
+ };
+
+ struct s_power_arch {
+ 	float C_wire_local;
+ };
+
+
+/*************************************************************************************************/
+/* FPGA Physical Logic Blocks data types                                                         */
+/*************************************************************************************************/
+
 
 /* A class of CLB pins that share common properties
  * port_name: name of this class of pins
@@ -216,13 +248,7 @@ struct s_mux_node {
 	boolean level_restorer;
 };
 
-typedef struct s_mux_arch {
-	int levels;
-	int num_inputs;
-	float * transistor_sizes; /* [0..levels] */
-	enum e_encoding_type * encoding_types;
-	t_mux_node * mux_graph_head;
-} t_mux_arch;
+
 
 struct s_pb_graph_edge;
 /** Describes interconnect edge inside a cluster
@@ -388,7 +414,7 @@ struct s_cluster_placement_primitive;
  * parent_pb_graph_node: parent pb graph node
  */
 struct s_pb_graph_node {
-	const struct s_pb_type *pb_type;
+	struct s_pb_type *pb_type;
 
 	int placement_index;
 
@@ -650,106 +676,9 @@ struct poly_record {
  poly_extention: poly extention
  */
 
-/************************* POWER ***********************************/
 
-/* two types of transisters */
-typedef enum {
-	NMOS, PMOS
-} e_tx_type;
 
-#define Q_charge 1.60e-19
-#define vsat 8.00e4
-#define Bolzmann_constant 1.38e-25
 
-typedef struct s_transistor_inf t_transistor_inf;
-typedef struct s_transistor_size_inf t_transistor_size_inf;
-
-/*
- * Leakage High - Leakage for Vds = Vdd
- * Leakage Low - Leakage for Vds = Vdd - Vth
- */
-struct s_transistor_size_inf {
-	float size;
-
-	float leakage_high;
-	float leakage_low;
-	float C_gate_cmos;
-	float C_source_cmos;
-	float C_drain_cmos;
-	float C_gate_pass;
-	float C_source_pass;
-	float C_drain_pass;
-};
-
-struct s_transistor_inf {
-	float Vth;
-	int num_size_entries;
-	t_transistor_size_inf * size_inf;
-	t_transistor_size_inf * long_trans_inf;
-};
-
-/* Record for storing the technology parameters for NMOS and
- PMOS type of transistors
-
- min_length: minimum channel width of the transistor (in m)
- min_width:  minimum width of the transistor (in m)
- Vth:        threshold voltage (in volt)
- CJ:         junction capacitance (F/m^2)
- CJSW:       side-wall junction capacitance (F/m)
- CJSWG:      gate-edge side-wall bulk junction capacitance (F/m)
- CGDO:       gate-drain overlap capacitance (F/m)
- COX:        gate-oxide cpacitance per unit area
- EC:         contant for leakage current calculation
- */
-
-struct temperature_record {
-	int temperature;
-	float NMOS_NFS_value;
-	float PMOS_NFS_value;
-};
-/* record for storing the NMOS and PMOS NFS values for leakage current
- calculation
- temperature: temperature in degree celcius
- NMOS_NFS_value: NFS value for NMOS for that temperature
- PMOS_NFS_value: NFS value for PMOS for that temperature
- */
-
-struct s_power_arch {
-	float tech_size;
-	float temperature;
-	float Vdd;
-	float C_wire_local;
-	struct s_transistor_inf NMOS_tx_record;
-	struct s_transistor_inf PMOS_tx_record;
-	float short_circuit_power_percentage;
-	float P_to_N_size_ratio;
-};
-
-typedef struct s_clock_inf t_clock_inf;
-struct s_clock_inf {
-	float density;
-	float prob;
-	boolean autosize_buffer;
-	float buffer_size;
-	float C_wire;
-};
-
-/*
- For Power calculation of the clock network
- Rbuffer: Resistance of clock buffer
- Cbuffer_in: Input Capacitance of clock buffer
- Cbuffer_out: Output Capacitance of clock buffer
- Rwire: Wire resistance of the clock network (unit: ohm per segment length)
- Cwire: Wire capacitance of the clock network (unit: F per segment length)
- Cin_per_clb_clock_pin: input capacitable to each logic block clock pin
- clock_density: transition density for the clock (usually is 2)
- */
-
-typedef struct s_clocks t_clocks;
-struct s_clocks {
-	int num_global_clock;
-	t_clock_inf *clock_inf; /* Details about the clock network */
-};
 
 /*   Detailed routing architecture */
 typedef struct s_arch t_arch;
@@ -770,7 +699,7 @@ struct s_arch {
 	int num_switches;
 	t_model *models;
 	t_model *model_library;
-	t_power_arch *power;
+	t_power_arch * power;
 	t_clocks * clocks;
 };
 

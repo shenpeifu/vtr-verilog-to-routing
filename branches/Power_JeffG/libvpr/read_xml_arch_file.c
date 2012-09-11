@@ -2699,27 +2699,6 @@ static void ProcessPower( INOUTP ezxml_t parent,
 		INP int NumTypes) {
 	ezxml_t Cur;
 
-	/*
-	 Cur = FindElement (parent, "Vgs_for_leakage", TRUE);
-	 Tokens = GetNodeTokens (Cur);
-	 assert (CountTokens (Tokens) == 1);
-	 power_arch->Vgs_for_leakage = atof (Tokens[0]);
-	 FreeTokens (&Tokens);
-	 FreeNode (Cur);
-
-	 Cur = FindElement (parent, "SRAM_leakage", TRUE);
-	 Tokens = GetNodeTokens (Cur);
-	 assert (CountTokens (Tokens) == 1);
-	 power_arch->SRAM_leakage = atof (Tokens[0]);
-	 FreeTokens (&Tokens);
-	 FreeNode (Cur);
-	 */
-
-	Cur = FindElement(parent, "short_circuit_power", TRUE);
-	power_arch->short_circuit_power_percentage = GetFloatProperty(Cur,
-			"percentage", TRUE, 0.);
-	FreeNode(Cur);
-
 	Cur = FindElement(parent, "local_interconnect", FALSE);
 	if (Cur) {
 		power_arch->C_wire_local = GetFloatProperty(Cur, "C_wire", FALSE, 0.);
