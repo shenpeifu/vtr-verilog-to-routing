@@ -12,6 +12,7 @@
 /************************* GLOBALS **********************************/
 static t_transistor_inf * g_transistor_last_searched;
 static t_power_buffer_strength_inf * g_buffer_strength_last_searched;
+static t_power_mux_volt_inf * g_mux_volt_last_searched;
 
 /************************* FUNCTION DECLARATIONS ********************/
 static void process_transistor_info(ezxml_t parent);
@@ -111,7 +112,7 @@ static void process_buffer_sc(ezxml_t parent) {
 
 	num_buffer_sizes = CountChildren(parent, "stages", 1);
 	g_power_tech->max_buffer_size = num_buffer_sizes; /* buffer size starts at 1, not 0 */
-	g_power_tech->buffer_size_inf = my_calloc(g_power_tech->max_buffer_size+1,
+	g_power_tech->buffer_size_inf = my_calloc(g_power_tech->max_buffer_size + 1,
 			sizeof(t_power_buffer_size_inf));
 
 	child = FindFirstElement(parent, "stages", TRUE);
@@ -423,8 +424,7 @@ void power_find_buffer_strength_inf(t_power_buffer_strength_inf ** lower,
 
 	key.stage_gain = stage_gain;
 
-	found = bsearch(&key, size_inf->strength_inf,
-			size_inf->num_strengths,
+	found = bsearch(&key, size_inf->strength_inf, size_inf->num_strengths,
 			sizeof(t_power_buffer_strength_inf), power_compare_buffer_strength);
 
 	if (stage_gain == max_size) {
@@ -449,10 +449,12 @@ void power_find_buffer_sc_levr(t_power_buffer_sc_levr_inf ** lower,
 	key.mux_size = input_mux_size;
 
 	g_buffer_strength_last_searched = buffer_strength;
-	found = bsearch(&key, buffer_strength->sc_levr_inf, buffer_strength->num_levr_entries,
+	found = bsearch(&key, buffer_strength->sc_levr_inf,
+			buffer_strength->num_levr_entries,
 			sizeof(t_power_buffer_sc_levr_inf), power_compare_buffer_sc_levr);
 
-	max_size = buffer_strength->sc_levr_inf[buffer_strength->num_levr_entries - 1].mux_size;
+	max_size = buffer_strength->sc_levr_inf[buffer_strength->num_levr_entries
+			- 1].mux_size;
 	if (input_mux_size > max_size) {
 		assert(
 				found == &buffer_strength->sc_levr_inf[buffer_strength->num_levr_entries-1]);
@@ -492,17 +494,22 @@ void power_find_mux_volt_inf(t_power_mux_volt_pair ** lower,
 	t_power_mux_volt_pair key;
 	t_power_mux_volt_pair * found;
 
+
 	key.v_in = v_in;
 
-	assert(v_in > (g_power_tech->Vdd / 2) && v_in <= g_power_tech->Vdd);
-
+	g_mux_volt_last_searched = volt_inf;
 	found = bsearch(&key, volt_inf->mux_voltage_pairs,
 			volt_inf->num_voltage_pairs, sizeof(t_power_mux_volt_pair),
 			power_compare_voltage_pair);
 	assert(found);
 
-	*lower = found;
-	*upper = found + 1;
+	if (found == &volt_inf->mux_voltage_pairs[volt_inf->num_voltage_pairs - 1]) {
+		*lower = found;
+		*upper = NULL;
+	} else {
+		*lower = found;
+		*upper = found + 1;
+	}
 }
 
 static int power_compare_buffer_sc_levr(const void * key_void,
@@ -601,6 +608,18 @@ static int power_compare_voltage_pair(const void * key_void,
 	const t_power_mux_volt_pair * key = key_void;
 	const t_power_mux_volt_pair * elem = elem_void;
 	const t_power_mux_volt_pair * next = elem + 1;
+
+	/* Check if we are comparing against the last element */
+	if (elem
+			== &g_mux_volt_last_searched->mux_voltage_pairs[g_mux_volt_last_searched->num_voltage_pairs
+					- 1]) {
+		/* Match if the desired value is larger than the largest item in the list */
+		if (key->v_in >= elem->v_in) {
+			return 0;
+		} else {
+			return -1;
+		}
+	}
 
 	/* Check for exact match to Vdd (upper end) */
 	if (key->v_in == elem->v_in) {

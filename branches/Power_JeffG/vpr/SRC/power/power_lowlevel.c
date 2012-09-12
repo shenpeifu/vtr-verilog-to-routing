@@ -522,7 +522,7 @@ float power_calc_mux_v_out(int num_inputs, float transistor_size, float v_in,
 
 	power_find_mux_volt_inf(&lower, &upper, mux_volt_inf, v_in);
 
-	if (lower->v_in == v_in) {
+	if (lower->v_in == v_in || !upper) {
 		v_out_min = lower->v_out_min;
 		v_out_max = lower->v_out_max;
 	} else {
