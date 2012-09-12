@@ -397,15 +397,19 @@ void power_find_nmos_leakage(t_power_nmos_leakage_pair ** lower,
 
 	key.v_ds = v_ds;
 
-	assert(v_ds > (g_power_tech->Vdd / 2) && v_ds <= g_power_tech->Vdd);
-
 	found = bsearch(&key, g_power_tech->leakage_pairs,
 			g_power_tech->num_leakage_pairs, sizeof(t_power_nmos_leakage_pair),
 			power_compare_leakage_pair);
 	assert(found);
 
-	*lower = found;
-	*upper = found + 1;
+	if (found
+			== &g_power_tech->leakage_pairs[g_power_tech->num_leakage_pairs - 1]) {
+		*lower = found;
+		*upper = NULL;
+	} else {
+		*lower = found;
+		*upper = found + 1;
+	}
 }
 
 void power_find_buffer_strength_inf(t_power_buffer_strength_inf ** lower,
@@ -476,6 +480,16 @@ static int power_compare_leakage_pair(const void * key_void,
 	const t_power_nmos_leakage_pair * elem = elem_void;
 	const t_power_nmos_leakage_pair * next = elem + 1;
 
+	/* Compare against last? */
+	if (elem
+			== &g_power_tech->leakage_pairs[g_power_tech->num_leakage_pairs - 1]) {
+		if (key->v_ds >= elem->v_ds) {
+			return 0;
+		} else {
+			return -1;
+		}
+	}
+
 	/* Check for exact match to Vdd (upper end) */
 	if (key->v_ds == elem->v_ds) {
 		return 0;
@@ -494,7 +508,6 @@ void power_find_mux_volt_inf(t_power_mux_volt_pair ** lower,
 	t_power_mux_volt_pair key;
 	t_power_mux_volt_pair * found;
 
-
 	key.v_in = v_in;
 
 	g_mux_volt_last_searched = volt_inf;
@@ -503,7 +516,8 @@ void power_find_mux_volt_inf(t_power_mux_volt_pair ** lower,
 			power_compare_voltage_pair);
 	assert(found);
 
-	if (found == &volt_inf->mux_voltage_pairs[volt_inf->num_voltage_pairs - 1]) {
+	if (found
+			== &volt_inf->mux_voltage_pairs[volt_inf->num_voltage_pairs - 1]) {
 		*lower = found;
 		*upper = NULL;
 	} else {

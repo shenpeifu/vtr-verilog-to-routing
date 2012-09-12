@@ -84,9 +84,9 @@ static float power_calc_dynamic_v(float capacitance, float density,
 			/ g_solution_inf->T_crit;
 }
 
-void power_calc_inverter_irregular(t_power_usage * power_usage, float * dyn_power_input,
-		float in_density, float in_probability, float PMOS_size,
-		float NMOS_size) {
+void power_calc_inverter_irregular(t_power_usage * power_usage,
+		float * dyn_power_input, float in_density, float in_probability,
+		float PMOS_size, float NMOS_size) {
 	float C_drain, C_gate, C_source;
 	float C_inv;
 	float C_in;
@@ -116,8 +116,9 @@ void power_calc_inverter_irregular(t_power_usage * power_usage, float * dyn_powe
 					* power_calc_leakage_subthreshold(NMOS, NMOS_size);
 }
 
-void power_calc_inverter_with_input(t_power_usage * power_usage, float * input_dynamic_power, float in_density,
-		float in_prob, float size) {
+void power_calc_inverter_with_input(t_power_usage * power_usage,
+		float * input_dynamic_power, float in_density, float in_prob,
+		float size) {
 	float C_drain, C_gate, C_source;
 	float C_inv;
 	float C_in;
@@ -371,7 +372,7 @@ static float power_calc_leakage_pass_transistor(float size, float v_ds) {
 
 	power_find_nmos_leakage(&lower, &upper, v_ds);
 
-	if (lower->v_ds == v_ds) {
+	if (lower->v_ds == v_ds || !upper) {
 		i_ds = lower->i_ds;
 	} else {
 		float perc_upper = (v_ds - lower->v_ds) / (upper->v_ds - lower->v_ds);
@@ -583,8 +584,8 @@ void power_calc_mux_singlelevel_dynamic(t_power_usage * power_usage,
 			v_out);
 }
 
-void power_calc_level_restorer(t_power_usage * power_usage, float * dyn_power_in, float in_density,
-		float in_probability) {
+void power_calc_level_restorer(t_power_usage * power_usage,
+		float * dyn_power_in, float in_density, float in_probability) {
 	t_power_usage sub_power_usage;
 	float C;
 	float C_in;
@@ -593,8 +594,8 @@ void power_calc_level_restorer(t_power_usage * power_usage, float * dyn_power_in
 	power_zero_usage(power_usage);
 
 	/* Inverter */
-	power_calc_inverter_irregular(&sub_power_usage, &input_dyn_power, in_density, in_probability,
-			1.0, 2.0);
+	power_calc_inverter_irregular(&sub_power_usage, &input_dyn_power,
+			in_density, in_probability, 1.0, 2.0);
 	power_add_usage(power_usage, &sub_power_usage);
 
 	if (g_power_tech->PMOS_inf.long_trans_inf == NULL ) {
@@ -639,8 +640,8 @@ float power_calc_pb_dyn_from_c_internal(t_pb * pb,
 	return power_calc_dynamic(pb_graph_node->pb_type->C_internal, density);
 }
 
-static float power_calc_buffer_sc_levr(t_power_buffer_strength_inf * buffer_strength,
-		int input_mux_size) {
+static float power_calc_buffer_sc_levr(
+		t_power_buffer_strength_inf * buffer_strength, int input_mux_size) {
 	t_power_buffer_sc_levr_inf * mux_lower;
 	t_power_buffer_sc_levr_inf * mux_upper;
 
@@ -664,10 +665,10 @@ float power_calc_buffer_sc(int stages, float gain, boolean level_restored,
 	t_power_buffer_strength_inf * strength_upper;
 	float sc;
 
-	size_inf = & g_power_tech->buffer_size_inf[stages];
+	size_inf = &g_power_tech->buffer_size_inf[stages];
 
-
-	power_find_buffer_strength_inf(&strength_lower, &strength_upper, size_inf, gain);
+	power_find_buffer_strength_inf(&strength_lower, &strength_upper, size_inf,
+			gain);
 
 	if (!level_restored) {
 		if (strength_upper == NULL ) {
@@ -687,8 +688,10 @@ float power_calc_buffer_sc(int stages, float gain, boolean level_restored,
 			float sc_buf_low;
 			float sc_buf_high;
 
-			sc_buf_low = power_calc_buffer_sc_levr(strength_lower, input_mux_size);
-			sc_buf_high = power_calc_buffer_sc_levr(strength_upper, input_mux_size);
+			sc_buf_low = power_calc_buffer_sc_levr(strength_lower,
+					input_mux_size);
+			sc_buf_high = power_calc_buffer_sc_levr(strength_upper,
+					input_mux_size);
 
 			float percent_upper = (gain - strength_lower->stage_gain)
 					/ (strength_upper->stage_gain - strength_lower->stage_gain);
