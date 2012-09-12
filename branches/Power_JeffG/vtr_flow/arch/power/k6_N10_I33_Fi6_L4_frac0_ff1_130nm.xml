@@ -572,7 +572,6 @@
 		</pb_type>
 	</complexblocklist>
 	<power>
-		<short_circuit_power percentage="0.1"/>
 		<local_interconnect C_wire="1.9e-10"/>
 	</power>
 	<clocks>

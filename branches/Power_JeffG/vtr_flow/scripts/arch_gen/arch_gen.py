@@ -10,7 +10,7 @@ do_power = True
 Fc_in = 0.15
 Fc_out = 0.1
 
-power_short_circuit_percentage = 0.1
+power_short_circuit_percentage = 0.0
 
 R_minW_nmos = 6065.520020
 R_minW_pmos = 18138.500000
@@ -619,9 +619,9 @@ def gen_arch(dir, k_LUT, N_BLE, I_CLB, I_BLE, fracture_level, num_FF, seg_length
         xbegin("power")
         xclose()
         
-        xbegin("short_circuit_power")
-        xprop("percentage", power_short_circuit_percentage)
-        xcloseend()
+        #xbegin("short_circuit_power")
+        #xprop("percentage", power_short_circuit_percentage)
+        #xcloseend()
         
         xbegin("local_interconnect")
         xprop("C_wire", C_wire_local(tech_nm))
@@ -646,7 +646,7 @@ def gen_arch(dir, k_LUT, N_BLE, I_CLB, I_BLE, fracture_level, num_FF, seg_length
 arches = []
 #              k    N       I_CLB   I_BLE   frac    num_FF  seg_length
 
-sweep = 1
+sweep = 0
 
 if (sweep):
     dir = "C:/Users/Jeff/Dropbox/linux_home/vtr/vtr_flow/arch/power/sweep"

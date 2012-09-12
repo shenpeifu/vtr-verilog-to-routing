@@ -107,6 +107,11 @@ void read_blif(char *blif_file, boolean sweep_hanging_nets_and_inputs,
 		read_activity(power_opts->activity_file);
 	}
 
+	/* Read activity file */
+	if (power_opts->do_power) {
+		read_activity(power_opts->activity_file);
+	}
+
 	free_parse();
 }
 

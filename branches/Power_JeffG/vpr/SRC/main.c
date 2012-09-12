@@ -161,7 +161,7 @@ int main(int argc, char **argv) {
 	struct s_annealing_sched AnnealSched;
 	struct s_router_opts RouterOpts;
 	struct s_det_routing_arch RoutingArch;
-	t_power_opts PowerOpts;
+	t_power_opts power_opts;
 	t_segment_inf *Segments;
 	t_timing_inf Timing;
 	boolean ShowGraphics;
@@ -200,7 +200,7 @@ int main(int argc, char **argv) {
 	SetupVPR(Options, TimingEnabled, &FileNameOpts, &Arch, &Operation,
 			&user_models, &library_models, &PackerOpts, &PlacerOpts,
 			&AnnealSched, &RouterOpts, &RoutingArch, &Segments, &Timing,
-			&ShowGraphics, &GraphPause, &PowerOpts);
+			&ShowGraphics, &GraphPause, &power_opts);
 
 	/* Check inputs are reasonable */
 	CheckOptions(Options, TimingEnabled);
@@ -214,8 +214,8 @@ int main(int argc, char **argv) {
 	/* Packing stage */
 	if (PackerOpts.doPacking) {
 		begin = clock();
-		PowerOpts.activity_file = FileNameOpts.ActFile;
-		try_pack(&PackerOpts, &Arch, user_models, library_models, &PowerOpts);
+		power_opts.activity_file = FileNameOpts.ActFile;
+		try_pack(&PackerOpts, &Arch, user_models, library_models, & power_opts);
 		end = clock();
 #ifdef CLOCKS_PER_SEC
 		printf("Packing took %g seconds\n",
@@ -271,7 +271,7 @@ int main(int argc, char **argv) {
 			AnnealSched, RouterOpts, RoutingArch, Segments, Timing, Arch.Chans,
 			Arch.models);
 
-	if (PowerOpts.do_power) {
+	if (power_opts.do_power) {
 		e_power_ret_code power_ret_code;
 		boolean power_error;
 
@@ -279,11 +279,11 @@ int main(int argc, char **argv) {
 		printf("-----------------\n");
 
 		assert(FileNameOpts.PowerFile);
-		PowerOpts.power_output_file = FileNameOpts.PowerFile;
+		power_opts.power_output_file = FileNameOpts.PowerFile;
 		assert(g_solution_inf->T_crit > 0);
 
 		printf("\tInitializing power module...");
-		power_error = power_init(&PowerOpts, Arch.power);
+		power_error = power_init(&power_opts, Arch.power);
 		if (power_error) {
 			printf("Failed.\n");
 		} else {

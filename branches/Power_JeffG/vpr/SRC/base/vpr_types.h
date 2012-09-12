@@ -539,13 +539,6 @@ struct s_placer_opts {
  * td_place_exp_last: value that the criticality exponent will be at the end *
  * doPlacement: TRUE if placement is supposed to be done in the CAD flow, FALSE otherwise */
 
-typedef struct s_power_opts t_power_opts;
-struct s_power_opts {
-	boolean do_power;
-	char * activity_file;
-	char * power_output_file;
-	char * cmos_tech_behavior_file;
-};
 
 enum e_route_type {
 	GLOBAL, DETAILED

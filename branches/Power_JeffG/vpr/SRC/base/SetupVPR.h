@@ -1,6 +1,8 @@
 #ifndef SETUPVPR_H
 #define SETUPVPR_H
 
+#include "power.h"
+
 boolean IsTimingEnabled(INP t_options Options);
 boolean IsEchoEnabled(INP t_options Options);
 
@@ -20,7 +22,7 @@ void SetupVPR(INP t_options Options,
 		OUTP t_timing_inf * Timing,
 		OUTP boolean * ShowGraphics,
 		OUTP int *GraphPause,
-		OUTP struct s_power_opts *PowerOpts);
+		OUTP t_power_opts * power_opts);
 
 void CheckSetup(INP enum e_operation Operation,
 		INP struct s_placer_opts PlacerOpts,

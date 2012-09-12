@@ -46,7 +46,7 @@ void SetupVPR(INP t_options Options, INP boolean TimingEnabled,
 		OUTP struct s_det_routing_arch *RoutingArch,
 		OUTP t_segment_inf ** Segments, OUTP t_timing_inf * Timing,
 		OUTP boolean * ShowGraphics, OUTP int *GraphPause,
-		OUTP struct s_power_opts *PowerOpts) {
+		OUTP t_power_opts * power_opts) {
 	int i, j, len;
 
 	/* init default filenames */
@@ -148,7 +148,7 @@ void SetupVPR(INP t_options Options, INP boolean TimingEnabled,
 	SetupPlacerOpts(Options, TimingEnabled, PlacerOpts);
 	SetupAnnealSched(Options, AnnealSched);
 	SetupRouterOpts(Options, TimingEnabled, RouterOpts);
-	SetupPowerOpts(Options, PowerOpts, Arch);
+	SetupPowerOpts(Options, power_opts, Arch);
 
 	XmlReadArch(Options.ArchFile, TimingEnabled, Arch, &type_descriptors,
 			&num_types);

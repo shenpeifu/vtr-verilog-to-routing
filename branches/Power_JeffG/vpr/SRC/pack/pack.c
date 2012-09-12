@@ -12,12 +12,16 @@
 #include "cluster.h"
 #include "output_clustering.h"
 #include "ReadOptions.h"
+#include "power.h"
 
 /* #define DUMP_PB_GRAPH 1 */
 /* #define DUMP_BLIF_INPUT 1 */
 
+
+
 void try_pack(INP struct s_packer_opts *packer_opts, INP const t_arch * arch,
-		INP t_model *user_models, INP t_model *library_models, t_power_opts * power_opts) {
+		INP t_model *user_models, INP t_model *library_models,
+		t_power_opts * power_opts) {
 	boolean *is_clock;
 	int num_models;
 	t_model *cur_model;
@@ -57,6 +61,7 @@ void try_pack(INP struct s_packer_opts *packer_opts, INP const t_arch * arch,
 
 
 	 */
+
 	if (GetEchoOption()) {
 		echo_input(packer_opts->blif_file_name, "blif_input.echo",
 				library_models);
@@ -116,3 +121,4 @@ void try_pack(INP struct s_packer_opts *packer_opts, INP const t_arch * arch,
 
 	printf("\nNetlist conversion complete.\n\n");
 }
+
