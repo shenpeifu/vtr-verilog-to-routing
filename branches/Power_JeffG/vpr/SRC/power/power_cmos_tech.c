@@ -208,7 +208,7 @@ static void process_multiplexer_info(ezxml_t parent) {
 			sizeof(t_power_mux_volt_inf));
 
 	child = FindFirstElement(parent, "multiplexer", TRUE);
-	i = 2;
+	i = 1;
 	while (child) {
 		int num_voltages;
 

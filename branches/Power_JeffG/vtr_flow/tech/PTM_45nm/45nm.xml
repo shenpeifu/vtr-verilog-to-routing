@@ -1262,6 +1262,19 @@
 		</size>
 	</transistor>
 	<multiplexers>
+		<multiplexer size="1">
+			<voltages in="0.5" out_min="5.0000E-01" out_max="5.0000E-01"/>
+			<voltages in="0.55" out_min="5.5000E-01" out_max="5.5000E-01"/>
+			<voltages in="0.6" out_min="6.0000E-01" out_max="6.0000E-01"/>
+			<voltages in="0.65" out_min="6.5000E-01" out_max="6.5000E-01"/>
+			<voltages in="0.7" out_min="6.9999E-01" out_max="6.9999E-01"/>
+			<voltages in="0.75" out_min="7.4997E-01" out_max="7.4997E-01"/>
+			<voltages in="0.8" out_min="7.9985E-01" out_max="7.9985E-01"/>
+			<voltages in="0.85" out_min="8.4933E-01" out_max="8.4933E-01"/>
+			<voltages in="0.9" out_min="8.9713E-01" out_max="8.9713E-01"/>
+			<voltages in="0.95" out_min="9.3915E-01" out_max="9.3915E-01"/>
+			<voltages in="1" out_min="9.6839E-01" out_max="9.6839E-01"/>
+		</multiplexer>
 		<multiplexer size="2">
 			<voltages in="0.5" out_min="4.9995E-01" out_max="5.0000E-01"/>
 			<voltages in="0.55" out_min="5.4986E-01" out_max="5.5000E-01"/>
@@ -1746,287 +1759,287 @@
 	<buffer_sc>
 		<stages num_stages='1'>
 			<strength gain='1' sc_nolevr='1.8689E+00'>
-				<input_cap mux_size='2' sc_levr='2.4061E+00'/>
-				<input_cap mux_size='6' sc_levr='3.5636E+00'/>
-				<input_cap mux_size='10' sc_levr='4.8046E+00'/>
-				<input_cap mux_size='14' sc_levr='6.2897E+00'/>
-				<input_cap mux_size='18' sc_levr='7.8036E+00'/>
-				<input_cap mux_size='22' sc_levr='9.2504E+00'/>
-				<input_cap mux_size='26' sc_levr='1.0761E+01'/>
-				<input_cap mux_size='30' sc_levr='1.2358E+01'/>
-				<input_cap mux_size='34' sc_levr='1.5483E+01'/>
+				<input_cap mux_size='1' sc_levr='2.1448E+00'/>
+				<input_cap mux_size='5' sc_levr='3.3088E+00'/>
+				<input_cap mux_size='9' sc_levr='4.5105E+00'/>
+				<input_cap mux_size='13' sc_levr='5.8969E+00'/>
+				<input_cap mux_size='17' sc_levr='7.4023E+00'/>
+				<input_cap mux_size='21' sc_levr='8.6255E+00'/>
+				<input_cap mux_size='25' sc_levr='1.0330E+01'/>
+				<input_cap mux_size='29' sc_levr='1.2386E+01'/>
+				<input_cap mux_size='33' sc_levr='1.4872E+01'/>
 			</strength>
 		</stages>
 		<stages num_stages='2'>
 			<strength gain='1' sc_nolevr='1.1197E+00'>
-				<input_cap mux_size='2' sc_levr='1.7282E+00'/>
-				<input_cap mux_size='6' sc_levr='2.3852E+00'/>
-				<input_cap mux_size='10' sc_levr='2.9631E+00'/>
-				<input_cap mux_size='14' sc_levr='3.6540E+00'/>
-				<input_cap mux_size='18' sc_levr='4.3579E+00'/>
-				<input_cap mux_size='22' sc_levr='5.0995E+00'/>
-				<input_cap mux_size='26' sc_levr='5.9244E+00'/>
-				<input_cap mux_size='30' sc_levr='6.7165E+00'/>
-				<input_cap mux_size='34' sc_levr='7.4605E+00'/>
+				<input_cap mux_size='1' sc_levr='1.5914E+00'/>
+				<input_cap mux_size='5' sc_levr='2.2048E+00'/>
+				<input_cap mux_size='9' sc_levr='2.8341E+00'/>
+				<input_cap mux_size='13' sc_levr='3.5214E+00'/>
+				<input_cap mux_size='17' sc_levr='4.2224E+00'/>
+				<input_cap mux_size='21' sc_levr='4.8921E+00'/>
+				<input_cap mux_size='25' sc_levr='5.7234E+00'/>
+				<input_cap mux_size='29' sc_levr='6.4289E+00'/>
+				<input_cap mux_size='33' sc_levr='7.2180E+00'/>
 			</strength>
 			<strength gain='2' sc_nolevr='6.9393E-01'>
-				<input_cap mux_size='2' sc_levr='1.3851E+00'/>
-				<input_cap mux_size='6' sc_levr='1.9100E+00'/>
-				<input_cap mux_size='10' sc_levr='2.3408E+00'/>
-				<input_cap mux_size='14' sc_levr='2.9147E+00'/>
-				<input_cap mux_size='18' sc_levr='3.4809E+00'/>
-				<input_cap mux_size='22' sc_levr='3.9116E+00'/>
-				<input_cap mux_size='26' sc_levr='4.4730E+00'/>
-				<input_cap mux_size='30' sc_levr='4.9391E+00'/>
-				<input_cap mux_size='34' sc_levr='5.4897E+00'/>
+				<input_cap mux_size='1' sc_levr='1.2981E+00'/>
+				<input_cap mux_size='5' sc_levr='1.7594E+00'/>
+				<input_cap mux_size='9' sc_levr='2.2275E+00'/>
+				<input_cap mux_size='13' sc_levr='2.7695E+00'/>
+				<input_cap mux_size='17' sc_levr='3.2924E+00'/>
+				<input_cap mux_size='21' sc_levr='3.7612E+00'/>
+				<input_cap mux_size='25' sc_levr='4.2908E+00'/>
+				<input_cap mux_size='29' sc_levr='4.8910E+00'/>
+				<input_cap mux_size='33' sc_levr='5.3375E+00'/>
 			</strength>
 			<strength gain='3' sc_nolevr='5.3588E-01'>
-				<input_cap mux_size='2' sc_levr='1.3320E+00'/>
-				<input_cap mux_size='6' sc_levr='1.8174E+00'/>
-				<input_cap mux_size='10' sc_levr='2.1735E+00'/>
-				<input_cap mux_size='14' sc_levr='2.6946E+00'/>
-				<input_cap mux_size='18' sc_levr='3.0759E+00'/>
-				<input_cap mux_size='22' sc_levr='3.4768E+00'/>
-				<input_cap mux_size='26' sc_levr='3.9965E+00'/>
-				<input_cap mux_size='30' sc_levr='4.4115E+00'/>
-				<input_cap mux_size='34' sc_levr='4.8435E+00'/>
+				<input_cap mux_size='1' sc_levr='1.2609E+00'/>
+				<input_cap mux_size='5' sc_levr='1.6465E+00'/>
+				<input_cap mux_size='9' sc_levr='2.0635E+00'/>
+				<input_cap mux_size='13' sc_levr='2.4867E+00'/>
+				<input_cap mux_size='17' sc_levr='3.0095E+00'/>
+				<input_cap mux_size='21' sc_levr='3.3375E+00'/>
+				<input_cap mux_size='25' sc_levr='3.8852E+00'/>
+				<input_cap mux_size='29' sc_levr='4.3159E+00'/>
+				<input_cap mux_size='33' sc_levr='4.6642E+00'/>
 			</strength>
 			<strength gain='4' sc_nolevr='4.9061E-01'>
-				<input_cap mux_size='2' sc_levr='1.3792E+00'/>
-				<input_cap mux_size='6' sc_levr='1.7659E+00'/>
-				<input_cap mux_size='10' sc_levr='2.1536E+00'/>
-				<input_cap mux_size='14' sc_levr='2.6007E+00'/>
-				<input_cap mux_size='18' sc_levr='3.0044E+00'/>
-				<input_cap mux_size='22' sc_levr='3.3474E+00'/>
-				<input_cap mux_size='26' sc_levr='3.8326E+00'/>
-				<input_cap mux_size='30' sc_levr='4.1762E+00'/>
-				<input_cap mux_size='34' sc_levr='4.5768E+00'/>
+				<input_cap mux_size='1' sc_levr='1.2232E+00'/>
+				<input_cap mux_size='5' sc_levr='1.6652E+00'/>
+				<input_cap mux_size='9' sc_levr='2.0585E+00'/>
+				<input_cap mux_size='13' sc_levr='2.4986E+00'/>
+				<input_cap mux_size='17' sc_levr='2.9324E+00'/>
+				<input_cap mux_size='21' sc_levr='3.2193E+00'/>
+				<input_cap mux_size='25' sc_levr='3.7044E+00'/>
+				<input_cap mux_size='29' sc_levr='4.0743E+00'/>
+				<input_cap mux_size='33' sc_levr='4.4485E+00'/>
 			</strength>
 			<strength gain='5' sc_nolevr='4.7918E-01'>
-				<input_cap mux_size='2' sc_levr='1.4363E+00'/>
-				<input_cap mux_size='6' sc_levr='1.8305E+00'/>
-				<input_cap mux_size='10' sc_levr='2.1749E+00'/>
-				<input_cap mux_size='14' sc_levr='2.6661E+00'/>
-				<input_cap mux_size='18' sc_levr='2.9441E+00'/>
-				<input_cap mux_size='22' sc_levr='3.3756E+00'/>
-				<input_cap mux_size='26' sc_levr='3.7662E+00'/>
-				<input_cap mux_size='30' sc_levr='4.1732E+00'/>
-				<input_cap mux_size='34' sc_levr='4.4991E+00'/>
+				<input_cap mux_size='1' sc_levr='1.3056E+00'/>
+				<input_cap mux_size='5' sc_levr='1.7359E+00'/>
+				<input_cap mux_size='9' sc_levr='2.1128E+00'/>
+				<input_cap mux_size='13' sc_levr='2.5428E+00'/>
+				<input_cap mux_size='17' sc_levr='2.8604E+00'/>
+				<input_cap mux_size='21' sc_levr='3.2981E+00'/>
+				<input_cap mux_size='25' sc_levr='3.6802E+00'/>
+				<input_cap mux_size='29' sc_levr='4.0376E+00'/>
+				<input_cap mux_size='33' sc_levr='4.3917E+00'/>
 			</strength>
 			<strength gain='6' sc_nolevr='4.8039E-01'>
-				<input_cap mux_size='2' sc_levr='1.5193E+00'/>
-				<input_cap mux_size='6' sc_levr='1.9447E+00'/>
-				<input_cap mux_size='10' sc_levr='2.2908E+00'/>
-				<input_cap mux_size='14' sc_levr='2.6904E+00'/>
-				<input_cap mux_size='18' sc_levr='2.9895E+00'/>
-				<input_cap mux_size='22' sc_levr='3.4655E+00'/>
-				<input_cap mux_size='26' sc_levr='3.8204E+00'/>
-				<input_cap mux_size='30' sc_levr='4.1275E+00'/>
-				<input_cap mux_size='34' sc_levr='4.4703E+00'/>
+				<input_cap mux_size='1' sc_levr='1.4083E+00'/>
+				<input_cap mux_size='5' sc_levr='1.8075E+00'/>
+				<input_cap mux_size='9' sc_levr='2.1771E+00'/>
+				<input_cap mux_size='13' sc_levr='2.6222E+00'/>
+				<input_cap mux_size='17' sc_levr='2.9387E+00'/>
+				<input_cap mux_size='21' sc_levr='3.3323E+00'/>
+				<input_cap mux_size='25' sc_levr='3.7391E+00'/>
+				<input_cap mux_size='29' sc_levr='4.0531E+00'/>
+				<input_cap mux_size='33' sc_levr='4.3701E+00'/>
 			</strength>
 		</stages>
 		<stages num_stages='3'>
 			<strength gain='1' sc_nolevr='1.0132E+00'>
-				<input_cap mux_size='2' sc_levr='1.4015E+00'/>
-				<input_cap mux_size='6' sc_levr='1.7934E+00'/>
-				<input_cap mux_size='10' sc_levr='2.1627E+00'/>
-				<input_cap mux_size='14' sc_levr='2.6548E+00'/>
-				<input_cap mux_size='18' sc_levr='3.0463E+00'/>
-				<input_cap mux_size='22' sc_levr='3.4763E+00'/>
-				<input_cap mux_size='26' sc_levr='3.9392E+00'/>
-				<input_cap mux_size='30' sc_levr='4.4118E+00'/>
-				<input_cap mux_size='34' sc_levr='4.9349E+00'/>
+				<input_cap mux_size='1' sc_levr='1.3042E+00'/>
+				<input_cap mux_size='5' sc_levr='1.6754E+00'/>
+				<input_cap mux_size='9' sc_levr='2.1050E+00'/>
+				<input_cap mux_size='13' sc_levr='2.5294E+00'/>
+				<input_cap mux_size='17' sc_levr='2.9589E+00'/>
+				<input_cap mux_size='21' sc_levr='3.3780E+00'/>
+				<input_cap mux_size='25' sc_levr='3.8091E+00'/>
+				<input_cap mux_size='29' sc_levr='4.3023E+00'/>
+				<input_cap mux_size='33' sc_levr='4.7838E+00'/>
 			</strength>
 			<strength gain='2' sc_nolevr='4.1760E-01'>
-				<input_cap mux_size='2' sc_levr='6.9534E-01'/>
-				<input_cap mux_size='6' sc_levr='9.3970E-01'/>
-				<input_cap mux_size='10' sc_levr='1.0910E+00'/>
-				<input_cap mux_size='14' sc_levr='1.3304E+00'/>
-				<input_cap mux_size='18' sc_levr='1.5683E+00'/>
-				<input_cap mux_size='22' sc_levr='1.6978E+00'/>
-				<input_cap mux_size='26' sc_levr='1.9314E+00'/>
-				<input_cap mux_size='30' sc_levr='2.1397E+00'/>
-				<input_cap mux_size='34' sc_levr='2.3420E+00'/>
+				<input_cap mux_size='1' sc_levr='6.9050E-01'/>
+				<input_cap mux_size='5' sc_levr='8.5875E-01'/>
+				<input_cap mux_size='9' sc_levr='1.0252E+00'/>
+				<input_cap mux_size='13' sc_levr='1.2778E+00'/>
+				<input_cap mux_size='17' sc_levr='1.4368E+00'/>
+				<input_cap mux_size='21' sc_levr='1.6804E+00'/>
+				<input_cap mux_size='25' sc_levr='1.8975E+00'/>
+				<input_cap mux_size='29' sc_levr='2.1048E+00'/>
+				<input_cap mux_size='33' sc_levr='2.3001E+00'/>
 			</strength>
 			<strength gain='3' sc_nolevr='3.2183E-01'>
-				<input_cap mux_size='2' sc_levr='5.5829E-01'/>
-				<input_cap mux_size='6' sc_levr='6.9061E-01'/>
-				<input_cap mux_size='10' sc_levr='8.2405E-01'/>
-				<input_cap mux_size='14' sc_levr='9.2654E-01'/>
-				<input_cap mux_size='18' sc_levr='1.1204E+00'/>
-				<input_cap mux_size='22' sc_levr='1.2319E+00'/>
-				<input_cap mux_size='26' sc_levr='1.3903E+00'/>
-				<input_cap mux_size='30' sc_levr='1.5161E+00'/>
-				<input_cap mux_size='34' sc_levr='1.6839E+00'/>
+				<input_cap mux_size='1' sc_levr='4.7996E-01'/>
+				<input_cap mux_size='5' sc_levr='6.3131E-01'/>
+				<input_cap mux_size='9' sc_levr='8.2659E-01'/>
+				<input_cap mux_size='13' sc_levr='8.8430E-01'/>
+				<input_cap mux_size='17' sc_levr='1.0854E+00'/>
+				<input_cap mux_size='21' sc_levr='1.1867E+00'/>
+				<input_cap mux_size='25' sc_levr='1.4069E+00'/>
+				<input_cap mux_size='29' sc_levr='1.4978E+00'/>
+				<input_cap mux_size='33' sc_levr='1.6234E+00'/>
 			</strength>
 			<strength gain='4' sc_nolevr='2.6518E-01'>
-				<input_cap mux_size='2' sc_levr='5.2238E-01'/>
-				<input_cap mux_size='6' sc_levr='6.8078E-01'/>
-				<input_cap mux_size='10' sc_levr='7.0909E-01'/>
-				<input_cap mux_size='14' sc_levr='8.9292E-01'/>
-				<input_cap mux_size='18' sc_levr='9.6081E-01'/>
-				<input_cap mux_size='22' sc_levr='1.1544E+00'/>
-				<input_cap mux_size='26' sc_levr='1.2287E+00'/>
-				<input_cap mux_size='30' sc_levr='1.3593E+00'/>
-				<input_cap mux_size='34' sc_levr='1.5024E+00'/>
+				<input_cap mux_size='1' sc_levr='5.0482E-01'/>
+				<input_cap mux_size='5' sc_levr='5.6647E-01'/>
+				<input_cap mux_size='9' sc_levr='7.1543E-01'/>
+				<input_cap mux_size='13' sc_levr='8.5792E-01'/>
+				<input_cap mux_size='17' sc_levr='9.5414E-01'/>
+				<input_cap mux_size='21' sc_levr='1.0781E+00'/>
+				<input_cap mux_size='25' sc_levr='1.1913E+00'/>
+				<input_cap mux_size='29' sc_levr='1.3140E+00'/>
+				<input_cap mux_size='33' sc_levr='1.4260E+00'/>
 			</strength>
 			<strength gain='5' sc_nolevr='2.9680E-01'>
-				<input_cap mux_size='2' sc_levr='4.7868E-01'/>
-				<input_cap mux_size='6' sc_levr='6.3352E-01'/>
-				<input_cap mux_size='10' sc_levr='7.9017E-01'/>
-				<input_cap mux_size='14' sc_levr='8.5350E-01'/>
-				<input_cap mux_size='18' sc_levr='9.6081E-01'/>
-				<input_cap mux_size='22' sc_levr='1.0800E+00'/>
-				<input_cap mux_size='26' sc_levr='1.1921E+00'/>
-				<input_cap mux_size='30' sc_levr='1.2839E+00'/>
-				<input_cap mux_size='34' sc_levr='1.3711E+00'/>
+				<input_cap mux_size='1' sc_levr='4.9382E-01'/>
+				<input_cap mux_size='5' sc_levr='7.0913E-01'/>
+				<input_cap mux_size='9' sc_levr='7.2736E-01'/>
+				<input_cap mux_size='13' sc_levr='8.4977E-01'/>
+				<input_cap mux_size='17' sc_levr='9.0584E-01'/>
+				<input_cap mux_size='21' sc_levr='1.1110E+00'/>
+				<input_cap mux_size='25' sc_levr='1.1678E+00'/>
+				<input_cap mux_size='29' sc_levr='1.2596E+00'/>
+				<input_cap mux_size='33' sc_levr='1.3450E+00'/>
 			</strength>
 			<strength gain='6' sc_nolevr='3.3339E-01'>
-				<input_cap mux_size='2' sc_levr='5.2742E-01'/>
-				<input_cap mux_size='6' sc_levr='6.6639E-01'/>
-				<input_cap mux_size='10' sc_levr='8.0198E-01'/>
-				<input_cap mux_size='14' sc_levr='9.0492E-01'/>
-				<input_cap mux_size='18' sc_levr='1.0291E+00'/>
-				<input_cap mux_size='22' sc_levr='1.0870E+00'/>
-				<input_cap mux_size='26' sc_levr='1.2086E+00'/>
-				<input_cap mux_size='30' sc_levr='1.3224E+00'/>
-				<input_cap mux_size='34' sc_levr='1.3231E+00'/>
+				<input_cap mux_size='1' sc_levr='4.8313E-01'/>
+				<input_cap mux_size='5' sc_levr='6.3847E-01'/>
+				<input_cap mux_size='9' sc_levr='7.8385E-01'/>
+				<input_cap mux_size='13' sc_levr='9.0356E-01'/>
+				<input_cap mux_size='17' sc_levr='1.0139E+00'/>
+				<input_cap mux_size='21' sc_levr='1.0903E+00'/>
+				<input_cap mux_size='25' sc_levr='1.1882E+00'/>
+				<input_cap mux_size='29' sc_levr='1.2935E+00'/>
+				<input_cap mux_size='33' sc_levr='1.3191E+00'/>
 			</strength>
 		</stages>
 		<stages num_stages='4'>
 			<strength gain='1' sc_nolevr='9.7001E-01'>
-				<input_cap mux_size='2' sc_levr='1.2472E+00'/>
-				<input_cap mux_size='6' sc_levr='1.5289E+00'/>
-				<input_cap mux_size='10' sc_levr='1.8099E+00'/>
-				<input_cap mux_size='14' sc_levr='2.1704E+00'/>
-				<input_cap mux_size='18' sc_levr='2.4440E+00'/>
-				<input_cap mux_size='22' sc_levr='2.7704E+00'/>
-				<input_cap mux_size='26' sc_levr='3.0952E+00'/>
-				<input_cap mux_size='30' sc_levr='3.4014E+00'/>
-				<input_cap mux_size='34' sc_levr='3.7164E+00'/>
+				<input_cap mux_size='1' sc_levr='1.1579E+00'/>
+				<input_cap mux_size='5' sc_levr='1.4510E+00'/>
+				<input_cap mux_size='9' sc_levr='1.7438E+00'/>
+				<input_cap mux_size='13' sc_levr='2.0683E+00'/>
+				<input_cap mux_size='17' sc_levr='2.3741E+00'/>
+				<input_cap mux_size='21' sc_levr='2.6809E+00'/>
+				<input_cap mux_size='25' sc_levr='2.9998E+00'/>
+				<input_cap mux_size='29' sc_levr='3.3074E+00'/>
+				<input_cap mux_size='33' sc_levr='3.6405E+00'/>
 			</strength>
 			<strength gain='2' sc_nolevr='2.8831E-01'>
-				<input_cap mux_size='2' sc_levr='4.1834E-01'/>
-				<input_cap mux_size='6' sc_levr='5.1012E-01'/>
-				<input_cap mux_size='10' sc_levr='5.7175E-01'/>
-				<input_cap mux_size='14' sc_levr='6.7652E-01'/>
-				<input_cap mux_size='18' sc_levr='7.8066E-01'/>
-				<input_cap mux_size='22' sc_levr='8.3440E-01'/>
-				<input_cap mux_size='26' sc_levr='9.3913E-01'/>
-				<input_cap mux_size='30' sc_levr='1.0520E+00'/>
-				<input_cap mux_size='34' sc_levr='1.1472E+00'/>
+				<input_cap mux_size='1' sc_levr='3.9401E-01'/>
+				<input_cap mux_size='5' sc_levr='4.7567E-01'/>
+				<input_cap mux_size='9' sc_levr='5.7136E-01'/>
+				<input_cap mux_size='13' sc_levr='6.5887E-01'/>
+				<input_cap mux_size='17' sc_levr='7.1855E-01'/>
+				<input_cap mux_size='21' sc_levr='8.3190E-01'/>
+				<input_cap mux_size='25' sc_levr='9.0826E-01'/>
+				<input_cap mux_size='29' sc_levr='1.0245E+00'/>
+				<input_cap mux_size='33' sc_levr='1.1286E+00'/>
 			</strength>
 			<strength gain='3' sc_nolevr='2.0613E-01'>
-				<input_cap mux_size='2' sc_levr='2.6485E-01'/>
-				<input_cap mux_size='6' sc_levr='2.9977E-01'/>
-				<input_cap mux_size='10' sc_levr='3.2606E-01'/>
-				<input_cap mux_size='14' sc_levr='3.7930E-01'/>
-				<input_cap mux_size='18' sc_levr='4.2411E-01'/>
-				<input_cap mux_size='22' sc_levr='4.8338E-01'/>
-				<input_cap mux_size='26' sc_levr='5.5989E-01'/>
-				<input_cap mux_size='30' sc_levr='5.8877E-01'/>
-				<input_cap mux_size='34' sc_levr='6.2593E-01'/>
+				<input_cap mux_size='1' sc_levr='2.4576E-01'/>
+				<input_cap mux_size='5' sc_levr='2.7246E-01'/>
+				<input_cap mux_size='9' sc_levr='3.4582E-01'/>
+				<input_cap mux_size='13' sc_levr='3.7665E-01'/>
+				<input_cap mux_size='17' sc_levr='4.2025E-01'/>
+				<input_cap mux_size='21' sc_levr='4.6795E-01'/>
+				<input_cap mux_size='25' sc_levr='5.6106E-01'/>
+				<input_cap mux_size='29' sc_levr='5.5457E-01'/>
+				<input_cap mux_size='33' sc_levr='6.0747E-01'/>
 			</strength>
 			<strength gain='4' sc_nolevr='1.7935E-01'>
-				<input_cap mux_size='2' sc_levr='2.4116E-01'/>
-				<input_cap mux_size='6' sc_levr='2.9538E-01'/>
-				<input_cap mux_size='10' sc_levr='3.0158E-01'/>
-				<input_cap mux_size='14' sc_levr='3.3222E-01'/>
-				<input_cap mux_size='18' sc_levr='3.6895E-01'/>
-				<input_cap mux_size='22' sc_levr='4.2035E-01'/>
-				<input_cap mux_size='26' sc_levr='4.6750E-01'/>
-				<input_cap mux_size='30' sc_levr='5.0475E-01'/>
-				<input_cap mux_size='34' sc_levr='5.2522E-01'/>
+				<input_cap mux_size='1' sc_levr='2.5543E-01'/>
+				<input_cap mux_size='5' sc_levr='2.4831E-01'/>
+				<input_cap mux_size='9' sc_levr='2.9909E-01'/>
+				<input_cap mux_size='13' sc_levr='3.4012E-01'/>
+				<input_cap mux_size='17' sc_levr='3.6268E-01'/>
+				<input_cap mux_size='21' sc_levr='4.3080E-01'/>
+				<input_cap mux_size='25' sc_levr='4.1964E-01'/>
+				<input_cap mux_size='29' sc_levr='4.9583E-01'/>
+				<input_cap mux_size='33' sc_levr='5.3125E-01'/>
 			</strength>
 			<strength gain='5' sc_nolevr='2.4042E-01'>
-				<input_cap mux_size='2' sc_levr='2.4002E-01'/>
-				<input_cap mux_size='6' sc_levr='3.0372E-01'/>
-				<input_cap mux_size='10' sc_levr='3.7609E-01'/>
-				<input_cap mux_size='14' sc_levr='3.6219E-01'/>
-				<input_cap mux_size='18' sc_levr='4.3566E-01'/>
-				<input_cap mux_size='22' sc_levr='4.0242E-01'/>
-				<input_cap mux_size='26' sc_levr='4.8115E-01'/>
-				<input_cap mux_size='30' sc_levr='4.9443E-01'/>
-				<input_cap mux_size='34' sc_levr='5.4386E-01'/>
+				<input_cap mux_size='1' sc_levr='2.3703E-01'/>
+				<input_cap mux_size='5' sc_levr='2.6581E-01'/>
+				<input_cap mux_size='9' sc_levr='3.0729E-01'/>
+				<input_cap mux_size='13' sc_levr='3.7673E-01'/>
+				<input_cap mux_size='17' sc_levr='4.1052E-01'/>
+				<input_cap mux_size='21' sc_levr='3.8226E-01'/>
+				<input_cap mux_size='25' sc_levr='4.6315E-01'/>
+				<input_cap mux_size='29' sc_levr='5.1234E-01'/>
+				<input_cap mux_size='33' sc_levr='5.3643E-01'/>
 			</strength>
 			<strength gain='6' sc_nolevr='2.9130E-01'>
-				<input_cap mux_size='2' sc_levr='3.6517E-01'/>
-				<input_cap mux_size='6' sc_levr='3.8457E-01'/>
-				<input_cap mux_size='10' sc_levr='3.7948E-01'/>
-				<input_cap mux_size='14' sc_levr='4.3209E-01'/>
-				<input_cap mux_size='18' sc_levr='4.4843E-01'/>
-				<input_cap mux_size='22' sc_levr='4.9630E-01'/>
-				<input_cap mux_size='26' sc_levr='5.0030E-01'/>
-				<input_cap mux_size='30' sc_levr='4.5246E-01'/>
-				<input_cap mux_size='34' sc_levr='5.0976E-01'/>
+				<input_cap mux_size='1' sc_levr='3.3247E-01'/>
+				<input_cap mux_size='5' sc_levr='3.7427E-01'/>
+				<input_cap mux_size='9' sc_levr='3.3590E-01'/>
+				<input_cap mux_size='13' sc_levr='4.1921E-01'/>
+				<input_cap mux_size='17' sc_levr='3.9007E-01'/>
+				<input_cap mux_size='21' sc_levr='4.4598E-01'/>
+				<input_cap mux_size='25' sc_levr='5.1764E-01'/>
+				<input_cap mux_size='29' sc_levr='4.6123E-01'/>
+				<input_cap mux_size='33' sc_levr='4.9822E-01'/>
 			</strength>
 		</stages>
 		<stages num_stages='5'>
 			<strength gain='1' sc_nolevr='9.3215E-01'>
-				<input_cap mux_size='2' sc_levr='1.1571E+00'/>
-				<input_cap mux_size='6' sc_levr='1.3931E+00'/>
-				<input_cap mux_size='10' sc_levr='1.6067E+00'/>
-				<input_cap mux_size='14' sc_levr='1.8885E+00'/>
-				<input_cap mux_size='18' sc_levr='2.1082E+00'/>
-				<input_cap mux_size='22' sc_levr='2.3493E+00'/>
-				<input_cap mux_size='26' sc_levr='2.6136E+00'/>
-				<input_cap mux_size='30' sc_levr='2.8381E+00'/>
-				<input_cap mux_size='34' sc_levr='3.0875E+00'/>
+				<input_cap mux_size='1' sc_levr='1.1131E+00'/>
+				<input_cap mux_size='5' sc_levr='1.3236E+00'/>
+				<input_cap mux_size='9' sc_levr='1.5510E+00'/>
+				<input_cap mux_size='13' sc_levr='1.8228E+00'/>
+				<input_cap mux_size='17' sc_levr='2.0561E+00'/>
+				<input_cap mux_size='21' sc_levr='2.3025E+00'/>
+				<input_cap mux_size='25' sc_levr='2.5447E+00'/>
+				<input_cap mux_size='29' sc_levr='2.7829E+00'/>
+				<input_cap mux_size='33' sc_levr='3.0251E+00'/>
 			</strength>
 			<strength gain='2' sc_nolevr='2.1670E-01'>
-				<input_cap mux_size='2' sc_levr='2.7628E-01'/>
-				<input_cap mux_size='6' sc_levr='3.2276E-01'/>
-				<input_cap mux_size='10' sc_levr='3.4876E-01'/>
-				<input_cap mux_size='14' sc_levr='4.0205E-01'/>
-				<input_cap mux_size='18' sc_levr='4.4034E-01'/>
-				<input_cap mux_size='22' sc_levr='4.8458E-01'/>
-				<input_cap mux_size='26' sc_levr='5.2126E-01'/>
-				<input_cap mux_size='30' sc_levr='5.7556E-01'/>
-				<input_cap mux_size='34' sc_levr='6.0102E-01'/>
+				<input_cap mux_size='1' sc_levr='2.6429E-01'/>
+				<input_cap mux_size='5' sc_levr='3.1007E-01'/>
+				<input_cap mux_size='9' sc_levr='3.4062E-01'/>
+				<input_cap mux_size='13' sc_levr='3.8648E-01'/>
+				<input_cap mux_size='17' sc_levr='4.2252E-01'/>
+				<input_cap mux_size='21' sc_levr='4.7820E-01'/>
+				<input_cap mux_size='25' sc_levr='5.1190E-01'/>
+				<input_cap mux_size='29' sc_levr='5.5428E-01'/>
+				<input_cap mux_size='33' sc_levr='5.9292E-01'/>
 			</strength>
 			<strength gain='3' sc_nolevr='1.5811E-01'>
-				<input_cap mux_size='2' sc_levr='1.7265E-01'/>
-				<input_cap mux_size='6' sc_levr='1.8694E-01'/>
-				<input_cap mux_size='10' sc_levr='1.8773E-01'/>
-				<input_cap mux_size='14' sc_levr='2.0122E-01'/>
-				<input_cap mux_size='18' sc_levr='2.1495E-01'/>
-				<input_cap mux_size='22' sc_levr='2.3186E-01'/>
-				<input_cap mux_size='26' sc_levr='2.7743E-01'/>
-				<input_cap mux_size='30' sc_levr='2.7325E-01'/>
-				<input_cap mux_size='34' sc_levr='2.8955E-01'/>
+				<input_cap mux_size='1' sc_levr='1.6535E-01'/>
+				<input_cap mux_size='5' sc_levr='1.7888E-01'/>
+				<input_cap mux_size='9' sc_levr='2.0644E-01'/>
+				<input_cap mux_size='13' sc_levr='2.0119E-01'/>
+				<input_cap mux_size='17' sc_levr='2.2528E-01'/>
+				<input_cap mux_size='21' sc_levr='2.3558E-01'/>
+				<input_cap mux_size='25' sc_levr='2.7384E-01'/>
+				<input_cap mux_size='29' sc_levr='2.7113E-01'/>
+				<input_cap mux_size='33' sc_levr='2.7905E-01'/>
 			</strength>
 			<strength gain='4' sc_nolevr='2.1926E-01'>
-				<input_cap mux_size='2' sc_levr='1.9571E-01'/>
-				<input_cap mux_size='6' sc_levr='2.0882E-01'/>
-				<input_cap mux_size='10' sc_levr='2.1070E-01'/>
-				<input_cap mux_size='14' sc_levr='2.1522E-01'/>
-				<input_cap mux_size='18' sc_levr='2.7506E-01'/>
-				<input_cap mux_size='22' sc_levr='2.4878E-01'/>
-				<input_cap mux_size='26' sc_levr='2.8449E-01'/>
-				<input_cap mux_size='30' sc_levr='2.9086E-01'/>
-				<input_cap mux_size='34' sc_levr='2.8839E-01'/>
+				<input_cap mux_size='1' sc_levr='2.1263E-01'/>
+				<input_cap mux_size='5' sc_levr='2.0161E-01'/>
+				<input_cap mux_size='9' sc_levr='2.1851E-01'/>
+				<input_cap mux_size='13' sc_levr='2.1932E-01'/>
+				<input_cap mux_size='17' sc_levr='2.6504E-01'/>
+				<input_cap mux_size='21' sc_levr='2.6441E-01'/>
+				<input_cap mux_size='25' sc_levr='2.8510E-01'/>
+				<input_cap mux_size='29' sc_levr='2.8899E-01'/>
+				<input_cap mux_size='33' sc_levr='2.7958E-01'/>
 			</strength>
 			<strength gain='5' sc_nolevr='8.1584E-01'>
-				<input_cap mux_size='2' sc_levr='7.8747E-01'/>
-				<input_cap mux_size='6' sc_levr='8.0792E-01'/>
-				<input_cap mux_size='10' sc_levr='7.7226E-01'/>
-				<input_cap mux_size='14' sc_levr='7.9937E-01'/>
-				<input_cap mux_size='18' sc_levr='7.8635E-01'/>
-				<input_cap mux_size='22' sc_levr='8.0842E-01'/>
-				<input_cap mux_size='26' sc_levr='7.7157E-01'/>
-				<input_cap mux_size='30' sc_levr='7.7869E-01'/>
-				<input_cap mux_size='34' sc_levr='7.8090E-01'/>
+				<input_cap mux_size='1' sc_levr='8.0633E-01'/>
+				<input_cap mux_size='5' sc_levr='7.8868E-01'/>
+				<input_cap mux_size='9' sc_levr='8.0556E-01'/>
+				<input_cap mux_size='13' sc_levr='8.1161E-01'/>
+				<input_cap mux_size='17' sc_levr='7.9338E-01'/>
+				<input_cap mux_size='21' sc_levr='8.1649E-01'/>
+				<input_cap mux_size='25' sc_levr='7.7789E-01'/>
+				<input_cap mux_size='29' sc_levr='7.7794E-01'/>
+				<input_cap mux_size='33' sc_levr='7.8037E-01'/>
 			</strength>
 			<strength gain='6' sc_nolevr='4.8207E+00'>
-				<input_cap mux_size='2' sc_levr='4.7438E+00'/>
-				<input_cap mux_size='6' sc_levr='4.7211E+00'/>
-				<input_cap mux_size='10' sc_levr='4.7180E+00'/>
-				<input_cap mux_size='14' sc_levr='4.6798E+00'/>
-				<input_cap mux_size='18' sc_levr='4.6596E+00'/>
-				<input_cap mux_size='22' sc_levr='4.6728E+00'/>
-				<input_cap mux_size='26' sc_levr='4.6322E+00'/>
-				<input_cap mux_size='30' sc_levr='4.5968E+00'/>
-				<input_cap mux_size='34' sc_levr='4.5546E+00'/>
+				<input_cap mux_size='1' sc_levr='4.7687E+00'/>
+				<input_cap mux_size='5' sc_levr='4.7548E+00'/>
+				<input_cap mux_size='9' sc_levr='4.6991E+00'/>
+				<input_cap mux_size='13' sc_levr='4.7107E+00'/>
+				<input_cap mux_size='17' sc_levr='4.6446E+00'/>
+				<input_cap mux_size='21' sc_levr='4.6953E+00'/>
+				<input_cap mux_size='25' sc_levr='4.6731E+00'/>
+				<input_cap mux_size='29' sc_levr='4.6511E+00'/>
+				<input_cap mux_size='33' sc_levr='4.5760E+00'/>
 			</strength>
 		</stages>
 	</buffer_sc>
