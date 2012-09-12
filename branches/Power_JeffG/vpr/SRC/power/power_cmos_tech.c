@@ -444,7 +444,7 @@ void power_find_buffer_sc_levr(t_power_buffer_sc_levr_inf ** lower,
 	char msg[1024];
 	int max_size;
 
-	assert(input_mux_size >= 2);
+	assert(input_mux_size >= 1);
 
 	key.mux_size = input_mux_size;
 
