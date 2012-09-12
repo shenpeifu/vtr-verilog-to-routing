@@ -110,8 +110,8 @@ static void process_buffer_sc(ezxml_t parent) {
 	int num_buffer_sizes;
 
 	num_buffer_sizes = CountChildren(parent, "stages", 1);
-	g_power_tech->max_buffer_size = num_buffer_sizes + 1; /* buffer size starts at 1, not 0 */
-	g_power_tech->buffer_size_inf = my_calloc(num_buffer_sizes,
+	g_power_tech->max_buffer_size = num_buffer_sizes; /* buffer size starts at 1, not 0 */
+	g_power_tech->buffer_size_inf = my_calloc(g_power_tech->max_buffer_size+1,
 			sizeof(t_power_buffer_size_inf));
 
 	child = FindFirstElement(parent, "stages", TRUE);

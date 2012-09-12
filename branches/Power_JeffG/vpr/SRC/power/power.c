@@ -1554,7 +1554,6 @@ void power_print_stats(FILE * fp) {
 e_power_ret_code power_total(void) {
 	t_power_usage total_power;
 	t_power_usage sub_power_usage;
-	t_power_usage * cb_power_usage;
 
 	total_power.dynamic = 0.;
 	total_power.leakage = 0.;
@@ -1584,7 +1583,7 @@ e_power_ret_code power_total(void) {
 		power_component_add_usage(&sub_power_usage, POWER_COMPONENT_CLOCK);
 
 		/* Complex Blocks */
-		power_calc_tile_usage(cb_power_usage);
+		power_calc_tile_usage(&clb_power_usage);
 		power_add_usage(&total_power, &clb_power_usage);
 		power_component_add_usage(&clb_power_usage, POWER_COMPONENT_CLB);
 
