@@ -5,7 +5,7 @@
 #include "power.h"
 
 /************************* DEFINES **********************************/
-#define PRINT_SPICE_COMPARISON 1
+#define PRINT_SPICE_COMPARISON 0
 
 /************************* FUNCTION DECLARATIONS ********************/
 void power_print_spice_comparison(void);
