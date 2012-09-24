@@ -673,12 +673,15 @@ else:
     # Fracturable LUT
     arches.append([6, 10, 33, 6, 1, 1, 4, 45])
     arches.append([6, 10, 33, 6, 1, 2, 4, 45])
-    arches.append([6, 10, 39, 7, 0, 1, 4, 45])
     arches.append([6, 10, 39, 7, 1, 1, 4, 45])
     arches.append([6, 10, 39, 7, 1, 2, 4, 45])
-    arches.append([6, 10, 44, 8, 0, 1, 4, 45])
     arches.append([6, 10, 44, 8, 1, 1, 4, 45])
     arches.append([6, 10, 44, 8, 1, 2, 4, 45])
+    
+    arches.append([6, 10, 33, 7, 1, 1, 4, 45])
+    arches.append([6, 10, 33, 7, 1, 2, 4, 45])
+    arches.append([6, 10, 33, 8, 1, 1, 4, 45])
+    arches.append([6, 10, 33, 8, 1, 2, 4, 45])
     
     #Segment Variation
     arches.append([6, 10, 33, 6, 0, 1, 1, 45])

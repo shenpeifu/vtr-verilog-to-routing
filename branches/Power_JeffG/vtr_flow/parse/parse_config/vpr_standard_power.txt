@@ -14,22 +14,22 @@ num_outputs;vpr.out;Netlist output pins:\s*(\d+)
 unabsorb_ff;vpr.out;(\d+) FFs in input netlist not absorbable
 num_memories;vpr.out;Netlist memory blocks:\s*(\d+)
 num_mult;vpr.out;Netlist mult_36 blocks:\s*(\d+)
-total_power;*.power;<Total.*?P="(.*?)"
-routing_power_perc;*.power;<Routing.*?P_total="(.*?)"
-clock_power_perc;*.power;<Clock.*?P_total="(.*?)"
-tile_power_perc;*.power;<Tiles.*?P_total="(.*?)"
-power_dyn_perc;*.power;<Total.*?P_dyn="(.*?)"
+total_power;*.power;^Total\s+(.*?)\s+
+routing_power_perc;*.power;^\s+Routing\s+\S+\s+(.*?)\s+
+clock_power_perc;*.power;^\s+Clock\s+\S+\s+(.*?)\s+
+tile_power_perc;*.power;^\s+CLBs\s+\S+\s+(.*?)\s+
+power_dyn_perc;*.power;^Total\s+\S+\s+\S+\s+\S+\s+(.*?)\s+
 clb_array_size;vpr.out;The circuit will be mapped into a (\d+) x \d+ array of clbs.
 chan_width;vpr.crit_path.out;--route_chan_width (\d+)
-sb_power_perc;*.power;<Switchbox.*?P_total="(.*?)"
-cb_power_perc;*.power;<Connectionbox.*?P_total="(.*?)"
-glb_wire_power_perc;*.power;<GlobalWires.*?P_total="(.*?)"
-clkbuffer_power_perc;*.power;<ClockBuffer.*?P_total="(.*?)"
-clkwire_power_perc;*.power;<ClockWire.*?P_total="(.*?)"
-interc_power_perc;*.power;<Interc.*?P_total="(.*?)"
-local_wire_power_perc;*.power;<LocalWire.*?P_total="(.*?)"
-ff_power_perc;*.power;<FF.*?P_total="(.*?)"
-lut_power_perc;*.power;<LUT.*?P_total="(.*?)"
+sb_power_perc;*.power;^\s+Switchbox\s+\S+\s+\S+\s+(.*?)\s+
+cb_power_perc;*.power;^\s+Connectionbox\s+\S+\s+\S+\s+(.*?)\s+
+glb_wire_power_perc;*.power;^\s+GlobalWires\s+\S+\s+\S+\s+(.*?)\s+
+clkbuffer_power_perc;*.power;^\s+ClockBuffer\s+\S+\s+\S+\s+(.*?)\s+
+clkwire_power_perc;*.power;^\s+ClockWire\s+\S+\s+\S+\s+(.*?)\s+
+interc_power_perc;*.power;^\s+Interconnect\s+\S+\s+\S+\s+(.*?)\s+
+local_wire_power_perc;*.power;^\s+LocalWire\s+\S+\s+\S+\s+(.*?)\s+
+ff_power_perc;*.power;^\s+FF\s+\S+\s+\S+\s+(.*?)\s+
+lut_power_perc;*.power;^\s+LUT\s+\S+\s+\S+\s+(.*?)\s+
 route_dyn_perc;*.power;<Routing.*?P_dyn="(.*?)"
 tile_dyn_perc;*.power;<Tiles.*?P_dyn="(.*?)"
 clock_dyn_perc;*.power;<Clock.*?P_dyn="(.*?)"
