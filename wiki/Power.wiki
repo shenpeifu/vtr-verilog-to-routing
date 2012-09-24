@@ -1,0 +1,40 @@
+= VersaPower: Power Estimation for VTR =
+
+*`***`IMPORTANT: Currently the power estimation code resides in a branch, which is a few months old, and not up to date with the trunk.  Over the next month, this branch will be integrated into the trunk.`***`*
+
+==Download==
+
+The code can be downloaded from:
+svn/branches/Power_JeffG/
+
+
+== Source Code ==
+
+VersaPower source code is located here:
+  * vtr_flow/vpr/SRC/power/power.c
+  * vtr_flow/vpr/SRC/power/power.h
+
+==Compiling ==
+
+Compile Project:
+<code>
+`make`</code>
+
+==Run VTR flow with VersaPower==
+<code>vtr_flow/scripts/run_vtr_flow.pl <verilog> <architecture> -power -cmos_tech <tech_xml></code>
+
+Example:
+<code>
+vtr_flow/scripts/run_vtr_flow.pl vtr_flow/benchmarks/verilog/ch_intrinsics.v vtr_flow/arch/power/k6_N10_I33_Fi6_L4_frac1_ff2_45nm.xml -power -cmos_tech vtr_flow/tech/PTM_45nm/45nm.xml </code>
+
+==Output==
+
+Power information will be created in <code>temp/<circuit_name>.power</code>
+
+==Other Resources ==
+
+Additional Verilog Benchmarks:
+<code>vtr_flow/benchmarks/verilog</code>
+
+Additional Arch Files:
+<code>vtr_flow/arch/power/</code>
