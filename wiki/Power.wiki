@@ -1,4 +1,4 @@
-= VersaPower`:` Power Estimation for VTR =
+=VersaPower Power Estimation for VTR=
 
 *`***`IMPORTANT: Currently the power estimation code resides in a branch, which is a few months old, and not up to date with the trunk.  Over the next month, this branch will be integrated into the trunk.`***`*
 
