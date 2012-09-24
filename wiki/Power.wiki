@@ -5,7 +5,7 @@
 ==Download==
 
 The code can be downloaded from:
-svn/branches/Power_JeffG/
+<code>svn/branches/Power_JeffG/</code>
 
 
 == Source Code ==
