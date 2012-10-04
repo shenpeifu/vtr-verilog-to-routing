@@ -1,3 +1,25 @@
+/*********************************************************************
+ *  The following code is part of the power modelling feature of VTR.
+ *
+ * For support:
+ * http://code.google.com/p/vtr-verilog-to-routing/wiki/Power
+ *
+ * or email:
+ * vtr.power.estimation@gmail.com
+ *
+ * If you are using power estimation for your researach please cite:
+ *
+ * Jeffrey Goeders and Steven Wilton.  VersaPower: Power Estimation
+ * for Diverse FPGA Architectures.  In International Conference on
+ * Field Programmable Technology, 2012.
+ *
+ ********************************************************************/
+
+/**
+ * This file provides functions that calculate the power of low-level
+ * components (inverters, simple multiplexers, etc)
+ */
+
 #ifndef __POWER_LOW_LEVEL_H__
 #define __POWER_LOW_LEVEL_H__
 
@@ -17,8 +39,7 @@ void power_calc_inverter_with_input(t_power_usage * power_usage,
 void power_calc_inverter_irregular(t_power_usage * power_usage,
 		float * dyn_power_input, float in_density, float in_probability,
 		float PMOS_size, float NMOS_size);
-void power_calc_inverter_nogate(t_power_usage * power_usage, float in_density,
-		float in_probability, float PMOS_size, float NMOS_size);
+
 
 void power_calc_wire(t_power_usage * power_usage, float capacitance,
 		float density);
@@ -39,7 +60,7 @@ void power_calc_mux_singlelevel_dynamic(t_power_usage * power_usage,
 void power_calc_level_restorer(t_power_usage * power_usage,
 		float * dyn_power_in, float in_density, float in_probability);
 
-float power_calc_pb_dyn_from_c_internal(t_pb * pb,
+float power_calc_pb_switching_from_c_internal(t_pb * pb,
 		t_pb_graph_node * pb_graph_node);
 
 float power_calc_mux_v_out(int num_inputs, float transistor_size, float v_in,

@@ -1,3 +1,25 @@
+/*********************************************************************
+ *  The following code is part of the power modelling feature of VTR.
+ *
+ * For support:
+ * http://code.google.com/p/vtr-verilog-to-routing/wiki/Power
+ *
+ * or email:
+ * vtr.power.estimation@gmail.com
+ *
+ * If you are using power estimation for your researach please cite:
+ *
+ * Jeffrey Goeders and Steven Wilton.  VersaPower: Power Estimation
+ * for Diverse FPGA Architectures.  In International Conference on
+ * Field Programmable Technology, 2012.
+ *
+ ********************************************************************/
+
+/**
+ * This file provides functions that calculate the power of low-level
+ * components (inverters, simple multiplexers, etc)
+ */
+
 /************************* INCLUDES *********************************/
 #include <assert.h>
 
@@ -7,83 +29,126 @@
 #include "globals.h"
 
 /************************* FUNCTION DELCARATIONS ********************/
-static float power_calc_dynamic(float capacitance, float density);
-static float power_calc_dynamic_v(float capacitance, float density,
+static float power_calc_node_switching(float capacitance, float density);
+static float power_calc_node_switching_v(float capacitance, float density,
 		float voltage);
-static void power_calc_transistor_capacitance(float *C_drain, float *C_source,
-		float *C_gate, e_tx_type transistor_type, float size,
-		e_power_circuit_type circuit_type);
-static float power_calc_leakage_subthreshold(e_tx_type transistor_type,
+static void power_calc_transistor_capacitance(float *C_d, float *C_s,
+		float *C_g, e_tx_type transistor_type, float size);
+static float power_calc_leakage_st(e_tx_type transistor_type,
 		float size);
-static float power_calc_leakage_pass_transistor(float size, float v_ds);
+static float power_calc_leakage_st_pass_transistor(float size, float v_ds);
 static float power_calc_leakage_gate(e_tx_type transistor_type, float size);
+static float power_calc_buffer_sc_levr(
+		t_power_buffer_strength_inf * buffer_strength, int input_mux_size);
 
 /************************* FUNCTION DEFINITIONS *********************/
+
+/**
+ * Initializer function for this module, called by power_init
+ */
 void power_lowlevel_init() {
-	float C_drain, C_source, C_gate;
+	float C_d, C_s, C_g;
 
-	power_calc_transistor_capacitance(&C_drain, &C_source, &C_gate, NMOS, 1.0,
-			POWER_CIRCUIT_TYPE_CMOS);
-	g_power_commonly_used->NMOS_1X_C_drain_cmos = C_drain;
-	g_power_commonly_used->NMOS_1X_C_gate_cmos = C_gate;
-	g_power_commonly_used->NMOS_1X_C_source_cmos = C_source;
+	power_calc_transistor_capacitance(&C_d, &C_s, &C_g, NMOS, 1.0);
+	g_power_commonly_used->NMOS_1X_C_d = C_d;
+	g_power_commonly_used->NMOS_1X_C_g = C_g;
+	g_power_commonly_used->NMOS_1X_C_s = C_s;
 
-	power_calc_transistor_capacitance(&C_drain, &C_source, &C_gate, NMOS, 1.0,
-			POWER_CIRCUIT_TYPE_PASS);
-	g_power_commonly_used->NMOS_1X_C_drain_pass = C_drain;
-	g_power_commonly_used->NMOS_1X_C_gate_pass = C_gate;
-	g_power_commonly_used->NMOS_1X_C_source_pass = C_source;
+	power_calc_transistor_capacitance(&C_d, &C_s, &C_g, PMOS,
+			g_power_tech->PN_ratio);
+	g_power_commonly_used->PMOS_1X_C_d = C_d;
+	g_power_commonly_used->PMOS_1X_C_g = C_g;
+	g_power_commonly_used->PMOS_1X_C_s = C_s;
 
-	power_calc_transistor_capacitance(&C_drain, &C_source, &C_gate, NMOS,
-			g_power_tech->PN_ratio, POWER_CIRCUIT_TYPE_CMOS);
-	g_power_commonly_used->PMOS_1X_C_drain_cmos = C_drain;
-	g_power_commonly_used->PMOS_1X_C_gate_cmos = C_gate;
-	g_power_commonly_used->PMOS_1X_C_source_cmos = C_source;
+	g_power_commonly_used->NMOS_1X_st_leakage = power_calc_leakage_st(
+			NMOS, 1.0);
+	g_power_commonly_used->PMOS_1X_st_leakage = power_calc_leakage_st(
+			PMOS, 1.0 * g_power_tech->PN_ratio);
 
-	power_calc_transistor_capacitance(&C_drain, &C_source, &C_gate, NMOS,
-			g_power_tech->PN_ratio, POWER_CIRCUIT_TYPE_PASS);
-	g_power_commonly_used->PMOS_1X_C_drain_pass = C_drain;
-	g_power_commonly_used->PMOS_1X_C_gate_pass = C_gate;
-	g_power_commonly_used->PMOS_1X_C_source_pass = C_source;
+	g_power_commonly_used->INV_1X_C_in = g_power_commonly_used->NMOS_1X_C_g
+			+ g_power_commonly_used->PMOS_1X_C_g;
+	g_power_commonly_used->INV_1X_C = g_power_commonly_used->NMOS_1X_C_g
+			+ g_power_commonly_used->PMOS_1X_C_g
+			+ g_power_commonly_used->NMOS_1X_C_d
+			+ g_power_commonly_used->PMOS_1X_C_d;
 
-	g_power_commonly_used->NMOS_1X_leakage_cmos =
-			power_calc_leakage_subthreshold(NMOS, 1.0);
-	g_power_commonly_used->PMOS_1X_leakage_cmos =
-			power_calc_leakage_subthreshold(PMOS, 1.0 * g_power_tech->PN_ratio);
-
-	g_power_commonly_used->NMOS_2X_leakage_cmos =
-			power_calc_leakage_subthreshold(NMOS, 2.0);
-	g_power_commonly_used->PMOS_2X_leakage_cmos =
-			power_calc_leakage_subthreshold(PMOS, 2.0 * g_power_tech->PN_ratio);
-
-	g_power_commonly_used->INV_1X_C_in =
-			g_power_commonly_used->NMOS_1X_C_gate_cmos
-					+ g_power_commonly_used->PMOS_1X_C_gate_cmos;
-	g_power_commonly_used->INV_1X_C = g_power_commonly_used->NMOS_1X_C_gate_cmos
-			+ g_power_commonly_used->PMOS_1X_C_gate_cmos
-			+ g_power_commonly_used->NMOS_1X_C_drain_cmos
-			+ g_power_commonly_used->PMOS_1X_C_drain_cmos;
-
-	power_calc_transistor_capacitance(&C_drain, &C_source, &C_gate, NMOS, 2.0,
-			POWER_CIRCUIT_TYPE_CMOS);
-	g_power_commonly_used->INV_2X_C = C_gate + C_drain;
-	power_calc_transistor_capacitance(&C_drain, &C_source, &C_gate, PMOS,
-			2.0 * g_power_tech->PN_ratio, POWER_CIRCUIT_TYPE_CMOS);
-	g_power_commonly_used->INV_2X_C = C_gate + C_drain;
+	power_calc_transistor_capacitance(&C_d, &C_s, &C_g, NMOS, 2.0);
+	g_power_commonly_used->INV_2X_C = C_g + C_d;
+	power_calc_transistor_capacitance(&C_d, &C_s, &C_g, PMOS,
+			2.0 * g_power_tech->PN_ratio);
+	g_power_commonly_used->INV_2X_C += C_g + C_d;
 
 }
 
-static float power_calc_dynamic(float capacitance, float density) {
+/**
+ * Calculates the switching power of a node
+ * - capacitance: The capacitance of the nodoe
+ * - density: The transition density of the node
+ */
+static float power_calc_node_switching(float capacitance, float density) {
 	return 0.5 * g_power_tech->Vdd * g_power_tech->Vdd * capacitance * density
 			/ g_solution_inf->T_crit;
 }
 
-static float power_calc_dynamic_v(float capacitance, float density,
+/**
+ * Calculates the switching power of a node, with non-Vdd voltage
+ * - capacitance: The capacitance of the nodoe
+ * - density: The transition density of the node
+ * - voltage: The voltage when the node is charged
+ */
+static float power_calc_node_switching_v(float capacitance, float density,
 		float voltage) {
 	return 0.5 * voltage * g_power_tech->Vdd * capacitance * density
 			/ g_solution_inf->T_crit;
 }
 
+/**
+ * Calculates the power of an inverter
+ * - power_usage: (Return value) The power usage of the inverter
+ * - in_dens: The transition density of the input
+ * - in_prob: The signal probability of the input
+ * - size: The inverter size, relative to a min-size inverter
+ */
+void power_calc_inverter(t_power_usage * power_usage, float in_dens,
+		float in_prob, float size) {
+	float C_drain, C_gate, C_source;
+	float C_inv;
+
+	float PMOS_size = g_power_tech->PN_ratio * size;
+	float NMOS_size = size;
+
+	power_usage->dynamic = 0.;
+	power_usage->leakage = 0.;
+
+	C_inv = 0.;
+
+	power_calc_transistor_capacitance(&C_drain, &C_source, &C_gate, NMOS,
+			NMOS_size);
+	C_inv += C_gate + C_drain;
+
+	power_calc_transistor_capacitance(&C_drain, &C_source, &C_gate, PMOS,
+			PMOS_size);
+	C_inv += C_gate + C_drain;
+
+	power_usage->dynamic = power_calc_node_switching(C_inv, in_dens);
+
+	power_usage->leakage = in_prob
+			* power_calc_leakage_st(PMOS, PMOS_size)
+			+ (1 - in_prob) * power_calc_leakage_st(NMOS, NMOS_size);
+
+	power_usage->leakage += in_prob * power_calc_leakage_gate(NMOS, NMOS_size)
+			+ (1 - in_prob) * power_calc_leakage_gate(PMOS, PMOS_size);
+}
+
+/**
+ * Calculates the power of an inverter, with irregular P/N ratio
+ * - power_usage: (Return value) The power usage of the inverter
+ * - dy_power_input: (Return value) The dynamic power of the input node
+ * - in_dens: The transition density of the input
+ * - in_prob: The signal probability of the input
+ * - PMOS_size: (W/L) of the PMOS
+ * - NMOS_size: (W/L) of the NMOS
+ */
 void power_calc_inverter_irregular(t_power_usage * power_usage,
 		float * dyn_power_input, float in_density, float in_probability,
 		float PMOS_size, float NMOS_size) {
@@ -98,24 +163,32 @@ void power_calc_inverter_irregular(t_power_usage * power_usage,
 	C_in = 0.;
 
 	power_calc_transistor_capacitance(&C_drain, &C_source, &C_gate, NMOS,
-			NMOS_size, POWER_CIRCUIT_TYPE_CMOS);
+			NMOS_size);
 	C_inv += C_gate + C_drain;
 	C_in += C_gate;
 
 	power_calc_transistor_capacitance(&C_drain, &C_source, &C_gate, PMOS,
-			PMOS_size, POWER_CIRCUIT_TYPE_CMOS);
+			PMOS_size);
 	C_inv += C_gate + C_drain;
 	C_in += C_gate;
 
-	power_usage->dynamic = power_calc_dynamic(C_inv, in_density);
-	*dyn_power_input = power_calc_dynamic(C_in, in_density);
+	power_usage->dynamic = power_calc_node_switching(C_inv, in_density);
+	*dyn_power_input = power_calc_node_switching(C_in, in_density);
 
 	power_usage->leakage = in_probability
-			* power_calc_leakage_subthreshold(PMOS, PMOS_size)
+			* power_calc_leakage_st(PMOS, PMOS_size)
 			+ (1 - in_probability)
-					* power_calc_leakage_subthreshold(NMOS, NMOS_size);
+					* power_calc_leakage_st(NMOS, NMOS_size);
 }
 
+/**
+ * Calculates the power of an inverter, also returning dynamic power of the input
+ * - power_usage: (Return value) The power usage of the inverter
+ * - input_dynamic_power: (Return value) The dynamic power of the input node
+ * - in_dens: The transition density of the input
+ * - in_prob: The signal probability of the input
+ * - size: The inverter size, relative to a min-size inverter
+ */
 void power_calc_inverter_with_input(t_power_usage * power_usage,
 		float * input_dynamic_power, float in_density, float in_prob,
 		float size) {
@@ -133,111 +206,44 @@ void power_calc_inverter_with_input(t_power_usage * power_usage,
 	C_in = 0.;
 
 	power_calc_transistor_capacitance(&C_drain, &C_source, &C_gate, NMOS,
-			NMOS_size, POWER_CIRCUIT_TYPE_CMOS);
+			NMOS_size);
 	C_inv += C_gate + C_drain;
 	C_in += C_gate;
 
 	power_calc_transistor_capacitance(&C_drain, &C_source, &C_gate, PMOS,
-			PMOS_size, POWER_CIRCUIT_TYPE_CMOS);
+			PMOS_size);
 	C_inv += C_gate + C_drain;
 	C_in += C_gate;
 
-	power_usage->dynamic = power_calc_dynamic(C_inv, in_density);
-	*input_dynamic_power = power_calc_dynamic(C_in, in_density);
+	power_usage->dynamic = power_calc_node_switching(C_inv, in_density);
+	*input_dynamic_power = power_calc_node_switching(C_in, in_density);
 
 	power_usage->leakage = in_prob
-			* power_calc_leakage_subthreshold(PMOS, PMOS_size)
-			+ (1 - in_prob) * power_calc_leakage_subthreshold(NMOS, NMOS_size);
+			* power_calc_leakage_st(PMOS, PMOS_size)
+			+ (1 - in_prob) * power_calc_leakage_st(NMOS, NMOS_size);
 
 	power_usage->leakage += in_prob * power_calc_leakage_gate(NMOS, NMOS_size)
 			+ (1 - in_prob) * power_calc_leakage_gate(PMOS, PMOS_size);
 }
 
-void power_calc_inverter(t_power_usage * power_usage, float in_density,
-		float in_prob, float size) {
-	float C_drain, C_gate, C_source;
-	float C_inv;
-
-	float PMOS_size = g_power_tech->PN_ratio * size;
-	float NMOS_size = size;
-
-	power_usage->dynamic = 0.;
-	power_usage->leakage = 0.;
-
-	C_inv = 0.;
-
-	power_calc_transistor_capacitance(&C_drain, &C_source, &C_gate, NMOS,
-			NMOS_size, POWER_CIRCUIT_TYPE_CMOS);
-	C_inv += C_gate + C_drain;
-
-	power_calc_transistor_capacitance(&C_drain, &C_source, &C_gate, PMOS,
-			PMOS_size, POWER_CIRCUIT_TYPE_CMOS);
-	C_inv += C_gate + C_drain;
-
-	power_usage->dynamic = power_calc_dynamic(C_inv, in_density);
-
-	power_usage->leakage = in_prob
-			* power_calc_leakage_subthreshold(PMOS, PMOS_size)
-			+ (1 - in_prob) * power_calc_leakage_subthreshold(NMOS, NMOS_size);
-
-	power_usage->leakage += in_prob * power_calc_leakage_gate(NMOS, NMOS_size)
-			+ (1 - in_prob) * power_calc_leakage_gate(PMOS, PMOS_size);
-}
-
-void power_calc_inverter_nogate(t_power_usage * power_usage, float in_density,
-		float in_probability, float PMOS_size, float NMOS_size) {
-	float C_drain, C_gate, C_source;
-	float C_inv;
-
-	power_usage->dynamic = 0.;
-	power_usage->leakage = 0.;
-
-	C_inv = 0.;
-
-	power_calc_transistor_capacitance(&C_drain, &C_source, &C_gate, NMOS,
-			NMOS_size, POWER_CIRCUIT_TYPE_CMOS);
-	C_inv += C_drain;
-
-	power_calc_transistor_capacitance(&C_drain, &C_source, &C_gate, PMOS,
-			PMOS_size, POWER_CIRCUIT_TYPE_CMOS);
-	C_inv += C_drain;
-
-	power_usage->dynamic = power_calc_dynamic(C_inv, in_density);
-	power_usage->leakage = in_probability
-			* power_calc_leakage_subthreshold(PMOS, PMOS_size)
-			+ (1 - in_probability)
-					* power_calc_leakage_subthreshold(NMOS, NMOS_size);
-}
-
-/*
- * Func Name	:	calc_transistor_capacitance
- *
- * Description	: 	Calculate the capacitance for a transistor
- *
- * Arguments	: 	C_drain - Return value of drain capacitance
- * 					C_source - Return value of source capacitance
- * 					C_gate - Return value of gate capacitacne
- * 					transistor_type - NMOS or PMOS
- * 					size - Transistor size (relative to min-size)
- *
- * Returns		: 	Nothing
+/**
+ * Calculate the capacitance for a transistor
+ * - C_d: (Return value) Drain capacitance
+ * - C_s: (Return value) Source capacitance
+ * - C_g: (Return value) Gate capacitance
+ * - transistor_type: NMOS or PMOS
+ * - size: (W/L) size of the transistor
  */
-static void power_calc_transistor_capacitance(float *C_drain, float *C_source,
-		float *C_gate, e_tx_type transistor_type, float size,
-		e_power_circuit_type circuit_type) {
+static void power_calc_transistor_capacitance(float *C_d, float *C_s,
+		float *C_g, e_tx_type transistor_type, float size) {
 	t_transistor_size_inf * tx_info_lower;
 	t_transistor_size_inf * tx_info_upper;
 	boolean error;
 
-	circuit_type = POWER_CIRCUIT_TYPE_CMOS;
-
-	assert(
-			circuit_type == POWER_CIRCUIT_TYPE_CMOS || circuit_type == POWER_CIRCUIT_TYPE_PASS);
-
 	/* Initialize to 0 */
-	*C_drain = 0.;
-	*C_source = 0.;
-	*C_gate = 0.;
+	*C_d = 0.;
+	*C_s = 0.;
+	*C_g = 0.;
 
 	error = power_find_transistor_info(&tx_info_lower, &tx_info_upper,
 			transistor_type, size);
@@ -247,62 +253,36 @@ static void power_calc_transistor_capacitance(float *C_drain, float *C_source,
 
 	if (tx_info_lower == NULL ) {
 		/* No lower bound */
-		if (circuit_type == POWER_CIRCUIT_TYPE_CMOS) {
-			*C_drain = tx_info_upper->C_drain_cmos;
-			*C_source = tx_info_upper->C_drain_cmos;
-			*C_gate = tx_info_upper->C_gate_cmos;
-		} else if (circuit_type == POWER_CIRCUIT_TYPE_PASS) {
-			*C_drain = tx_info_upper->C_drain_pass;
-			*C_source = tx_info_upper->C_source_pass;
-			*C_gate = tx_info_upper->C_gate_pass;
-		}
+		*C_d = tx_info_upper->C_d;
+		*C_s = tx_info_upper->C_s;
+		*C_g = tx_info_upper->C_g;
 	} else if (tx_info_upper == NULL ) {
 		/* No upper bound */
-		if (circuit_type == POWER_CIRCUIT_TYPE_CMOS) {
-			*C_drain = tx_info_lower->C_drain_cmos;
-			*C_source = tx_info_lower->C_drain_cmos;
-			*C_gate = tx_info_lower->C_gate_cmos;
-		} else if (circuit_type == POWER_CIRCUIT_TYPE_PASS) {
-			*C_drain = tx_info_lower->C_drain_pass;
-			*C_source = tx_info_lower->C_source_pass;
-			*C_gate = tx_info_lower->C_gate_pass;
-		}
+		*C_d = tx_info_lower->C_d;
+		*C_s = tx_info_lower->C_s;
+		*C_g = tx_info_lower->C_g;
 	} else {
 		/* Linear approximation between sizes */
 		float percent_upper = (size - tx_info_lower->size)
 				/ (tx_info_upper->size - tx_info_lower->size);
-		if (circuit_type == POWER_CIRCUIT_TYPE_CMOS) {
-			*C_drain = (1 - percent_upper) * tx_info_lower->C_drain_cmos
-					+ percent_upper * tx_info_upper->C_drain_cmos;
-			*C_source = (1 - percent_upper) * tx_info_lower->C_drain_cmos
-					+ percent_upper * tx_info_upper->C_drain_cmos;
-			*C_gate = (1 - percent_upper) * tx_info_lower->C_gate_cmos
-					+ percent_upper * tx_info_upper->C_gate_cmos;
-		} else if (circuit_type == POWER_CIRCUIT_TYPE_PASS) {
-			*C_drain = (1 - percent_upper) * tx_info_lower->C_drain_pass
-					+ percent_upper * tx_info_upper->C_drain_pass;
-			*C_source = (1 - percent_upper) * tx_info_lower->C_source_pass
-					+ percent_upper * tx_info_upper->C_source_pass;
-			*C_gate = (1 - percent_upper) * tx_info_lower->C_gate_pass
-					+ percent_upper * tx_info_upper->C_gate_pass;
-		}
+		*C_d = (1 - percent_upper) * tx_info_lower->C_d
+				+ percent_upper * tx_info_upper->C_d;
+		*C_s = (1 - percent_upper) * tx_info_lower->C_s
+				+ percent_upper * tx_info_upper->C_s;
+		*C_g = (1 - percent_upper) * tx_info_lower->C_g
+				+ percent_upper * tx_info_upper->C_g;
 	}
 
 	return;
 }
 
-/*
- * Func Name	: 	power_calc_transistor_leakage
- *
- * Description	: 	Calculates the leakage power (Watts) for a transistor
- *
- * Arguments	:	transistor_type - NMOS or PMOS
- * 					C_diffusion - Diffusion capacitance
- * 					size - Size of transistor, relative to minimum size
- *
- * Returns		: 	Leakage power (Watts)
+/**
+ * Returns the subthreshold leakage power of a transistor,
+ * for V_ds = V_dd
+ * - transistor_type: NMOS or PMOS
+ * - size: (W/L) of transistor
  */
-static float power_calc_leakage_subthreshold(e_tx_type transistor_type,
+static float power_calc_leakage_st(e_tx_type transistor_type,
 		float size) {
 	t_transistor_size_inf * tx_info_lower;
 	t_transistor_size_inf * tx_info_upper;
@@ -333,6 +313,11 @@ static float power_calc_leakage_subthreshold(e_tx_type transistor_type,
 	return current * g_power_tech->Vdd;
 }
 
+/**
+ * Returns the gate gate leakage power of a transistor
+ * - transistor_type: NMOS or PMOS
+ * - size: (W/L) of transistor
+ */
 static float power_calc_leakage_gate(e_tx_type transistor_type, float size) {
 	t_transistor_size_inf * tx_info_lower;
 	t_transistor_size_inf * tx_info_upper;
@@ -363,7 +348,13 @@ static float power_calc_leakage_gate(e_tx_type transistor_type, float size) {
 	return current * g_power_tech->Vdd;
 }
 
-static float power_calc_leakage_pass_transistor(float size, float v_ds) {
+/**
+ * Returns the subthreshold leakage power of a pass-transistor,
+ * assumed to be a minimum-sized NMOS
+ * - size: (W/L) size of transistor (Must be 1.0)
+ * - v_ds: Drain-source voltage
+ */
+static float power_calc_leakage_st_pass_transistor(float size, float v_ds) {
 	t_power_nmos_leakage_pair * lower;
 	t_power_nmos_leakage_pair * upper;
 	float i_ds;
@@ -382,12 +373,27 @@ static float power_calc_leakage_pass_transistor(float size, float v_ds) {
 	return i_ds * g_power_tech->Vdd;
 }
 
+/**
+ * Calculates the power of a wire
+ * - power_usage: (Return value) Power usage of the wire
+ * - capacitance: Capacitance of the wire (F)
+ * - density: Transition density of the wire
+ */
 void power_calc_wire(t_power_usage * power_usage, float capacitance,
 		float density) {
 	power_usage->leakage = 0.;
-	power_usage->dynamic = power_calc_dynamic(capacitance, density);
+	power_usage->dynamic = power_calc_node_switching(capacitance, density);
 }
 
+/**
+ * Calculates the power of a 2-input multiplexer, comprised of transmission gates
+ * - power_usage: (Return value) Power usage of the mux
+ * - in_dens: Array of input transition densities
+ * - in_prob: Array of input signal probabilities
+ * - sel_desn: Transition density of select line
+ * - sel_prob: Signal probability of select line
+ * - out_dens: Transition density of the output
+ */
 void power_calc_MUX2_transmission(t_power_usage * power_usage, float * in_dens,
 		float * in_prob, float sel_dens, float sel_prob, float out_dens) {
 
@@ -396,38 +402,48 @@ void power_calc_MUX2_transmission(t_power_usage * power_usage, float * in_dens,
 	/* A transmission gate leaks if the selected input != other input  */
 	power_usage->leakage += (in_prob[0] * (1 - in_prob[1])
 			+ (1 - in_prob[0]) * in_prob[1])
-			* (g_power_commonly_used->NMOS_1X_leakage_cmos
-					+ g_power_commonly_used->PMOS_1X_leakage_cmos);
+			* (g_power_commonly_used->NMOS_1X_st_leakage
+					+ g_power_commonly_used->PMOS_1X_st_leakage);
 
 	/* Gate switching */
 	power_usage->dynamic += 2
-			* power_calc_dynamic(
-					g_power_commonly_used->NMOS_1X_C_gate_pass
-							+ g_power_commonly_used->PMOS_1X_C_gate_pass,
-					sel_dens);
+			* power_calc_node_switching(
+					g_power_commonly_used->NMOS_1X_C_g
+							+ g_power_commonly_used->PMOS_1X_C_g, sel_dens);
 
 	/* Input switching */
-	power_usage->dynamic += power_calc_dynamic(
-			g_power_commonly_used->NMOS_1X_C_drain_pass
-					+ g_power_commonly_used->PMOS_1X_C_source_pass, in_dens[0]);
-	power_usage->dynamic += power_calc_dynamic(
-			g_power_commonly_used->NMOS_1X_C_drain_pass
-					+ g_power_commonly_used->PMOS_1X_C_source_pass, in_dens[1]);
+	power_usage->dynamic += power_calc_node_switching(
+			g_power_commonly_used->NMOS_1X_C_d
+					+ g_power_commonly_used->PMOS_1X_C_s, in_dens[0]);
+	power_usage->dynamic += power_calc_node_switching(
+			g_power_commonly_used->NMOS_1X_C_d
+					+ g_power_commonly_used->PMOS_1X_C_s, in_dens[1]);
 
 	/* Output switching */
-	power_usage->dynamic += power_calc_dynamic(
+	power_usage->dynamic += power_calc_node_switching(
 			2
-					* (g_power_commonly_used->NMOS_1X_C_source_pass
-							+ g_power_commonly_used->PMOS_1X_C_drain_pass),
-			out_dens);
+					* (g_power_commonly_used->NMOS_1X_C_s
+							+ g_power_commonly_used->PMOS_1X_C_d), out_dens);
 }
 
+/**
+ * Calucates the power of a static, single-level multiplexer
+ * - power_usage: (Return value) power usage of the mux
+ * - out_prob: (Return value) Signal probability of the output
+ * - out_dens: (Return value) Transition density of the output
+ * - num_inputs: Number of inputs of the mux
+ * - selected_idx: The input index that is selected by the select lines
+ * - in_prob: Array of input signal probabilities
+ * - in_dens: Array of input tranistion densities
+ * - v_in: Array of input max voltages
+ * - transistor_size: Size of the NMOS transistors (must be 1.0)
+ * - v_out_restored: Whether the output will be level restored to Vdd
+ */
 void power_calc_mux_singlelevel_static(t_power_usage * power_usage,
 		float * out_prob, float * out_dens, float * v_out, int num_inputs,
 		int selected_idx, float * in_prob, float * in_dens, float * v_in,
 		float transistor_size, boolean v_out_restored) {
 	int input_idx;
-	float C_drain, C_source, C_gate;
 	float v_in_selected;
 	float in_prob_avg;
 
@@ -445,7 +461,7 @@ void power_calc_mux_singlelevel_static(t_power_usage * power_usage,
 		 * other branch of the mux has more inputs than this one,
 		 * and the selected input index is not a valid index for
 		 * this portion of the mux.  If the mux was actually built
-		 * this way, their would likely be a weak pull-up to ensure
+		 * this way, there would likely be a weak pull-up to ensure
 		 * that the node does not float.
 		 */
 		*out_prob = 1.0;
@@ -458,14 +474,12 @@ void power_calc_mux_singlelevel_static(t_power_usage * power_usage,
 		v_in_selected /= num_inputs;
 	}
 
-	power_calc_transistor_capacitance(&C_drain, &C_source, &C_gate, NMOS, 1.0,
-			POWER_CIRCUIT_TYPE_PASS);
-
 	in_prob_avg = 0.;
 	for (input_idx = 0; input_idx < num_inputs; input_idx++) {
 		/* Dynamic Power at Inputs */
-		power_usage->dynamic += power_calc_dynamic_v(C_drain,
-				in_dens[input_idx], v_in[input_idx]);
+		power_usage->dynamic += power_calc_node_switching_v(
+				g_power_commonly_used->NMOS_1X_C_d, in_dens[input_idx],
+				v_in[input_idx]);
 
 		if (input_idx != selected_idx) {
 			in_prob_avg += in_prob[input_idx];
@@ -489,20 +503,27 @@ void power_calc_mux_singlelevel_static(t_power_usage * power_usage,
 
 		/* Output is high and this input is low */
 		power_usage->leakage += (*out_prob) * (1 - in_prob[input_idx])
-				* power_calc_leakage_pass_transistor(transistor_size, *v_out);
+				* power_calc_leakage_st_pass_transistor(transistor_size, *v_out);
 
 		/* Output is low and this input is high */
 		power_usage->leakage += (1 - *out_prob) * in_prob[input_idx]
-				* power_calc_leakage_pass_transistor(transistor_size,
+				* power_calc_leakage_st_pass_transistor(transistor_size,
 						v_in[input_idx]);
 	}
 
 	/* Dynamic Power at Output */
-	power_usage->dynamic += power_calc_dynamic_v(C_source * num_inputs,
-			*out_dens, *v_out);
+	power_usage->dynamic += power_calc_node_switching_v(
+			g_power_commonly_used->NMOS_1X_C_s * num_inputs, *out_dens, *v_out);
 
 }
 
+/**
+ * This function calcualtes the output voltage of a single-level multiplexer
+ * - num_inputs: Number of inputs of the multiplexer
+ * - transistor_size: The size of the NMOS transistors (must be 1.0)
+ * - v_in: The input voltage of the selcted input
+ * - in_prob_avg: The average signal probabilities of the non-selected inputs
+ */
 float power_calc_mux_v_out(int num_inputs, float transistor_size, float v_in,
 		float in_prob_avg) {
 	t_power_mux_volt_inf * mux_volt_inf;
@@ -537,9 +558,23 @@ float power_calc_mux_v_out(int num_inputs, float transistor_size, float v_in,
 	return in_prob_avg * v_out_max + (1 - in_prob_avg) * v_out_min;
 }
 
+/** This function calculates the power of a single-level multiplexer, where the
+ * select lines are dynamic
+ * - power_usage: (Return value) The power usage of the mux
+ * - num_inputs: Number of multiplexer inputs (must be 2)
+ * - out_density: The transition density of the output
+ * - out_prob: The signal probability of the output
+ * - v_out: The output max voltage
+ * - in_prob: Array of input signal probabilities
+ * - in_dens: Array of input tranistion densities
+ * - v_in: Array of input voltages
+ * - sel_dens: Transition density of the select line
+ * - sel_prob: Signal probability of the select line
+ * - tranisistor_size: NMOS transistor sizes (must be 1.0)
+ */
 void power_calc_mux_singlelevel_dynamic(t_power_usage * power_usage,
 		int num_inputs, float out_density, float out_prob, float v_out,
-		float * in_prob, float * in_density, float * v_in, float sel_dens,
+		float * in_prob, float * in_dens, float * v_in, float sel_dens,
 		float sel_prob, float transistor_size) {
 
 	assert(num_inputs == 2);
@@ -553,39 +588,44 @@ void power_calc_mux_singlelevel_dynamic(t_power_usage * power_usage,
 
 	/* 1st selected, 1st Low, 2nd High - Leakage from 2nd in->out */
 	power_usage->leakage += (1 - sel_prob) * (1 - in_prob[0]) * in_prob[1]
-			* power_calc_leakage_pass_transistor(1.0, v_in[1]);
+			* power_calc_leakage_st_pass_transistor(1.0, v_in[1]);
 
 	/* 1st selected, 1st High, 2nd Low - Leakage from 2nd out->in */
 	/* 2nd selected, 1st Low, 2nd High - Leakage from 1st out->in */
 	power_usage->leakage += ((1 - sel_prob) * in_prob[0] * (1 - in_prob[1])
 			+ sel_prob * (1 - in_prob[0]) * in_prob[1])
-			* power_calc_leakage_pass_transistor(1.0, v_out);
+			* power_calc_leakage_st_pass_transistor(1.0, v_out);
 
 	/* 2nd selected, 1st High, 2nd Low - Leakage from 1st in->out */
 	power_usage->leakage += sel_prob * in_prob[0] * (1 - in_prob[1])
-			* power_calc_leakage_pass_transistor(1.0, v_in[0]);
+			* power_calc_leakage_st_pass_transistor(1.0, v_in[0]);
 
 	/* Gate switching */
 	power_usage->dynamic += 2
-			* power_calc_dynamic(g_power_commonly_used->NMOS_1X_C_gate_pass,
+			* power_calc_node_switching(g_power_commonly_used->NMOS_1X_C_g,
 					sel_dens);
 
 	/* Input switching */
-	power_usage->dynamic += power_calc_dynamic_v(
-			g_power_commonly_used->NMOS_1X_C_drain_pass, in_density[0],
-			v_in[0]);
-	power_usage->dynamic += power_calc_dynamic_v(
-			g_power_commonly_used->NMOS_1X_C_drain_pass, in_density[1],
-			v_in[1]);
+	power_usage->dynamic += power_calc_node_switching_v(
+			g_power_commonly_used->NMOS_1X_C_d, in_dens[0], v_in[0]);
+	power_usage->dynamic += power_calc_node_switching_v(
+			g_power_commonly_used->NMOS_1X_C_d, in_dens[1], v_in[1]);
 
 	/* Output switching */
-	power_usage->dynamic += power_calc_dynamic_v(
-			2 * g_power_commonly_used->NMOS_1X_C_source_pass, out_density,
-			v_out);
+	power_usage->dynamic += power_calc_node_switching_v(
+			2 * g_power_commonly_used->NMOS_1X_C_s, out_density, v_out);
 }
 
+/**
+ * This function calculates the power of a level restorer, which is a biased
+ * inverter with a pull-up PMOS transistor in feedback.
+ * - power_usage: (Return value) Power usage of the level restorer
+ * - dyn_power_in: (Return value) Dynamic power at the input
+ * - in_density: Transition density of the input
+ * - in_prob: Signal probability of the input
+ */
 void power_calc_level_restorer(t_power_usage * power_usage,
-		float * dyn_power_in, float in_density, float in_probability) {
+		float * dyn_power_in, float in_dens, float in_prob) {
 	t_power_usage sub_power_usage;
 	float C;
 	float C_in;
@@ -595,33 +635,43 @@ void power_calc_level_restorer(t_power_usage * power_usage,
 
 	/* Inverter */
 	power_calc_inverter_irregular(&sub_power_usage, &input_dyn_power,
-			in_density, in_probability, 1.0, 2.0);
+			in_dens, in_prob, 1.0, 2.0);
 	power_add_usage(power_usage, &sub_power_usage);
 
+	/* Pull-up PMOS */
 	if (g_power_tech->PMOS_inf.long_trans_inf == NULL ) {
 		power_log_msg(POWER_LOG_ERROR,
 				"No long transistor information exists.  Cannot determine transistor properties.");
 		return;
 	}
-	C = g_power_tech->PMOS_inf.long_trans_inf->C_drain_cmos
-			+ g_power_tech->PMOS_inf.long_trans_inf->C_gate_cmos;
-	C_in = g_power_tech->PMOS_inf.long_trans_inf->C_drain_cmos;
+	C = g_power_tech->PMOS_inf.long_trans_inf->C_d
+			+ g_power_tech->PMOS_inf.long_trans_inf->C_g;
+	C_in = g_power_tech->PMOS_inf.long_trans_inf->C_d;
 
-	input_dyn_power += power_calc_dynamic(C_in, in_density);
-	power_usage->dynamic += power_calc_dynamic(C, in_density);
-	power_usage->leakage += (1 - in_probability)
+	input_dyn_power += power_calc_node_switching(C_in, in_dens);
+	power_usage->dynamic += power_calc_node_switching(C, in_dens);
+	power_usage->leakage += (1 - in_prob)
 			* g_power_tech->PMOS_inf.long_trans_inf->leakage_subthreshold;
 
 	*dyn_power_in = input_dyn_power;
 }
 
-float power_calc_pb_dyn_from_c_internal(t_pb * pb,
+/**
+ * This function calculates the switching power of a logic block, based on the
+ * internal capacitance.  This function is only used for user-created logic blocks
+ * where only the internal capacitance is known.
+ * - pb: The physical block instance
+ * - pb_graph_node: The physical block graph node
+ */
+float power_calc_pb_switching_from_c_internal(t_pb * pb,
 		t_pb_graph_node * pb_graph_node) {
 	float density = 0.;
 
 	int port_idx;
 	int pin_idx;
 	int num_pins = 0;
+
+	/* Average the activity of all pins */
 	for (port_idx = 0; port_idx < pb_graph_node->num_input_ports; port_idx++) {
 		for (pin_idx = 0; pin_idx < pb_graph_node->num_input_pins[port_idx];
 				pin_idx++) {
@@ -637,27 +687,19 @@ float power_calc_pb_dyn_from_c_internal(t_pb * pb,
 	if (num_pins != 0) {
 		density = density / num_pins;
 	}
-	return power_calc_dynamic(pb_graph_node->pb_type->C_internal, density);
+	return power_calc_node_switching(pb_graph_node->pb_type->C_internal,
+			density);
 }
 
-static float power_calc_buffer_sc_levr(
-		t_power_buffer_strength_inf * buffer_strength, int input_mux_size) {
-	t_power_buffer_sc_levr_inf * mux_lower;
-	t_power_buffer_sc_levr_inf * mux_upper;
-
-	power_find_buffer_sc_levr(&mux_lower, &mux_upper, buffer_strength,
-			input_mux_size);
-	if (mux_upper == NULL ) {
-		return mux_lower->sc_levr;
-	} else {
-		float percent_upper = (input_mux_size - mux_lower->mux_size)
-				/ (mux_upper->mux_size - mux_lower->mux_size);
-		return (1 - percent_upper) * mux_lower->sc_levr
-				+ percent_upper * mux_upper->sc_levr;
-	}
-}
-
-float power_calc_buffer_sc(int stages, float gain, boolean level_restored,
+/**
+ *  This function calculates the short-circuit factor for a buffer.  This factor
+ *  represents the short-circuit power of a buffer, as a factor of switching power.
+ *  - stages: Number of stages of the buffer
+ *  - gain: The gain at each stage
+ *  - level_restorer: Whether this buffer must level-restore the input to Vdd
+ *  - input_mux_size: For level-restoring buffers, what is the size of the mux driving it
+ */
+float power_calc_buffer_sc(int stages, float gain, boolean level_restorer,
 		int input_mux_size) {
 
 	t_power_buffer_size_inf * size_inf;
@@ -665,12 +707,14 @@ float power_calc_buffer_sc(int stages, float gain, boolean level_restored,
 	t_power_buffer_strength_inf * strength_upper;
 	float sc;
 
+	/* Find information for given buffer size */
 	size_inf = &g_power_tech->buffer_size_inf[stages];
 
+	/* Find information for a given size/strength */
 	power_find_buffer_strength_inf(&strength_lower, &strength_upper, size_inf,
 			gain);
 
-	if (!level_restored) {
+	if (!level_restorer) {
 		if (strength_upper == NULL ) {
 			sc = strength_lower->sc_no_levr;
 		} else {
@@ -699,4 +743,27 @@ float power_calc_buffer_sc(int stages, float gain, boolean level_restored,
 		}
 	}
 	return sc;
+}
+
+/**
+ * This function calculates the short-circuit factor for a level-restoring buffer,
+ * used by power_calc_buffer_sc
+ * - buffer_strength: The buffer information, for a given size/strength
+ * - input_mux_size: The size of the mux driving this buffer
+ */
+static float power_calc_buffer_sc_levr(
+		t_power_buffer_strength_inf * buffer_strength, int input_mux_size) {
+	t_power_buffer_sc_levr_inf * mux_lower;
+	t_power_buffer_sc_levr_inf * mux_upper;
+
+	power_find_buffer_sc_levr(&mux_lower, &mux_upper, buffer_strength,
+			input_mux_size);
+	if (mux_upper == NULL ) {
+		return mux_lower->sc_levr;
+	} else {
+		float percent_upper = (input_mux_size - mux_lower->mux_size)
+				/ (mux_upper->mux_size - mux_lower->mux_size);
+		return (1 - percent_upper) * mux_lower->sc_levr
+				+ percent_upper * mux_upper->sc_levr;
+	}
 }

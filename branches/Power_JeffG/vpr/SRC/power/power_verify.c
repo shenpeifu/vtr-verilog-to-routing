@@ -1,5 +1,26 @@
+/*********************************************************************
+ *  The following code is part of the power modelling feature of VTR.
+ *
+ * For support:
+ * http://code.google.com/p/vtr-verilog-to-routing/wiki/Power
+ *
+ * or email:
+ * vtr.power.estimation@gmail.com
+ *
+ * If you are using power estimation for your researach please cite:
+ *
+ * Jeffrey Goeders and Steven Wilton.  VersaPower: Power Estimation
+ * for Diverse FPGA Architectures.  In International Conference on
+ * Field Programmable Technology, 2012.
+ *
+ ********************************************************************/
+
+/* This file provides functions used to verify the power estimations
+ * againt SPICE.
+ */
+
 /************************* INCLUDES *********************************/
-#include "power_misc.h"
+#include "power_verify.h"
 #include "power_components.h"
 #include "power_lowlevel.h"
 #include "power_util.h"
@@ -10,6 +31,10 @@
 static char binary_not(char c);
 
 /************************* FUNCTION DEFINITIONS *********************/
+
+/* This function prints high-activitiy and zero-activity single-cycle
+ * energy estimations for a variety of components and sizes.
+ */
 void power_print_spice_comparison(void) {
 	t_power_usage sub_power_usage;
 

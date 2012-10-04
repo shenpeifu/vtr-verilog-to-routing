@@ -291,8 +291,10 @@ int main(int argc, char **argv) {
 		}
 
 		if (!power_error) {
+			float power_runtime_s;
+
 			printf("\tRunning power estimation...");
-			power_ret_code = power_total();
+			power_ret_code = power_total(&power_runtime_s);
 			if (power_ret_code == POWER_RET_CODE_ERRORS) {
 				printf("failed. (See power output for error details).\n");
 			} else if (power_ret_code == POWER_RET_CODE_WARNINGS) {
@@ -301,6 +303,7 @@ int main(int argc, char **argv) {
 			} else if (power_ret_code == POWER_RET_CODE_SUCCESS) {
 				printf("OK.\n");
 			}
+			printf("\tPower estimation took %g seconds\n", power_runtime_s);
 		}
 
 		if (!power_error) {

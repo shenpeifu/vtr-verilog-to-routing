@@ -15,16 +15,24 @@
  *
  ********************************************************************/
 
-/**
- * The functions in this file are used to count the transistors in the
- * FPGA, for physical size estimations
+/* This file provides functions used to verify the power estimations
+ * againt SPICE.
  */
 
-#ifndef __POWER_TRANSISTOR_CNT_H__
-#define __POWER_TRANSISTOR_CNT_H__
+#ifndef __POWER_MISC_H__
+#define __POWER_MISC_H__
 
-/************************* FUNCTION DECLARATION *********************/
-float power_count_transistors(void);
-float power_count_transistors_buffer(float buffer_size);
-float power_transistor_area(float num_transistors);
+/************************* INCLUDES *********************************/
+#include "power.h"
+
+/************************* DEFINES **********************************/
+
+/* This controls whether the tools is run in verification mode.
+ * IN VERIFICATION MODE, THE INPUT CIRCUIT WILL BE IGNORED.
+ */
+#define PRINT_SPICE_COMPARISON 0
+
+/************************* FUNCTION DECLARATIONS ********************/
+void power_print_spice_comparison(void);
+
 #endif

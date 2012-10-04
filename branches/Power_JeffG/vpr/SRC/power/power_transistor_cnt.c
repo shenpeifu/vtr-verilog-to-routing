@@ -1,3 +1,25 @@
+/*********************************************************************
+ *  The following code is part of the power modelling feature of VTR.
+ *
+ * For support:
+ * http://code.google.com/p/vtr-verilog-to-routing/wiki/Power
+ *
+ * or email:
+ * vtr.power.estimation@gmail.com
+ *
+ * If you are using power estimation for your researach please cite:
+ *
+ * Jeffrey Goeders and Steven Wilton.  VersaPower: Power Estimation
+ * for Diverse FPGA Architectures.  In International Conference on
+ * Field Programmable Technology, 2012.
+ *
+ ********************************************************************/
+
+/**
+ * The functions in this file are used to count the transistors in the
+ * FPGA, for physical size estimations
+ */
+
 /************************* INCLUDES *********************************/
 #include <assert.h>
 #include <string.h>
@@ -24,6 +46,9 @@ static float power_cnt_transistor_SRAM_bit(void);
 
 /************************* FUNCTION DEFINITIONS *********************/
 
+/**
+ *  Counts the number of transistors in the largest connection box
+ */
 static float power_count_transistors_connectionbox(void) {
 	float transistor_cnt = 0.;
 	int CLB_inputs;
@@ -34,7 +59,7 @@ static float power_count_transistors_connectionbox(void) {
 
 	/* Buffers from Tracks */
 	buffer_size = g_power_commonly_used->max_seg_to_IPIN_fanout
-			* (g_power_commonly_used->NMOS_1X_C_drain_pass
+			* (g_power_commonly_used->NMOS_1X_C_d
 					/ g_power_commonly_used->INV_1X_C_in) / POWER_BUFFER_STAGE_GAIN;
 	buffer_size = max(1, buffer_size);
 	transistor_cnt += g_solution_inf->channel_width
@@ -48,6 +73,10 @@ static float power_count_transistors_connectionbox(void) {
 	return transistor_cnt;
 }
 
+/**
+ * Counts the number of transistors in a buffer.
+ * - buffer_size: The final stage size of the buffer, relative to a minimum sized inverter
+ */
 float power_count_transistors_buffer(float buffer_size) {
 	int stages;
 	float effort;
@@ -67,6 +96,10 @@ float power_count_transistors_buffer(float buffer_size) {
 	return transistor_cnt;
 }
 
+/**
+ * Counts the number of transistors in a multiplexer
+ * - mux_arch: The architecture of the multiplexer
+ */
 static float power_count_transistors_mux(t_mux_arch * mux_arch) {
 	float transistor_cnt = 0.;
 	int lvl_idx;
@@ -98,6 +131,10 @@ static float power_count_transistors_mux(t_mux_arch * mux_arch) {
 	return transistor_cnt;
 }
 
+/**
+ *  This function is used recursively to determine the largest single-level
+ *  multiplexer at each level of a multi-level multiplexer
+ */
 static void power_mux_node_max_inputs(t_mux_node * mux_node, float * max_inputs) {
 
 	max_inputs[mux_node->level] =
@@ -113,6 +150,9 @@ static void power_mux_node_max_inputs(t_mux_node * mux_node, float * max_inputs)
 	}
 }
 
+/**
+ * This function is used recursively to count the number of transistors in a multiplexer
+ */
 static float power_count_transistors_mux_node(t_mux_node * mux_node,
 		float * transistor_sizes) {
 	int input_idx;
@@ -134,6 +174,9 @@ static float power_count_transistors_mux_node(t_mux_node * mux_node,
 	return transistor_cnt;
 }
 
+/**
+ * This function returns the number of transistors in an interconnect structure
+ */
 static float power_count_transistors_interconnect(t_interconnect * interc) {
 	float transistor_cnt = 0.;
 
@@ -158,6 +201,11 @@ static float power_count_transistors_interconnect(t_interconnect * interc) {
 	return transistor_cnt;
 }
 
+/**
+ * This functions counts the number of transistors in all structures in the FPGA.
+ * It returns the number of transistors in a grid of the FPGA (logic block,
+ * switch box, 2 connection boxes)
+ */
 float power_count_transistors(void) {
 	int type_idx;
 	float transistor_cnt = 0.;
@@ -177,6 +225,9 @@ float power_count_transistors(void) {
 	return transistor_cnt;
 }
 
+/**
+ * This function counts the number of transistors for a given physical block type
+ */
 static float power_count_transistors_pb_type(t_pb_type * pb_type) {
 	int mode_idx;
 	float transistor_cnt_max = 0;
@@ -243,6 +294,9 @@ static float power_count_transistors_pb_type(t_pb_type * pb_type) {
 	return transistor_cnt_max;
 }
 
+/**
+ * This function counts the maximum number of transistors in a switch box
+ */
 static float power_count_transistors_switchbox(void) {
 	float transistor_cnt = 0.;
 	float transistors_per_buf_mux = 0.;
@@ -273,6 +327,9 @@ static float power_count_transistors_switchbox(void) {
 	return transistor_cnt;
 }
 
+/**
+ * This function calculates the number of transistors for a primitive physical block
+ */
 static float power_count_transistors_blif_primitive(t_pb_type * pb_type) {
 	float transistor_cnt;
 
@@ -295,6 +352,9 @@ static float power_count_transistors_blif_primitive(t_pb_type * pb_type) {
 	return transistor_cnt;
 }
 
+/**
+ * Returns the transistor count of an SRAM cell
+ */
 static float power_cnt_transistor_SRAM_bit(void) {
 	/* The SRAM cell consists of:
 	 *  - 2 weak PMOS for pullup (size 1)
@@ -307,6 +367,9 @@ static float power_cnt_transistor_SRAM_bit(void) {
 	return (1 + 1 + 4 + 4 + 2 + 2);
 }
 
+/**
+ * Returns the transistor count for a LUT
+ */
 static float power_count_transistors_LUT(int LUT_size) {
 	float transistor_cnt;
 	int level_idx;
@@ -342,6 +405,9 @@ static float power_count_transistors_LUT(int LUT_size) {
 	return transistor_cnt;
 }
 
+/**
+ * Returns the transistor count for a flip-flop
+ */
 static float power_count_transistors_FF(void) {
 	float transistor_cnt = 0.;
 
@@ -354,3 +420,11 @@ static float power_count_transistors_FF(void) {
 	return transistor_cnt;
 }
 
+float power_transistor_area(float num_transistors) {
+	/* Calculate transistor area, assuming:
+	 *  - Min transistor size is Wx6L
+	 *  - Overhead to space transistors is: POWER_TRANSISTOR_SPACING_FACTOR */
+
+	return num_transistors * POWER_TRANSISTOR_SPACING_FACTOR
+			* (g_power_tech->tech_size * g_power_tech->tech_size * 6);
+}

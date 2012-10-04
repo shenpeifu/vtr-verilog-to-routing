@@ -1,3 +1,27 @@
+/*********************************************************************
+ *  The following code is part of the power modelling feature of VTR.
+ *
+ * For support:
+ * http://code.google.com/p/vtr-verilog-to-routing/wiki/Power
+ *
+ * or email:
+ * vtr.power.estimation@gmail.com
+ *
+ * If you are using power estimation for your researach please cite:
+ *
+ * Jeffrey Goeders and Steven Wilton.  VersaPower: Power Estimation
+ * for Diverse FPGA Architectures.  In International Conference on
+ * Field Programmable Technology, 2012.
+ *
+ ********************************************************************/
+
+/**
+ * This file provides functions relating to the cmos technology.  It
+ * includes functions to read the transistor characteristics from the
+ * xml file into data structures, and functions to search within
+ * these data structures.
+ */
+
 /************************* INCLUDES *********************************/
 #include <assert.h>
 #include <string.h>
@@ -15,32 +39,38 @@ static t_power_buffer_strength_inf * g_buffer_strength_last_searched;
 static t_power_mux_volt_inf * g_mux_volt_last_searched;
 
 /************************* FUNCTION DECLARATIONS ********************/
-static void process_transistor_info(ezxml_t parent);
-static void process_multiplexer_info(ezxml_t parent);
-static void process_nmos_leakages(ezxml_t parent);
+static void process_tech_xml_load_transistor_info(ezxml_t parent);
+static void power_tech_xml_load_multiplexer_info(ezxml_t parent);
+static void power_tech_xml_load_nmos_st_leakages(ezxml_t parent);
 static int power_compare_transistor_size(const void * key_void,
 		const void * elem_void);
 static int power_compare_voltage_pair(const void * key_void,
 		const void * elem_void);
 static int power_compare_leakage_pair(const void * key_void,
 		const void * elem_void);
-static void process_buffer_sc(ezxml_t parent);
+static void power_tech_xml_load_sc(ezxml_t parent);
 static int power_compare_buffer_strength(const void * key_void,
 		const void * elem_void);
 static int power_compare_buffer_sc_levr(const void * key_void,
 		const void * elem_void);
 
 /************************* FUNCTION DEFINITIONS *********************/
-void power_read_cmos_tech_behavior(void) {
+
+/**
+ * Reads the transistor properties from the .xml file
+ */
+void power_tech_load_xml_file(void) {
 	ezxml_t cur, child, prev;
 	const char * prop;
 	char msg[BUFSIZE];
 
 	if (!file_exists(g_power_opts->cmos_tech_behavior_file)) {
+		/* .xml transistor characteristics is missing */
 		sprintf(msg,
 				"The CMOS technology behavior file ('%s') does not exist.  No power information will be calculated.",
 				g_power_opts->cmos_tech_behavior_file);
 		power_log_msg(POWER_LOG_ERROR, msg);
+
 		g_power_tech->NMOS_inf.num_size_entries = 0;
 		g_power_tech->NMOS_inf.long_trans_inf = NULL;
 		g_power_tech->NMOS_inf.size_inf = NULL;
@@ -74,42 +104,43 @@ void power_read_cmos_tech_behavior(void) {
 
 	/* Transistor Information */
 	child = FindFirstElement(cur, "transistor", TRUE);
-	process_transistor_info(child);
+	process_tech_xml_load_transistor_info(child);
 
 	prev = child;
 	child = child->next;
 	FreeNode(prev);
 
-	process_transistor_info(child);
+	process_tech_xml_load_transistor_info(child);
 	FreeNode(child);
 
 	/* Multiplexer Voltage Information */
 	child = FindElement(cur, "multiplexers", TRUE);
-	process_multiplexer_info(child);
+	power_tech_xml_load_multiplexer_info(child);
 	FreeNode(child);
 
 	/* Vds Leakage Information */
 	child = FindElement(cur, "nmos_leakages", TRUE);
-	process_nmos_leakages(child);
+	power_tech_xml_load_nmos_st_leakages(child);
 	FreeNode(child);
 
 	/* Buffer SC Info */
 	child = FindElement(cur, "buffer_sc", TRUE);
-	process_buffer_sc(child);
+	power_tech_xml_load_sc(child);
 	FreeNode(child);
 
 	FreeNode(cur);
 }
 
-struct s_power_buffer_sc {
-
-};
-
-static void process_buffer_sc(ezxml_t parent) {
+/**
+ * Read short-circuit buffer information from the transistor .xml file.
+ * This contains values for buffers of various 1) # Stages 2) Stage strength 3) Input type & capacitance
+ */
+static void power_tech_xml_load_sc(ezxml_t parent) {
 	ezxml_t child, prev, gc, ggc;
 	int i, j, k;
 	int num_buffer_sizes;
 
+	/* Information for buffers, based on # of stages in buffer */
 	num_buffer_sizes = CountChildren(parent, "stages", 1);
 	g_power_tech->max_buffer_size = num_buffer_sizes; /* buffer size starts at 1, not 0 */
 	g_power_tech->buffer_size_inf = my_calloc(g_power_tech->max_buffer_size + 1,
@@ -121,6 +152,8 @@ static void process_buffer_sc(ezxml_t parent) {
 		t_power_buffer_size_inf * size_inf = &g_power_tech->buffer_size_inf[i];
 
 		GetIntProperty(child, "num_stages", TRUE, 1);
+
+		/* For the given # of stages, find the records for the strength of each stage */
 		size_inf->num_strengths = CountChildren(child, "strength", 1);
 		size_inf->strength_inf = my_calloc(size_inf->num_strengths,
 				sizeof(t_power_buffer_strength_inf));
@@ -131,10 +164,12 @@ static void process_buffer_sc(ezxml_t parent) {
 			t_power_buffer_strength_inf * strength_inf =
 					&size_inf->strength_inf[j];
 
+			/* Get the short circuit factor for a buffer with no level restorer at the input */
 			strength_inf->stage_gain = GetFloatProperty(gc, "gain", TRUE, 0.0);
 			strength_inf->sc_no_levr = GetFloatProperty(gc, "sc_nolevr", TRUE,
 					0.0);
 
+			/* Get the short circuit factor for buffers with level restorers at the input */
 			strength_inf->num_levr_entries = CountChildren(gc, "input_cap", 1);
 			strength_inf->sc_levr_inf = my_calloc(
 					strength_inf->num_levr_entries,
@@ -146,6 +181,7 @@ static void process_buffer_sc(ezxml_t parent) {
 				t_power_buffer_sc_levr_inf * levr_inf =
 						&strength_inf->sc_levr_inf[k];
 
+				/* Short circuit factor is depdent on size of mux that drives the buffer */
 				levr_inf->mux_size = GetIntProperty(ggc, "mux_size", TRUE, 0);
 				levr_inf->sc_levr = GetFloatProperty(ggc, "sc_levr", TRUE, 0.0);
 
@@ -168,7 +204,11 @@ static void process_buffer_sc(ezxml_t parent) {
 	}
 }
 
-static void process_nmos_leakages(ezxml_t parent) {
+/**
+ *  Read NMOS subthreshold leakage currents from the .xml transistor characteristics
+ *  This builds a table of (Vds,Ids) value pairs
+ *  */
+static void power_tech_xml_load_nmos_st_leakages(ezxml_t parent) {
 	ezxml_t child, prev;
 	int num_leakage_pairs;
 	int i;
@@ -194,11 +234,16 @@ static void process_nmos_leakages(ezxml_t parent) {
 
 }
 
-static void process_multiplexer_info(ezxml_t parent) {
+/**
+ *  Read multiplexer information from the .xml transistor characteristics.
+ *  This contains the estimates of mux output voltages, depending on 1) Mux Size 2) Mux Vin
+ *  */
+static void power_tech_xml_load_multiplexer_info(ezxml_t parent) {
 	ezxml_t child, prev, gc;
 	int num_mux_sizes;
 	int i, j;
 
+	/* Process all multiplexer sizes */
 	num_mux_sizes = CountChildren(parent, "multiplexer", 1);
 
 	/* Add entries for 0 and 1, for convenience, although
@@ -215,6 +260,7 @@ static void process_multiplexer_info(ezxml_t parent) {
 
 		assert(i == GetFloatProperty(child, "size", TRUE, 0));
 
+		/* For each mux size, process all of the Vin levels */
 		num_voltages = CountChildren(child, "voltages", 1);
 
 		g_power_tech->mux_voltage_inf[i].num_voltage_pairs = num_voltages;
@@ -224,6 +270,7 @@ static void process_multiplexer_info(ezxml_t parent) {
 		gc = FindFirstElement(child, "voltages", TRUE);
 		j = 0;
 		while (gc) {
+			/* For each mux size, and Vin level, get the min/max V_out */
 			g_power_tech->mux_voltage_inf[i].mux_voltage_pairs[j].v_in =
 					GetFloatProperty(gc, "in", TRUE, 0.0);
 			g_power_tech->mux_voltage_inf[i].mux_voltage_pairs[j].v_out_min =
@@ -244,12 +291,20 @@ static void process_multiplexer_info(ezxml_t parent) {
 	}
 }
 
-static void process_transistor_info(ezxml_t parent) {
+/**
+ * Read the transistor information from the .xml transistor characteristics.
+ * For each transistor size, it extracts the:
+ * - transistor node capacitances
+ * - subthreshold leakage
+ * - gate leakage
+ */
+static void process_tech_xml_load_transistor_info(ezxml_t parent) {
 	t_transistor_inf * trans_inf;
 	const char * prop;
 	ezxml_t child, prev, grandchild;
 	int i;
 
+	/* Get transistor type: NMOS or PMOS */
 	prop = FindProperty(parent, "type", TRUE);
 	if (strcmp(prop, "nmos") == 0) {
 		trans_inf = &g_power_tech->NMOS_inf;
@@ -260,8 +315,7 @@ static void process_transistor_info(ezxml_t parent) {
 	}
 	ezxml_set_attr(parent, "type", NULL );
 
-	/*trans_inf->Vth = GetFloatProperty(parent, "Vth", TRUE, 0.);*/
-
+	/* Get long transistor information (W=1,L=2) */
 	trans_inf->long_trans_inf = my_malloc(sizeof(t_transistor_size_inf));
 
 	child = FindElement(parent, "long_size", TRUE);
@@ -274,20 +328,15 @@ static void process_transistor_info(ezxml_t parent) {
 	FreeNode(grandchild);
 
 	grandchild = FindElement(child, "capacitance", TRUE);
-	trans_inf->long_trans_inf->C_gate_cmos = GetFloatProperty(grandchild,
-			"gate_cmos", TRUE, 0);
-	/*trans_inf->long_trans_inf->C_source_cmos = GetFloatProperty(grandchild,
-	 "source_cmos", TRUE, 0);*/
-	trans_inf->long_trans_inf->C_drain_cmos = GetFloatProperty(grandchild,
-			"drain_cmos", TRUE, 0);
-	trans_inf->long_trans_inf->C_gate_pass = GetFloatProperty(grandchild,
-			"gate_pass", TRUE, 0);
-	trans_inf->long_trans_inf->C_source_pass = GetFloatProperty(grandchild,
-			"source_pass", TRUE, 0);
-	trans_inf->long_trans_inf->C_drain_pass = GetFloatProperty(grandchild,
-			"drain_pass", TRUE, 0);
+	trans_inf->long_trans_inf->C_g = GetFloatProperty(grandchild, "C_g", TRUE,
+			0);
+	trans_inf->long_trans_inf->C_d = GetFloatProperty(grandchild, "C_d", TRUE,
+			0);
+	trans_inf->long_trans_inf->C_s = GetFloatProperty(grandchild, "C_s", TRUE,
+			0);
 	FreeNode(grandchild);
 
+	/* Process all transistor sizes */
 	trans_inf->num_size_entries = CountChildren(parent, "size", 1);
 	trans_inf->size_inf = my_calloc(trans_inf->num_size_entries,
 			sizeof(t_transistor_size_inf));
@@ -300,6 +349,7 @@ static void process_transistor_info(ezxml_t parent) {
 
 		trans_inf->size_inf[i].size = GetFloatProperty(child, "W", TRUE, 0);
 
+		/* Get leakage currents */
 		grandchild = FindElement(child, "leakage_current", TRUE);
 		trans_inf->size_inf[i].leakage_subthreshold = GetFloatProperty(
 				grandchild, "subthreshold", TRUE, 0);
@@ -307,19 +357,14 @@ static void process_transistor_info(ezxml_t parent) {
 				"gate", TRUE, 0);
 		FreeNode(grandchild);
 
+		/* Get node capacitances */
 		grandchild = FindElement(child, "capacitance", TRUE);
-		trans_inf->size_inf[i].C_gate_cmos = GetFloatProperty(grandchild,
-				"gate_cmos", TRUE, 0);
-		/*trans_inf->size_inf[i].C_source_cmos = GetFloatProperty(grandchild,
-		 "source_cmos", TRUE, 0); */
-		trans_inf->size_inf[i].C_drain_cmos = GetFloatProperty(grandchild,
-				"drain_cmos", TRUE, 0);
-		trans_inf->size_inf[i].C_gate_pass = GetFloatProperty(grandchild,
-				"gate_pass", TRUE, 0);
-		trans_inf->size_inf[i].C_source_pass = GetFloatProperty(grandchild,
-				"source_pass", TRUE, 0);
-		trans_inf->size_inf[i].C_drain_pass = GetFloatProperty(grandchild,
-				"drain_pass", TRUE, 0);
+		trans_inf->size_inf[i].C_g = GetFloatProperty(grandchild, "C_g",
+				TRUE, 0);
+		trans_inf->size_inf[i].C_s = GetFloatProperty(grandchild, "C_s",
+				TRUE, 0);
+		trans_inf->size_inf[i].C_d = GetFloatProperty(grandchild, "C_d",
+						TRUE, 0);
 		FreeNode(grandchild);
 
 		prev = child;
@@ -329,6 +374,13 @@ static void process_transistor_info(ezxml_t parent) {
 	}
 }
 
+/**
+ * This function searches for a transistor by size
+ * - lower: (Return value) The lower-bound matching transistor
+ * - upper: (Return value) The upper-bound matching transistor
+ * - type: The transistor type to search for
+ * - size: The transistor size to search for (size = W/L)
+ */
 boolean power_find_transistor_info(t_transistor_size_inf ** lower,
 		t_transistor_size_inf ** upper, e_tx_type type, float size) {
 	char msg[1024];
@@ -340,6 +392,7 @@ boolean power_find_transistor_info(t_transistor_size_inf ** lower,
 
 	key.size = size;
 
+	/* Find the appropriate global transistor records */
 	if (type == NMOS) {
 		trans_info = &g_power_tech->NMOS_inf;
 	} else if (type == PMOS) {
@@ -356,6 +409,7 @@ boolean power_find_transistor_info(t_transistor_size_inf ** lower,
 		return error;
 	}
 
+	/* Make note of the transistor record we are searching in, and the bounds */
 	g_transistor_last_searched = trans_info;
 	min_size = trans_info->size_inf[0].size;
 	max_size = trans_info->size_inf[trans_info->num_size_entries - 1].size;
@@ -364,8 +418,8 @@ boolean power_find_transistor_info(t_transistor_size_inf ** lower,
 			sizeof(t_transistor_size_inf), power_compare_transistor_size);
 	assert(found);
 
-	/* Too small */
 	if (size < min_size) {
+		/* Too small */
 		assert(found == &trans_info->size_inf[0]);
 		sprintf(msg,
 				"Using %s transistor of size '%f', which is smaller than the smallest modeled transistor (%f) in the technology behavior file.",
@@ -374,6 +428,7 @@ boolean power_find_transistor_info(t_transistor_size_inf ** lower,
 		*lower = NULL;
 		*upper = found;
 	} else if (size > max_size) {
+		/* Too large */
 		assert(
 				found == &trans_info->size_inf[trans_info->num_size_entries - 1]);
 		sprintf(msg,
@@ -390,6 +445,13 @@ boolean power_find_transistor_info(t_transistor_size_inf ** lower,
 	return error;
 }
 
+/**
+ * This function searches for the Ids leakage current, based on a given Vds.
+ * This function is used for minimum-sized NMOS transistors (used in muxs).
+ * - lower: (Return value) The lower-bound matching V/I pair
+ * - upper: (Return value) The upper-bound matching V/I pair
+ * - v_ds: The drain/source voltage to search for
+ */
 void power_find_nmos_leakage(t_power_nmos_leakage_pair ** lower,
 		t_power_nmos_leakage_pair ** upper, float v_ds) {
 	t_power_nmos_leakage_pair key;
@@ -404,6 +466,7 @@ void power_find_nmos_leakage(t_power_nmos_leakage_pair ** lower,
 
 	if (found
 			== &g_power_tech->leakage_pairs[g_power_tech->num_leakage_pairs - 1]) {
+		/* The results equal to the max voltage (Vdd) */
 		*lower = found;
 		*upper = NULL;
 	} else {
@@ -412,6 +475,12 @@ void power_find_nmos_leakage(t_power_nmos_leakage_pair ** lower,
 	}
 }
 
+/**
+ * This function searches for the information for a given buffer strength.
+ * - lower: (Return value) The lower-bound matching record
+ * - upper: (Return value) The upper-bound matching record
+ * - stage_gain: The buffer strength to search for
+ */
 void power_find_buffer_strength_inf(t_power_buffer_strength_inf ** lower,
 		t_power_buffer_strength_inf ** upper,
 		t_power_buffer_size_inf * size_inf, float stage_gain) {
@@ -440,6 +509,14 @@ void power_find_buffer_strength_inf(t_power_buffer_strength_inf ** lower,
 	}
 }
 
+/**
+ * This function searches for short-circuit current information for a level-restoring buffer,
+ * based on the size of the multiplexer driving the input
+ * - lower: (Return value) The lower-bound matching record
+ * - upper: (Return value) The upper-bound matching record
+ * - buffer_strength: The set of records to search withing, which are for a specific buffer size/strength
+ * - input_mux_size: The input mux size to search for
+ */
 void power_find_buffer_sc_levr(t_power_buffer_sc_levr_inf ** lower,
 		t_power_buffer_sc_levr_inf ** upper,
 		t_power_buffer_strength_inf * buffer_strength, int input_mux_size) {
@@ -460,8 +537,9 @@ void power_find_buffer_sc_levr(t_power_buffer_sc_levr_inf ** lower,
 	max_size = buffer_strength->sc_levr_inf[buffer_strength->num_levr_entries
 			- 1].mux_size;
 	if (input_mux_size > max_size) {
+		/* Input mux too large */
 		assert(
-				found == &buffer_strength->sc_levr_inf[buffer_strength->num_levr_entries-1]);
+				found == &buffer_strength->sc_levr_inf[buffer_strength->num_levr_entries - 1]);
 		sprintf(msg,
 				"Using buffer driven by mux of size '%d', which is larger than the largest modeled size (%d) in the technology behavior file.",
 				input_mux_size, max_size);
@@ -474,6 +552,9 @@ void power_find_buffer_sc_levr(t_power_buffer_sc_levr_inf ** lower,
 	}
 }
 
+/**
+ * Comparison function, used by power_find_nmos_leakage
+ */
 static int power_compare_leakage_pair(const void * key_void,
 		const void * elem_void) {
 	const t_power_nmos_leakage_pair * key = key_void;
@@ -502,6 +583,13 @@ static int power_compare_leakage_pair(const void * key_void,
 	}
 }
 
+/**
+ * This function searches for multiplexer output voltage information, based on input voltage
+ * - lower: (Return value) The lower-bound matching record
+ * - upper: (Return value) The upper-bound matching record
+ * - volt_inf: The set of records to search within, which are for a specific mux size
+ * - v_in: The input voltage to search for
+ */
 void power_find_mux_volt_inf(t_power_mux_volt_pair ** lower,
 		t_power_mux_volt_pair ** upper, t_power_mux_volt_inf * volt_inf,
 		float v_in) {
@@ -526,6 +614,9 @@ void power_find_mux_volt_inf(t_power_mux_volt_pair ** lower,
 	}
 }
 
+/**
+ * Comparison function, used by power_find_buffer_sc_levr
+ */
 static int power_compare_buffer_sc_levr(const void * key_void,
 		const void * elem_void) {
 	const t_power_buffer_sc_levr_inf * key = key_void;
@@ -561,6 +652,9 @@ static int power_compare_buffer_sc_levr(const void * key_void,
 	}
 }
 
+/**
+ * Comparison function, used by power_find_buffer_strength_inf
+ */
 static int power_compare_buffer_strength(const void * key_void,
 		const void * elem_void) {
 	const t_power_buffer_strength_inf * key = key_void;
@@ -579,6 +673,9 @@ static int power_compare_buffer_strength(const void * key_void,
 	}
 }
 
+/**
+ * Comparison function, used by power_find_transistor_info
+ */
 static int power_compare_transistor_size(const void * key_void,
 		const void * elem_void) {
 	const t_transistor_size_inf * key = key_void;
@@ -617,6 +714,9 @@ static int power_compare_transistor_size(const void * key_void,
 
 }
 
+/**
+ * Comparison function, used by power_find_mux_volt_inf
+ */
 static int power_compare_voltage_pair(const void * key_void,
 		const void * elem_void) {
 	const t_power_mux_volt_pair * key = key_void;

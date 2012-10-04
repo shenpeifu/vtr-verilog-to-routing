@@ -23,6 +23,7 @@ typedef struct s_power_usage t_power_usage;
 typedef struct s_clocks t_clocks;
 typedef struct s_clock_inf t_clock_inf;
 typedef struct s_power_arch t_power_arch;
+typedef struct s_interconnect_pins t_interconnect_pins;
 
 /*************************************************************************************************/
 /* FPGA basic definitions                                                                        */
@@ -297,7 +298,7 @@ struct s_interconnect_pins {
 	struct s_pb_graph_pin *** input_pins;
 	struct s_pb_graph_pin *** output_pins;
 };
-typedef struct s_interconnect_pins t_interconnect_pins;
+
 
 /** Describes mode
  * name: name of the mode

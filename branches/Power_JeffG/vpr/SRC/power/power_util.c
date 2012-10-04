@@ -1,5 +1,27 @@
+/*********************************************************************
+ *  The following code is part of the power modelling feature of VTR.
+ *
+ * For support:
+ * http://code.google.com/p/vtr-verilog-to-routing/wiki/Power
+ *
+ * or email:
+ * vtr.power.estimation@gmail.com
+ *
+ * If you are using power estimation for your researach please cite:
+ *
+ * Jeffrey Goeders and Steven Wilton.  VersaPower: Power Estimation
+ * for Diverse FPGA Architectures.  In International Conference on
+ * Field Programmable Technology, 2012.
+ *
+ ********************************************************************/
+
+/**
+ * This file provides utility functions used by power estimation.
+ */
+
 /************************* INCLUDES *********************************/
 #include <string.h>
+#include <assert.h>
 
 #include "power_util.h"
 #include "globals.h"
@@ -8,6 +30,7 @@
 
 /************************* FUNCTION DECLARATIONS*********************/
 static void log_msg(t_log * log_ptr, char * msg);
+static void int_2_binary_str(char * binary_str, int value, int str_length);
 
 /************************* FUNCTION DEFINITIONS *********************/
 void power_zero_usage(t_power_usage * power_usage) {
@@ -69,6 +92,13 @@ float pin_prob(t_pb * pb, t_pb_graph_pin * pin) {
 	return prob;
 }
 
+/**
+ * This function determines the values of the selectors in a static mux, based
+ * on the routing information.
+ * - selector_values: (Return values) selected index at each mux level
+ * - mux_node:
+ * - selected_input_pin: The input index to the multi-level mux that is chosen
+ */
 boolean mux_find_selector_values(int * selector_values, t_mux_node * mux_node,
 		int selected_input_pin) {
 	if (mux_node->level == 0) {
@@ -124,15 +154,10 @@ static void log_msg(t_log * log_ptr, char * msg) {
 	}
 }
 
-/*
- * Func Name	: 	calc_buffer_num_stages
- *
- * Description	:	Calculates the number of buffer stages required, to achieve a given buffer fanout
- *
- * Arguments	:	final_stage_size - size of the final stage of the buffer (relative to min-size buffer)
- * 					desired_stage_effort - target fanout gain of each stage of the buffer
- *
- * Returns		:	Number of stages
+/**
+ * Calculates the number of buffer stages required, to achieve a given buffer fanout
+ * final_stage_size: Size of the final inverter in the buffer, relative to a min size
+ * desired_stage_effort: The desired gain between stages, typically 4
  */
 int calc_buffer_num_stages(float final_stage_size, float desired_stage_effort) {
 	int N = 1;
@@ -157,15 +182,10 @@ int calc_buffer_num_stages(float final_stage_size, float desired_stage_effort) {
 	return N;
 }
 
-/*
- * Func Name	: 	calc_buffer_stage_effort
- *
- * Description	: 	Calculates the required effort of each stage of a buffer to achieve an overall fanout
- *
- * Arguments	: 	N - number of buffer stages
- * 					final_stage_size - size of the final buffer stage
- *
- * Returns		: 	Effort by each stage
+/**
+ * Calculates the required effort of each stage of a buffer
+ * - N: The number of stages of the buffer
+ * - final_stage_size: Size of the final inverter in the buffer, relative to a min size
  */
 float calc_buffer_stage_effort(int N, float final_stage_size) {
 	if (N > 1)
@@ -174,3 +194,281 @@ float calc_buffer_stage_effort(int N, float final_stage_size) {
 		return 1.0;
 }
 
+#if 0
+void integer_to_SRAMvalues(int SRAM_num, int input_integer, char SRAM_values[]) {
+	char binary_str[20];
+	int binary_str_counter;
+	int local_integer;
+	int i;
+
+	binary_str_counter = 0;
+
+	local_integer = input_integer;
+
+	while (local_integer > 0) {
+		if (local_integer % 2 == 0) {
+			SRAM_values[binary_str_counter++] = '0';
+		} else {
+			SRAM_values[binary_str_counter++] = '1';
+		}
+		local_integer = local_integer / 2;
+	}
+
+	while (binary_str_counter < SRAM_num) {
+		SRAM_values[binary_str_counter++] = '0';
+	}
+
+	SRAM_values[binary_str_counter] = '\0';
+
+	for (i = 0; i < binary_str_counter; i++) {
+		binary_str[i] = SRAM_values[binary_str_counter - 1 - i];
+	}
+
+	binary_str[binary_str_counter] = '\0';
+
+}
+#endif
+
+/**
+ * This function converts an integer to a binary string
+ * - binary_str: (Return value) The created binary string
+ * - value: The integer value to convert
+ * - str_length: The length of the binary string
+ */
+static void int_2_binary_str(char * binary_str, int value, int str_length) {
+	int i;
+	int odd;
+
+	binary_str[str_length] = '\0';
+
+	for (i = str_length - 1; i >= 0; i--, value >>= 1) {
+		odd = value % 2;
+		if (odd == 0) {
+			binary_str[i] = '0';
+		} else {
+			binary_str[i] = '1';
+		}
+	}
+}
+
+/**
+* This functions returns the LUT SRAM values from the given logic terms
+*  - LUT_size: The number of LUT inputs
+*  - truth_table: The logic terms saved from the BLIF file, in a linked list format
+*/
+char * alloc_SRAM_values_from_truth_table(int LUT_size,
+		t_linked_vptr * truth_table) {
+	char * SRAM_values;
+	int i;
+	int num_SRAM_bits;
+	char * binary_str;
+	char ** terms;
+	char * buffer;
+	char * str_loc;
+	boolean on_set;
+	t_linked_vptr * list_ptr;
+	int num_terms;
+	int term_idx;
+	int bit_idx;
+	int dont_care_start_pos;
+	boolean used = TRUE;
+
+	num_SRAM_bits = 1 << LUT_size;
+	SRAM_values = my_calloc(num_SRAM_bits + 1, sizeof(char));
+	SRAM_values[num_SRAM_bits] = '\0';
+
+	if (!truth_table) {
+		used = FALSE;
+		for (i = 0; i < num_SRAM_bits; i++) {
+			SRAM_values[i] = '1';
+		}
+		return SRAM_values;
+	}
+
+	binary_str = my_calloc(LUT_size + 1, sizeof(char));
+	buffer = my_calloc(LUT_size + 10, sizeof(char));
+
+	strcpy(buffer, truth_table->data_vptr);
+
+	/* Check if this is an unconnected node - hopefully these will be
+	 * ignored by VPR in the future
+	 */
+	if (strcmp(buffer, " 0") == 0) {
+		free(binary_str);
+		free(buffer);
+		return SRAM_values;
+	} else if (strcmp(buffer, " 1") == 0) {
+		for (i = 0; i < num_SRAM_bits; i++) {
+			SRAM_values[i] = '1';
+		}
+		free(binary_str);
+		free(buffer);
+		return SRAM_values;
+	}
+
+	/* If the LUT is larger than the terms, the lower significant bits will be don't cares */
+	str_loc = strtok(buffer, " \t");
+	dont_care_start_pos = strlen(str_loc);
+
+	/* Find out if the truth table provides the ON-set or OFF-set */
+	str_loc = strtok(NULL, " \t");
+	if (str_loc[0] == '1') {
+		on_set = TRUE;
+	} else if (str_loc[0] == '0') {
+		on_set = FALSE;
+	} else {
+		assert(0);
+	}
+
+	/* Count truth table terms */
+	num_terms = 0;
+	for (list_ptr = truth_table; list_ptr != NULL ; list_ptr = list_ptr->next) {
+		num_terms++;
+	}
+	terms = my_calloc(num_terms, sizeof(char *));
+
+	/* Extract truth table terms */
+	for (list_ptr = truth_table, term_idx = 0; list_ptr != NULL ; list_ptr =
+			list_ptr->next, term_idx++) {
+		terms[term_idx] = my_calloc(LUT_size + 1, sizeof(char));
+
+		strcpy(buffer, list_ptr->data_vptr);
+		str_loc = strtok(buffer, " \t");
+		strcpy(terms[term_idx], str_loc);
+
+		/* Fill don't cares for lower bits (when LUT is larger than term size) */
+		for (bit_idx = dont_care_start_pos; bit_idx < LUT_size; bit_idx++) {
+			terms[term_idx][bit_idx] = '-';
+		}
+
+		/* Verify on/off consistency */
+		str_loc = strtok(NULL, " \t");
+		if (on_set) {
+			assert(str_loc[0] == '1');
+		} else {
+			assert(str_loc[0] == '0');
+		}
+	}
+
+	/* Loop through all SRAM bits */
+	for (i = 0; i < num_SRAM_bits; i++) {
+		/* Set default value */
+		if (on_set) {
+			SRAM_values[i] = '0';
+		} else {
+			SRAM_values[i] = '1';
+		}
+
+		/* Get binary number representing this SRAM index */
+		int_2_binary_str(binary_str, i, LUT_size);
+
+		/* Loop through truth table terms */
+		for (term_idx = 0; term_idx < num_terms; term_idx++) {
+			boolean match = TRUE;
+
+			for (bit_idx = 0; bit_idx < LUT_size; bit_idx++) {
+				if ((terms[term_idx][bit_idx] != '-')
+						&& (terms[term_idx][bit_idx] != binary_str[bit_idx])) {
+					match = FALSE;
+					break;
+				}
+			}
+
+			if (match) {
+				if (on_set) {
+					SRAM_values[i] = '1';
+				} else {
+					SRAM_values[i] = '0';
+				}
+
+				/* No need to check the other terms, already matched */
+				break;
+			}
+		}
+
+	}
+	free(binary_str);
+	free(buffer);
+	for (term_idx = 0; term_idx < num_terms; term_idx++) {
+		free(terms[term_idx]);
+	}
+	free(terms);
+
+	return SRAM_values;
+}
+
+/* Reduce mux levels for multiplexers that are too small for the preset number of levels */
+void mux_arch_fix_levels(t_mux_arch * mux_arch) {
+	while ((pow(2, mux_arch->levels) > mux_arch->num_inputs)
+			&& (mux_arch->levels > 1)) {
+		mux_arch->levels--;
+	}
+}
+
+float clb_net_density(int net_idx) {
+	if (net_idx == OPEN) {
+		return 0.;
+	} else {
+		return clb_net[net_idx].density;
+	}
+}
+
+float clb_net_prob(int net_idx) {
+	if (net_idx == OPEN) {
+		return 0.;
+	} else {
+		return clb_net[net_idx].probability;
+	}
+}
+
+char * interconnect_type_name(enum e_interconnect type) {
+	switch (type) {
+	case COMPLETE_INTERC:
+		return "complete";
+	case MUX_INTERC:
+		return "mux";
+	case DIRECT_INTERC:
+		return "direct";
+	default:
+		return "";
+	}
+}
+
+void output_log(t_log * log_ptr, FILE * fp) {
+	int msg_idx;
+
+	for (msg_idx = 0; msg_idx < log_ptr->num_messages; msg_idx++) {
+		fprintf(fp, "%s\n", log_ptr->messages[msg_idx]);
+	}
+}
+
+void output_logs(FILE * fp, t_log * logs, int num_logs) {
+	int log_idx;
+
+	for (log_idx = 0; log_idx < num_logs; log_idx++) {
+		if (logs[log_idx].num_messages) {
+			power_print_title(fp, logs[log_idx].name);
+			output_log(&logs[log_idx], fp);
+			fprintf(fp, "\n");
+		}
+	}
+}
+
+float power_buffer_size_from_logical_effort(float C_load) {
+	return max(1, C_load / g_power_commonly_used->INV_1X_C_in / POWER_BUFFER_STAGE_GAIN);
+}
+
+void power_print_title(FILE * fp, char * title) {
+	int i;
+	const int width = 80;
+
+	int firsthalf = (width - strlen(title) - 2) / 2;
+	int secondhalf = width - strlen(title) - 2 - firsthalf;
+
+	for (i = 1; i < firsthalf; i++)
+		fprintf(fp, "-");
+	fprintf(fp, " %s ", title);
+	for (i = 1; i < secondhalf; i++)
+		fprintf(fp, "-");
+	fprintf(fp, "\n");
+}

@@ -1,3 +1,24 @@
+/*********************************************************************
+ *  The following code is part of the power modelling feature of VTR.
+ *
+ * For support:
+ * http://code.google.com/p/vtr-verilog-to-routing/wiki/Power
+ *
+ * or email:
+ * vtr.power.estimation@gmail.com
+ *
+ * If you are using power estimation for your researach please cite:
+ *
+ * Jeffrey Goeders and Steven Wilton.  VersaPower: Power Estimation
+ * for Diverse FPGA Architectures.  In International Conference on
+ * Field Programmable Technology, 2012.
+ *
+ ********************************************************************/
+
+/**
+ * This is the top-level file for power estimation in VTR
+ */
+
 /************************* INCLUDES *********************************/
 #include <assert.h>
 #include <stdlib.h>
@@ -12,7 +33,7 @@
 #include "power_util.h"
 #include "power_lowlevel.h"
 #include "power_transistor_cnt.h"
-#include "power_misc.h"
+#include "power_verify.h"
 #include "power_cmos_tech.h"
 
 #include "physical_types.h"
@@ -22,35 +43,11 @@
 #include "ezxml.h"
 #include "read_xml_util.h"
 
+/************************* DEFINES **********************************/
 #define CONVERT_NM_PER_M 1000000000
 #define CONVERT_UM_PER_M 1000000
 
-/* Future */
-/* TODO_POWER - Analyze run-time */
-/* TODO_POWER - What if packing is run separately? */
-/* TODO_POWER - Memory usage of new route algorithm */
-
-/* Immediate */
-/* TODO_POWER - LUT driver autosize */
-/* TODO_POWER - LUT fracture input sharing fix */
-/* TODO_POWER - Clock buffer instead of INV */
-/* TODO_POWER - Buffer sense stage Y/N parameter */
-
-/************************* DEFINES **********************************/
-
-static const float CM_PER_M = 100;
-static const float E0 = 8.854187e-12;
-static const float Esi = 103.41690416e-12; /* 11.68 * E0 */
-static const float q = 1.602177e-19;
-static const float Kb = 1.3806503e-23;
-
 /************************* ENUMS ************************************/
-
-typedef enum {
-	POWER_VOLTAGE_LEVEL_VDD = 0,
-	POWER_VOLTAGE_LEVEL_VDD_SUB_VTH,
-	POWER_VOLTAGE_LEVEL_VTH
-} e_power_voltage_level;
 
 /************************* GLOBALS **********************************/
 t_power_arch * g_power_arch;
@@ -60,314 +57,63 @@ t_power_commonly_used * g_power_commonly_used;
 t_power_tech * g_power_tech;
 
 /************************* Function Declarations ********************/
-char * interconnect_type_name(enum e_interconnect type);
 
-void output_log(t_log * log_ptr, FILE * fp);
-
-static float power_buffer_size_from_logical_effort(float C_load);
-
-char * alloc_SRAM_values_from_truth_table(int LUT_size,
-		t_linked_vptr * truth_table);
-
-void int_2_binary_str(char * binary_str, int value, int str_length);
-float clb_net_density(int net_idx);
-float clb_net_prob(int net_idx);
-
-void power_calc_pb(t_power_usage * power_usage, t_pb * pb,
-		t_pb_graph_node * pb_graph_node);
-
+/* Routing */
 static void power_calc_routing(t_power_usage * power_usage);
 
-void dealloc_mux_graph_recursive(t_mux_node * node);
+/* Tiles */
+static void power_calc_tile_usage(t_power_usage * power_usage);
+static void power_calc_pb(t_power_usage * power_usage, t_pb * pb,
+		t_pb_graph_node * pb_graph_node);
+static void power_calc_pb_recursive(t_power_usage * power_usage, t_pb * pb,
+		t_pb_graph_node * pb_graph_node, boolean calc_dynamic,
+		boolean calc_leakage);
+static void power_calc_blif_primitive(t_power_usage * power_usage, t_pb * pb,
+		t_pb_graph_node * pb_graph_node, boolean calc_dynamic,
+		boolean calc_static);
+static void power_reset_tile_usage(void);
+static void power_reset_pb_type(t_pb_type * pb_type);
 
-void power_print_element_usage_close(char * name, int indent_level);
-
-static float power_transistor_area(float num_transistors);
-
-void power_reset_tile_usage(void);
-
-void alloc_and_load_mux_graph_recursive(t_mux_node * node,
-		int num_primary_inputs, int level, int starting_pin_idx);
-
-void dealloc_mux_graph(t_mux_node * node);
-
-void output_logs(FILE * fp, t_log * logs, int num_logs);
-
-void init_mux_arch_default(t_mux_arch * mux_arch, int levels, int num_inputs);
-
-t_mux_node * alloc_and_load_mux_graph(int num_inputs, int levels);
-
-float get_NFS(e_tx_type transistor_type, int temperature);
-
+/* Clock */
 static void power_calc_clock(t_power_usage * power_usage, t_clocks * clocks);
-
 static void power_calc_clock_single(t_power_usage * power_usage,
 		t_clock_inf * clock_inf);
 
-void power_calc_tile_usage(t_power_usage * power_usage);
+/* Init/Uninit */
+static void init_mux_arch_default(t_mux_arch * mux_arch, int levels, int num_inputs);
+static void dealloc_mux_graph(t_mux_node * node);
+static void dealloc_mux_graph_recursive(t_mux_node * node);
 
-void power_calc_pb_recursive(t_power_usage * power_usage, t_pb * pb,
-		t_pb_graph_node * pb_graph_node, boolean calc_dynamic,
-		boolean calc_leakage);
+/* Mux Graphs */
+static void alloc_and_load_mux_graph_recursive(t_mux_node * node,
+		int num_primary_inputs, int level, int starting_pin_idx);
 
-void power_calc_blif_primitive(t_power_usage * power_usage, t_pb * pb,
-		t_pb_graph_node * pb_graph_node, boolean calc_dynamic,
-		boolean calc_leakage);
-
-void power_reset_pb_type(t_pb_type * pb_type);
-
-int binary_str_to_integer(int binary_length, char *binary_str);
-
-void power_calc_MUX_node(t_power_usage * power_usage, float * out_dens,
-		float * out_prob, t_mux_node * mux_node, t_mux_arch * mux_arch,
-		int * selector_values, float * primary_input_density,
-		float * primary_input_prob);
-
-void power_print_pb_usage_recursive(FILE * fp, t_pb_type * type,
+/* Printing */
+static void power_print_clb_usage(FILE * fp);
+static void power_print_pb_usage_recursive(FILE * fp, t_pb_type * type,
 		int indent_level, float parent_power, float total_power);
-
-void power_print_pb_usage(FILE * fp);
-
-void integer_to_SRAMvalues(int SRAM_num, int input_integer, char SRAM_values[]);
 
 /************************* FUNCTION DEFINITIONS *********************/
 
-void integer_to_SRAMvalues(int SRAM_num, int input_integer, char SRAM_values[]) {
-	char binary_str[20];
-	int binary_str_counter;
-	int local_integer;
-	int i;
-
-	binary_str_counter = 0;
-
-	local_integer = input_integer;
-
-	while (local_integer > 0) {
-		if (local_integer % 2 == 0) {
-			SRAM_values[binary_str_counter++] = '0';
-		} else {
-			SRAM_values[binary_str_counter++] = '1';
-		}
-		local_integer = local_integer / 2;
-	}
-
-	while (binary_str_counter < SRAM_num) {
-		SRAM_values[binary_str_counter++] = '0';
-	}
-
-	SRAM_values[binary_str_counter] = '\0';
-
-	for (i = 0; i < binary_str_counter; i++) {
-		binary_str[i] = SRAM_values[binary_str_counter - 1 - i];
-	}
-
-	binary_str[binary_str_counter] = '\0';
-
-}
-
-int binary_str_to_integer(int binary_length, char *binary_str) {
-	int i;
-	int integer_value;
-	int temp_value;
-
-	integer_value = 0;
-
-	for (i = 0; i < binary_length; i++) {
-		if (binary_str[i] == '1') {
-			temp_value = (1 << (binary_length - i - 1));
-			integer_value += temp_value;
-		}
-	}
-
-	return (integer_value);
-}
-
-#if 0
-void calc_MUX_prob_and_density (
-		float *out_prob,
-		float *out_dens,
-		float in_0_prob,
-		float in_1_prob,
-		float sel_prob,
-		float in_0_density,
-		float in_1_density,
-		float sel_dens,
-)
-{
-	/* Calculations based on the transition density signal model */
-
-	(*out_prob) = in_0_prob * (1 - sel_prob) + in_1_prob * sel_prob;
-
-	(*out_dens) = (1 - sel_prob) * in_0_density + sel_prob * in_1_density +
-	((1 - in_0_prob) * in_1_prob + in_0_prob * (1 - in_1_prob)) * sel_dens;
-}
-#endif
-
-void int_2_binary_str(char * binary_str, int value, int str_length) {
-	int i;
-	int odd;
-
-	binary_str[str_length] = '\0';
-
-	for (i = str_length - 1; i >= 0; i--, value >>= 1) {
-		odd = value % 2;
-		if (odd == 0) {
-			binary_str[i] = '0';
-		} else {
-			binary_str[i] = '1';
-		}
-	}
-}
-
-char * alloc_SRAM_values_from_truth_table(int LUT_size,
-		t_linked_vptr * truth_table) {
-	char * SRAM_values;
-	int i;
-	int num_SRAM_bits;
-	char * binary_str;
-	char ** terms;
-	char * buffer;
-	char * str_loc;
-	boolean on_set;
-	t_linked_vptr * list_ptr;
-	int num_terms;
-	int term_idx;
-	int bit_idx;
-	int dont_care_start_pos;
-	boolean used = TRUE;
-
-	num_SRAM_bits = 1 << LUT_size;
-	SRAM_values = my_calloc(num_SRAM_bits + 1, sizeof(char));
-	SRAM_values[num_SRAM_bits] = '\0';
-
-	if (!truth_table) {
-		used = FALSE;
-		for (i = 0; i < num_SRAM_bits; i++) {
-			SRAM_values[i] = '1';
-		}
-		return SRAM_values;
-	}
-
-	binary_str = my_calloc(LUT_size + 1, sizeof(char));
-	buffer = my_calloc(LUT_size + 10, sizeof(char));
-
-	strcpy(buffer, truth_table->data_vptr);
-
-	/* Check if this is an unconnected node - hopefully these will be
-	 * ignored by VPR in the future
-	 */
-	if (strcmp(buffer, " 0") == 0) {
-		free(binary_str);
-		free(buffer);
-		return SRAM_values;
-	} else if (strcmp(buffer, " 1") == 0) {
-		for (i = 0; i < num_SRAM_bits; i++) {
-			SRAM_values[i] = '1';
-		}
-		free(binary_str);
-		free(buffer);
-		return SRAM_values;
-	}
-
-	/* If the LUT is larger than the terms, the lower significant bits will be don't cares */
-	str_loc = strtok(buffer, " \t");
-	dont_care_start_pos = strlen(str_loc);
-
-	/* Find out if the truth table provides the ON-set or OFF-set */
-	str_loc = strtok(NULL, " \t");
-	if (str_loc[0] == '1') {
-		on_set = TRUE;
-	} else if (str_loc[0] == '0') {
-		on_set = FALSE;
-	} else {
-		assert(0);
-	}
-
-	/* Count truth table terms */
-	num_terms = 0;
-	for (list_ptr = truth_table; list_ptr != NULL ; list_ptr = list_ptr->next) {
-		num_terms++;
-	}
-	terms = my_calloc(num_terms, sizeof(char *));
-
-	/* Extract truth table terms */
-	for (list_ptr = truth_table, term_idx = 0; list_ptr != NULL ; list_ptr =
-			list_ptr->next, term_idx++) {
-		terms[term_idx] = my_calloc(LUT_size + 1, sizeof(char));
-
-		strcpy(buffer, list_ptr->data_vptr);
-		str_loc = strtok(buffer, " \t");
-		strcpy(terms[term_idx], str_loc);
-
-		/* Fill don't cares for lower bits (when LUT is larger than term size) */
-		for (bit_idx = dont_care_start_pos; bit_idx < LUT_size; bit_idx++) {
-			terms[term_idx][bit_idx] = '-';
-		}
-
-		/* Verify on/off consistency */
-		str_loc = strtok(NULL, " \t");
-		if (on_set) {
-			assert(str_loc[0] == '1');
-		} else {
-			assert(str_loc[0] == '0');
-		}
-	}
-
-	/* Loop through all SRAM bits */
-	for (i = 0; i < num_SRAM_bits; i++) {
-		/* Set default value */
-		if (on_set) {
-			SRAM_values[i] = '0';
-		} else {
-			SRAM_values[i] = '1';
-		}
-
-		/* Get binary number representing this SRAM index */
-		int_2_binary_str(binary_str, i, LUT_size);
-
-		/* Loop through truth table terms */
-		for (term_idx = 0; term_idx < num_terms; term_idx++) {
-			boolean match = TRUE;
-
-			for (bit_idx = 0; bit_idx < LUT_size; bit_idx++) {
-				if ((terms[term_idx][bit_idx] != '-')
-						&& (terms[term_idx][bit_idx] != binary_str[bit_idx])) {
-					match = FALSE;
-					break;
-				}
-			}
-
-			if (match) {
-				if (on_set) {
-					SRAM_values[i] = '1';
-				} else {
-					SRAM_values[i] = '0';
-				}
-
-				/* No need to check the other terms, already matched */
-				break;
-			}
-		}
-
-	}
-	free(binary_str);
-	free(buffer);
-	for (term_idx = 0; term_idx < num_terms; term_idx++) {
-		free(terms[term_idx]);
-	}
-	free(terms);
-
-	return SRAM_values;
-}
-
-void power_calc_blif_primitive(t_power_usage * power_usage, t_pb * pb,
+/**
+ *  This function calculates the power of primitives (ff, lut, etc),
+ *  by calling the appropriate primitive function.
+ *  - power_usage: (Return value)
+ *  - pb: The pysical block
+ *  - pb_graph_node: The physical block graph node
+ *  - calc_dynamic: Calculate dynamic power? Otherwise ignore
+ *  - calc_static: Calculate static power? Otherwise ignore
+ */
+static void power_calc_blif_primitive(t_power_usage * power_usage, t_pb * pb,
 		t_pb_graph_node * pb_graph_node, boolean calc_dynamic,
-		boolean calc_leakage) {
+		boolean calc_static) {
 	t_power_usage sub_power_usage;
 	power_usage->dynamic = 0.;
 	power_usage->leakage = 0.;
 
 	if (strcmp(pb_graph_node->pb_type->blif_model, ".names") == 0) {
+		/* LUT */
+
 		char * SRAM_values;
 		float * input_probabilities;
 		float * input_densities;
@@ -401,9 +147,11 @@ void power_calc_blif_primitive(t_power_usage * power_usage, t_pb * pb,
 		free(input_probabilities);
 		free(input_densities);
 	} else if (strcmp(pb_graph_node->pb_type->blif_model, ".latch") == 0) {
+		/* Flip-Flop */
+
 		t_pb_graph_pin * D_pin = &pb_graph_node->input_pins[0][0];
 		t_pb_graph_pin * Q_pin = &pb_graph_node->output_pins[0][0];
-		/*t_pb_graph_pin * clk_pin = &pb_graph_node->clock_pins[0][0];*/
+
 		float D_dens = 0.;
 		float D_prob = 0.;
 		float Q_prob = 0.;
@@ -419,8 +167,6 @@ void power_calc_blif_primitive(t_power_usage * power_usage, t_pb * pb,
 		assert(g_arch->clocks->num_global_clock == 1);
 		clk_dens = g_arch->clocks->clock_inf[0].density;
 		clk_prob = g_arch->clocks->clock_inf[0].prob;
-		/*clk_dens = pin_density(pb, clk_pin);
-		 clk_prob = pin_prob(pb, clk_pin);*/
 
 		power_calc_FF(&sub_power_usage, D_prob, D_dens, Q_prob, Q_dens,
 				clk_prob, clk_dens);
@@ -435,7 +181,7 @@ void power_calc_blif_primitive(t_power_usage * power_usage, t_pb * pb,
 					pb_graph_node->pb_type->blif_model);
 			power_log_msg(POWER_LOG_WARNING, msg);
 		}
-		if (calc_leakage) {
+		if (calc_static) {
 			sprintf(msg, "No leakage power defined for BLIF model: %s",
 					pb_graph_node->pb_type->blif_model);
 			power_log_msg(POWER_LOG_WARNING, msg);
@@ -446,24 +192,20 @@ void power_calc_blif_primitive(t_power_usage * power_usage, t_pb * pb,
 	if (!calc_dynamic) {
 		power_usage->dynamic = 0.;
 	}
-	if (!calc_leakage) {
+	if (!calc_static) {
 		power_usage->leakage = 0.;
 	}
 }
 
-void power_calc_pb(t_power_usage * power_usage, t_pb * pb,
+/**
+ * Calculate the power of a pysical block
+ */
+static void power_calc_pb(t_power_usage * power_usage, t_pb * pb,
 		t_pb_graph_node * pb_graph_node) {
 	power_calc_pb_recursive(power_usage, pb, pb_graph_node, TRUE, TRUE);
 }
 
-void mux_arch_fix_levels(t_mux_arch * mux_arch) {
-	while ((pow(2, mux_arch->levels) > mux_arch->num_inputs)
-			&& (mux_arch->levels > 1)) {
-		mux_arch->levels--;
-	}
-}
-
-void power_calc_pb_recursive(t_power_usage * power_usage, t_pb * pb,
+static void power_calc_pb_recursive(t_power_usage * power_usage, t_pb * pb,
 		t_pb_graph_node * pb_graph_node, boolean calc_dynamic,
 		boolean calc_leakage) {
 	t_power_usage sub_power_usage;
@@ -507,8 +249,7 @@ void power_calc_pb_recursive(t_power_usage * power_usage, t_pb * pb,
 				== DYNAMIC_C_INTERNAL) {
 			/* Just take the average density of inputs pins and use
 			 * that with user-defined block capacitance and leakage */
-
-			power_usage->dynamic += power_calc_pb_dyn_from_c_internal(pb,
+			power_usage->dynamic += power_calc_pb_switching_from_c_internal(pb,
 					pb_graph_node);
 
 			continue_dynamic = FALSE;
@@ -596,25 +337,8 @@ void power_calc_pb_recursive(t_power_usage * power_usage, t_pb * pb,
 	power_add_usage(&pb_graph_node->pb_type->power_usage, power_usage);
 }
 
-#if 0
-void calc_leakage_complexblocks_unused(float * block_leakage) {
-	int type_idx;
-	for (type_idx = 0; type_idx < num_types; type_idx++) {
-		t_power_usage pb_power;
-
-		if (&type_descriptors[type_idx] == EMPTY_TYPE) {
-			continue;
-		}
-
-		power_calc_pb(&pb_power, NULL,
-				type_descriptors[type_idx].pb_graph_head);
-
-		block_leakage[type_idx] = pb_power.leakage;
-	}
-}
-#endif
-
-void power_reset_pb_type(t_pb_type * pb_type) {
+/* Resets the power stats for all physical blocks */
+static void power_reset_pb_type(t_pb_type * pb_type) {
 	int mode_idx;
 	int child_idx;
 	int interc_idx;
@@ -639,7 +363,10 @@ void power_reset_pb_type(t_pb_type * pb_type) {
 	}
 }
 
-void power_reset_tile_usage(void) {
+/**
+ * Resets the power usage for all tile types
+ */
+static void power_reset_tile_usage(void) {
 	int type_idx;
 
 	for (type_idx = 0; type_idx < num_types; type_idx++) {
@@ -649,7 +376,10 @@ void power_reset_tile_usage(void) {
 	}
 }
 
-void power_calc_tile_usage(t_power_usage * power_usage) {
+/*
+ * Calcultes the power usage of all tiles in the FPGA
+ */
+static void power_calc_tile_usage(t_power_usage * power_usage) {
 	int x, y, z;
 	int type_idx;
 
@@ -681,14 +411,8 @@ void power_calc_tile_usage(t_power_usage * power_usage) {
 	return;
 }
 
-/*
- * Func Name	: 	calc_power_clock
- *
- * Description	: 	Calculates the total power usage from the clock network
- *
- * Arguments	:
- *
- * Returns		:	Nothing
+/**
+ * Calculates the total power usage from the clock network
  */
 static void power_calc_clock(t_power_usage * power_usage, t_clocks * clocks) {
 	float Clock_power_dissipation;
@@ -728,6 +452,9 @@ static void power_calc_clock(t_power_usage * power_usage, t_clocks * clocks) {
 	return;
 }
 
+/**
+ * Calculates the power from a single spine-and-rib global clock
+ */
 static void power_calc_clock_single(t_power_usage * power_usage,
 		t_clock_inf * single_clock) {
 
@@ -808,7 +535,10 @@ static void power_calc_clock_single(t_power_usage * power_usage,
 	return;
 }
 
-void init_mux_arch_default(t_mux_arch * mux_arch, int levels, int num_inputs) {
+/**
+ * Generates a default multiplexer architecture of given size and number of levels
+ */
+static void init_mux_arch_default(t_mux_arch * mux_arch, int levels, int num_inputs) {
 	int level_idx;
 
 	mux_arch->levels = levels;
@@ -828,7 +558,13 @@ void init_mux_arch_default(t_mux_arch * mux_arch, int levels, int num_inputs) {
 			mux_arch->levels);
 }
 
-void dealloc_mux_graph_recursive(t_mux_node * node) {
+/* Frees a multiplexer graph */
+static void dealloc_mux_graph(t_mux_node * node) {
+	dealloc_mux_graph_recursive(node);
+	free(node);
+}
+
+static void dealloc_mux_graph_recursive(t_mux_node * node) {
 	int child_idx;
 
 	/* Dealloc Children */
@@ -840,12 +576,19 @@ void dealloc_mux_graph_recursive(t_mux_node * node) {
 	}
 }
 
-void dealloc_mux_graph(t_mux_node * node) {
-	dealloc_mux_graph_recursive(node);
-	free(node);
+/**
+ * Allocates a builds a multiplexer graph with given # inputs and levels
+ */
+t_mux_node * alloc_and_load_mux_graph(int num_inputs, int levels) {
+	t_mux_node * node;
+
+	node = my_malloc(sizeof(t_mux_node));
+	alloc_and_load_mux_graph_recursive(node, num_inputs, levels - 1, 0);
+
+	return node;
 }
 
-void alloc_and_load_mux_graph_recursive(t_mux_node * node,
+static void alloc_and_load_mux_graph_recursive(t_mux_node * node,
 		int num_primary_inputs, int level, int starting_pin_idx) {
 	int child_idx;
 	int pin_idx = starting_pin_idx;
@@ -868,32 +611,9 @@ void alloc_and_load_mux_graph_recursive(t_mux_node * node,
 	}
 }
 
-t_mux_node *
-alloc_and_load_mux_graph(int num_inputs, int levels) {
-	t_mux_node * node;
-
-	node = my_malloc(sizeof(t_mux_node));
-	alloc_and_load_mux_graph_recursive(node, num_inputs, levels - 1, 0);
-
-	return node;
-}
-
-float clb_net_density(int net_idx) {
-	if (net_idx == OPEN) {
-		return 0.;
-	} else {
-		return clb_net[net_idx].density;
-	}
-}
-
-float clb_net_prob(int net_idx) {
-	if (net_idx == OPEN) {
-		return 0.;
-	} else {
-		return clb_net[net_idx].probability;
-	}
-}
-
+/**
+* Calculates the power of the entire routing fabric (not local routing
+*/
 static void power_calc_routing(t_power_usage * power_usage) {
 	int rr_node_idx;
 	int net_idx;
@@ -1074,8 +794,7 @@ static void power_calc_routing(t_power_usage * power_usage) {
 			/* Buffer to next Switchbox */
 			if (switchbox_fanout) {
 				buffer_size = power_buffer_size_from_logical_effort(
-						switchbox_fanout
-								* g_power_commonly_used->NMOS_1X_C_drain_pass);
+						switchbox_fanout * g_power_commonly_used->NMOS_1X_C_d);
 				power_calc_buffer(&sub_power_usage, buffer_size,
 						1 - node->in_prob[node->selected_input],
 						node->in_density[node->selected_input], FALSE, 0);
@@ -1089,7 +808,7 @@ static void power_calc_routing(t_power_usage * power_usage) {
 
 				buffer_size = power_buffer_size_from_logical_effort(
 						connectionbox_fanout
-								* g_power_commonly_used->NMOS_1X_C_drain_pass);
+								* g_power_commonly_used->NMOS_1X_C_d);
 
 				power_calc_buffer(&sub_power_usage, buffer_size,
 						node->in_density[node->selected_input],
@@ -1113,15 +832,8 @@ static void power_calc_routing(t_power_usage * power_usage) {
 	}
 }
 
-/*
- * Func Name	: 	power_init
- *
- * Description	: 	Initialization for all power-related functions
- *
- * Arguments	: 	power_otions
- * 					power_architecture
- *
- * Returns		: 	Nothing
+/**
+ * Initialization for all power-related functions
  */
 boolean power_init(t_power_opts * power_opts, t_power_arch * power_arch) {
 	boolean error = FALSE;
@@ -1157,7 +869,7 @@ boolean power_init(t_power_opts * power_opts, t_power_arch * power_arch) {
 		}
 	}
 
-	power_read_cmos_tech_behavior();
+	power_tech_load_xml_file();
 
 	power_components_init();
 
@@ -1288,15 +1000,10 @@ boolean power_init(t_power_opts * power_opts, t_power_arch * power_arch) {
 	return error;
 }
 
-static float power_transistor_area(float num_transistors) {
-	/* Calculate transistor area, assuming:
-	 *  - Min transistor size is Wx6L
-	 *  - Overhead to space transistors is: POWER_TRANSISTOR_SPACING_FACTOR */
 
-	return num_transistors * POWER_TRANSISTOR_SPACING_FACTOR
-			* (g_power_tech->tech_size * g_power_tech->tech_size * 6);
-}
-
+/**
+ * Uninitialize power module
+ */
 boolean power_uninit(void) {
 	int mux_size;
 	int log_idx;
@@ -1322,6 +1029,7 @@ boolean power_uninit(void) {
 		}
 	}
 
+	/* Free mux architectures */
 	for (mux_size = 1; mux_size <= g_power_commonly_used->max_mux_size;
 			mux_size++) {
 		free(g_power_commonly_used->mux_arch[mux_size].encoding_types);
@@ -1335,6 +1043,8 @@ boolean power_uninit(void) {
 	if (g_power_output->out) {
 		fclose(g_power_output->out);
 	}
+
+	/* Free logs */
 	for (log_idx = 0; log_idx < g_power_output->num_logs; log_idx++) {
 		for (msg_idx = 0; msg_idx < g_power_output->logs[log_idx].num_messages;
 				msg_idx++) {
@@ -1349,28 +1059,10 @@ boolean power_uninit(void) {
 	return error;
 }
 
-void power_print_element_usage_close(char * name, int indent_level) {
-	int i;
-	for (i = 0; i < indent_level; i++) {
-		fprintf(g_power_output->out, "\t");
-	}
-	fprintf(g_power_output->out, "</%s>\n", name);
-}
-
-char * interconnect_type_name(enum e_interconnect type) {
-	switch (type) {
-	case COMPLETE_INTERC:
-		return "complete";
-	case MUX_INTERC:
-		return "mux";
-	case DIRECT_INTERC:
-		return "direct";
-	default:
-		return "";
-	}
-}
-
-void power_print_pb_usage_recursive(FILE * fp, t_pb_type * type,
+/**
+ * Prints the power of all pb structures, in an xml format that matches the archicture file
+ */
+static void power_print_pb_usage_recursive(FILE * fp, t_pb_type * type,
 		int indent_level, float parent_power, float total_power) {
 	int mode_idx;
 	int mode_indent;
@@ -1472,7 +1164,7 @@ void power_print_pb_usage_recursive(FILE * fp, t_pb_type * type,
 	fprintf(fp, "</pb_type>\n");
 }
 
-void power_print_clb_usage(FILE * fp) {
+static void power_print_clb_usage(FILE * fp) {
 	int type_idx;
 
 	float clb_power_total = power_component_get_usage_sum(POWER_COMPONENT_CLB);
@@ -1486,20 +1178,7 @@ void power_print_clb_usage(FILE * fp) {
 	}
 }
 
-void power_print_title(FILE * fp, char * title) {
-	int i;
-	const int width = 80;
 
-	int firsthalf = (width - strlen(title) - 2) / 2;
-	int secondhalf = width - strlen(title) - 2 - firsthalf;
-
-	for (i = 1; i < firsthalf; i++)
-		fprintf(fp, "-");
-	fprintf(fp, " %s ", title);
-	for (i = 1; i < secondhalf; i++)
-		fprintf(fp, "-");
-	fprintf(fp, "\n");
-}
 
 void power_print_stats(FILE * fp) {
 	fprintf(fp, "Technology (nm): %.0f\n",
@@ -1535,26 +1214,18 @@ void power_print_stats(FILE * fp) {
 }
 
 /*
- * Func Name	: 	calc_power
- *
- * Description	: 	Calculated the power required during a clock cycle of the entire circuit.
- *
- * Arguments	: 	power_options - Power Options
- * 					power_architecture - Power Architecture
- * 					directionality - Bi/Uni Directional
- * 					switch_block_type - Switch block type used in the architecture
- * 					T_crit - Period of the critical path
- * 					num_segment_types - Number of different types of routing segments avail. in the architecture
- * 					segment_inf - Information for each routing segment - Array 0..(num_segment-1)
- *					total_segments_used - Total number of segments used in the routed design
- *					num_switch_types - Number of types of switches in the architecture (includes 2 switches added by VPR for internal purposes)
- *
- * Returns		:	Power in Watts
+ * Top-level function for the power module.
+ * Calculates the average power of the entire FPGA (watts),
+ * and prints it to the output file
+ * - run_time_s: (Return value) The total runtime in seconds (us accuracy)
  */
-e_power_ret_code power_total(void) {
+e_power_ret_code power_total(float * run_time_s) {
 	t_power_usage total_power;
 	t_power_usage sub_power_usage;
+	struct timeval t_start;
+	struct timeval t_end;
 
+	gettimeofday(&t_start, NULL);
 	total_power.dynamic = 0.;
 	total_power.leakage = 0.;
 
@@ -1604,6 +1275,10 @@ e_power_ret_code power_total(void) {
 	power_print_title(g_power_output->out, "Tile Power Breakdown");
 	power_print_clb_usage(g_power_output->out);
 
+	gettimeofday(&t_end, NULL);
+
+	*run_time_s = (t_end.tv_usec - t_start.tv_usec) / 1000000. + (t_end.tv_sec - t_start.tv_sec);
+
 	/* Return code */
 	if (g_power_output->logs[POWER_LOG_ERROR].num_messages) {
 		return POWER_RET_CODE_ERRORS;
@@ -1614,38 +1289,3 @@ e_power_ret_code power_total(void) {
 	}
 }
 
-void output_log(t_log * log_ptr, FILE * fp) {
-	int msg_idx;
-
-	for (msg_idx = 0; msg_idx < log_ptr->num_messages; msg_idx++) {
-		fprintf(fp, "%s\n", log_ptr->messages[msg_idx]);
-	}
-}
-
-void output_logs(FILE * fp, t_log * logs, int num_logs) {
-	int log_idx;
-
-	for (log_idx = 0; log_idx < num_logs; log_idx++) {
-		if (logs[log_idx].num_messages) {
-			power_print_title(fp, logs[log_idx].name);
-			output_log(&logs[log_idx], fp);
-			fprintf(fp, "\n");
-		}
-	}
-}
-
-#if 0
-static t_transistor_inf * power_ret_tx_info_from_type(e_tx_type tx_type) {
-	if (tx_type == NMOS) {
-		return &g_power_arch->NMOS_tx_record;
-	} else if (tx_type == PMOS) {
-		return &g_power_arch->PMOS_tx_record;
-	} else {
-		assert(0);
-	}
-}
-#endif
-
-static float power_buffer_size_from_logical_effort(float C_load) {
-	return max(1, C_load / g_power_commonly_used->INV_1X_C_in / POWER_BUFFER_STAGE_GAIN);
-}

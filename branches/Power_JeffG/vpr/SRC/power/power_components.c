@@ -1,3 +1,25 @@
+/*********************************************************************
+ *  The following code is part of the power modelling feature of VTR.
+ *
+ * For support:
+ * http://code.google.com/p/vtr-verilog-to-routing/wiki/Power
+ *
+ * or email:
+ * vtr.power.estimation@gmail.com
+ *
+ * If you are using power estimation for your researach please cite:
+ *
+ * Jeffrey Goeders and Steven Wilton.  VersaPower: Power Estimation
+ * for Diverse FPGA Architectures.  In International Conference on
+ * Field Programmable Technology, 2012.
+ *
+ ********************************************************************/
+
+/**
+ *  This file offers functions to estimate power of major components
+ * within the FPGA (flip-flops, LUTs, interconnect structures, etc).
+ */
+
 /************************* INCLUDES *********************************/
 #include <string.h>
 #include <assert.h>
@@ -28,6 +50,10 @@ static void power_calc_mux_rec(t_power_usage * power_usage, float * out_prob,
 		boolean v_out_restored);
 
 /************************* FUNCTION DEFINITIONS *********************/
+
+/**
+ * Module initializer function, called by power_init
+ */
 void power_components_init(void) {
 	int i;
 
@@ -39,31 +65,55 @@ void power_components_init(void) {
 	}
 }
 
+/**
+ * Module un-initializer function, called by power_uninit
+ */
 void power_components_uninit(void) {
 	free(g_power_breakdown->components);
 	free(g_power_breakdown);
 }
 
+/**
+ * Adds power usage for a component to the global component tracker
+ * - power_usage: Power usage to add
+ * - component_idx: Type of component
+ */
 void power_component_add_usage(t_power_usage * power_usage,
 		e_power_component_type component_idx) {
 	power_add_usage(&g_power_breakdown->components[component_idx], power_usage);
 }
 
+/**
+ * Gets power usage for a component
+ * - power_usage: (Return value) Power usage for the given component
+ * - component_idx: Type of component
+ */
 void power_component_get_usage(t_power_usage * power_usage,
 		e_power_component_type component_idx) {
 	memcpy(power_usage, &g_power_breakdown->components[component_idx],
 			sizeof(t_power_usage));
 }
 
+/**
+ * Returns total power for a given component
+ * - component_idx: Type of component
+ */
 float power_component_get_usage_sum(e_power_component_type component_idx) {
 	return power_usage_sum(&g_power_breakdown->components[component_idx]);
 }
 
+/**
+ * Prints the power usage for all components
+ * - fp: File descripter to print out to
+ */
 void power_component_print_usage(FILE * fp) {
 	power_component_print_usage_rec(fp, "Total", POWER_COMPONENT_TOTAL,
 			POWER_COMPONENT_TOTAL, 0);
 }
 
+/**
+ * Internal recurseive function, used by power_component_print_usage
+ */
 static void power_component_print_usage_rec(FILE * fp, char * name,
 		e_power_component_type type, e_power_component_type parent_type,
 		int indent_level) {
@@ -132,7 +182,7 @@ static void power_component_print_usage_rec(FILE * fp, char * name,
 		power_component_print_usage_rec(fp, "Mux", POWER_COMPONENT_LUT_MUX,
 				type, indent_level + 1);
 		power_component_print_usage_rec(fp, "Restorer",
-				POWER_COMPONENT_LUT_RESTORER, type, indent_level + 1);
+				POWER_COMPONENT_LUT_BUFFERS, type, indent_level + 1);
 
 		break;
 	default:
@@ -144,6 +194,16 @@ static void power_component_print_usage_rec(FILE * fp, char * name,
 	}
 }
 
+/**
+ * Calculates power of a D flip-flop
+ * - power_usage: (Return value) power usage of the flip-flop
+ * - D_prob: Signal probability of the input
+ * - D_dens: Transition density of the input
+ * - Q_prob: Signal probability of the output
+ * - Q_dens: Transition density of the output
+ * - clk_prob: Signal probability of the clock
+ * - clk_dens: Transition density of the clock
+ */
 void power_calc_FF(t_power_usage * power_usage, float D_prob, float D_dens,
 		float Q_prob, float Q_dens, float clk_prob, float clk_dens) {
 	t_power_usage sub_power_usage;
@@ -193,6 +253,45 @@ void power_calc_FF(t_power_usage * power_usage, float D_prob, float D_dens,
 	return;
 }
 
+/**
+ * Calculated power of a look-up table (LUT)
+ * - power_usage: (Return value) The power usage of the LUT
+ * - LUT_size: Number of LUT inputs
+ * - SRAM_values: The 2^(LUT_size) truth table values.  String of '0' and '1' characters.
+ * 		First characters is for all inputs = 0 and last characters is for all inputs = 1.
+ * - input_prob: Array of input signal probabilities
+ * - input_dens: Array of input transition densities
+ *
+ * NOTE: The following provides a diagram of a 3-LUT, the sram bit ordering, and
+ *  the input array ordering.
+ *
+ *	X - NMOS gate controlled by complement of input
+ *	Z - NMOS gate controlled by input
+ *
+ * S
+ * R  I   I   I
+ * A  N   N   N
+ * M  2   1   0
+ * |  |   |   |
+ * v  v   |   |
+ *        v   |
+ * 0 _X_      |
+ *      |_X_  v
+ * 1 _Z_|   |
+ *          |_X_
+ * 2 _X_    |   |
+ *      |_Z_|   |
+ * 3 _Z_|       |
+ *              |------ out
+ * 4 _X_        |
+ *      |_X_    |
+ * 5 _Z_|   |   |
+ *          |_Z_|
+ * 6 _X_    |
+ *      |_Z_|
+ * 7 _Z_|
+ *
+ */
 void power_calc_LUT(t_power_usage * power_usage, int LUT_size,
 		char * SRAM_values, float * input_prob, float * input_dens) {
 	float **internal_prob;
@@ -224,15 +323,6 @@ void power_calc_LUT(t_power_usage * power_usage, int LUT_size,
 		internal_v[i] = my_calloc(1 << (LUT_size - i), sizeof(float));
 	}
 
-	/* initialize the SRAM_values in the LUTs */
-	/* Notice: the input signals that control the output of
-	 the LUT go from LSB to MSB.
-	 Please refer to figure B.9 in Vaughn's thesis.
-	 In0 is the LSB and IN3 is the MSB. Therefore, the
-	 function value needs to be converted to match the
-	 LUT SRAM values.
-	 */
-
 	/* Initialize internal probabilities/densities from SRAM bits */
 	for (i = 0; i < num_SRAM_bits; i++) {
 		if (SRAM_values[i] == '0') {
@@ -255,6 +345,7 @@ void power_calc_LUT(t_power_usage * power_usage, int LUT_size,
 
 		MUXs_this_level = 1 << (reverse_idx);
 
+		/* Power of input drivers */
 		power_calc_inverter(&driver_power_usage, input_dens[reverse_idx],
 				input_prob[reverse_idx], 1.0);
 		power_add_usage(power_usage, &driver_power_usage);
@@ -272,22 +363,7 @@ void power_calc_LUT(t_power_usage * power_usage, int LUT_size,
 		power_add_usage(power_usage, &driver_power_usage);
 		power_component_add_usage(&driver_power_usage,
 				POWER_COMPONENT_LUT_DRIVER);
-		/*
-		 power_calc_INV1(&driver_power_usage, input_densities[reverse_idx],
-		 input_probabilities[reverse_idx]);
-		 power_add_usage_element(power_usage, &driver_power_usage,
-		 POWER_COMPONENT_LUT_DRIVER);
 
-		 power_calc_INV2(&driver_power_usage, input_densities[reverse_idx],
-		 input_probabilities[reverse_idx]);
-		 power_add_usage_element(power_usage, &driver_power_usage,
-		 POWER_COMPONENT_LUT_DRIVER);
-
-		 power_calc_INV2(&driver_power_usage, input_densities[reverse_idx],
-		 1 - input_probabilities[reverse_idx]);
-		 power_add_usage_element(power_usage, &driver_power_usage,
-		 POWER_COMPONENT_LUT_DRIVER);
-		 */
 
 		MUXCounter = 0;
 		SRAMCounter = 0;
@@ -310,20 +386,7 @@ void power_calc_LUT(t_power_usage * power_usage, int LUT_size,
 			level_restorer_this_level = FALSE;
 		}
 
-		/* Calculate Vin,Vout of the muxes at this level */
-		/*
-		 if (level_restorer_this_level) {
-		 Vout_level = POWER_VOLTAGE_LEVEL_VDD;
-		 } else {
-		 Vout_level = POWER_VOLTAGE_LEVEL_VDD_SUB_VTH;
-		 }
-
-		 if (level_restorer_last_level) {
-		 Vin_level = POWER_VOLTAGE_LEVEL_VDD;
-		 } else {
-		 Vin_level = POWER_VOLTAGE_LEVEL_VDD_SUB_VTH;
-		 }*/
-
+		/* Loop through the 2-muxs at each level */
 		for (MUX_idx = 0; MUX_idx < MUXs_this_level; MUX_idx++) {
 			t_power_usage sub_power;
 			float out_prob;
@@ -388,10 +451,12 @@ void power_calc_LUT(t_power_usage * power_usage, int LUT_size,
 										internal_prob[level_idx][MUX_idx * 2]);
 			}
 
+			/* Save internal node info */
 			internal_dens[level_idx + 1][MUX_idx] = out_dens;
 			internal_prob[level_idx + 1][MUX_idx] = out_prob;
 			internal_v[level_idx + 1][MUX_idx] = v_out;
 
+			/* Calculate power of the 2-mux */
 			power_calc_mux_singlelevel_dynamic(&sub_power, 2,
 					internal_dens[level_idx + 1][MUX_idx],
 					internal_prob[level_idx + 1][MUX_idx],
@@ -403,22 +468,21 @@ void power_calc_LUT(t_power_usage * power_usage, int LUT_size,
 			power_add_usage(power_usage, &sub_power);
 			power_component_add_usage(&sub_power, POWER_COMPONENT_LUT_MUX);
 
+			/* Add the level-restoring buffer if necessary */
 			if (level_restorer_this_level) {
 				/* Level restorer */
 				power_calc_buffer(&sub_power, 1,
 						internal_prob[level_idx + 1][MUX_idx],
 						internal_dens[level_idx + 1][MUX_idx], TRUE, 2);
-				/*power_calc_level_restorer(&sub_power,
-				 internal_dens[level_idx + 1][MUX_idx],
-				 internal_prob[level_idx + 1][MUX_idx]);*/
 				power_add_usage(power_usage, &sub_power);
 				power_component_add_usage(&sub_power,
-						POWER_COMPONENT_LUT_RESTORER);
+						POWER_COMPONENT_LUT_BUFFERS);
 			}
 		}
 
 	}
 
+	/* Free allocated memory */
 	for (i = 0; i <= LUT_size; i++) {
 		free(internal_prob[i]);
 		free(internal_dens[i]);
@@ -433,6 +497,13 @@ void power_calc_LUT(t_power_usage * power_usage, int LUT_size,
 	return;
 }
 
+/**
+ * This function calculates power of a local interconnect structure
+ * - power_usage: (Return value) Power usage of the structure
+ * - pb: The physical block to which this interconnect belongs
+ * - interc_pins: The interconnect input/ouput pin information
+ * - interc_length: The physical length spanned by the interconnect (meters)
+ */
 void power_calc_interconnect(t_power_usage * power_usage, t_pb * pb,
 		t_interconnect_pins * interc_pins, float interc_length) {
 	int pin_idx;
@@ -494,11 +565,16 @@ void power_calc_interconnect(t_power_usage * power_usage, t_pb * pb,
 		}
 	}
 
+	/* Power of transistors to build interconnect structure */
 	switch (interc_pins->interconnect->type) {
 	case DIRECT_INTERC:
+		/* Direct connections require no transistors */
 		break;
 	case MUX_INTERC:
 	case COMPLETE_INTERC:
+		/* Many-to-1, or Many-to-Many
+		 * Implemented as a multiplexer for each output
+		 * */
 		in_dens = my_calloc(interc->num_input_ports, sizeof(float));
 		in_prob = my_calloc(interc->num_input_ports, sizeof(float));
 
@@ -515,6 +591,7 @@ void power_calc_interconnect(t_power_usage * power_usage, t_pb * pb,
 					in_prob[in_port_idx] = 0.;
 				}
 
+				/* Get probability/density of input signals */
 				if (pb) {
 					int output_pin_net =
 							pb->rr_graph[interc_pins->output_pins[out_port_idx][pin_idx]->pin_count_in_cluster].net_num;
@@ -550,6 +627,7 @@ void power_calc_interconnect(t_power_usage * power_usage, t_pb * pb,
 					selected_input = 0;
 				}
 
+				/* Calculate power of the multiplexer */
 				power_calc_mux_multilevel(&MUX_power,
 						interc_pins->interconnect->mux_arch, in_prob, in_dens,
 						selected_input, TRUE);
@@ -563,11 +641,22 @@ void power_calc_interconnect(t_power_usage * power_usage, t_pb * pb,
 		free(in_dens);
 		free(in_prob);
 		break;
+	default:
+		assert(0);
 	}
 
 	power_add_usage(&interc_pins->interconnect->power_usage, power_usage);
 }
 
+/**
+ *  This calculates the power of a multilevel multiplexer, with static inputs
+ *  - power_usage: (Return value) The power usage of the multiplexer
+ *  - mux_arch: The information on the multiplexer architecture
+ *  - in_prob: Array of input signal probabilities
+ *  - in_dens: Array of input transition densitites
+ *  - selected_input: The index of the input that has been statically selected
+ *  - output_level_restored: Whether the output is level restored to Vdd.
+ */
 void power_calc_mux_multilevel(t_power_usage * power_usage,
 		t_mux_arch * mux_arch, float * in_prob, float * in_dens,
 		int selected_input, boolean output_level_restored) {
@@ -582,7 +671,6 @@ void power_calc_mux_multilevel(t_power_usage * power_usage,
 	power_zero_usage(power_usage);
 
 	/* Find selection index at each level */
-
 	found = mux_find_selector_values(selector_values, mux_arch->mux_graph_head,
 			selected_input);
 	assert(found);
@@ -595,6 +683,9 @@ void power_calc_mux_multilevel(t_power_usage * power_usage,
 	free(selector_values);
 }
 
+/**
+ * Internal function, used recursively by power_calc_mux
+ */
 static void power_calc_mux_rec(t_power_usage * power_usage, float * out_prob,
 		float * out_dens, float * v_out, t_mux_node * mux_node,
 		t_mux_arch * mux_arch, int * selector_values,
@@ -623,11 +714,12 @@ static void power_calc_mux_rec(t_power_usage * power_usage, float * out_prob,
 			v_in[input_idx] = g_power_tech->Vdd;
 		}
 	} else {
-		/* High level of mux - inputs recursive from lower levels */
+		/* Higher level of mux - inputs recursive from lower levels */
 		in_prob = my_calloc(mux_node->num_inputs, sizeof(float));
 		in_dens = my_calloc(mux_node->num_inputs, sizeof(float));
 
 		for (input_idx = 0; input_idx < mux_node->num_inputs; input_idx++) {
+			/* Call recursively for multiplexer driving the input */
 			power_calc_mux_rec(power_usage, &in_prob[input_idx],
 					&in_dens[input_idx], &v_in[input_idx],
 					&mux_node->children[input_idx], mux_arch, selector_values,
@@ -647,8 +739,17 @@ static void power_calc_mux_rec(t_power_usage * power_usage, float * out_prob,
 	}
 }
 
+/**
+ * This function calculates the power of a multistage buffer
+ * - power_usage: (Return value) Power usage of buffer
+ * - size: The size of the final buffer stage, relative to min-sized inverter
+ * - in_prob: The signal probability of the input
+ * - in_dens: The transition density of the input
+ * - level_restored: Whether this buffer must level restore the input
+ * - input_mux_size: If fed by a mux, the size of this mutliplexer
+ */
 void power_calc_buffer(t_power_usage * power_usage, float size, float in_prob,
-		float in_dens, boolean level_restored, int input_mux_size) {
+		float in_dens, boolean level_restorer, int input_mux_size) {
 	t_power_usage sub_power_usage;
 	int i, num_stages;
 	float stage_effort;
@@ -670,7 +771,7 @@ void power_calc_buffer(t_power_usage * power_usage, float size, float in_prob,
 		stage_inv_size = pow(stage_effort, i);
 
 		if (i == 0) {
-			if (level_restored) {
+			if (level_restorer) {
 				/* Sense Buffer */
 				power_calc_level_restorer(&sub_power_usage, &input_dyn_power,
 						in_dens, stage_in_prob);
@@ -688,11 +789,11 @@ void power_calc_buffer(t_power_usage * power_usage, float size, float in_prob,
 		stage_in_prob = 1 - stage_in_prob;
 	}
 
-	/* SC add a factor to dynamic power, but the factor is not in addition to the input power
+	/* Short-circuit: add a factor to dynamic power, but the factor is not in addition to the input power
 	 * Need to subtract input before adding factor - this matters for small buffers
 	 */
 	power_usage->dynamic += (power_usage->dynamic - input_dyn_power)
-			* power_calc_buffer_sc(num_stages, stage_effort, level_restored,
+			* power_calc_buffer_sc(num_stages, stage_effort, level_restorer,
 					input_mux_size);
 }
 
