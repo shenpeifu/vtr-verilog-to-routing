@@ -19,6 +19,16 @@ The [Run_VTR_Flow run_vtr_flow.pl] script is provided to execute the VTR flow fo
 {{{<vtr>}}}/vtr_flow/scripts/run_vtr_flow.pl {{{<circuit_file> <architecture_file>}}}
 </code>
 
+Circuit files are located here:
+<code>
+<vtr>/vtr_flow/benchmarks/
+</code>
+
+Architecture files are located here:
+<code>
+<vtr>/vtr_flow/arch/
+</code>
+
 The script can also be used to run a partial VTR flow. For command-line options see [Run_VTR_Flow run_vtr_flow.pl].
 
 == Tasks ==
