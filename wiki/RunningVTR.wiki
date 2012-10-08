@@ -70,7 +70,7 @@ The output is simply a collection of the outputs from the underlying script used
 
 
 ===Task File Organization===
-The below diagram illustrates the file organization for each tasks.  All of the blue items are automatically created on execution of the task. Each execution of the task will create a new folder named run`<#>`, where `#` begins at 0 and increments with each execution.  This maintains a history of all executions of the task.  Within the 'run#' folder, folders will be created for each architecture type.  Inside each architecture folder, folders will be created for each circuit.  Within each circuit folder, the [Run_VTR_Flow run_vtr_flow.pl] script will be executed, which will produce output files for each stage of the VTR flow.
+The below diagram illustrates the file organization for each tasks.  All of the blue items are automatically created on execution of the task. Each execution of the task will create a new folder named run`<#>`, where `#` begins at 1 and increments with each execution.  This maintains a history of all executions of the task.  Within the 'run#' folder, folders will be created for each architecture type.  Inside each architecture folder, folders will be created for each circuit.  Within each circuit folder, the [Run_VTR_Flow run_vtr_flow.pl] script will be executed, which will produce output files for each stage of the VTR flow.
 
 [http://vtr-verilog-to-routing.googlecode.com/svn/wiki/images/task_file_organization.png]
 
