@@ -10,9 +10,13 @@
 # 	-l <task_list_file>: Used to provide a test file containing a list of tasks
 #   -create_golden:  Will create/overwrite the golden results with those of the
 #						most recent execution
-#   -verify_golden:  Will verify the results of the most recent execution against
+#   -check_golden:  Will verify the results of the most recent execution against
 #						the golden results for each task and report either a
 #						[Pass] or [Fail]
+#   -parse_qor:  	Used for the purposes of parsing quality of results of the
+#					most recent execution.
+#   -calc_geomean:  Used for the purposes of computing quality of results geomeans 
+# 					of the most recent execution.
 ###################################################################################
 
 use strict;
@@ -20,14 +24,19 @@ use Cwd;
 use File::Spec;
 use File::Copy;
 use List::Util;
+use Math::BigInt;
+use POSIX qw/strftime/;
 
 # Function Prototypes
 sub trim;
 sub parse_single_task;
+sub summarize_qor;
+sub calc_geomean;
+sub check_golden;
 sub expand_user_path;
 
-# Get Absoluate Path of 'vtr_flow
-Cwd::abs_path($0) =~ m/(.*\/vtr_flow)\//;
+# Get Absolute Path of 'vtr_flow
+Cwd::abs_path($0) =~ m/(.*vtr_flow)/;
 my $vtr_flow_path = $1;
 
 my $run_prefix = "run";
@@ -38,11 +47,14 @@ my @task_files;
 my $token;
 my $create_golden = 0;
 my $check_golden  = 0;
+my $parse_qor 	  = 1;  # QoR file is parsed by default; turned off if 
+						# user does not specify QoR parse file in config.txt
+my $calc_geomean  = 0;  # QoR geomeans are not computed by default;
+my $revision;
 
 while ( $token = shift(@ARGV) ) {
 
 	# Check for a task list file
-	if ( $token =~ /^-/ ) {
 		if ( $token =~ /^-l(.+)$/ ) {
 			push( @task_files, expand_user_path($1) );
 		}
@@ -55,11 +67,18 @@ while ( $token = shift(@ARGV) ) {
 		elsif ( $token eq "-check_golden" ) {
 			$check_golden = 1;
 		}
-		else {
+	elsif ( $token eq "-parse_qor" ) {
+		$parse_qor = 1;
+	}
+	elsif ( $token eq "-calc_geomean" ) {
+		$calc_geomean = 1;
+	}
+	elsif ( $token eq "-revision" ) {
+		$revision = shift(@ARGV);
+	}
+	elsif ( $token =~ /^-/ ) {
 			die "Invalid option: $token\n";
 		}
-	}
-
 	# must be a task name
 	else {
 		if ( $token =~ /(.*)\// ) {
@@ -67,10 +86,6 @@ while ( $token = shift(@ARGV) ) {
 		}
 		push( @tasks, $token );
 	}
-}
-
-if ( @tasks == 0 ) {
-	die "One or more task names must be provided.";
 }
 
 # Read Task Files
@@ -87,6 +102,11 @@ foreach my $task (@tasks) {
 	parse_single_task($task);
 }
 
+if ($calc_geomean) {
+	summarize_qor;
+	calc_geomean;
+}
+
 sub parse_single_task {
 	my $task_name = shift;
 	my $task_path = "$vtr_flow_path/tasks/$task_name";
@@ -98,6 +118,7 @@ sub parse_single_task {
 
 	my @circuits;
 	my $parse_file;
+	my $qor_parse_file;
 	my @archs;
 	foreach my $line (@config_data) {
 
@@ -117,13 +138,17 @@ sub parse_single_task {
 		elsif ( $key eq "parse_file" ) {
 			$parse_file = expand_user_path($value);
 		}
+		elsif ( $key eq "qor_parse_file" ) {
+			$qor_parse_file = expand_user_path($value);
+	}
 	}
 
-	if ( $parse_file eq "" ) {
+	# PARSE CONFIG FILE
+	if ( -e "$task_path/config/$parse_file" ) {
+		$parse_file = "$task_path/config/$parse_file";
+	}
+	elsif ( $parse_file eq "" ) {
 		die "Task $task_name has no parse file specified.\n";
-	}
-
-	if ( -e $parse_file ) {
 	}
 	elsif ( -e "$vtr_flow_path/parse/parse_config/$parse_file" ) {
 		$parse_file = "$vtr_flow_path/parse/parse_config/$parse_file";
@@ -136,6 +161,22 @@ sub parse_single_task {
 	opendir(DIR, $task_path);
 	my @folders = readdir(DIR);
 	closedir(DIR);
+	# QOR PARSE CONFIG FILE
+	if ( -e "$task_path/config/$qor_parse_file" ) {
+		$qor_parse_file = "$task_path/config/$qor_parse_file";
+	}
+	elsif ( $qor_parse_file eq "" ) {
+		print "Task $task_name has no QoR parse file specified. Skipping QoR.\n";
+		$parse_qor = 0;
+		$calc_geomean = 0;
+	}
+	elsif ( -e "$vtr_flow_path/parse/qor_config/$qor_parse_file" ) {
+		$qor_parse_file = "$vtr_flow_path/parse/qor_config/$qor_parse_file";
+	}
+	else {
+		die "QoR parse file does not exist ($qor_parse_file)";
+	}
+
 	my $exp_num = 1;
 	foreach my $folder_name (@folders) {
 		$folder_name =~ /${run_prefix}(\d+)/;
@@ -166,6 +207,28 @@ sub parse_single_task {
 	}
 	close(OUTPUT_FILE);
 
+	if ($parse_qor) {
+		my $first = 1;
+		open( OUTPUT_FILE, ">$run_path/qor_results.txt" );
+		foreach my $arch (@archs) {
+			foreach my $circuit (@circuits) {
+				system(
+					"$vtr_flow_path/scripts/parse_vtr_flow.pl $run_path/$arch/$circuit $qor_parse_file > $run_path/$arch/$circuit/qor_results.txt"
+				);
+				open( RESULTS_FILE, "$run_path/$arch/$circuit/qor_results.txt" );
+				my $output = <RESULTS_FILE>;
+				if ($first) {
+					print OUTPUT_FILE "arch\tcircuit\t$output";
+					$first = 0;
+				}
+				my $output = <RESULTS_FILE>;
+				close(RESULTS_FILE);
+				print OUTPUT_FILE $arch . "\t" . $circuit . "\t" . $output;
+			}
+		}
+		close(OUTPUT_FILE);
+	}
+
 	if ($create_golden) {
 		copy( "$run_path/parse_results.txt",
 			"$run_path/../config/golden_results.txt" );
@@ -174,6 +237,159 @@ sub parse_single_task {
 		check_golden( $task_name, $task_path, $run_path );
 	}
 }
+
+sub summarize_qor {
+
+	##############################################################
+	# Set up output file
+	##############################################################
+
+	my $first = 1;
+	
+	my $task = @tasks[0];
+	my $task_path = "$vtr_flow_path/tasks/$task";
+	
+	my $output_path = $task_path;
+	my $exp_num = last_exp($task_path);
+
+	if ( ( ( $#tasks + 1 ) > 1 ) | ( -e "$task_path/../task_list.txt" ) ) {
+		$output_path = "$task_path/../";
+	}
+	if ( !-e "$output_path/task_summary" ) {
+		mkdir "$output_path/task_summary";
+	}
+	if ( -e "$output_path/task_summary/${run_prefix}${exp_num}_summary.txt" ) {
+	}
+	open( OUTPUT_FILE, ">$output_path/task_summary/${run_prefix}${exp_num}_summary.txt" );
+	
+	##############################################################
+	# Append contents of QoR files to output file
+	##############################################################
+
+	foreach my $task (@tasks) {
+		chomp($task);
+		$task_path = "$vtr_flow_path/tasks/$task";
+		$exp_num = last_exp($task_path);
+		my $run_path = "$task_path/${run_prefix}${exp_num}";
+
+		open( RESULTS_FILE, "$run_path/qor_results.txt" );
+		my $output = <RESULTS_FILE>;
+
+		if ($first) {
+			print OUTPUT_FILE "task_name\t$output";
+			$first = 0;
+		}
+		
+		while ($output = <RESULTS_FILE>) {
+			print OUTPUT_FILE $task . "\t" . $output;
+		}
+		close(RESULTS_FILE);
+	}
+	close(OUTPUT_FILE);
+}
+
+sub calc_geomean {
+
+	##############################################################
+	# Set up output file
+	##############################################################
+
+	my $first = 0;
+
+	my $task = @tasks[0];
+	my $task_path = "$vtr_flow_path/tasks/$task";
+	
+	my $output_path = $task_path;
+	my $exp_num = last_exp($task_path);
+
+	if ( ( ( $#tasks + 1 ) > 1 ) | ( -e "$task_path/../task_list.txt" ) ) {
+		$output_path = "$task_path/../"; 
+	}
+	if ( !-e "$output_path/qor_geomean.txt" ) {
+		open( OUTPUT_FILE, ">$output_path/qor_geomean.txt" );
+		$first = 1;
+	}
+	else {
+		open( OUTPUT_FILE, ">>$output_path/qor_geomean.txt" );
+	}
+	
+	##############################################################
+	# Read summary file
+	##############################################################
+
+	my $summary_file = "$output_path/task_summary/${run_prefix}${exp_num}_summary.txt";
+
+	if ( !-r $summary_file ) {
+		print "[ERROR] Failed to open $summary_file: $!";
+		return;
+	}
+	open( SUMMARY_FILE, "<$summary_file" );
+	my @summary_data = <SUMMARY_FILE>;
+	close(SUMMARY_FILE);
+
+	my $summary_params = shift @summary_data;
+	my @summary_params = split( /\t/, trim($summary_params) );
+	
+	if ($first) {
+		# Hack - remove unwanted labels
+		my $num = 4;
+		while ($num) {
+			shift @summary_params;
+			--$num;
+		}
+		print OUTPUT_FILE "run";
+		my @temp = @summary_params;
+		while ( $#temp >= 0 ) {
+			my $label = shift @temp;
+			print OUTPUT_FILE "\t" . "$label";
+		}
+		print OUTPUT_FILE "\t" . "date" . "\t" . "revision";
+		$first = 0;
+	}
+	else {
+	}
+
+	print OUTPUT_FILE "\n${exp_num}";
+
+	##############################################################
+	# Compute & write geomean to output file
+	##############################################################
+
+	my $index = 4;
+	my @summary_params = split( /\t/, trim($summary_params) );
+	
+	while ( $#summary_params  >= $index ) {
+		my $geomean = 1; my $num = 0;
+		foreach my $line (@summary_data) {
+			my @test_line = split( /\t/, $line );
+			if ( trim( @test_line[$index] ) > 0 ) {
+				$geomean *= trim( @test_line[$index] );
+				$num++;
+			}
+		}
+		if ($num) {
+			$geomean **= 1/$num;
+			print OUTPUT_FILE "\t" . "${geomean}";
+		}
+		else {
+			print OUTPUT_FILE "\t" . "-1";
+		}
+		$index++;
+	}
+	my $date = strftime( '%D', localtime );
+	print OUTPUT_FILE "\t" . "$date" . "\t" . "$revision";
+	close(OUTPUT_FILE);
+}
+
+sub last_exp {
+	my $path = shift;
+	my $num = 1;
+	while ( -e "$path/${run_prefix}${num}" ) {
+		++$num;
+	}
+	--$num;
+	return $num;
+} 
 
 sub check_golden {
 	my $task_name = shift;
@@ -270,7 +486,7 @@ sub check_golden {
 	  split( /\t/, trim($test_params) );      # get parameters of test results
 
 	if ( $golden_params ne $test_params ) {
-		print "[ERROR] Different parameters in golden and result file.\n";
+		print "[ERROR] Different parameters in golden and result file. $golden_params different from $test_params\n";
 		return;
 	}
 

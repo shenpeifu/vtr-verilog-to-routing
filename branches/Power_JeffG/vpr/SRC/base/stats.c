@@ -1,6 +1,8 @@
+
 #include <assert.h>
 #include <stdio.h>
 #include <math.h>
+#include <string.h>
 #include "util.h"
 #include "vpr_types.h"
 #include "globals.h"
@@ -26,20 +28,18 @@ void routing_stats(boolean full_stats, enum e_route_type route_type,
 		int num_switch, t_segment_inf * segment_inf, int num_segment,
 		float R_minW_nmos, float R_minW_pmos,
 		enum e_directionality directionality, boolean timing_analysis_enabled,
-		float **net_slack, float **net_delay) {
+		float **net_delay, t_slack * slacks) {
 
 	/* Prints out various statistics about the current routing.  Both a routing *
 	 * and an rr_graph must exist when you call this routine.                   */
 
-	float T_crit;
 	float area, used_area;
 	int i, j;
 
 	get_length_and_bends_stats();
 	get_channel_occupancy_stats();
 
-	printf(
-			"Logic Area (in minimum width transistor areas, excludes I/Os and empty grid tiles):\n");
+	vpr_printf(TIO_MESSAGE_INFO, "Logic area (in minimum width transistor areas, excludes I/Os and empty grid tiles)...\n");
 
 	area = 0;
 	for (i = 1; i <= nx; i++) {
@@ -54,9 +54,7 @@ void routing_stats(boolean full_stats, enum e_route_type route_type,
 		}
 	}
 	/* Todo: need to add pitch of routing to blocks with height > 3 */
-	printf(
-			"Total Logic Block Area (Warning, need to add pitch of routing to blocks with height > 3): %g \n",
-			area);
+	vpr_printf(TIO_MESSAGE_INFO, "\tTotal logic block area (Warning, need to add pitch of routing to blocks with height > 3): %g\n", area);
 
 	used_area = 0;
 	for (i = 0; i < num_blocks; i++) {
@@ -68,7 +66,7 @@ void routing_stats(boolean full_stats, enum e_route_type route_type,
 			}
 		}
 	}
-	printf("Total Used Logic Block Area: %g \n", used_area);
+	vpr_printf(TIO_MESSAGE_INFO, "\tTotal used logic block area: %g\n", used_area);
 
 	if (route_type == DETAILED) {
 		count_routing_transistors(directionality, num_switch, segment_inf,
@@ -78,29 +76,27 @@ void routing_stats(boolean full_stats, enum e_route_type route_type,
 		if (timing_analysis_enabled) {
 			load_net_delay_from_routing(net_delay, clb_net, num_nets);
 
-			if (GetEchoOption()) {
-				print_net_delay(net_delay, "net_delay.echo", clb_net, num_nets);
-			}
-
 			load_timing_graph_net_delays(net_delay);
-			T_crit = load_net_slack(net_slack, 0);
-			g_solution_inf->T_crit = T_crit;
 
-			if (GetEchoOption()) {
-				print_timing_graph("timing_graph.echo");
-				print_net_slack("net_slack.echo", net_slack);
-				print_critical_path("critical_path.echo");
+#ifdef HACK_LUT_PIN_SWAPPING			
+			do_timing_analysis(slacks, FALSE, TRUE, TRUE);
+#else
+			do_timing_analysis(slacks, FALSE, FALSE, TRUE);
+#endif
+			if (getEchoEnabled()) {
+				if(isEchoFileEnabled(E_ECHO_TIMING_GRAPH))
+					print_timing_graph(getEchoFileName(E_ECHO_TIMING_GRAPH));
+				if (isEchoFileEnabled(E_ECHO_NET_DELAY)) 
+					print_net_delay(net_delay, getEchoFileName(E_ECHO_NET_DELAY));
+				if(isEchoFileEnabled(E_ECHO_LUT_REMAPPING))
+					print_lut_remapping(getEchoFileName(E_ECHO_LUT_REMAPPING));
 			}
 
-			printf("\n");
-			if (pb_max_internal_delay == UNDEFINED
-					|| pb_max_internal_delay < T_crit) {
-				printf("Critical Path: %g (s)\n", T_crit);
-			} else {
-				printf(
-						"Critical Path: %g (s) - capped by fmax of block type %s\n",
-						pb_max_internal_delay, pbtype_max_internal_delay->name);
-			}
+			print_slack(slacks->slack, TRUE, getOutputFileName(E_SLACK_FILE));
+			print_criticality(slacks, TRUE, getOutputFileName(E_CRITICALITY_FILE));
+			print_critical_path(getOutputFileName(E_CRIT_PATH_FILE));
+
+			print_timing_stats();
 		}
 	}
 
@@ -148,24 +144,22 @@ void get_length_and_bends_stats(void) {
 	}
 
 	av_bends = (float) total_bends / (float) (num_nets - num_global_nets);
-	printf("\nAverage number of bends per net: %#g  Maximum # of bends: %d\n\n",
-			av_bends, max_bends);
+	vpr_printf(TIO_MESSAGE_INFO, "\n");
+	vpr_printf(TIO_MESSAGE_INFO, "Average number of bends per net: %#g  Maximum # of bends: %d\n", av_bends, max_bends);
+	vpr_printf(TIO_MESSAGE_INFO, "\n");
 
 	av_length = (float) total_length / (float) (num_nets - num_global_nets);
-	printf("\nThe number of routed nets (nonglobal): %d\n",
-			num_nets - num_global_nets);
-	printf("Wirelength results (all in units of 1 clb segments):\n");
-	printf("\tTotal wirelength: %d   Average net length: %#g\n", total_length,
-			av_length);
-	printf("\tMaximum net length: %d\n\n", max_length);
+	vpr_printf(TIO_MESSAGE_INFO, "Number of routed nets (nonglobal): %d\n", num_nets - num_global_nets);
+	vpr_printf(TIO_MESSAGE_INFO, "Wirelength results (in units of 1 clb segments)...\n");
+	vpr_printf(TIO_MESSAGE_INFO, "\tTotal wirelength: %d, average net length: %#g\n", total_length, av_length);
+	vpr_printf(TIO_MESSAGE_INFO, "\tMaximum net length: %d\n", max_length);
+	vpr_printf(TIO_MESSAGE_INFO, "\n");
 
 	av_segments = (float) total_segments / (float) (num_nets - num_global_nets);
-	printf("Wirelength results in terms of physical segments:\n");
-	printf("\tTotal wiring segments used: %d   Av. wire segments per net: "
-			"%#g\n", total_segments, av_segments);
-	printf("\tMaximum segments used by a net: %d\n\n", max_segments);
-	printf("\tTotal local nets with reserved CLB opins: %d\n\n",
-			num_clb_opins_reserved);
+	vpr_printf(TIO_MESSAGE_INFO, "Wirelength results in terms of physical segments...\n");
+	vpr_printf(TIO_MESSAGE_INFO, "\tTotal wiring segments used: %d, average wire segments per net: %#g\n", total_segments, av_segments);
+	vpr_printf(TIO_MESSAGE_INFO, "\tMaximum segments used by a net: %d\n", max_segments);
+	vpr_printf(TIO_MESSAGE_INFO, "\tTotal local nets with reserved CLB opins: %d\n", num_clb_opins_reserved);
 }
 
 static void get_channel_occupancy_stats(void) {
@@ -181,8 +175,8 @@ static void get_channel_occupancy_stats(void) {
 	chany_occ = (int **) alloc_matrix(0, nx, 1, ny, sizeof(int));
 	load_channel_occupancies(chanx_occ, chany_occ);
 
-	printf("\nX - Directed channels:\n\n");
-	printf("j\tmax occ\tav_occ\t\tcapacity\n");
+	vpr_printf(TIO_MESSAGE_INFO, "\n");
+	vpr_printf(TIO_MESSAGE_INFO, "X - Directed channels: j\tmax occ\tav_occ\t\tcapacity\n");
 
 	total_x = 0;
 
@@ -196,11 +190,11 @@ static void get_channel_occupancy_stats(void) {
 			av_occ += chanx_occ[i][j];
 		}
 		av_occ /= nx;
-		printf("%d\t%d\t%-#9g\t%d\n", j, max_occ, av_occ, chan_width_x[j]);
+		vpr_printf(TIO_MESSAGE_INFO, "%d\t%d\t%-#9g\t%d\n", j, max_occ, av_occ, chan_width_x[j]);
 	}
 
-	printf("\nY - Directed channels:\n\n");
-	printf("i\tmax occ\tav_occ\t\tcapacity\n");
+	vpr_printf(TIO_MESSAGE_INFO, "\n");
+	vpr_printf(TIO_MESSAGE_INFO, "Y - Directed channels: i\tmax occ\tav_occ\t\tcapacity\n");
 
 	total_y = 0;
 
@@ -214,11 +208,12 @@ static void get_channel_occupancy_stats(void) {
 			av_occ += chany_occ[i][j];
 		}
 		av_occ /= ny;
-		printf("%d\t%d\t%-#9g\t%d\n", i, max_occ, av_occ, chan_width_y[i]);
+		vpr_printf(TIO_MESSAGE_INFO, "%d\t%d\t%-#9g\t%d\n", i, max_occ, av_occ, chan_width_y[i]);
 	}
 
-	printf("\nTotal Tracks in X-direction: %d  in Y-direction: %d\n\n", total_x,
-			total_y);
+	vpr_printf(TIO_MESSAGE_INFO, "\n");
+	vpr_printf(TIO_MESSAGE_INFO, "Total tracks in x-direction: %d, in y-direction: %d\n", total_x, total_y);
+	vpr_printf(TIO_MESSAGE_INFO, "\n");
 
 	free_matrix(chanx_occ, 1, nx, 0, sizeof(int));
 	free_matrix(chany_occ, 0, nx, 1, sizeof(int));
@@ -295,9 +290,7 @@ void get_num_bends_and_length(int inet, int *bends_ptr, int *len_ptr,
 
 	prevptr = trace_head[inet]; /* Should always be SOURCE. */
 	if (prevptr == NULL) {
-		printf(
-				"Error in get_num_bends_and_length:  net #%d has no traceback.\n",
-				inet);
+		vpr_printf(TIO_MESSAGE_ERROR, "in get_num_bends_and_length: net #%d has no traceback.\n", inet);
 		exit(1);
 	}
 	inode = prevptr->index;
@@ -365,14 +358,12 @@ void print_wirelen_prob_dist(void) {
 			index = (int) two_point_length;
 			if (index >= prob_dist_size) {
 
-				printf(
-						"Warning: index (%d) to prob_dist exceeds its allocated size (%d)\n",
+				vpr_printf(TIO_MESSAGE_WARNING, "index (%d) to prob_dist exceeds its allocated size (%d).\n",
 						index, prob_dist_size);
-				printf(
-						"Realloc'ing to increase 2-pin wirelen prob distribution array\n");
+				vpr_printf(TIO_MESSAGE_INFO, "Realloc'ing to increase 2-pin wirelen prob distribution array.\n");
 				incr = index - prob_dist_size + 2;
 				prob_dist_size += incr;
-				prob_dist = my_realloc(prob_dist,
+				prob_dist = (float *)my_realloc(prob_dist,
 						prob_dist_size * sizeof(float));
 				for (i = prob_dist_size - incr; i < prob_dist_size; i++)
 					prob_dist[i] = 0.0;
@@ -383,14 +374,12 @@ void print_wirelen_prob_dist(void) {
 			index++;
 			if (index >= prob_dist_size) {
 
-				printf(
-						"Warning: index (%d) to prob_dist exceeds its allocated size (%d)\n",
+				vpr_printf(TIO_MESSAGE_WARNING, "Warning: index (%d) to prob_dist exceeds its allocated size (%d).\n",
 						index, prob_dist_size);
-				printf(
-						"Realloc'ing to increase 2-pin wirelen prob distribution array\n");
+				vpr_printf(TIO_MESSAGE_INFO, "Realloc'ing to increase 2-pin wirelen prob distribution array.\n");
 				incr = index - prob_dist_size + 2;
 				prob_dist_size += incr;
-				prob_dist = my_realloc(prob_dist,
+				prob_dist = (float *)my_realloc(prob_dist,
 						prob_dist_size * sizeof(float));
 				for (i = prob_dist_size - incr; i < prob_dist_size; i++)
 					prob_dist[i] = 0.0;
@@ -404,20 +393,23 @@ void print_wirelen_prob_dist(void) {
 
 	/* Normalize so total probability is 1 and print out. */
 
-	printf("\nProbability distribution of 2-pin net lengths:\n\n");
-	printf("Length    p(Lenth)\n");
+	vpr_printf(TIO_MESSAGE_INFO, "\n");
+	vpr_printf(TIO_MESSAGE_INFO, "Probability distribution of 2-pin net lengths:\n");
+	vpr_printf(TIO_MESSAGE_INFO, "\n");
+	vpr_printf(TIO_MESSAGE_INFO, "Length    p(Lenth)\n");
 
 	av_length = 0;
 
 	for (index = 0; index < prob_dist_size; index++) {
 		prob_dist[index] /= norm_fac;
-		printf("%6d  %10.6f\n", index, prob_dist[index]);
+		vpr_printf(TIO_MESSAGE_INFO, "%6d  %10.6f\n", index, prob_dist[index]);
 		av_length += prob_dist[index] * index;
 	}
 
-	printf("\nThe number of 2-pin nets is ;%g;\n", norm_fac);
-	printf("\nExpected value of 2-pin net length (R) is ;%g;\n", av_length);
-	printf("\nTotal wire length is ;%g;\n", norm_fac * av_length);
+	vpr_printf(TIO_MESSAGE_INFO, "\n");
+	vpr_printf(TIO_MESSAGE_INFO, "Number of 2-pin nets: ;%g;\n", norm_fac);
+	vpr_printf(TIO_MESSAGE_INFO, "Expected value of 2-pin net length (R): ;%g;\n", av_length);
+	vpr_printf(TIO_MESSAGE_INFO, "Total wire length: ;%g;\n", norm_fac * av_length);
 
 	free(prob_dist);
 }
@@ -451,5 +443,41 @@ void print_lambda(void) {
 	}
 
 	lambda = (float) num_inputs_used / (float) num_blocks;
-	printf("Average lambda (input pins used per clb) is: %g\n", lambda);
+	vpr_printf(TIO_MESSAGE_INFO, "Average lambda (input pins used per clb) is: %g\n", lambda);
 }
+
+int count_netlist_clocks(void) {
+
+	/* Count how many clocks are in the netlist. */
+
+	int iblock, i, clock_net;
+	char * name;
+	boolean found;
+	int num_clocks = 0;
+	char ** clock_names = NULL;
+
+	for (iblock = 0; iblock < num_logical_blocks; iblock++) {
+		if (logical_block[iblock].type == VPACK_LATCH) {
+			clock_net = logical_block[iblock].clock_net;
+			assert(clock_net != OPEN);
+			name = logical_block[clock_net].name;
+			/* Now that we've found a clock, let's see if we've counted it already */
+			found = FALSE;
+			for (i = 0; !found && i < num_clocks; i++) {
+				if (strcmp(clock_names[i], name) == 0) {
+					found = TRUE;
+				}
+			}
+			if (!found) {
+				/* If we get here, the clock is new and so we dynamically grow the array netlist_clocks by one. */
+				clock_names = (char **) my_realloc (clock_names, ++num_clocks * sizeof(char *));
+				clock_names[num_clocks - 1] = name;
+			}
+		}
+	}
+	free (clock_names);
+	return num_clocks;
+}
+
+
+

@@ -87,7 +87,7 @@ void power_lowlevel_init() {
  */
 static float power_calc_node_switching(float capacitance, float density) {
 	return 0.5 * g_power_tech->Vdd * g_power_tech->Vdd * capacitance * density
-			/ g_solution_inf->T_crit;
+			/ g_solution_inf.T_crit;
 }
 
 /**
@@ -99,7 +99,7 @@ static float power_calc_node_switching(float capacitance, float density) {
 static float power_calc_node_switching_v(float capacitance, float density,
 		float voltage) {
 	return 0.5 * voltage * g_power_tech->Vdd * capacitance * density
-			/ g_solution_inf->T_crit;
+			/ g_solution_inf.T_crit;
 }
 
 /**

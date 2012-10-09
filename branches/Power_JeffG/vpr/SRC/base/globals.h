@@ -1,9 +1,12 @@
 /* 
  Global variables 
 
- Key global variables that are used everywhere are: 
+ Key global variables that are used everywhere in VPR: 
  clb_net, vpack_net, block, and logical_block
- These variables represent the user netlist in various stages of the CAD flow
+
+ These variables represent the user netlist in various stages of the CAD flow:
+  vpack_net and logical_block for the unclustered netlist pre packing
+  clb_net and block for the clustered netlist post packing
  */
 
 #ifndef GLOBALS_H
@@ -17,7 +20,21 @@ extern t_det_routing_arch * g_routing_arch;
 extern t_router_opts * g_routing_opts;
 
 /* Solution Information */
-extern t_solution_inf * g_solution_inf;
+extern t_solution_inf g_solution_inf;
+
+/********************************************************************
+Checking OS System
+********************************************************************/
+/*#if defined(__WIN32__) || defined(__WIN32) || defined(_WIN32) || defined(WIN32) || defined(__TOS_WIN__) || defined(__WINDOWS__)
+  #ifndef __WIN32__
+    #define __WIN32__
+  #endif
+#else
+    #ifndef __UNIX__
+      #define __UNIX__
+    #endif
+	#include <sys/time.h>
+#endif*/
 
 /********************************************************************
  User Netlist Globals
@@ -51,11 +68,10 @@ extern t_type_ptr FILL_TYPE;
 extern int num_types;
 extern struct s_type_descriptor *type_descriptors;
 
-/* Default prefix string for output files */
-extern char *OutFilePrefix;
-
 /* name of the blif circuit */
 extern char *blif_circuit_name;
+/* default output name */
+extern char *default_output_name;
 
 /* Default area of a 1x1 logic tile (excludes routing) on the FPGA */
 extern float grid_logic_tile_area;
@@ -70,11 +86,10 @@ extern float ipin_mux_trans_size;
 /* Netlist description data structures. */
 
 /* User netlist information */
-extern int num_logical_nets, num_logical_blocks, num_saved_logical_blocks,
-		num_saved_logical_nets;
+extern int num_logical_nets, num_logical_blocks;
 extern int num_p_inputs, num_p_outputs;
-extern struct s_net *vpack_net, *saved_logical_nets;
-extern struct s_logical_block *logical_block, *saved_logical_blocks;
+extern struct s_net *vpack_net;
+extern struct s_logical_block *logical_block;
 extern struct s_subckt *subckt;
 
 /* primiary inputs removed from circuit */
@@ -84,8 +99,6 @@ extern struct s_linked_vptr *circuit_p_io_removed;
 extern int *clb_to_vpack_net_mapping; /* [0..num_clb_nets - 1] */
 extern int *vpack_to_clb_net_mapping; /* [0..num_vpack_nets - 1] */
 
-/* Number in original netlist, before FF packing. */
-extern int num_luts, num_latches, num_subckts;
 
 /*******************************************************************
  Routing related globals
@@ -107,13 +120,22 @@ extern int **net_rr_terminals; /* [0..num_nets-1][0..num_pins-1] */
 extern struct s_switch_inf *switch_inf; /* [0..det_routing_arch.num_switch-1] */
 extern int **rr_blk_source; /* [0..num_blocks-1][0..num_class-1] */
 
+/* the head pointers of structures that are "freed" and used constantly */
+/*struct s_heap *g_heap_free_head;
+struct s_trace *g_trace_free_head;
+struct s_linked_f_pointer *g_linked_f_pointer_free_head;*/
+
 /*******************************************************************
  Timing related globals
  ********************************************************************/
-extern t_tnode *tnode; /* [0..num_tnodes - 1] */
-extern int num_tnodes; /* Number of nodes (pins) in the timing graph */
+
 extern float pb_max_internal_delay; /* biggest internal delay of block */
 extern const t_pb_type *pbtype_max_internal_delay; /* block type with highest internal delay */
+
+/*******************************************************************
+ Clock Network
+ ********************************************************************/
+extern t_clock_arch * g_clock_arch;
 
 #endif
 

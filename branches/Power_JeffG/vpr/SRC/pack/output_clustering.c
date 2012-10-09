@@ -27,7 +27,7 @@ static void print_tabs(FILE *fpout, int num_tabs) {
 	}
 }
 
-static void print_string(char *str_ptr, int *column, int num_tabs, FILE * fpout) {
+static void print_string(const char *str_ptr, int *column, int num_tabs, FILE * fpout) {
 
 	/* Prints string without making any lines longer than LINELENGTH.  Column  *
 	 * points to the column in which the next character will go (both used and *
@@ -37,8 +37,7 @@ static void print_string(char *str_ptr, int *column, int num_tabs, FILE * fpout)
 
 	len = strlen(str_ptr);
 	if (len + 3 > LINELENGTH) {
-		printf("Error in print_string: String %s is too long for desired\n"
-				"maximum line length.\n", str_ptr);
+		vpr_printf(TIO_MESSAGE_ERROR, "in print_string: String %s is too long for desired maximum line length.\n", str_ptr);
 		exit(1);
 	}
 
@@ -61,7 +60,7 @@ static void print_net_name(int inet, int *column, int num_tabs, FILE * fpout) {
 	 * used and updated by this routine).  fpout is the output file     *
 	 * pointer.                                                         */
 
-	char *str_ptr;
+	const char *str_ptr;
 
 	if (inet == OPEN)
 		str_ptr = "open";
@@ -112,7 +111,7 @@ static void print_interconnect(int inode, int *column, int num_tabs,
 										rr_node[prev_node].pb_graph_pin->port->name)
 								+ rr_node[prev_node].pb_graph_pin->pin_number
 										/ 10 + strlen(name) + 11;
-				str_ptr = my_malloc(len * sizeof(char));
+				str_ptr = (char*)my_malloc(len * sizeof(char));
 				sprintf(str_ptr, "%s[%d].%s[%d]->%s ",
 						rr_node[prev_node].pb_graph_pin->parent_node->pb_type->name,
 						rr_node[prev_node].pb_graph_pin->parent_node->placement_index,
@@ -126,7 +125,7 @@ static void print_interconnect(int inode, int *column, int num_tabs,
 										rr_node[prev_node].pb_graph_pin->port->name)
 								+ rr_node[prev_node].pb_graph_pin->pin_number
 										/ 10 + strlen(name) + 8;
-				str_ptr = my_malloc(len * sizeof(char));
+				str_ptr = (char*)my_malloc(len * sizeof(char));
 				sprintf(str_ptr, "%s.%s[%d]->%s ",
 						rr_node[prev_node].pb_graph_pin->parent_node->pb_type->name,
 						rr_node[prev_node].pb_graph_pin->port->name,
@@ -232,7 +231,7 @@ static void print_open_pb_graph_node(t_pb_graph_node * pb_graph_node,
 
 		column = tab_depth * TAB_LENGTH + 8; /* Next column I will write to. */
 		print_tabs(fpout, tab_depth);
-		fprintf(fpout, "\t<globals>\n");
+		fprintf(fpout, "\t<clocks>\n");
 		port_index = 0;
 		for (i = 0; i < pb_type->num_ports; i++) {
 			if (pb_type->ports[i].is_clock
@@ -251,7 +250,7 @@ static void print_open_pb_graph_node(t_pb_graph_node * pb_graph_node,
 			}
 		}
 		print_tabs(fpout, tab_depth);
-		fprintf(fpout, "\t</globals>\n");
+		fprintf(fpout, "\t</clocks>\n");
 
 		if (pb_type->num_modes > 0) {
 			for (i = 0; i < mode->num_pb_type_children; i++) {
@@ -361,7 +360,7 @@ static void print_pb(FILE *fpout, t_pb * pb, int pb_index, int tab_depth) {
 
 	column = tab_depth * TAB_LENGTH + 8; /* Next column I will write to. */
 	print_tabs(fpout, tab_depth);
-	fprintf(fpout, "\t<globals>\n");
+	fprintf(fpout, "\t<clocks>\n");
 	port_index = 0;
 	for (i = 0; i < pb_type->num_ports; i++) {
 		if (pb_type->ports[i].is_clock && pb_type->ports[i].type == IN_PORT) {
@@ -384,7 +383,7 @@ static void print_pb(FILE *fpout, t_pb * pb, int pb_index, int tab_depth) {
 		}
 	}
 	print_tabs(fpout, tab_depth);
-	fprintf(fpout, "\t</globals>\n");
+	fprintf(fpout, "\t</clocks>\n");
 
 	if (pb_type->num_modes > 0) {
 		for (i = 0; i < mode->num_pb_type_children; i++) {
@@ -444,15 +443,12 @@ static void print_stats(t_block *clb, int num_clusters) {
 	/* Prints out one cluster (clb).  Both the external pins and the *
 	 * internal connections are printed out.                         */
 
-	int ipin, icluster, itype, inet, iblk, num_pins, i;
-	int MAX_LUT_INPUTS;
-	int unabsorbable_ffs, total_ffs;
-	int num_luts_total;
+	int ipin, icluster, itype, inet;/*, iblk;*/
+	/*int unabsorbable_ffs;*/
 	int total_nets_absorbed;
 	boolean * nets_absorbed;
 
-	int *num_clb_types, *num_clb_inputs_used, *num_clb_outputs_used,
-			*num_lut_of_size;
+	int *num_clb_types, *num_clb_inputs_used, *num_clb_outputs_used;
 
 	nets_absorbed = NULL;
 	num_clb_types = num_clb_inputs_used = num_clb_outputs_used = NULL;
@@ -461,51 +457,30 @@ static void print_stats(t_block *clb, int num_clusters) {
 	num_clb_inputs_used = (int*) my_calloc(num_types, sizeof(int));
 	num_clb_outputs_used = (int*) my_calloc(num_types, sizeof(int));
 
-	MAX_LUT_INPUTS = 0;
-	for (iblk = 0; iblk < num_logical_blocks; iblk++) {
-		if (strcmp(logical_block[iblk].model->name, "names") == 0) {
-			MAX_LUT_INPUTS = logical_block[iblk].model->inputs->size;
-			break;
-		}
-	}
-	num_lut_of_size = (int*) my_calloc(MAX_LUT_INPUTS + 1, sizeof(int));
 
 	nets_absorbed = (boolean *) my_calloc(num_logical_nets, sizeof(boolean));
 	for (inet = 0; inet < num_logical_nets; inet++) {
 		nets_absorbed[inet] = TRUE;
 	}
 
+#if 0
+
+/*counting number of flipflops which cannot be absorbed to check the optimality of the packer wrt CLB density*/
+
 	unabsorbable_ffs = 0;
-	total_ffs = 0;
 	for (iblk = 0; iblk < num_logical_blocks; iblk++) {
-		if (strcmp(logical_block[iblk].model->name, "names") == 0) {
-			num_pins = 0;
-			for (ipin = 0; ipin < logical_block[iblk].model->inputs->size;
-					ipin++) {
-				if (logical_block[iblk].input_nets[0][ipin] != OPEN) {
-					num_pins++;
-				}
-			}
-			num_lut_of_size[num_pins]++;
-		} else if (strcmp(logical_block[iblk].model->name, "latch") == 0) {
+		if (strcmp(logical_block[iblk].model->name, "latch") == 0) {
 			if (vpack_net[logical_block[iblk].input_nets[0][0]].num_sinks > 1
 					|| strcmp(
 							logical_block[vpack_net[logical_block[iblk].input_nets[0][0]].node_block[0]].model->name,
 							"names") != 0) {
 				unabsorbable_ffs++;
 			}
-			total_ffs++;
 		}
 	}
-	printf("\n");
-	num_luts_total = 0;
-	for (i = 0; i <= MAX_LUT_INPUTS; i++) {
-		printf("%d LUTs of size %d\n", num_lut_of_size[i], i);
-		num_luts_total += num_lut_of_size[i];
-	}
-	printf("%d LUTs in input netlist\n", num_luts_total);
-	printf("%d FFs in input netlist\n", total_ffs);
-	printf("%d FFs in input netlist not absorbable\n", unabsorbable_ffs);
+	vpr_printf(TIO_MESSAGE_INFO, "\n");
+	vpr_printf(TIO_MESSAGE_INFO, "%d FFs in input netlist not absorbable (ie. impossible to form BLE).\n", unabsorbable_ffs);
+#endif
 
 	/* Counters used only for statistics purposes. */
 
@@ -527,18 +502,13 @@ static void print_stats(t_block *clb, int num_clusters) {
 
 	for (itype = 0; itype < num_types; itype++) {
 		if (num_clb_types[itype] == 0) {
-			printf(
-					"\t%s: # blocks %d, avg # input + clock pins used %g, avg # output pins used %g\n",
-					type_descriptors[itype].name, num_clb_types[itype], 0.0,
-					0.0);
+			vpr_printf(TIO_MESSAGE_INFO, "\t%s: # blocks: %d, average # input + clock pins used: %g, average # output pins used: %g\n",
+					type_descriptors[itype].name, num_clb_types[itype], 0.0, 0.0);
 		} else {
-			printf(
-					"\t%s: # blocks %d, avg # input + clock pins used %g, avg # output pins used %g\n",
+			vpr_printf(TIO_MESSAGE_INFO, "\t%s: # blocks: %d, average # input + clock pins used: %g, average # output pins used: %g\n",
 					type_descriptors[itype].name, num_clb_types[itype],
-					(float) num_clb_inputs_used[itype]
-							/ (float) num_clb_types[itype],
-					(float) num_clb_outputs_used[itype]
-							/ (float) num_clb_types[itype]);
+					(float) num_clb_inputs_used[itype] / (float) num_clb_types[itype],
+					(float) num_clb_outputs_used[itype] / (float) num_clb_types[itype]);
 		}
 	}
 
@@ -548,11 +518,9 @@ static void print_stats(t_block *clb, int num_clusters) {
 			total_nets_absorbed++;
 		}
 	}
-	printf("Absorbed logical nets %d out of %d nets, %d nets not absorbed\n",
-			total_nets_absorbed, num_logical_nets,
-			num_logical_nets - total_nets_absorbed);
+	vpr_printf(TIO_MESSAGE_INFO, "Absorbed logical nets %d out of %d nets, %d nets not absorbed.\n",
+			total_nets_absorbed, num_logical_nets, num_logical_nets - total_nets_absorbed);
 	free(nets_absorbed);
-	free(num_lut_of_size);
 	free(num_clb_types);
 	free(num_clb_inputs_used);
 	free(num_clb_outputs_used);
@@ -595,14 +563,14 @@ void output_clustering(t_block *clb, int num_clusters, boolean global_clocks,
 
 	column = 2 * TAB_LENGTH;
 	if (global_clocks) {
-		fprintf(fpout, "\n\t<globals>\n\t\t");
+		fprintf(fpout, "\n\t<clocks>\n\t\t");
 
 		for (netnum = 0; netnum < num_logical_nets; netnum++) {
 			if (is_clock[netnum]) {
 				print_string(vpack_net[netnum].name, &column, 2, fpout);
 			}
 		}
-		fprintf(fpout, "\n\t</globals>\n\n");
+		fprintf(fpout, "\n\t</clocks>\n\n");
 	}
 
 	/* Print out all input and output pads. */
@@ -619,16 +587,14 @@ void output_clustering(t_block *clb, int num_clusters, boolean global_clocks,
 			break;
 
 		case VPACK_EMPTY:
-			printf(
-					"Error in output_netlist -- logical_block %d is VPACK_EMPTY.\n",
+			vpr_printf(TIO_MESSAGE_ERROR, "in output_netlist: logical_block %d is VPACK_EMPTY.\n",
 					bnum);
 			exit(1);
 			break;
 
 		default:
-			printf(
-					"Error in output_netlist.  Unexpected type %d for logical_block"
-							"%d.\n", logical_block[bnum].type, bnum);
+			vpr_printf(TIO_MESSAGE_ERROR, "in output_netlist: Unexpected type %d for logical_block %d.\n", 
+					logical_block[bnum].type, bnum);
 		}
 	}
 

@@ -82,7 +82,7 @@ static enum color_types *net_color, *block_color;
  * [0..num_nets-1] and [0..num_blocks-1], respectively.    */
 
 static float line_fuz = 0.3;
-static char *name_type[] = { "SOURCE", "SINK", "IPIN", "OPIN", "CHANX", "CHANY",
+static const char *name_type[] = { "SOURCE", "SINK", "IPIN", "OPIN", "CHANX", "CHANY",
 		"INTRA_CLUSTER_EDGE" };
 
 static float *x_rr_node_left = NULL;
@@ -250,7 +250,7 @@ static void toggle_nets(void (*drawscreen_ptr)(void)) {
 	 * Also disables drawing of routing resources.  See graphics.c for details *
 	 * of how buttons work.                                                    */
 
-	show_nets = !show_nets;
+	show_nets = (show_nets == FALSE) ? TRUE : FALSE;
 	draw_rr_toggle = DRAW_NO_RR;
 	show_congestion = FALSE;
 
@@ -267,7 +267,7 @@ static void toggle_rr(void (*drawscreen_ptr)(void)) {
 	 * through the options:  DRAW_NO_RR, DRAW_ALL_RR, DRAW_ALL_BUT_BUFFERS_RR,  *
 	 * DRAW_NODES_AND_SBOX_RR, and DRAW_NODES_RR.                               */
 
-	draw_rr_toggle = (draw_rr_toggle + 1) % (DRAW_RR_TOGGLE_MAX);
+	draw_rr_toggle = (enum e_draw_rr_toggle) (((int)draw_rr_toggle + 1) % ((int)DRAW_RR_TOGGLE_MAX));
 	show_nets = FALSE;
 	show_congestion = FALSE;
 
@@ -276,7 +276,7 @@ static void toggle_rr(void (*drawscreen_ptr)(void)) {
 }
 
 static void toggle_defects(void (*drawscreen_ptr)(void)) {
-	show_defects = !show_defects;
+	show_defects = (show_defects == FALSE) ? TRUE : FALSE;
 	update_message(default_message);
 	drawscreen_ptr();
 }
@@ -289,7 +289,7 @@ static void toggle_congestion(void (*drawscreen_ptr)(void)) {
 
 	show_nets = FALSE;
 	draw_rr_toggle = DRAW_NO_RR;
-	show_congestion = !show_congestion;
+	show_congestion = (show_congestion == FALSE) ? TRUE : FALSE;
 
 	if (!show_congestion) {
 		update_message(default_message);
@@ -726,8 +726,7 @@ void draw_rr(void) {
 			break;
 
 		default:
-			printf("Error in draw_rr:  Unexpected rr_node type: %d.\n",
-					rr_node[inode].type);
+			vpr_printf(TIO_MESSAGE_ERROR, "in draw_rr: Unexpected rr_node type: %d.\n", rr_node[inode].type);
 			exit(1);
 		}
 	}
@@ -928,7 +927,7 @@ static void draw_rr_edges(int inode) {
 		to_ptc_num = rr_node[to_node].ptc_num;
 
 		if (show_defects)
-			defective = (switch_inf[rr_node[inode].switches[iedge]].R < 0);
+			defective = (boolean)(switch_inf[rr_node[inode].switches[iedge]].R < 0);
 		switch (from_type) {
 
 		case OPIN:
@@ -946,10 +945,8 @@ static void draw_rr_edges(int inode) {
 				break;
 
 			default:
-				printf(
-						"Error in draw_rr_edges:  node %d (type: %d) connects to \n"
-								"node %d (type: %d).\n", inode, from_type,
-						to_node, to_type);
+				vpr_printf(TIO_MESSAGE_ERROR, "in draw_rr_edges: node %d (type: %d) connects to node %d (type: %d).\n",
+						inode, from_type, to_node, to_type);
 				exit(1);
 				break;
 			}
@@ -999,10 +996,8 @@ static void draw_rr_edges(int inode) {
 				break;
 
 			default:
-				printf(
-						"Error in draw_rr_edges:  node %d (type: %d) connects to \n"
-								"node %d (type: %d).\n", inode, from_type,
-						to_node, to_type);
+				vpr_printf(TIO_MESSAGE_ERROR, "in draw_rr_edges: node %d (type: %d) connects to node %d (type: %d).\n",
+						inode, from_type, to_node, to_type);
 				exit(1);
 				break;
 			}
@@ -1052,17 +1047,15 @@ static void draw_rr_edges(int inode) {
 				break;
 
 			default:
-				printf(
-						"Error in draw_rr_edges:  node %d (type: %d) connects to \n"
-								"node %d (type: %d).\n", inode, from_type,
-						to_node, to_type);
+				vpr_printf(TIO_MESSAGE_ERROR, "in draw_rr_edges: node %d (type: %d) connects to node %d (type: %d).\n",
+						inode, from_type, to_node, to_type);
 				exit(1);
 				break;
 			}
 			break;
 
 		default: /* from_type */
-			printf("Error:  draw_rr_edges called with node %d of type %d.\n",
+			vpr_printf(TIO_MESSAGE_ERROR, "draw_rr_edges called with node %d of type %d.\n", 
 					inode, from_type);
 			exit(1);
 			break;
@@ -1264,13 +1257,13 @@ static void draw_chany_to_chany_edge(int from_node, int from_track, int to_node,
 				y1 = tile_y[to_ylow - 1] + tile_width;
 			} else { /* DEC wire starts at top edge */
 				if (!(from_yhigh > to_yhigh)) {
-					printf("from_yhigh (%d) !> to_yhigh (%d).\n", from_yhigh,
-							to_yhigh);
-					printf("from is (%d, %d) to (%d, %d) track %d.\n",
+					vpr_printf(TIO_MESSAGE_INFO, "from_yhigh (%d) !> to_yhigh (%d).\n", 
+							from_yhigh, to_yhigh);
+					vpr_printf(TIO_MESSAGE_INFO, "from is (%d, %d) to (%d, %d) track %d.\n",
 							rr_node[from_node].xhigh, rr_node[from_node].yhigh,
 							rr_node[from_node].xlow, rr_node[from_node].ylow,
 							rr_node[from_node].ptc_num);
-					printf("to is (%d, %d) to (%d, %d) track %d.\n",
+					vpr_printf(TIO_MESSAGE_INFO, "to is (%d, %d) to (%d, %d) track %d.\n",
 							rr_node[to_node].xhigh, rr_node[to_node].yhigh,
 							rr_node[to_node].xlow, rr_node[to_node].ylow,
 							rr_node[to_node].ptc_num);
@@ -1425,8 +1418,7 @@ static void get_rr_pin_draw_coords(int inode, int iside, int ioff, float *xcen,
 		break;
 
 	default:
-		printf("Error in get_rr_pin_draw_coords:  Unexpected iside %d.\n",
-				iside);
+		vpr_printf(TIO_MESSAGE_ERROR, "in get_rr_pin_draw_coords: Unexpected iside %d.\n", iside);
 		exit(1);
 		break;
 	}
@@ -1537,9 +1529,7 @@ static void drawroute(enum e_draw_net_type draw_net_type) {
 					break;
 
 				default:
-					printf(
-							"Error in drawroute:  Unexpected connection from an \n"
-									"rr_node of type %d to one of type %d.\n",
+					vpr_printf(TIO_MESSAGE_ERROR, "in drawroute: Unexpected connection from an rr_node of type %d to one of type %d.\n",
 							prev_type, rr_type);
 					exit(1);
 				}
@@ -1575,9 +1565,7 @@ static void drawroute(enum e_draw_net_type draw_net_type) {
 					break;
 
 				default:
-					printf(
-							"Error in drawroute:  Unexpected connection from an \n"
-									"rr_node of type %d to one of type %d.\n",
+					vpr_printf(TIO_MESSAGE_ERROR, "in drawroute: Unexpected connection from an rr_node of type %d to one of type %d.\n",
 							prev_type, rr_type);
 					exit(1);
 				}
@@ -1625,8 +1613,7 @@ static int get_track_num(int inode, int **chanx_track, int **chany_track) {
 		return (chany_track[i][j]);
 
 	default:
-		printf("Error in get_track_num:  unexpected node type %d for node %d."
-				"\n", rr_type, inode);
+		vpr_printf(TIO_MESSAGE_ERROR, "in get_track_num: Unexpected node type %d for node %d.\n", rr_type, inode);
 		exit(1);
 	}
 }
@@ -1817,10 +1804,10 @@ static void deselect_all(void) {
 		if (block[i].type->index < 3) {
 			block_color[i] = LIGHTGREY;
 		} else if (block[i].type->index < 3 + MAX_BLOCK_COLOURS) {
-			block_color[i] = BISQUE + MAX_BLOCK_COLOURS + block[i].type->index
-					- 3;
+			block_color[i] = (enum color_types) (BISQUE + MAX_BLOCK_COLOURS + block[i].type->index
+					- 3);
 		} else {
-			block_color[i] = BISQUE + 2 * MAX_BLOCK_COLOURS - 1;
+			block_color[i] = (enum color_types) (BISQUE + 2 * MAX_BLOCK_COLOURS - 1);
 		}
 	}
 
@@ -1995,8 +1982,7 @@ static void draw_pin_to_chan_edge(int pin_node, int chan_node) {
 		break;
 
 	default:
-		printf("Error in draw_pin_to_chan_edge:  invalid channel node %d.\n",
-				chan_node);
+		vpr_printf(TIO_MESSAGE_ERROR, "in draw_pin_to_chan_edge: Invalid channel node %d.\n", chan_node);
 		exit(1);
 	}
 

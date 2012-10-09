@@ -23,8 +23,7 @@ void CheckOptions(INP t_options Options, INP boolean TimingEnabled) {
 
 	/* Check that all filenames were given */
 	if ((NULL == Options.CircuitName) || (NULL == Options.ArchFile)) {
-		printf(ERRTAG "Not enough args. Need at least 'vpr "
-		"<archfile> <circuit_name>'\n");
+		vpr_printf(TIO_MESSAGE_ERROR, "Not enough args. Need at least 'vpr <archfile> <circuit_name>'.\n");
 		exit(1);
 	}
 
@@ -32,8 +31,7 @@ void CheckOptions(INP t_options Options, INP boolean TimingEnabled) {
 	Cur = OptionBaseTokenList;
 	while (Cur->Str) {
 		if (Options.Count[Cur->Enum] > 1) {
-			printf(ERRTAG "Parameter '%s' was specified more than "
-			"once on command line.\n", Cur->Str);
+			vpr_printf(TIO_MESSAGE_ERROR, "Parameter '%s' was specified more than once on command line.\n", Cur->Str);
 			exit(1);
 		}
 		++Cur;
@@ -47,14 +45,12 @@ void CheckOptions(INP t_options Options, INP boolean TimingEnabled) {
 	if (Options.Count[OT_TIMING_ANALYZE_ONLY_WITH_NET_DELAY]
 			&& (Options.Count[OT_PACK] || Options.Count[OT_PLACE]
 					|| Options.Count[OT_ROUTE])) {
-		printf(ERRTAG "'cluster'/'route'/'place', and "
-		"'timing_analysis_only_with_net_delay' are mutually "
-		"exclusive flags\n");
+		vpr_printf(TIO_MESSAGE_ERROR, "'cluster'/'route'/'place', and 'timing_analysis_only_with_net_delay' are mutually exclusive flags..\n");
 		exit(1);
 	}
 
 	/* If placing and timing is enabled, default to a timing placer */
-	TimingPlacer = ((Options.Count[OT_PLACE] || default_flow) && TimingEnabled);
+	TimingPlacer = (boolean)((Options.Count[OT_PLACE] || default_flow) && TimingEnabled);
 	if (Options.Count[OT_PLACE_ALGORITHM] > 0) {
 		if ((PATH_TIMING_DRIVEN_PLACE != Options.PlaceAlgorithm)
 				&& (NET_TIMING_DRIVEN_PLACE != Options.PlaceAlgorithm)) {
@@ -64,7 +60,7 @@ void CheckOptions(INP t_options Options, INP boolean TimingEnabled) {
 	}
 
 	/* If routing and timing is enabled, default to a timing router */
-	TimingRouter = ((Options.Count[OT_ROUTE] || default_flow) && TimingEnabled);
+	TimingRouter = (boolean)((Options.Count[OT_ROUTE] || default_flow) && TimingEnabled);
 	if (Options.Count[OT_ROUTER_ALGORITHM] > 0) {
 		if (TIMING_DRIVEN != Options.RouterAlgorithm) {
 			/* Turn off the timing router if they request a different router */
@@ -94,17 +90,11 @@ void CheckOptions(INP t_options Options, INP boolean TimingEnabled) {
 	if (Options.Count[OT_PLACE_ALGORITHM] > 0) {
 		Yes = OT_PLACE_ALGORITHM;
 	}
-	if (Options.Count[OT_PLACE_COST_TYPE] > 0) {
-		Yes = OT_PLACE_COST_TYPE;
-	}
 	if (Options.Count[OT_PLACE_COST_EXP] > 0) {
 		Yes = OT_PLACE_COST_EXP;
 	}
 	if (Options.Count[OT_PLACE_CHAN_WIDTH] > 0) {
 		Yes = OT_PLACE_CHAN_WIDTH;
-	}
-	if (Options.Count[OT_NUM_REGIONS] > 0) {
-		Yes = OT_NUM_REGIONS;
 	}
 	if (Options.Count[OT_ENABLE_TIMING_COMPUTATIONS] > 0) {
 		Yes = OT_ENABLE_TIMING_COMPUTATIONS;
@@ -118,9 +108,7 @@ void CheckOptions(INP t_options Options, INP boolean TimingEnabled) {
 		Cur = OptionBaseTokenList;
 		while (Cur->Str) {
 			if (Yes == Cur->Enum) {
-				printf(ERRTAG
-				"Option '%s' is not allowed when placement is "
-				"not run.\n", Cur->Str);
+				vpr_printf(TIO_MESSAGE_ERROR, "Option '%s' is not allowed when placement is not run.\n", Cur->Str);
 				exit(1);
 			}
 			++Cur;
@@ -148,9 +136,7 @@ void CheckOptions(INP t_options Options, INP boolean TimingEnabled) {
 		Cur = OptionBaseTokenList;
 		while (Cur->Str) {
 			if (Yes == Cur->Enum) {
-				printf(ERRTAG
-				"Option '%s' is not allowed when timing placement is "
-				"not used.\n", Cur->Str);
+				vpr_printf(TIO_MESSAGE_ERROR, "Option '%s' is not allowed when timing placement is not used.\n", Cur->Str);
 				exit(1);
 			}
 			++Cur;
@@ -209,9 +195,7 @@ void CheckOptions(INP t_options Options, INP boolean TimingEnabled) {
 		Cur = OptionBaseTokenList;
 		while (Cur->Str) {
 			if (Yes == Cur->Enum) {
-				printf(ERRTAG
-				"Option '%s' is not allowed when timing router is "
-				"not used.\n", Cur->Str);
+				vpr_printf(TIO_MESSAGE_ERROR, "Option '%s' is not allowed when timing router is not used.\n", Cur->Str);
 				exit(1);
 			}
 			++Cur;

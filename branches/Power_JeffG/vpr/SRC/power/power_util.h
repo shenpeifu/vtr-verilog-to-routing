@@ -67,4 +67,8 @@ float power_buffer_size_from_logical_effort(float C_load);
 
 void power_print_title(FILE * fp, char * title);
 
+t_mux_arch * power_get_mux_arch(int num_mux_inputs);
+
+
+
 #endif

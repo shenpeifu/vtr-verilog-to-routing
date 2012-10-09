@@ -192,9 +192,8 @@ void count_bidir_routing_transistors(int num_switch, float R_minW_nmos,
 					break;
 
 				default:
-					printf(
-							"Error in count_routing_transistors:  Unexpected \n"
-									"connection from node %d (type %d) to node %d (type %d).\n",
+					vpr_printf(TIO_MESSAGE_ERROR, "in count_routing_transistors:\n");
+					vpr_printf(TIO_MESSAGE_ERROR, "\tUnexpected connection from node %d (type %d) to node %d (type %d).\n",
 							from_node, from_rr_type, to_node, to_rr_type);
 					exit(1);
 					break;
@@ -268,15 +267,13 @@ void count_bidir_routing_transistors(int num_switch, float R_minW_nmos,
 	ntrans_sharing += input_cblock_trans;
 	ntrans_no_sharing += input_cblock_trans;
 
-	printf("\nRouting area (in minimum width transistor areas):\n");
-	printf(
-			"Assuming no buffer sharing (pessimistic). Total: %#g  Per logic tile: "
-					"%#g\n", ntrans_no_sharing,
-			ntrans_no_sharing / (float) (nx * ny));
-	printf(
-			"Assuming buffer sharing (slightly optimistic). Total: %#g  Per logic tile: "
-					"%#g\n\n", ntrans_sharing,
-			ntrans_sharing / (float) (nx * ny));
+	vpr_printf(TIO_MESSAGE_INFO, "\n");
+	vpr_printf(TIO_MESSAGE_INFO, "Routing area (in minimum width transistor areas)...\n");
+	vpr_printf(TIO_MESSAGE_INFO, "\tAssuming no buffer sharing (pessimistic). Total: %#g, per logic tile: %#g\n", 
+			ntrans_no_sharing, ntrans_no_sharing / (float) (nx * ny));
+	vpr_printf(TIO_MESSAGE_INFO, "\tAssuming buffer sharing (slightly optimistic). Total: %#g, per logic tile: %#g\n", 
+			ntrans_sharing, ntrans_sharing / (float) (nx * ny));
+	vpr_printf(TIO_MESSAGE_INFO, "\n");
 }
 
 void count_unidir_routing_transistors(t_segment_inf * segment_inf,
@@ -386,9 +383,8 @@ void count_unidir_routing_transistors(t_segment_inf * segment_inf,
 					break;
 
 				default:
-					printf(
-							"Error in count_routing_transistors:  Unexpected \n"
-									"connection from node %d (type %d) to node %d (type %d).\n",
+					vpr_printf(TIO_MESSAGE_ERROR, "in count_routing_transistors:\n");
+					vpr_printf(TIO_MESSAGE_ERROR, "\tUnexpected connection from node %d (type %d) to node %d (type %d).\n",
 							from_node, from_rr_type, to_node, to_rr_type);
 					exit(1);
 					break;
@@ -429,9 +425,9 @@ void count_unidir_routing_transistors(t_segment_inf * segment_inf,
 
 	ntrans += input_cblock_trans;
 
-	printf("\nRouting area (in minimum width transistor areas):\n");
-	printf("Total Routing Area: %#g  Per logic tile: %#g\n", ntrans,
-			ntrans / (float) (nx * ny));
+	vpr_printf(TIO_MESSAGE_INFO, "\n");
+	vpr_printf(TIO_MESSAGE_INFO, "Routing area (in minimum width transistor areas)...\n");
+	vpr_printf(TIO_MESSAGE_INFO, "\tTotal routing area: %#g, per logic tile: %#g\n", ntrans, ntrans / (float) (nx * ny));
 }
 
 static float get_cblock_trans(int *num_inputs_to_cblock,
@@ -548,7 +544,7 @@ static float trans_per_buf(float Rbuf, float R_minW_nmos, float R_minW_pmos) {
 
 		num_stage = nint(log10(R_minW_nmos / Rbuf) / log10(4.));
 		num_stage = max(num_stage, 1);
-		stage_ratio = pow(R_minW_nmos / Rbuf, 1. / (float) num_stage);
+		stage_ratio = pow((float)(R_minW_nmos / Rbuf), (float)( 1. / (float) num_stage));
 
 		Rstage = R_minW_nmos;
 		trans_count = 0.;
@@ -587,7 +583,7 @@ static float trans_per_mux(int num_inputs, float trans_sram_bit,
 		/* This is a large multiplexer so design it using a two-level multiplexer   *
 		 * + 0.00001 is to make sure exact square roots two don't get rounded down  *
 		 * to one lower level.                                                      */
-		num_second_stage_trans = floor(sqrt(num_inputs) + 0.00001);
+		num_second_stage_trans = (int)floor((float)sqrt((float)num_inputs) + 0.00001);
 		pass_trans = (num_inputs + num_second_stage_trans) * pass_trans_area;
 		sram_trans = (ceil(
 				(float) num_inputs / num_second_stage_trans - 0.00001)

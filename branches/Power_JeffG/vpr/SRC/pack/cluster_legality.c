@@ -6,16 +6,17 @@
 #include "physical_types.h"
 #include "vpr_types.h"
 #include "globals.h"
-#include "mst.h"
 #include "route_export.h"
 #include "route_common.h"
 #include "cluster_legality.h"
 #include "cluster_placement.h"
 #include "rr_graph.h"
 
-static struct s_linked_vptr *rr_mem_chunk_list_head = NULL;
+static t_chunk rr_mem_ch = {NULL, 0, NULL};
+
+/*static struct s_linked_vptr *rr_mem_chunk_list_head = NULL;
 static int chunk_bytes_avail = 0;
-static char *chunk_next_avail_mem = NULL;
+static char *chunk_next_avail_mem = NULL;*/
 static struct s_trace **best_routing;
 
 /* nets_in_cluster: array of all nets contained in the cluster */
@@ -34,14 +35,9 @@ static int num_rr_intrinsic_cost = 0;
 /********************* Subroutines local to this module *********************/
 static boolean is_net_in_cluster(INP int inet);
 
-static void setup_intracluster_routing_for_logical_block(INP int iblock,
-		INP t_pb_graph_node *primitive);
-
 static void add_net_rr_terminal_cluster(int iblk_net,
 		t_pb_graph_node * primitive, int ilogical_block,
 		t_model_ports * model_port, int ipin);
-
-static void reload_ext_net_rr_terminal_cluster(void);
 
 static boolean breadth_first_route_net_cluster(int inet);
 
@@ -156,7 +152,7 @@ static void add_net_rr_terminal_cluster(int iblk_net,
 	}
 }
 
-static void reload_ext_net_rr_terminal_cluster(void) {
+void reload_ext_net_rr_terminal_cluster(void) {
 	int i, j, net_index;
 	boolean has_ext_sink, has_ext_source;
 	int curr_ext_output, curr_ext_input, curr_ext_clock;
@@ -168,7 +164,7 @@ static void reload_ext_net_rr_terminal_cluster(void) {
 	for (i = 0; i < num_nets_in_cluster; i++) {
 		net_index = nets_in_cluster[i];
 		has_ext_sink = FALSE;
-		has_ext_source =
+		has_ext_source = (boolean)
 				(logical_block[vpack_net[net_index].node_block[0]].clb_index
 						!= curr_cluster_index);
 		if (has_ext_source) {
@@ -208,13 +204,13 @@ static void reload_ext_net_rr_terminal_cluster(void) {
 void alloc_and_load_cluster_legality_checker(void) {
 	best_routing = (struct s_trace **) my_calloc(num_logical_nets,
 			sizeof(struct s_trace *));
-	nets_in_cluster = my_malloc(num_logical_nets * sizeof(int));
+	nets_in_cluster = (int *) my_malloc(num_logical_nets * sizeof(int));
 	num_nets_in_cluster = 0;
 	num_nets = num_logical_nets;
 
 	/* inside a cluster, I do not consider rr_indexed_data cost, set to 1 since other costs are multiplied by it */
 	num_rr_indexed_data = 1;
-	rr_indexed_data = my_calloc(1, sizeof(t_rr_indexed_data));
+	rr_indexed_data = (t_rr_indexed_data *) my_calloc(1, sizeof(t_rr_indexed_data));
 	rr_indexed_data[0].base_cost = 1;
 
 	/* alloc routing structures */
@@ -224,19 +220,24 @@ void alloc_and_load_cluster_legality_checker(void) {
 
 void free_cluster_legality_checker(void) {
 	int inet;
+	free(best_routing);
 	free(rr_indexed_data);
 	free_rr_node_route_structs();
-	free_route_structs(NULL);
+	free_route_structs();
 	free_trace_structs();
 
-	free_chunk_memory(rr_mem_chunk_list_head);
-	rr_mem_chunk_list_head = NULL;
+	free_chunk_memory(&rr_mem_ch);
 
 	for (inet = 0; inet < num_logical_nets; inet++) {
 		free(saved_net_rr_terminals[inet]);
 	}
 	free(net_rr_terminals);
+	free(nets_in_cluster);
 	free(saved_net_rr_terminals);
+
+	free(rr_intrinsic_cost);
+	rr_intrinsic_cost = NULL;
+	num_rr_intrinsic_cost = 0;
 }
 
 void alloc_and_load_rr_graph_for_pb_graph_node(
@@ -245,7 +246,7 @@ void alloc_and_load_rr_graph_for_pb_graph_node(
 	int i, j, k, index;
 	boolean is_primitive;
 
-	is_primitive = (pb_graph_node->pb_type->num_modes == 0);
+	is_primitive = (boolean) (pb_graph_node->pb_type->num_modes == 0);
 
 	for (i = 0; i < pb_graph_node->num_input_ports; i++) {
 		for (j = 0; j < pb_graph_node->num_input_pins[i]; j++) {
@@ -257,9 +258,9 @@ void alloc_and_load_rr_graph_for_pb_graph_node(
 					pb_graph_node->input_pins[i][j].num_output_edges;
 			rr_node[index].pack_intrinsic_cost = 1
 					+ (float) rr_node[index].num_edges / 5; /* need to normalize better than 5 */
-			rr_node[index].edges = my_malloc(
+			rr_node[index].edges = (int *) my_malloc(
 					rr_node[index].num_edges * sizeof(int));
-			rr_node[index].switches = my_calloc(rr_node[index].num_edges,
+			rr_node[index].switches = (short *) my_calloc(rr_node[index].num_edges,
 					sizeof(int));
 			rr_node[index].net_num = OPEN;
 			rr_node[index].prev_node = OPEN;
@@ -295,9 +296,9 @@ void alloc_and_load_rr_graph_for_pb_graph_node(
 					pb_graph_node->output_pins[i][j].num_output_edges;
 			rr_node[index].pack_intrinsic_cost = 1
 					+ (float) rr_node[index].num_edges / 5; /* need to normalize better than 5 */
-			rr_node[index].edges = my_malloc(
+			rr_node[index].edges = (int *) my_malloc(
 					rr_node[index].num_edges * sizeof(int));
-			rr_node[index].switches = my_calloc(rr_node[index].num_edges,
+			rr_node[index].switches = (short *) my_calloc(rr_node[index].num_edges,
 					sizeof(int));
 			rr_node[index].net_num = OPEN;
 			rr_node[index].prev_node = OPEN;
@@ -333,9 +334,9 @@ void alloc_and_load_rr_graph_for_pb_graph_node(
 					pb_graph_node->clock_pins[i][j].num_output_edges;
 			rr_node[index].pack_intrinsic_cost = 1
 					+ (float) rr_node[index].num_edges / 5; /* need to normalize better than 5 */
-			rr_node[index].edges = my_malloc(
+			rr_node[index].edges = (int *) my_malloc(
 					rr_node[index].num_edges * sizeof(int));
-			rr_node[index].switches = my_calloc(rr_node[index].num_edges,
+			rr_node[index].switches = (short *) my_calloc(rr_node[index].num_edges,
 					sizeof(int));
 			rr_node[index].net_num = OPEN;
 			rr_node[index].prev_node = OPEN;
@@ -403,10 +404,10 @@ void alloc_and_load_legalizer_for_cluster(INP t_block* clb, INP int clb_index,
 			+ pb_type->num_output_pins + pb_type->num_clock_pins;
 	if (num_rr_nodes > num_rr_intrinsic_cost) {
 		free(rr_intrinsic_cost);
-		rr_intrinsic_cost = my_calloc(num_rr_nodes, sizeof(float));
+		rr_intrinsic_cost = (float *) my_calloc(num_rr_nodes, sizeof(float));
 		num_rr_intrinsic_cost = num_rr_nodes;
 	}
-	rr_node = my_calloc(num_rr_nodes, sizeof(t_rr_node));
+	rr_node = (t_rr_node *) my_calloc(num_rr_nodes, sizeof(t_rr_node));
 	clb->pb->rr_graph = rr_node;
 
 	alloc_and_load_rr_graph_for_pb_graph_node(pb_graph_node, arch, 0);
@@ -429,9 +430,9 @@ void alloc_and_load_legalizer_for_cluster(INP t_block* clb, INP int clb_index,
 		rr_node[index].num_edges = pb_type->num_input_pins;
 		rr_node[index].pack_intrinsic_cost = 1
 				+ (float) rr_node[index].num_edges / 5; /* need to normalize better than 5 */
-		rr_node[index].edges = my_malloc(
+		rr_node[index].edges = (int *) my_malloc(
 				rr_node[index].num_edges * sizeof(int));
-		rr_node[index].switches = my_calloc(rr_node[index].num_edges,
+		rr_node[index].switches = (short *) my_calloc(rr_node[index].num_edges,
 				sizeof(int));
 		rr_node[index].capacity = 1;
 		rr_intrinsic_cost[index] = 0;
@@ -456,9 +457,9 @@ void alloc_and_load_legalizer_for_cluster(INP t_block* clb, INP int clb_index,
 		rr_node[index].num_edges = pb_type->num_clock_pins;
 		rr_node[index].pack_intrinsic_cost = 1
 				+ (float) rr_node[index].num_edges / 5; /* need to normalize better than 5 */
-		rr_node[index].edges = my_malloc(
+		rr_node[index].edges = (int *) my_malloc(
 				rr_node[index].num_edges * sizeof(int));
-		rr_node[index].switches = my_calloc(rr_node[index].num_edges,
+		rr_node[index].switches = (short *) my_calloc(rr_node[index].num_edges,
 				sizeof(int));
 		rr_node[index].capacity = 1;
 		rr_intrinsic_cost[index] = 0;
@@ -486,10 +487,10 @@ void alloc_and_load_legalizer_for_cluster(INP t_block* clb, INP int clb_index,
 					+ pb_type->num_output_pins + pb_type->num_input_pins;
 			pb_graph_rr_index =
 					pb_graph_node->output_pins[i][j].pin_count_in_cluster;
-			rr_node[pb_graph_rr_index].edges = my_realloc(
+			rr_node[pb_graph_rr_index].edges = (int *) my_realloc(
 					rr_node[pb_graph_rr_index].edges,
 					(count_pins) * sizeof(int));
-			rr_node[pb_graph_rr_index].switches = my_realloc(
+			rr_node[pb_graph_rr_index].switches = (short *) my_realloc(
 					rr_node[pb_graph_rr_index].switches,
 					(count_pins) * sizeof(int));
 
@@ -544,19 +545,21 @@ void alloc_and_load_legalizer_for_cluster(INP t_block* clb, INP int clb_index,
 
 }
 
-void free_legalizer_for_cluster(INP t_block* clb) {
+void free_legalizer_for_cluster(INP t_block* clb, boolean free_local_rr_graph) {
 	int i;
 
 	free_rr_node_route_structs();
-	for (i = 0; i < num_rr_nodes; i++) {
-		if (clb->pb->rr_graph[i].edges != NULL) {
-			free(clb->pb->rr_graph[i].edges);
+	if(free_local_rr_graph == TRUE) {
+		for (i = 0; i < num_rr_nodes; i++) {
+			if (clb->pb->rr_graph[i].edges != NULL) {
+				free(clb->pb->rr_graph[i].edges);
+			}
+			if (clb->pb->rr_graph[i].switches != NULL) {
+				free(clb->pb->rr_graph[i].switches);
+			}
 		}
-		if (clb->pb->rr_graph[i].switches != NULL) {
-			free(clb->pb->rr_graph[i].switches);
-		}
+		free(clb->pb->rr_graph);
 	}
-	free(clb->pb->rr_graph);
 }
 
 void reset_legalizer_for_cluster(t_block *clb) {
@@ -617,8 +620,8 @@ boolean try_breadth_first_route_cluster(void) {
 
 			if (!is_routable) {
 				/* TODO: Inelegant, can be more intelligent */
-				printf("Failed routing net %s\n", vpack_net[net_index].name);
-				printf("Routing failed. Disconnected rr_graph\n");
+				vpr_printf(TIO_MESSAGE_INFO, "Failed routing net %s\n", vpack_net[net_index].name);
+				vpr_printf(TIO_MESSAGE_INFO, "Routing failed. Disconnected rr_graph.\n");
 				return FALSE;
 			}
 
@@ -636,7 +639,7 @@ boolean try_breadth_first_route_cluster(void) {
 		else
 			pres_fac *= router_opts.pres_fac_mult;
 
-		pres_fac = min(pres_fac, HUGE_FLOAT / 1e5);
+		pres_fac = min(pres_fac, HUGE_POSITIVE_FLOAT / 1e5);
 
 		pathfinder_update_cost(pres_fac, router_opts.acc_fac);
 	}
@@ -696,7 +699,7 @@ static boolean breadth_first_route_net_cluster(int inet) {
 				rr_node_route_inf[inode].prev_edge = current->prev_edge;
 				first_time = FALSE;
 
-				if (pcost > 0.99 * HUGE_FLOAT) /* First time touched. */{
+				if (pcost > 0.99 * HUGE_POSITIVE_FLOAT) /* First time touched. */{
 					add_to_mod_list(&rr_node_route_inf[inode].path_cost);
 					first_time = TRUE;
 				}
@@ -772,7 +775,7 @@ static void breadth_first_expand_neighbours_cluster(int inode, float pcost,
 	num_edges = rr_node[inode].num_edges;
 	for (iconn = 0; iconn < num_edges; iconn++) {
 		to_node = rr_node[inode].edges[iconn];
-		/*if(first_time) { */
+		/*if (first_time) { */
 		tot_cost = pcost
 				+ get_rr_cong_cost(to_node) * rr_node_intrinsic_cost(to_node);
 		/*
@@ -826,8 +829,7 @@ static void alloc_net_rr_terminals_cluster(void) {
 	for (inet = 0; inet < num_logical_nets; inet++) {
 		net_rr_terminals[inet] = (int *) my_chunk_malloc(
 				(vpack_net[inet].num_sinks + 1) * sizeof(int),
-				&rr_mem_chunk_list_head, &chunk_bytes_avail,
-				&chunk_next_avail_mem);
+				&rr_mem_ch);
 
 		saved_net_rr_terminals[inet] = (int *) my_malloc(
 				(vpack_net[inet].num_sinks + 1) * sizeof(int));
@@ -852,7 +854,7 @@ void setup_intracluster_routing_for_molecule(INP t_pack_molecule *molecule,
 	reload_ext_net_rr_terminal_cluster();
 }
 
-static void setup_intracluster_routing_for_logical_block(INP int iblock,
+void setup_intracluster_routing_for_logical_block(INP int iblock,
 		INP t_pb_graph_node *primitive) {
 
 	/* Allocates and loads the net_rr_terminals data structure.  For each net   *
@@ -1110,3 +1112,74 @@ void set_pb_graph_mode(t_pb_graph_node *pb_graph_node, int mode, int isOn) {
 		}
 	}
 }
+
+/* If this is done post place and route, use the cb pins determined by place-and-route rather than letting the legalizer freely determine */
+void force_post_place_route_cb_input_pins(int iblock) {
+	int i, j, k, ipin, net_index, ext_net;
+	int pin_offset;
+	boolean has_ext_source, success;
+	int curr_ext_output, curr_ext_input, curr_ext_clock;
+	t_pb_graph_node *pb_graph_node;
+
+	pb_graph_node = block[iblock].pb->pb_graph_node;
+	pin_offset = block[iblock].z * (pb_graph_node->pb_type->num_input_pins + pb_graph_node->pb_type->num_output_pins + pb_graph_node->pb_type->num_clock_pins);
+
+	curr_ext_input = ext_input_rr_node_index;
+	curr_ext_output = ext_output_rr_node_index;
+	curr_ext_clock = ext_clock_rr_node_index;
+
+	for (i = 0; i < num_nets_in_cluster; i++) {
+		net_index = nets_in_cluster[i];
+		has_ext_source = (boolean)
+				(logical_block[vpack_net[net_index].node_block[0]].clb_index
+						!= curr_cluster_index);
+		if(has_ext_source) {
+			ext_net = vpack_to_clb_net_mapping[net_index];
+			assert(ext_net != OPEN);
+			if (vpack_net[net_index].is_global) {
+				free(rr_node[curr_ext_clock].edges);
+				rr_node[curr_ext_clock].edges = NULL;
+				rr_node[curr_ext_clock].num_edges = 0;
+				
+				success = FALSE;
+				ipin = 0;
+				/* force intra-cluster net to use pins from ext route */
+				for(j = 0; j < pb_graph_node->num_clock_ports; j++) {
+					for(k = 0; k < pb_graph_node->num_clock_pins[j]; k++) {
+						if(ext_net == block[iblock].nets[ipin + pb_graph_node->pb_type->num_input_pins + pb_graph_node->pb_type->num_output_pins + pin_offset]) {
+							success = TRUE;
+							rr_node[curr_ext_clock].num_edges++;
+							rr_node[curr_ext_clock].edges = (int*)my_realloc(rr_node[curr_ext_clock].edges, rr_node[curr_ext_clock].num_edges * sizeof(int));
+							rr_node[curr_ext_clock].edges[rr_node[curr_ext_clock].num_edges - 1] = pb_graph_node->clock_pins[j][k].pin_count_in_cluster;
+						}
+						ipin++;
+					}
+				}
+				assert(success);
+				curr_ext_clock++;
+			} else {
+				free(rr_node[curr_ext_input].edges);
+				rr_node[curr_ext_input].edges = NULL;
+				rr_node[curr_ext_input].num_edges = 0;
+				
+				success = FALSE;
+				ipin = 0;
+				/* force intra-cluster net to use pins from ext route */
+				for(j = 0; j < pb_graph_node->num_input_ports; j++) {
+					for(k = 0; k < pb_graph_node->num_input_pins[j]; k++) {
+						if(ext_net == block[iblock].nets[ipin + pin_offset]) {
+							success = TRUE;
+							rr_node[curr_ext_input].num_edges++;
+							rr_node[curr_ext_input].edges = (int*)my_realloc(rr_node[curr_ext_input].edges, rr_node[curr_ext_input].num_edges * sizeof(int));
+							rr_node[curr_ext_input].edges[rr_node[curr_ext_input].num_edges - 1] = pb_graph_node->input_pins[j][k].pin_count_in_cluster;
+						}
+						ipin++;
+					}
+				}
+				curr_ext_input++;
+				assert(success);
+			}			
+		}
+	}
+}
+

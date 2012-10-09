@@ -22,7 +22,6 @@
     <ProjectGuid>{F9E45E14-1249-4E95-86DD-5676DB5C87FD}</ProjectGuid>
     <RootNamespace>Main</RootNamespace>
     <Keyword>Win32Proj</Keyword>
-    <ProjectName>VPR</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
@@ -60,16 +59,11 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
-    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)$(Configuration)\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">C:\workspace\vpr_compile_temp\</IntDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)$(Configuration)\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(Configuration)\</IntDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</LinkIncremental>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(Platform)\$(Configuration)\</IntDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(Platform)\$(Configuration)\</IntDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkIncremental>
     <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
     <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
@@ -87,22 +81,25 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>SRC\util;SRC\timing;SRC\route;SRC\place;SRC\pack;SRC\base;..\libvpr\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\libarchfpga\include;SRC\pcre;SRC\util;SRC\timing;SRC\route;SRC\place;SRC\pack;SRC\base;../printhandler/SRC/TIO_InputOutputHandlers;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_CRT_SECURE_NO_DEPRECATE;NO_GRAPHICS;_DEBUG;_CONSOLE;CREATE_ECHO_FILES;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <SmallerTypeCheck>true</SmallerTypeCheck>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <StructMemberAlignment>16Bytes</StructMemberAlignment>
       <FloatingPointModel>Strict</FloatingPointModel>
-      <ObjectFileName>$(IntDir)OBJ\</ObjectFileName>
       <BrowseInformation>true</BrowseInformation>
       <WarningLevel>Level4</WarningLevel>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <DisableSpecificWarnings>4100; 4244; 4305;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <CompileAs>CompileAsCpp</CompileAs>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
+      <AdditionalLibraryDirectories>
+      </AdditionalLibraryDirectories>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -114,7 +111,9 @@
       <WarningLevel>Level4</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <DisableSpecificWarnings>4100; 4244; 4305;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <AdditionalIncludeDirectories>SRC\util;SRC\timing;SRC\route;SRC\place;SRC\pack;SRC\base;..\libvpr\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\libarchfpga\include;SRC\pcre;SRC\util;SRC\timing;SRC\route;SRC\place;SRC\pack;SRC\base;../printhandler/SRC/TIO_InputOutputHandlers;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <Optimization>Full</Optimization>
+      <CompileAs>CompileAsCpp</CompileAs>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -122,6 +121,9 @@
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <TargetMachine>MachineX86</TargetMachine>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>
+      </AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -166,9 +168,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="SRC\base\globals.c" />
+    <ClCompile Include="SRC\base\read_settings.c" />
+    <ClCompile Include="SRC\base\verilog_writer.c" />
+    <ClCompile Include="SRC\base\vpr_api.c" />
     <ClCompile Include="SRC\main.c" />
     <ClCompile Include="SRC\base\check_netlist.c">
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">SRC\util;SRC\timing;SRC\route;SRC\place;SRC\pack;SRC\base;..\libvpr\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">SRC\util;SRC\timing;SRC\route;SRC\place;SRC\pack;SRC\base;..\libarchfpga\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <ClCompile Include="SRC\base\CheckArch.c" />
     <ClCompile Include="SRC\base\CheckOptions.c" />
@@ -185,22 +191,18 @@
     <ClCompile Include="SRC\base\SetupVPR.c" />
     <ClCompile Include="SRC\base\ShowSetup.c" />
     <ClCompile Include="SRC\base\stats.c" />
-    <ClCompile Include="..\libvpr\ezxml.c" />
-    <ClCompile Include="..\libvpr\read_xml_arch_file.c" />
-    <ClCompile Include="..\libvpr\read_xml_util.c" />
-    <ClCompile Include="..\libvpr\ReadLine.c" />
-    <ClCompile Include="..\libvpr\util.c" />
     <ClCompile Include="SRC\pack\cluster_feasibility_filter.c" />
     <ClCompile Include="SRC\pack\cluster_placement.c" />
     <ClCompile Include="SRC\pack\prepack.c" />
+    <ClCompile Include="SRC\place\place_macro.c" />
+    <ClCompile Include="SRC\timing\read_sdc.c" />
+    <ClCompile Include="SRC\timing\slre.c" />
     <ClCompile Include="SRC\util\hash.c" />
     <ClCompile Include="SRC\util\heapsort.c" />
-    <ClCompile Include="SRC\util\mst.c" />
     <ClCompile Include="SRC\util\token.c" />
     <ClCompile Include="SRC\util\vpr_utils.c" />
     <ClCompile Include="SRC\pack\cluster.c" />
     <ClCompile Include="SRC\pack\cluster_legality.c" />
-    <ClCompile Include="SRC\pack\ff_pack.c" />
     <ClCompile Include="SRC\pack\output_blif.c" />
     <ClCompile Include="SRC\pack\output_clustering.c" />
     <ClCompile Include="SRC\pack\pack.c" />
@@ -214,7 +216,6 @@
     <ClCompile Include="SRC\route\check_rr_graph.c" />
     <ClCompile Include="SRC\route\route_breadth_first.c" />
     <ClCompile Include="SRC\route\route_common.c" />
-    <ClCompile Include="SRC\route\route_directed_search.c" />
     <ClCompile Include="SRC\route\route_timing.c" />
     <ClCompile Include="SRC\route\route_tree_timing.c" />
     <ClCompile Include="SRC\route\rr_graph.c" />
@@ -242,13 +243,17 @@
     <ClInclude Include="SRC\base\read_netlist.h" />
     <ClInclude Include="SRC\base\read_place.h" />
     <ClInclude Include="SRC\base\ReadOptions.h" />
+    <ClInclude Include="SRC\base\read_settings.h" />
     <ClInclude Include="SRC\base\SetupGrid.h" />
     <ClInclude Include="SRC\base\SetupVPR.h" />
     <ClInclude Include="SRC\base\stats.h" />
+    <ClInclude Include="SRC\base\verilog_writer.h" />
+    <ClInclude Include="SRC\base\vpr_api.h" />
     <ClInclude Include="SRC\base\vpr_types.h" />
     <ClInclude Include="SRC\pack\cluster_feasibility_filter.h" />
     <ClInclude Include="SRC\pack\cluster_placement.h" />
     <ClInclude Include="SRC\pack\prepack.h" />
+    <ClInclude Include="SRC\place\place_macro.h" />
     <ClInclude Include="SRC\timing\net_delay.h" />
     <ClInclude Include="SRC\timing\path_delay.h" />
     <ClInclude Include="SRC\timing\path_delay2.h" />
@@ -257,7 +262,6 @@
     <ClInclude Include="SRC\route\check_rr_graph.h" />
     <ClInclude Include="SRC\route\route_breadth_first.h" />
     <ClInclude Include="SRC\route\route_common.h" />
-    <ClInclude Include="SRC\route\route_directed_search.h" />
     <ClInclude Include="SRC\route\route_export.h" />
     <ClInclude Include="SRC\route\route_timing.h" />
     <ClInclude Include="SRC\route\route_tree_timing.h" />
@@ -271,7 +275,6 @@
     <ClInclude Include="SRC\route\segment_stats.h" />
     <ClInclude Include="SRC\pack\cluster.h" />
     <ClInclude Include="SRC\pack\cluster_legality.h" />
-    <ClInclude Include="SRC\pack\ff_pack.h" />
     <ClInclude Include="SRC\pack\output_blif.h" />
     <ClInclude Include="SRC\pack\output_clustering.h" />
     <ClInclude Include="SRC\pack\pack.h" />
@@ -282,19 +285,23 @@
     <ClInclude Include="SRC\place\place_stats.h" />
     <ClInclude Include="SRC\place\timing_place.h" />
     <ClInclude Include="SRC\place\timing_place_lookup.h" />
-    <ClInclude Include="..\libvpr\include\arch_types.h" />
-    <ClInclude Include="..\libvpr\include\ezxml.h" />
-    <ClInclude Include="..\libvpr\include\logic_types.h" />
-    <ClInclude Include="..\libvpr\include\physical_types.h" />
-    <ClInclude Include="..\libvpr\include\read_xml_arch_file.h" />
-    <ClInclude Include="..\libvpr\include\read_xml_util.h" />
-    <ClInclude Include="..\libvpr\include\ReadLine.h" />
-    <ClInclude Include="..\libvpr\include\util.h" />
+    <ClInclude Include="SRC\timing\read_sdc.h" />
+    <ClInclude Include="SRC\timing\slre.h" />
     <ClInclude Include="SRC\util\hash.h" />
     <ClInclude Include="SRC\util\heapsort.h" />
-    <ClInclude Include="SRC\util\mst.h" />
     <ClInclude Include="SRC\util\token.h" />
     <ClInclude Include="SRC\util\vpr_utils.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\libarchfpga\libarchfpga.vcxproj">
+      <Project>{cbba36e0-cd88-4586-afb6-a0e603d16796}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\pcre\pcre.vcxproj">
+      <Project>{f15a8901-660a-4ffe-890e-74ccc94e862a}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\printhandler\printhandler.vcxproj">
+      <Project>{a5092a9c-6dfd-4dec-9951-51606f5eaf3b}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -19,7 +19,6 @@
  * This is the top-level file for power estimation in VTR
  */
 
-
 #ifndef __POWER_H__
 #define __POWER_H__
 
@@ -45,9 +44,7 @@
 
 /************************* ENUMS ************************************/
 typedef enum {
-	POWER_RET_CODE_SUCCESS = 0,
-	POWER_RET_CODE_ERRORS,
-	POWER_RET_CODE_WARNINGS
+	POWER_RET_CODE_SUCCESS = 0, POWER_RET_CODE_ERRORS, POWER_RET_CODE_WARNINGS
 } e_power_ret_code;
 
 enum e_power_log_type {
@@ -66,25 +63,14 @@ typedef struct s_power_buffer_sc_levr_inf t_power_buffer_sc_levr_inf;
 typedef struct s_power_tech t_power_tech;
 typedef struct s_transistor_inf t_transistor_inf;
 typedef struct s_transistor_size_inf t_transistor_size_inf;
-typedef struct s_power_opts t_power_opts;
+
 typedef struct s_power_buffer_size_inf t_power_buffer_size_inf;
 typedef struct s_power_buffer_strength_inf t_power_buffer_strength_inf;
-
-/**
- * Power options
- */
-struct s_power_opts {
-	boolean do_power; /* Perform power estimation? */
-	char * activity_file; /* Filename of activity file */
-	char * power_output_file; /* Output log of power details */
-	char * cmos_tech_behavior_file; /* Filename of xml of transistor properties */
-};
 
 /* two types of transisters */
 typedef enum {
 	NMOS, PMOS
 } e_tx_type;
-
 
 struct s_transistor_size_inf {
 	float size;
@@ -139,7 +125,6 @@ struct s_power_buffer_size_inf {
 	int num_strengths;
 	t_power_buffer_strength_inf * strength_inf;
 };
-
 
 /* Set of I/O Voltages for a single-level multiplexer */
 struct s_power_mux_volt_inf {
@@ -214,13 +199,12 @@ struct s_power_commonly_used {
 	float INV_1X_C;
 	float INV_2X_C;
 
-	/* Maximum mux size used in routing */
-	int max_mux_size;
-
-	/* Mux architecture information for 0..max_mux_size */
+	/* Mux architecture information for 0..mux_arch_max_size */
+	int mux_arch_max_size;
 	t_mux_arch * mux_arch;
 
 	/* Routing stats */
+	int max_routing_mux_size;
 	int max_IPIN_fanin;
 	int max_seg_fanout;
 	int max_seg_to_IPIN_fanout;
@@ -247,14 +231,14 @@ extern t_power_tech * g_power_tech;
 /************************* FUNCTION DECLARATIONS ********************/
 
 /* Call before using power module */
-boolean power_init(t_power_opts * power_opts, t_power_arch * power_arch);
+boolean power_init(char * power_out_filepath,
+		char * cmos_tech_behavior_filepath, t_arch * arch,
+		t_det_routing_arch * routing_arch);
 
 boolean power_uninit(void);
 
 /* Top-Level Function */
-e_power_ret_code power_total(float * run_time_s);
-
-t_mux_node * alloc_and_load_mux_graph(int num_inputs, int levels);
-
+e_power_ret_code power_total(float * run_time_s, t_arch * arch,
+		t_det_routing_arch * routing_arch);
 
 #endif /* __POWER_H__ */

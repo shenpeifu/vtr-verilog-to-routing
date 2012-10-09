@@ -4,11 +4,13 @@
 
 /* OptionBaseTokenList is for command line arg tokens. We will track how 
  * many times each of these things exist in a file */
-struct s_TokenPair OptionBaseTokenList[] = { { "nodisp", OT_NODISP }, { "auto",
+struct s_TokenPair OptionBaseTokenList[] = { 
+	{"settings_file", OT_SETTINGS_FILE },
+	{ "nodisp", OT_NODISP }, { "auto",
 		OT_AUTO }, { "recompute_crit_iter", OT_RECOMPUTE_CRIT_ITER }, {
 		"inner_loop_recompute_divider", OT_INNER_LOOP_RECOMPUTE_DIVIDER }, {
 		"fix_pins", OT_FIX_PINS }, { "full_stats", OT_FULL_STATS }, { "fast",
-		OT_FAST }, { "echo_file", OT_CREATE_ECHO_FILE }, { "timing_analysis",
+		OT_FAST }, { "echo_file", OT_CREATE_ECHO_FILE },{"gen_postsynthesis_netlist",OT_GENERATE_POST_SYNTHESIS_NETLIST}, { "timing_analysis",
 		OT_TIMING_ANALYSIS }, { "timing_analyze_only_with_net_delay",
 		OT_TIMING_ANALYZE_ONLY_WITH_NET_DELAY }, { "init_t", OT_INIT_T }, {
 		"alpha_t", OT_ALPHA_T }, { "exit_t", OT_EXIT_T }, { "inner_num",
@@ -18,8 +20,7 @@ struct s_TokenPair OptionBaseTokenList[] = { { "nodisp", OT_NODISP }, { "auto",
 		OT_PLACE_ALGORITHM }, { "timing_tradeoff", OT_TIMING_TRADEOFF }, {
 		"enable_timing_computations", OT_ENABLE_TIMING_COMPUTATIONS }, {
 		"block_dist", OT_BLOCK_DIST },
-		{ "place_cost_type", OT_PLACE_COST_TYPE }, { "num_regions",
-				OT_NUM_REGIONS }, { "place_chan_width", OT_PLACE_CHAN_WIDTH }, {
+		{ "place_chan_width", OT_PLACE_CHAN_WIDTH }, {
 				"max_router_iterations", OT_MAX_ROUTER_ITERATIONS }, {
 				"bb_factor", OT_BB_FACTOR }, { "router_algorithm",
 				OT_ROUTER_ALGORITHM }, { "first_iter_pres_fac",
@@ -34,7 +35,7 @@ struct s_TokenPair OptionBaseTokenList[] = { { "nodisp", OT_NODISP }, { "auto",
 				OT_VERIFY_BINARY_SEARCH },
 		{ "outfile_prefix", OT_OUTFILE_PREFIX }, { "blif_file", OT_BLIF_FILE },
 		{ "net_file", OT_NET_FILE }, { "place_file", OT_PLACE_FILE }, {
-				"route_file", OT_ROUTE_FILE }, { "global_clocks",
+			"route_file", OT_ROUTE_FILE }, {"sdc_file", OT_SDC_FILE}, { "global_clocks",
 				OT_GLOBAL_CLOCKS }, { "hill_climbing", OT_HILL_CLIMBING_FLAG },
 		{ "sweep_hanging_nets_and_inputs", OT_SWEEP_HANGING_NETS_AND_INPUTS }, {
 				"no_clustering", OT_SKIP_CLUSTERING }, {
@@ -59,14 +60,12 @@ struct s_TokenPair OptionBaseTokenList[] = { { "nodisp", OT_NODISP }, { "auto",
 struct s_TokenPair OptionArgTokenList[] = { { "on", OT_ON }, { "off", OT_OFF },
 		{ "random", OT_RANDOM }, { "bounding_box", OT_BOUNDING_BOX }, {
 				"net_timing_driven", OT_NET_TIMING_DRIVEN }, {
-				"path_timing_driven", OT_PATH_TIMING_DRIVEN }, { "linear",
-				OT_LINEAR }, { "nonlinear", OT_NONLINEAR }, { "breadth_first",
+				"path_timing_driven", OT_PATH_TIMING_DRIVEN }, { "breadth_first",
 				OT_BREADTH_FIRST }, { "timing_driven", OT_TIMING_DRIVEN }, {
-				"directed_search", OT_DIRECTED_SEARCH }, { "intrinsic_delay",
+				"NO_TIMING", OT_NO_TIMING }, { "intrinsic_delay",
 				OT_INTRINSIC_DELAY },
 		{ "delay_normalized", OT_DELAY_NORMALIZED }, { "demand_only",
 				OT_DEMAND_ONLY }, { "global", OT_GLOBAL }, { "detailed",
-				OT_DETAILED }, { "timing", OT_TIMING }, { "max_inputs",
-				OT_MAX_INPUTS }, { "greedy", OT_GREEDY }, { "lp", OT_LP }, {
-				"brute_force", OT_BRUTE_FORCE }, { NULL, OT_BASE_UNKNOWN } /* End of list marker */
+				OT_DETAILED }, { "timing", OT_TIMING }, { "max_inputs", OT_MAX_INPUTS }, { "greedy", OT_GREEDY }, { "lp", OT_LP }, 
+					{"brute_force", OT_BRUTE_FORCE }, { NULL, OT_BASE_UNKNOWN } /* End of list marker */
 };

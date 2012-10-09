@@ -18,8 +18,30 @@ int get_max_primitives_in_pb_type(t_pb_type *pb_type);
 int get_max_depth_of_pb_type(t_pb_type *pb_type);
 int get_max_nets_in_pb_type(const t_pb_type *pb_type);
 boolean primitive_type_feasible(int iblk, const t_pb_type *cur_pb_type);
+t_pb_graph_pin* get_pb_graph_node_pin_from_model_port_pin(t_model_ports *model_port, int model_pin, t_pb_graph_node *pb_graph_node);
+t_pb_graph_pin* get_pb_graph_node_pin_from_vpack_net(int inet, int ipin);
+t_pb_graph_pin* get_pb_graph_node_pin_from_clb_net(int inet, int ipin);
+t_pb_graph_pin* get_pb_graph_node_pin_from_block_pin(int iblock, int ipin);
 float compute_primitive_base_cost(INP t_pb_graph_node *primitive);
 int num_ext_inputs_logical_block(int iblk);
+
+int ** alloc_and_load_net_pin_index();
+
+void get_port_pin_from_blk_pin(int blk_type_index, int blk_pin, int * port,
+		int * port_pin);
+void free_port_pin_from_blk_pin(void);
+
+void get_blk_pin_from_port_pin(int blk_type_index, int port,int port_pin, 
+		int * blk_pin);
+void free_blk_pin_from_port_pin(void);
+
+void alloc_and_load_idirect_from_blk_pin(t_direct_inf* directs, int num_directs, 
+		int *** idirect_from_blk_pin, int *** direct_type_from_blk_pin);
+
+void free_cb(t_pb *pb);
+void free_pb_stats(t_pb *pb);
+void free_pb(t_pb *pb);
+
 
 #endif
 

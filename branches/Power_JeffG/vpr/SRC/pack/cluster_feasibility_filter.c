@@ -14,6 +14,8 @@
  a) Definition of a pin class - If there exists a path (ignoring directionality of connections) from pin A to pin B and pin A and pin B are of the same type (input, output, or clock), then pin A and pin B are in the same pin class.  Otherwise, pin A and pin B are in different pin classes.
  b) Code Identifies pin classes.  Given a candidate solution  
 
+ TODO: May 30, 2012 Jason Luu - Must take into consideration modes when doing pin counting.  For fracturable LUTs FI = 5, the soft logic block sees 6 pins instead of 5 pins for the dual LUT mode messing up the pin counter.  The packer still produces correct results but runs slower than its best (experiment on a modified architecture file that forces correct pin counting shows 40x speedup vs VPR 6.0 as opposed to 3x speedup at the time)
+
  Author: Jason Luu
  Date: May 16, 2012
 
@@ -288,11 +290,11 @@ static void load_pin_class_by_depth(INOUTP t_pb_graph_node *pb_graph_node,
 	if (pb_graph_node->pb_type->depth == depth
 			&& pb_graph_node->pb_type->num_modes != 0) {
 		/* Record pin class information for cluster */
-		pb_graph_node->num_input_pin_class = *input_count;
-		pb_graph_node->input_pin_class_size = (int*) my_calloc(*input_count,
+		pb_graph_node->num_input_pin_class = *input_count + 1; /* number of input pin classes discovered + 1 for primitive inputs not reachable from cluster input pins */
+		pb_graph_node->input_pin_class_size = (int*) my_calloc(*input_count + 1,
 				sizeof(int));
-		pb_graph_node->num_output_pin_class = *output_count;
-		pb_graph_node->output_pin_class_size = (int*) my_calloc(*output_count,
+		pb_graph_node->num_output_pin_class = *output_count + 1; /* number of output pin classes discovered + 1 for primitive inputs not reachable from cluster input pins */
+		pb_graph_node->output_pin_class_size = (int*) my_calloc(*output_count + 1,
 				sizeof(int));
 		sum_pin_class(pb_graph_node);
 	}
@@ -324,9 +326,7 @@ static void load_list_of_connectable_input_pin_ptrs(
 	for (i = 0; i < pb_graph_node->pb_type->num_modes; i++) {
 		for (j = 0; j < pb_graph_node->pb_type->modes[i].num_pb_type_children;
 				j++) {
-			for (k = 0;
-					k
-							< pb_graph_node->pb_type->modes[i].pb_type_children[j].num_pb;
+			for (k = 0;k < pb_graph_node->pb_type->modes[i].pb_type_children[j].num_pb;
 					k++) {
 				load_list_of_connectable_input_pin_ptrs(
 						&pb_graph_node->child_pb_graph_nodes[i][j][k]);
@@ -494,8 +494,7 @@ static void sum_pin_class(INOUTP t_pb_graph_node *pb_graph_node) {
 			assert(
 					pb_graph_node->input_pins[i][j].pin_class < pb_graph_node->num_input_pin_class);
 			if (pb_graph_node->input_pins[i][j].pin_class == OPEN) {
-				printf(
-						WARNTAG "%s[%d].%s[%d] unconnected pin in architecture\n",
+				vpr_printf(TIO_MESSAGE_WARNING, "%s[%d].%s[%d] unconnected pin in architecture.\n",
 						pb_graph_node->pb_type->name,
 						pb_graph_node->placement_index,
 						pb_graph_node->input_pins[i][j].port->name,
@@ -510,8 +509,7 @@ static void sum_pin_class(INOUTP t_pb_graph_node *pb_graph_node) {
 			assert(
 					pb_graph_node->output_pins[i][j].pin_class < pb_graph_node->num_output_pin_class);
 			if (pb_graph_node->output_pins[i][j].pin_class == OPEN) {
-				printf(
-						WARNTAG "%s[%d].%s[%d] unconnected pin in architecture\n",
+				vpr_printf(TIO_MESSAGE_WARNING, "%s[%d].%s[%d] unconnected pin in architecture.\n",
 						pb_graph_node->pb_type->name,
 						pb_graph_node->placement_index,
 						pb_graph_node->output_pins[i][j].port->name,
@@ -526,8 +524,7 @@ static void sum_pin_class(INOUTP t_pb_graph_node *pb_graph_node) {
 			assert(
 					pb_graph_node->clock_pins[i][j].pin_class < pb_graph_node->num_input_pin_class);
 			if (pb_graph_node->clock_pins[i][j].pin_class == OPEN) {
-				printf(
-						WARNTAG "%s[%d].%s[%d] unconnected pin in architecture\n",
+				vpr_printf(TIO_MESSAGE_WARNING, "%s[%d].%s[%d] unconnected pin in architecture.\n",
 						pb_graph_node->pb_type->name,
 						pb_graph_node->placement_index,
 						pb_graph_node->clock_pins[i][j].port->name,

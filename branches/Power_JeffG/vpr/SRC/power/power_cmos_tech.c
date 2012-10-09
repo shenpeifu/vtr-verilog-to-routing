@@ -59,16 +59,16 @@ static int power_compare_buffer_sc_levr(const void * key_void,
 /**
  * Reads the transistor properties from the .xml file
  */
-void power_tech_load_xml_file(void) {
+void power_tech_load_xml_file(char * cmos_tech_behavior_filepath) {
 	ezxml_t cur, child, prev;
 	const char * prop;
 	char msg[BUFSIZE];
 
-	if (!file_exists(g_power_opts->cmos_tech_behavior_file)) {
+	if (!file_exists(cmos_tech_behavior_filepath)) {
 		/* .xml transistor characteristics is missing */
 		sprintf(msg,
 				"The CMOS technology behavior file ('%s') does not exist.  No power information will be calculated.",
-				g_power_opts->cmos_tech_behavior_file);
+				cmos_tech_behavior_filepath);
 		power_log_msg(POWER_LOG_ERROR, msg);
 
 		g_power_tech->NMOS_inf.num_size_entries = 0;
@@ -84,14 +84,14 @@ void power_tech_load_xml_file(void) {
 		g_power_tech->PN_ratio = 1.;
 		return;
 	}
-	cur = ezxml_parse_file(g_power_opts->cmos_tech_behavior_file);
+	cur = ezxml_parse_file(cmos_tech_behavior_filepath);
 
 	prop = FindProperty(cur, "file", TRUE);
-	ezxml_set_attr(cur, "file", NULL );
+	ezxml_set_attr(cur, "file", NULL);
 
 	prop = FindProperty(cur, "size", TRUE);
 	g_power_tech->tech_size = atof(prop);
-	ezxml_set_attr(cur, "size", NULL );
+	ezxml_set_attr(cur, "size", NULL);
 
 	child = FindElement(cur, "operating_point", TRUE);
 	g_power_tech->temperature = GetFloatProperty(child, "temperature", TRUE, 0);
@@ -143,8 +143,8 @@ static void power_tech_xml_load_sc(ezxml_t parent) {
 	/* Information for buffers, based on # of stages in buffer */
 	num_buffer_sizes = CountChildren(parent, "stages", 1);
 	g_power_tech->max_buffer_size = num_buffer_sizes; /* buffer size starts at 1, not 0 */
-	g_power_tech->buffer_size_inf = my_calloc(g_power_tech->max_buffer_size + 1,
-			sizeof(t_power_buffer_size_inf));
+	g_power_tech->buffer_size_inf = (t_power_buffer_size_inf*) my_calloc(
+			g_power_tech->max_buffer_size + 1, sizeof(t_power_buffer_size_inf));
 
 	child = FindFirstElement(parent, "stages", TRUE);
 	i = 1;
@@ -155,8 +155,8 @@ static void power_tech_xml_load_sc(ezxml_t parent) {
 
 		/* For the given # of stages, find the records for the strength of each stage */
 		size_inf->num_strengths = CountChildren(child, "strength", 1);
-		size_inf->strength_inf = my_calloc(size_inf->num_strengths,
-				sizeof(t_power_buffer_strength_inf));
+		size_inf->strength_inf = (t_power_buffer_strength_inf*) my_calloc(
+				size_inf->num_strengths, sizeof(t_power_buffer_strength_inf));
 
 		gc = FindFirstElement(child, "strength", TRUE);
 		j = 0;
@@ -171,7 +171,7 @@ static void power_tech_xml_load_sc(ezxml_t parent) {
 
 			/* Get the short circuit factor for buffers with level restorers at the input */
 			strength_inf->num_levr_entries = CountChildren(gc, "input_cap", 1);
-			strength_inf->sc_levr_inf = my_calloc(
+			strength_inf->sc_levr_inf = (t_power_buffer_sc_levr_inf*) my_calloc(
 					strength_inf->num_levr_entries,
 					sizeof(t_power_buffer_sc_levr_inf));
 
@@ -215,8 +215,8 @@ static void power_tech_xml_load_nmos_st_leakages(ezxml_t parent) {
 
 	num_leakage_pairs = CountChildren(parent, "nmos_leakage", 1);
 	g_power_tech->num_leakage_pairs = num_leakage_pairs;
-	g_power_tech->leakage_pairs = my_calloc(num_leakage_pairs,
-			sizeof(t_power_nmos_leakage_pair));
+	g_power_tech->leakage_pairs = (t_power_nmos_leakage_pair*) my_calloc(
+			num_leakage_pairs, sizeof(t_power_nmos_leakage_pair));
 
 	child = FindFirstElement(parent, "nmos_leakage", TRUE);
 	i = 0;
@@ -250,8 +250,8 @@ static void power_tech_xml_load_multiplexer_info(ezxml_t parent) {
 	 * they will never be used
 	 */
 	g_power_tech->max_mux_sl_size = 1 + num_mux_sizes;
-	g_power_tech->mux_voltage_inf = my_calloc(g_power_tech->max_mux_sl_size + 1,
-			sizeof(t_power_mux_volt_inf));
+	g_power_tech->mux_voltage_inf = (t_power_mux_volt_inf*) my_calloc(
+			g_power_tech->max_mux_sl_size + 1, sizeof(t_power_mux_volt_inf));
 
 	child = FindFirstElement(parent, "multiplexer", TRUE);
 	i = 1;
@@ -264,8 +264,9 @@ static void power_tech_xml_load_multiplexer_info(ezxml_t parent) {
 		num_voltages = CountChildren(child, "voltages", 1);
 
 		g_power_tech->mux_voltage_inf[i].num_voltage_pairs = num_voltages;
-		g_power_tech->mux_voltage_inf[i].mux_voltage_pairs = my_calloc(
-				num_voltages, sizeof(t_power_mux_volt_pair));
+		g_power_tech->mux_voltage_inf[i].mux_voltage_pairs =
+				(t_power_mux_volt_pair*) my_calloc(num_voltages,
+						sizeof(t_power_mux_volt_pair));
 
 		gc = FindFirstElement(child, "voltages", TRUE);
 		j = 0;
@@ -313,10 +314,11 @@ static void process_tech_xml_load_transistor_info(ezxml_t parent) {
 	} else {
 		assert(0);
 	}
-	ezxml_set_attr(parent, "type", NULL );
+	ezxml_set_attr(parent, "type", NULL);
 
 	/* Get long transistor information (W=1,L=2) */
-	trans_inf->long_trans_inf = my_malloc(sizeof(t_transistor_size_inf));
+	trans_inf->long_trans_inf = (t_transistor_size_inf*) my_malloc(
+			sizeof(t_transistor_size_inf));
 
 	child = FindElement(parent, "long_size", TRUE);
 	assert(GetIntProperty(child, "L", TRUE, 0) == 2);
@@ -338,8 +340,8 @@ static void process_tech_xml_load_transistor_info(ezxml_t parent) {
 
 	/* Process all transistor sizes */
 	trans_inf->num_size_entries = CountChildren(parent, "size", 1);
-	trans_inf->size_inf = my_calloc(trans_inf->num_size_entries,
-			sizeof(t_transistor_size_inf));
+	trans_inf->size_inf = (t_transistor_size_inf*) my_calloc(
+			trans_inf->num_size_entries, sizeof(t_transistor_size_inf));
 	FreeNode(child);
 
 	child = FindFirstElement(parent, "size", TRUE);
@@ -359,12 +361,12 @@ static void process_tech_xml_load_transistor_info(ezxml_t parent) {
 
 		/* Get node capacitances */
 		grandchild = FindElement(child, "capacitance", TRUE);
-		trans_inf->size_inf[i].C_g = GetFloatProperty(grandchild, "C_g",
-				TRUE, 0);
-		trans_inf->size_inf[i].C_s = GetFloatProperty(grandchild, "C_s",
-				TRUE, 0);
-		trans_inf->size_inf[i].C_d = GetFloatProperty(grandchild, "C_d",
-						TRUE, 0);
+		trans_inf->size_inf[i].C_g = GetFloatProperty(grandchild, "C_g", TRUE,
+				0);
+		trans_inf->size_inf[i].C_s = GetFloatProperty(grandchild, "C_s", TRUE,
+				0);
+		trans_inf->size_inf[i].C_d = GetFloatProperty(grandchild, "C_d", TRUE,
+				0);
 		FreeNode(grandchild);
 
 		prev = child;
@@ -402,7 +404,7 @@ boolean power_find_transistor_info(t_transistor_size_inf ** lower,
 	}
 
 	/* No transistor data exists */
-	if (trans_info->size_inf == NULL ) {
+	if (trans_info->size_inf == NULL) {
 		power_log_msg(POWER_LOG_ERROR,
 				"No transistor information exists.  Cannot determine transistor properties.");
 		error = TRUE;
@@ -414,8 +416,9 @@ boolean power_find_transistor_info(t_transistor_size_inf ** lower,
 	min_size = trans_info->size_inf[0].size;
 	max_size = trans_info->size_inf[trans_info->num_size_entries - 1].size;
 
-	found = bsearch(&key, trans_info->size_inf, trans_info->num_size_entries,
-			sizeof(t_transistor_size_inf), power_compare_transistor_size);
+	found = (t_transistor_size_inf*) bsearch(&key, trans_info->size_inf,
+			trans_info->num_size_entries, sizeof(t_transistor_size_inf),
+			&power_compare_transistor_size);
 	assert(found);
 
 	if (size < min_size) {
@@ -459,9 +462,9 @@ void power_find_nmos_leakage(t_power_nmos_leakage_pair ** lower,
 
 	key.v_ds = v_ds;
 
-	found = bsearch(&key, g_power_tech->leakage_pairs,
-			g_power_tech->num_leakage_pairs, sizeof(t_power_nmos_leakage_pair),
-			power_compare_leakage_pair);
+	found = (t_power_nmos_leakage_pair*) bsearch(&key,
+			g_power_tech->leakage_pairs, g_power_tech->num_leakage_pairs,
+			sizeof(t_power_nmos_leakage_pair), power_compare_leakage_pair);
 	assert(found);
 
 	if (found
@@ -497,8 +500,9 @@ void power_find_buffer_strength_inf(t_power_buffer_strength_inf ** lower,
 
 	key.stage_gain = stage_gain;
 
-	found = bsearch(&key, size_inf->strength_inf, size_inf->num_strengths,
-			sizeof(t_power_buffer_strength_inf), power_compare_buffer_strength);
+	found = (t_power_buffer_strength_inf*) bsearch(&key, size_inf->strength_inf,
+			size_inf->num_strengths, sizeof(t_power_buffer_strength_inf),
+			power_compare_buffer_strength);
 
 	if (stage_gain == max_size) {
 		*lower = found;
@@ -530,8 +534,8 @@ void power_find_buffer_sc_levr(t_power_buffer_sc_levr_inf ** lower,
 	key.mux_size = input_mux_size;
 
 	g_buffer_strength_last_searched = buffer_strength;
-	found = bsearch(&key, buffer_strength->sc_levr_inf,
-			buffer_strength->num_levr_entries,
+	found = (t_power_buffer_sc_levr_inf*) bsearch(&key,
+			buffer_strength->sc_levr_inf, buffer_strength->num_levr_entries,
 			sizeof(t_power_buffer_sc_levr_inf), power_compare_buffer_sc_levr);
 
 	max_size = buffer_strength->sc_levr_inf[buffer_strength->num_levr_entries
@@ -557,9 +561,12 @@ void power_find_buffer_sc_levr(t_power_buffer_sc_levr_inf ** lower,
  */
 static int power_compare_leakage_pair(const void * key_void,
 		const void * elem_void) {
-	const t_power_nmos_leakage_pair * key = key_void;
-	const t_power_nmos_leakage_pair * elem = elem_void;
-	const t_power_nmos_leakage_pair * next = elem + 1;
+	const t_power_nmos_leakage_pair * key =
+			(const t_power_nmos_leakage_pair*) key_void;
+	const t_power_nmos_leakage_pair * elem =
+			(const t_power_nmos_leakage_pair*) elem_void;
+	const t_power_nmos_leakage_pair * next =
+			(const t_power_nmos_leakage_pair*) elem + 1;
 
 	/* Compare against last? */
 	if (elem
@@ -599,7 +606,7 @@ void power_find_mux_volt_inf(t_power_mux_volt_pair ** lower,
 	key.v_in = v_in;
 
 	g_mux_volt_last_searched = volt_inf;
-	found = bsearch(&key, volt_inf->mux_voltage_pairs,
+	found = (t_power_mux_volt_pair*) bsearch(&key, volt_inf->mux_voltage_pairs,
 			volt_inf->num_voltage_pairs, sizeof(t_power_mux_volt_pair),
 			power_compare_voltage_pair);
 	assert(found);
@@ -619,8 +626,10 @@ void power_find_mux_volt_inf(t_power_mux_volt_pair ** lower,
  */
 static int power_compare_buffer_sc_levr(const void * key_void,
 		const void * elem_void) {
-	const t_power_buffer_sc_levr_inf * key = key_void;
-	const t_power_buffer_sc_levr_inf * elem = elem_void;
+	const t_power_buffer_sc_levr_inf * key =
+			(const t_power_buffer_sc_levr_inf*) key_void;
+	const t_power_buffer_sc_levr_inf * elem =
+			(const t_power_buffer_sc_levr_inf*) elem_void;
 	const t_power_buffer_sc_levr_inf * next;
 
 	/* Compare against last? */
@@ -657,9 +666,12 @@ static int power_compare_buffer_sc_levr(const void * key_void,
  */
 static int power_compare_buffer_strength(const void * key_void,
 		const void * elem_void) {
-	const t_power_buffer_strength_inf * key = key_void;
-	const t_power_buffer_strength_inf * elem = elem_void;
-	const t_power_buffer_strength_inf * next = elem + 1;
+	const t_power_buffer_strength_inf * key =
+			(const t_power_buffer_strength_inf*) key_void;
+	const t_power_buffer_strength_inf * elem =
+			(const t_power_buffer_strength_inf*) elem_void;
+	const t_power_buffer_strength_inf * next =
+			(const t_power_buffer_strength_inf*) elem + 1;
 
 	/* Check for exact match */
 	if (key->stage_gain == elem->stage_gain) {
@@ -678,8 +690,9 @@ static int power_compare_buffer_strength(const void * key_void,
  */
 static int power_compare_transistor_size(const void * key_void,
 		const void * elem_void) {
-	const t_transistor_size_inf * key = key_void;
-	const t_transistor_size_inf * elem = elem_void;
+	const t_transistor_size_inf * key = (const t_transistor_size_inf*) key_void;
+	const t_transistor_size_inf * elem =
+			(const t_transistor_size_inf*) elem_void;
 	const t_transistor_size_inf * next;
 
 	/* Check if we are comparing against the last element */
@@ -719,9 +732,11 @@ static int power_compare_transistor_size(const void * key_void,
  */
 static int power_compare_voltage_pair(const void * key_void,
 		const void * elem_void) {
-	const t_power_mux_volt_pair * key = key_void;
-	const t_power_mux_volt_pair * elem = elem_void;
-	const t_power_mux_volt_pair * next = elem + 1;
+	const t_power_mux_volt_pair * key = (const t_power_mux_volt_pair *) key_void;
+	const t_power_mux_volt_pair * elem =
+			(const t_power_mux_volt_pair *) elem_void;
+	const t_power_mux_volt_pair * next = (const t_power_mux_volt_pair *) elem
+			+ 1;
 
 	/* Check if we are comparing against the last element */
 	if (elem

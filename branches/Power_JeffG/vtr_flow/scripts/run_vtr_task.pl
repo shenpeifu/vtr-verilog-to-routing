@@ -29,6 +29,7 @@ my $threaded = eval 'use threads; use Thread::Queue; 1';
 
 use Cwd;
 use File::Spec;
+use File::Basename;
 use IPC::Open2;
 use POSIX qw(strftime);
 
@@ -38,7 +39,7 @@ sub run_single_task;
 sub do_work;
 sub ret_expected_runtime;
 
-# Get Absoluate Path of 'vtr_flow
+# Get Absolute Path of 'vtr_flow
 Cwd::abs_path($0) =~ m/(.*vtr_flow)/;
 my $vtr_flow_path = $1;
 
@@ -142,6 +143,7 @@ foreach my $task (@tasks) {
 sub run_single_task {
 	my $circuits_dir;
 	my $archs_dir;
+	my $sdc_dir = "sdc";
 	my $script_default = "run_vtr_flow.pl";
 	my $script         = $script_default;
 	my $script_path;
@@ -155,7 +157,7 @@ sub run_single_task {
 	chdir($task_dir) or die "Task directory does not exist ($task_dir): $!";
 
 	print "\n$task\n";
-	print "--------------------\n";
+	print "-----------------------------------------\n";
 
 	# Get Task Config Info
 
@@ -178,6 +180,9 @@ sub run_single_task {
 		elsif ( $key eq "archs_dir" ) {
 			$archs_dir = $value;
 		}
+		elsif ($key eq "sdc_dir" ) {
+			$sdc_dir = $value;
+		}
 		elsif ( $key eq "circuit_list_add" ) {
 			push( @circuits, $value );
 		}
@@ -193,8 +198,7 @@ sub run_single_task {
 		elsif ( $key eq "cmos_tech_behavior" ) {
 			$cmos_tech_path = $value;
 		}
-		elsif ( $key eq "parse_file" or $key eq "pass_requirements_file" ) {
-
+		elsif ( $key eq "parse_file" or $key eq "qor_parse_file" or $key eq "pass_requirements_file" ) {
 			#Used by parser
 		}
 		else {
@@ -204,7 +208,6 @@ sub run_single_task {
 
 	# Using default script
 	if ( $script eq $script_default ) {
-
 		# This is hack to automatically add the option '-temp_dir .' if using the run_vtr_flow.pl script
 		# This ensures that a 'temp' folder is not created in each circuit directory
 		if ( !( $script_params =~ /-temp_dir/ ) ) {
@@ -217,6 +220,7 @@ sub run_single_task {
 
 	$circuits_dir = expand_user_path($circuits_dir);
 	$archs_dir    = expand_user_path($archs_dir);
+	$sdc_dir      = expand_user_path($sdc_dir);
 
 	if ( -d "$vtr_flow_path/$circuits_dir" ) {
 		$circuits_dir = "$vtr_flow_path/$circuits_dir";
@@ -234,6 +238,15 @@ sub run_single_task {
 	}
 	else {
 		die "Archs directory not found ($archs_dir)";
+	}
+
+	if ( -d "$vtr_flow_path/$sdc_dir" ) {
+		$sdc_dir = "$vtr_flow_path/$sdc_dir";
+	}
+	elsif ( -d $sdc_dir ) {
+	}
+	else {
+		$sdc_dir = "$vtr_flow_path/sdc";
 	}
 
 	(@circuits) or die "No circuits specified for task $task";
@@ -330,8 +343,11 @@ sub run_single_task {
 						"$task_dir/$run_prefix${experiment_number}/${arch}/${circuit}"
 					  )
 					  ; # or die "Cannot change to directory $StartDir/$run_prefix${experiment_number}/${arch}/${circuit}: $!";
+
+					# SDC file defaults to circuit_name.sdc					
+					my $sdc = fileparse( $circuit, '\.[^.]+$' ) . ".sdc";
 					system(
-						"$script_path $circuits_dir/$circuit $archs_dir/$arch $script_params\n"
+						"$script_path $circuits_dir/$circuit $archs_dir/$arch -sdc_file $sdc_dir/$sdc $script_params\n"
 					);
 				}
 			}
@@ -341,14 +357,18 @@ sub run_single_task {
 			my $thread_result = Thread::Queue->new();
 			my $threads       = $processors;
 
-			#print "# of Threads: $threads\n";
+			# print "# of Threads: $threads\n";
 
 			foreach my $circuit (@circuits) {
 				foreach my $arch (@archs) {
 					my $dir =
 					  "$task_dir/$run_prefix${experiment_number}/${arch}/${circuit}";
+					
+					# SDC file defaults to circuit_name.sdc					
+					my $sdc = fileparse( $circuit, '\.[^.]+$' ) . ".sdc";
+
 					my $command =
-					  "$script_path $circuits_dir/$circuit $archs_dir/$arch $script_params";
+					  "$script_path $circuits_dir/$circuit $archs_dir/$arch -sdc_file $sdc_dir/$sdc $script_params";
 					$thread_work->enqueue("$dir||||$command");
 				}
 			}

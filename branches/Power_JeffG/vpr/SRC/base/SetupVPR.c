@@ -9,7 +9,6 @@
 #include "SetupVPR.h"
 #include "pb_type_graph.h"
 #include "ReadOptions.h"
-#include "power.h"
 
 static void SetupOperation(INP t_options Options,
 		OUTP enum e_operation *Operation);
@@ -31,127 +30,144 @@ static void SetupTiming(INP t_options Options, INP t_arch Arch,
 static void SetupSwitches(INP t_arch Arch,
 		INOUTP struct s_det_routing_arch *RoutingArch,
 		INP struct s_switch_inf *ArchSwitches, INP int NumArchSwitches);
-static void SetupPowerOpts(t_options Options, struct s_power_opts *power_opts,
+static void SetupPowerOpts(t_options Options, t_power_opts *power_opts,
 		t_arch * Arch);
 
 /* Sets VPR parameters and defaults. Does not do any error checking
  * as this should have been done by the various input checkers */
-void SetupVPR(INP t_options Options, INP boolean TimingEnabled,
-		OUTP struct s_file_name_opts *FileNameOpts, OUTP t_arch * Arch,
-		OUTP enum e_operation *Operation, OUTP t_model ** user_models,
-		OUTP t_model ** library_models, OUTP struct s_packer_opts *PackerOpts,
+void SetupVPR(INP t_options *Options, INP boolean TimingEnabled,
+		INP boolean readArchFile, OUTP struct s_file_name_opts *FileNameOpts,
+		INOUTP t_arch * Arch, OUTP enum e_operation *Operation,
+		OUTP t_model ** user_models, OUTP t_model ** library_models,
+		OUTP struct s_packer_opts *PackerOpts,
 		OUTP struct s_placer_opts *PlacerOpts,
 		OUTP struct s_annealing_sched *AnnealSched,
 		OUTP struct s_router_opts *RouterOpts,
 		OUTP struct s_det_routing_arch *RoutingArch,
 		OUTP t_segment_inf ** Segments, OUTP t_timing_inf * Timing,
 		OUTP boolean * ShowGraphics, OUTP int *GraphPause,
-		OUTP t_power_opts * power_opts) {
+		t_power_opts * PowerOpts) {
 	int i, j, len;
 
+	len = strlen(Options->CircuitName) + 6; /* circuit_name.blif/0*/
+	if (Options->out_file_prefix != NULL ) {
+		len += strlen(Options->out_file_prefix);
+	}
+	default_output_name = (char*) my_calloc(len, sizeof(char));
+	if (Options->out_file_prefix == NULL ) {
+		sprintf(default_output_name, "%s", Options->CircuitName);
+	} else {
+		sprintf(default_output_name, "%s%s", Options->out_file_prefix,
+				Options->CircuitName);
+	}
+
 	/* init default filenames */
-	if (Options.BlifFile == NULL) {
-		len = strlen(Options.CircuitName) + 6; /* circuit_name.blif/0*/
-		if (Options.OutFilePrefix != NULL) {
-			len += strlen(Options.OutFilePrefix);
+	if (Options->BlifFile == NULL ) {
+		len = strlen(Options->CircuitName) + 6; /* circuit_name.blif/0*/
+		if (Options->out_file_prefix != NULL ) {
+			len += strlen(Options->out_file_prefix);
 		}
-		Options.BlifFile = my_calloc(len, sizeof(char));
-		if (Options.OutFilePrefix == NULL) {
-			sprintf(Options.BlifFile, "%s.blif", Options.CircuitName);
+		Options->BlifFile = (char*) my_calloc(len, sizeof(char));
+		if (Options->out_file_prefix == NULL ) {
+			sprintf(Options->BlifFile, "%s.blif", Options->CircuitName);
 		} else {
-			sprintf(Options.BlifFile, "%s%s.blif", Options.OutFilePrefix,
-					Options.CircuitName);
+			sprintf(Options->BlifFile, "%s%s.blif", Options->out_file_prefix,
+					Options->CircuitName);
 		}
 	}
 
-	if (Options.NetFile == NULL) {
-		len = strlen(Options.CircuitName) + 5; /* circuit_name.net/0*/
-		if (Options.OutFilePrefix != NULL) {
-			len += strlen(Options.OutFilePrefix);
+	if (Options->NetFile == NULL ) {
+		len = strlen(Options->CircuitName) + 5; /* circuit_name.net/0*/
+		if (Options->out_file_prefix != NULL ) {
+			len += strlen(Options->out_file_prefix);
 		}
-		Options.NetFile = my_calloc(len, sizeof(char));
-		if (Options.OutFilePrefix == NULL) {
-			sprintf(Options.NetFile, "%s.net", Options.CircuitName);
+		Options->NetFile = (char*) my_calloc(len, sizeof(char));
+		if (Options->out_file_prefix == NULL ) {
+			sprintf(Options->NetFile, "%s.net", Options->CircuitName);
 		} else {
-			sprintf(Options.NetFile, "%s%s.net", Options.OutFilePrefix,
-					Options.CircuitName);
+			sprintf(Options->NetFile, "%s%s.net", Options->out_file_prefix,
+					Options->CircuitName);
 		}
 	}
 
-	if (Options.PlaceFile == NULL) {
-		len = strlen(Options.CircuitName) + 7; /* circuit_name.place/0*/
-		if (Options.OutFilePrefix != NULL) {
-			len += strlen(Options.OutFilePrefix);
+	if (Options->PlaceFile == NULL ) {
+		len = strlen(Options->CircuitName) + 7; /* circuit_name.place/0*/
+		if (Options->out_file_prefix != NULL ) {
+			len += strlen(Options->out_file_prefix);
 		}
-		Options.PlaceFile = my_calloc(len, sizeof(char));
-		if (Options.OutFilePrefix == NULL) {
-			sprintf(Options.PlaceFile, "%s.place", Options.CircuitName);
+		Options->PlaceFile = (char*) my_calloc(len, sizeof(char));
+		if (Options->out_file_prefix == NULL ) {
+			sprintf(Options->PlaceFile, "%s.place", Options->CircuitName);
 		} else {
-			sprintf(Options.PlaceFile, "%s%s.place", Options.OutFilePrefix,
-					Options.CircuitName);
+			sprintf(Options->PlaceFile, "%s%s.place", Options->out_file_prefix,
+					Options->CircuitName);
 		}
 	}
 
-	if (Options.RouteFile == NULL) {
-		len = strlen(Options.CircuitName) + 7; /* circuit_name.route/0*/
-		if (Options.OutFilePrefix != NULL) {
-			len += strlen(Options.OutFilePrefix);
+	if (Options->RouteFile == NULL ) {
+		len = strlen(Options->CircuitName) + 7; /* circuit_name.route/0*/
+		if (Options->out_file_prefix != NULL ) {
+			len += strlen(Options->out_file_prefix);
 		}
-		Options.RouteFile = my_calloc(len, sizeof(char));
-		if (Options.OutFilePrefix == NULL) {
-			sprintf(Options.RouteFile, "%s.route", Options.CircuitName);
+		Options->RouteFile = (char*) my_calloc(len, sizeof(char));
+		if (Options->out_file_prefix == NULL ) {
+			sprintf(Options->RouteFile, "%s.route", Options->CircuitName);
 		} else {
-			sprintf(Options.RouteFile, "%s%s.route", Options.OutFilePrefix,
-					Options.CircuitName);
+			sprintf(Options->RouteFile, "%s%s.route", Options->out_file_prefix,
+					Options->CircuitName);
+		}
+	}
+	if (Options->ActFile == NULL ) {
+		len = strlen(Options->CircuitName) + 7; /* circuit_name.route/0*/
+		if (Options->out_file_prefix != NULL ) {
+			len += strlen(Options->out_file_prefix);
+		}
+		Options->ActFile = (char*) my_calloc(len, sizeof(char));
+		if (Options->out_file_prefix == NULL ) {
+			sprintf(Options->ActFile, "%s.act", Options->CircuitName);
+		} else {
+			sprintf(Options->ActFile, "%s%s.act", Options->out_file_prefix,
+					Options->CircuitName);
 		}
 	}
 
-	if (Options.ActFile == NULL) {
-		len = strlen(Options.CircuitName) + 7; /* circuit_name.route/0*/
-		if (Options.OutFilePrefix != NULL) {
-			len += strlen(Options.OutFilePrefix);
+	if (Options->PowerFile == NULL ) {
+		len = strlen(Options->CircuitName) + 7; /* circuit_name.route/0*/
+		if (Options->out_file_prefix != NULL ) {
+			len += strlen(Options->out_file_prefix);
 		}
-		Options.ActFile = my_calloc(len, sizeof(char));
-		if (Options.OutFilePrefix == NULL) {
-			sprintf(Options.ActFile, "%s.act", Options.CircuitName);
+		Options->PowerFile = (char*) my_calloc(len, sizeof(char));
+		if (Options->out_file_prefix == NULL ) {
+			sprintf(Options->PowerFile, "%s.power", Options->CircuitName);
 		} else {
-			sprintf(Options.ActFile, "%s%s.act", Options.OutFilePrefix,
-					Options.CircuitName);
+			sprintf(Options->ActFile, "%s%s.power", Options->out_file_prefix,
+					Options->CircuitName);
 		}
 	}
 
-	if (Options.PowerFile == NULL) {
-		len = strlen(Options.CircuitName) + 7; /* circuit_name.route/0*/
-		if (Options.OutFilePrefix != NULL) {
-			len += strlen(Options.OutFilePrefix);
-		}
-		Options.PowerFile = my_calloc(len, sizeof(char));
-		if (Options.OutFilePrefix == NULL) {
-			sprintf(Options.PowerFile, "%s.power", Options.CircuitName);
-		} else {
-			sprintf(Options.ActFile, "%s%s.power", Options.OutFilePrefix,
-					Options.CircuitName);
-		}
+	alloc_and_load_output_file_names(default_output_name);
+
+	FileNameOpts->CircuitName = Options->CircuitName;
+	FileNameOpts->ArchFile = Options->ArchFile;
+	FileNameOpts->BlifFile = Options->BlifFile;
+	FileNameOpts->NetFile = Options->NetFile;
+	FileNameOpts->PlaceFile = Options->PlaceFile;
+	FileNameOpts->RouteFile = Options->RouteFile;
+	FileNameOpts->ActFile = Options->ActFile;
+	FileNameOpts->PowerFile = Options->PowerFile;
+	FileNameOpts->CmosTechFile = Options->CmosTechFile;
+	FileNameOpts->out_file_prefix = Options->out_file_prefix;
+
+	SetupOperation(*Options, Operation);
+	SetupPlacerOpts(*Options, TimingEnabled, PlacerOpts);
+	SetupAnnealSched(*Options, AnnealSched);
+	SetupRouterOpts(*Options, TimingEnabled, RouterOpts);
+	SetupPowerOpts(*Options, PowerOpts, Arch);
+
+	if (readArchFile == TRUE) {
+		XmlReadArch(Options->ArchFile, TimingEnabled, Arch, &type_descriptors,
+				&num_types);
 	}
-
-	FileNameOpts->CircuitName = Options.CircuitName;
-	FileNameOpts->ArchFile = Options.ArchFile;
-	FileNameOpts->BlifFile = Options.BlifFile;
-	FileNameOpts->NetFile = Options.NetFile;
-	FileNameOpts->PlaceFile = Options.PlaceFile;
-	FileNameOpts->RouteFile = Options.RouteFile;
-	FileNameOpts->ActFile = Options.ActFile;
-	FileNameOpts->PowerFile = Options.PowerFile;
-	FileNameOpts->OutFilePrefix = Options.OutFilePrefix;
-
-	SetupOperation(Options, Operation);
-	SetupPlacerOpts(Options, TimingEnabled, PlacerOpts);
-	SetupAnnealSched(Options, AnnealSched);
-	SetupRouterOpts(Options, TimingEnabled, RouterOpts);
-	SetupPowerOpts(Options, power_opts, Arch);
-
-	XmlReadArch(Options.ArchFile, TimingEnabled, Arch, &type_descriptors,
-			&num_types);
 
 	*user_models = Arch->models;
 	*library_models = Arch->model_library;
@@ -181,44 +197,46 @@ void SetupVPR(INP t_options Options, INP boolean TimingEnabled,
 
 	SetupSwitches(*Arch, RoutingArch, Arch->Switches, Arch->num_switches);
 	SetupRoutingArch(*Arch, RoutingArch);
-	SetupTiming(Options, *Arch, TimingEnabled, *Operation, *PlacerOpts,
+	SetupTiming(*Options, *Arch, TimingEnabled, *Operation, *PlacerOpts,
 			*RouterOpts, Timing);
-	SetupPackerOpts(Options, TimingEnabled, *Arch, Options.NetFile, PackerOpts);
+	SetupPackerOpts(*Options, TimingEnabled, *Arch, Options->NetFile,
+			PackerOpts);
 
 	/* init global variables */
-	OutFilePrefix = Options.OutFilePrefix;
+	out_file_prefix = Options->out_file_prefix;
 	grid_logic_tile_area = Arch->grid_logic_tile_area;
 	ipin_mux_trans_size = Arch->ipin_mux_trans_size;
 
 	/* Set seed for pseudo-random placement, default seed to 1 */
 	PlacerOpts->seed = 1;
-	if (Options.Count[OT_SEED]) {
-		PlacerOpts->seed = Options.Seed;
+	if (Options->Count[OT_SEED]) {
+		PlacerOpts->seed = Options->Seed;
 	}
 	my_srandom(PlacerOpts->seed);
 
-	printf("Building complex block graph \n");
+	vpr_printf(TIO_MESSAGE_INFO, "Building complex block graph.\n");
 	alloc_and_load_all_pb_graphs();
 
-	if (GetEchoOption()) {
-		echo_pb_graph("pb_graph.echo");
+	if (getEchoEnabled() && isEchoFileEnabled(E_ECHO_PB_GRAPH)) {
+		echo_pb_graph(getEchoFileName(E_ECHO_PB_GRAPH));
 	}
 
 	*GraphPause = 1; /* DEFAULT */
-	if (Options.Count[OT_AUTO]) {
-		*GraphPause = Options.GraphPause;
+	if (Options->Count[OT_AUTO]) {
+		*GraphPause = Options->GraphPause;
 	}
 #ifdef NO_GRAPHICS
 	*ShowGraphics = FALSE; /* DEFAULT */
 #else /* NO_GRAPHICS */
 	*ShowGraphics = TRUE; /* DEFAULT */
-	if (Options.Count[OT_NODISP]) {
+	if (Options->Count[OT_NODISP]) {
 		*ShowGraphics = FALSE;
 	}
 #endif /* NO_GRAPHICS */
 
-	if (GetEchoOption()) {
-		EchoArch("arch.echo", type_descriptors, num_types, Arch);
+	if (getEchoEnabled() && isEchoFileEnabled(E_ECHO_ARCH)) {
+		EchoArch(getEchoFileName(E_ECHO_ARCH), type_descriptors, num_types,
+				Arch);
 	}
 
 }
@@ -238,6 +256,15 @@ static void SetupTiming(INP t_options Options, INP t_arch Arch,
 	Timing->C_ipin_cblock = Arch.C_ipin_cblock;
 	Timing->T_ipin_cblock = Arch.T_ipin_cblock;
 	Timing->timing_analysis_enabled = TimingEnabled;
+
+	/* If the user specified an SDC filename on the command line, look for specified_name.sdc, otherwise look for circuit_name.sdc*/
+	if (Options.SDCFile == NULL ) {
+		Timing->SDCFile = (char*) my_calloc(strlen(Options.CircuitName) + 5,
+				sizeof(char)); /* circuit_name.sdc/0*/
+		sprintf(Timing->SDCFile, "%s.sdc", Options.CircuitName);
+	} else {
+		Timing->SDCFile = (char*) my_strdup(Options.SDCFile);
+	}
 }
 
 /* This loads up VPR's switch_inf data by combining the switches from 
@@ -356,12 +383,12 @@ static void SetupRouterOpts(INP t_options Options, INP boolean TimingEnabled,
 	}
 
 	/* Depends on RouteOpts->route_type */
-	RouterOpts->router_algorithm = DIRECTED_SEARCH; /* DEFAULT */
+	RouterOpts->router_algorithm = NO_TIMING; /* DEFAULT */
 	if (TimingEnabled) {
 		RouterOpts->router_algorithm = TIMING_DRIVEN; /* DEFAULT */
 	}
 	if (GLOBAL == RouterOpts->route_type) {
-		RouterOpts->router_algorithm = DIRECTED_SEARCH; /* DEFAULT */
+		RouterOpts->router_algorithm = NO_TIMING; /* DEFAULT */
 	}
 	if (Options.Count[OT_ROUTER_ALGORITHM]) {
 		RouterOpts->router_algorithm = Options.RouterAlgorithm;
@@ -374,8 +401,7 @@ static void SetupRouterOpts(INP t_options Options, INP boolean TimingEnabled,
 
 	/* Depends on RouterOpts->router_algorithm */
 	RouterOpts->initial_pres_fac = 0.5; /* DEFAULT */
-	if (DIRECTED_SEARCH == RouterOpts->router_algorithm
-			|| Options.Count[OT_FAST]) {
+	if (NO_TIMING == RouterOpts->router_algorithm || Options.Count[OT_FAST]) {
 		RouterOpts->initial_pres_fac = 10000.0; /* DEFAULT */
 	}
 	if (Options.Count[OT_INITIAL_PRES_FAC]) {
@@ -387,7 +413,7 @@ static void SetupRouterOpts(INP t_options Options, INP boolean TimingEnabled,
 	if (BREADTH_FIRST == RouterOpts->router_algorithm) {
 		RouterOpts->base_cost_type = DEMAND_ONLY; /* DEFAULT */
 	}
-	if (DIRECTED_SEARCH == RouterOpts->router_algorithm) {
+	if (NO_TIMING == RouterOpts->router_algorithm) {
 		RouterOpts->base_cost_type = DEMAND_ONLY; /* DEFAULT */
 	}
 	if (Options.Count[OT_BASE_COST_TYPE]) {
@@ -399,8 +425,7 @@ static void SetupRouterOpts(INP t_options Options, INP boolean TimingEnabled,
 	if (BREADTH_FIRST == RouterOpts->router_algorithm) {
 		RouterOpts->first_iter_pres_fac = 0.0; /* DEFAULT */
 	}
-	if (DIRECTED_SEARCH == RouterOpts->router_algorithm
-			|| Options.Count[OT_FAST]) {
+	if (NO_TIMING == RouterOpts->router_algorithm || Options.Count[OT_FAST]) {
 		RouterOpts->first_iter_pres_fac = 10000.0; /* DEFAULT */
 	}
 	if (Options.Count[OT_FIRST_ITER_PRES_FAC]) {
@@ -443,7 +468,8 @@ static void SetupAnnealSched(INP t_options Options,
 		AnnealSched->alpha_t = Options.PlaceAlphaT;
 	}
 	if (AnnealSched->alpha_t >= 1 || AnnealSched->alpha_t <= 0) {
-		printf(ERRTAG "alpha_t must be between 0 and 1 exclusive\n");
+		vpr_printf(TIO_MESSAGE_ERROR,
+				"alpha_t must be between 0 and 1 exclusive.\n");
 		exit(1);
 	}
 	AnnealSched->exit_t = 0.01; /* DEFAULT */
@@ -451,7 +477,7 @@ static void SetupAnnealSched(INP t_options Options,
 		AnnealSched->exit_t = Options.PlaceExitT;
 	}
 	if (AnnealSched->exit_t <= 0) {
-		printf(ERRTAG "exit_t must be greater than 0\n");
+		vpr_printf(TIO_MESSAGE_ERROR, "exit_t must be greater than 0.\n");
 		exit(1);
 	}
 	AnnealSched->init_t = 100.0; /* DEFAULT */
@@ -459,11 +485,12 @@ static void SetupAnnealSched(INP t_options Options,
 		AnnealSched->init_t = Options.PlaceInitT;
 	}
 	if (AnnealSched->init_t <= 0) {
-		printf(ERRTAG "init_t must be greater than 0\n");
+		vpr_printf(TIO_MESSAGE_ERROR, "init_t must be greater than 0.\n");
 		exit(1);
 	}
 	if (AnnealSched->init_t < AnnealSched->exit_t) {
-		printf(ERRTAG "init_t must be greater or equal to than exit_t\n");
+		vpr_printf(TIO_MESSAGE_ERROR,
+				"init_t must be greater or equal to than exit_t.\n");
 		exit(1);
 	}
 	AnnealSched->inner_num = 10.0; /* DEFAULT */
@@ -474,7 +501,7 @@ static void SetupAnnealSched(INP t_options Options,
 		AnnealSched->inner_num = Options.PlaceInnerNum;
 	}
 	if (AnnealSched->inner_num <= 0) {
-		printf(ERRTAG "init_t must be greater than 0\n");
+		vpr_printf(TIO_MESSAGE_ERROR, "init_t must be greater than 0.\n");
 		exit(1);
 	}
 	AnnealSched->type = AUTO_SCHED; /* DEFAULT */
@@ -575,8 +602,10 @@ void SetupPackerOpts(INP t_options Options, INP boolean TimingEnabled,
 		PackerOpts->intra_cluster_net_delay = Options.intra_cluster_net_delay;
 	}
 	PackerOpts->inter_cluster_net_delay = 1.0; /* DEFAULT */
+	PackerOpts->auto_compute_inter_cluster_net_delay = TRUE;
 	if (Options.Count[OT_INTER_CLUSTER_NET_DELAY]) {
 		PackerOpts->inter_cluster_net_delay = Options.inter_cluster_net_delay;
+		PackerOpts->auto_compute_inter_cluster_net_delay = FALSE;
 	}
 
 	PackerOpts->packer_algorithm = PACK_GREEDY; /* DEFAULT */
@@ -600,41 +629,27 @@ static void SetupPlacerOpts(INP t_options Options, INP boolean TimingEnabled,
 				Options.inner_loop_recompute_divider;
 	}
 
-	PlacerOpts->place_cost_exp = 1.0; /* DEFAULT */
+	PlacerOpts->place_cost_exp = 1.; /* DEFAULT */
 	if (Options.Count[OT_PLACE_COST_EXP]) {
 		PlacerOpts->place_cost_exp = Options.place_cost_exp;
 	}
 
-	PlacerOpts->td_place_exp_first = 1; /* DEFAULT */
+	PlacerOpts->td_place_exp_first = 1.; /* DEFAULT */
 	if (Options.Count[OT_TD_PLACE_EXP_FIRST]) {
 		PlacerOpts->td_place_exp_first = Options.place_exp_first;
 	}
 
-	PlacerOpts->td_place_exp_last = 8; /* DEFAULT */
+	PlacerOpts->td_place_exp_last = 8.; /* DEFAULT */
 	if (Options.Count[OT_TD_PLACE_EXP_LAST]) {
 		PlacerOpts->td_place_exp_last = Options.place_exp_last;
 	}
 
-	PlacerOpts->place_cost_type = LINEAR_CONG; /* DEFAULT */
-	if (Options.Count[OT_PLACE_COST_TYPE]) {
-		PlacerOpts->place_cost_type = Options.PlaceCostType;
-	}
-
-	/* Depends on PlacerOpts->place_cost_type */
 	PlacerOpts->place_algorithm = BOUNDING_BOX_PLACE; /* DEFAULT */
 	if (TimingEnabled) {
 		PlacerOpts->place_algorithm = PATH_TIMING_DRIVEN_PLACE; /* DEFAULT */
 	}
-	if (NONLINEAR_CONG == PlacerOpts->place_cost_type) {
-		PlacerOpts->place_algorithm = BOUNDING_BOX_PLACE; /* DEFAULT */
-	}
 	if (Options.Count[OT_PLACE_ALGORITHM]) {
 		PlacerOpts->place_algorithm = Options.PlaceAlgorithm;
-	}
-
-	PlacerOpts->num_regions = 4; /* DEFAULT */
-	if (Options.Count[OT_NUM_REGIONS]) {
-		PlacerOpts->num_regions = Options.PlaceNonlinearRegions;
 	}
 
 	PlacerOpts->pad_loc_file = NULL; /* DEFAULT */
@@ -649,12 +664,7 @@ static void SetupPlacerOpts(INP t_options Options, INP boolean TimingEnabled,
 		PlacerOpts->pad_loc_type = (Options.PinFile ? USER : RANDOM);
 	}
 
-	/* Depends on PlacerOpts->place_cost_type */
 	PlacerOpts->place_chan_width = 100; /* DEFAULT */
-	if ((NONLINEAR_CONG == PlacerOpts->place_cost_type)
-			&& (Options.Count[OT_ROUTE_CHAN_WIDTH])) {
-		PlacerOpts->place_chan_width = Options.RouteChanWidth;
-	}
 	if (Options.Count[OT_PLACE_CHAN_WIDTH]) {
 		PlacerOpts->place_chan_width = Options.PlaceChanWidth;
 	}
@@ -679,11 +689,7 @@ static void SetupPlacerOpts(INP t_options Options, INP boolean TimingEnabled,
 		PlacerOpts->enable_timing_computations = Options.ShowPlaceTiming;
 	}
 
-	/* Depends on PlacerOpts->place_cost_type */
 	PlacerOpts->place_freq = PLACE_ONCE; /* DEFAULT */
-	if (NONLINEAR_CONG == PlacerOpts->place_cost_type) {
-		PlacerOpts->place_freq = PLACE_ALWAYS; /* DEFAULT */
-	}
 	if ((Options.Count[OT_ROUTE_CHAN_WIDTH])
 			|| (Options.Count[OT_PLACE_CHAN_WIDTH])) {
 		PlacerOpts->place_freq = PLACE_ONCE;
@@ -711,27 +717,6 @@ static void SetupOperation(INP t_options Options,
 	}
 }
 
-/* Determines whether timing analysis should be on or off. 
- Unless otherwise specified, always default to timing.
- */
-boolean IsTimingEnabled(INP t_options Options) {
-	/* First priority to the '--timing_analysis' flag */
-	if (Options.Count[OT_TIMING_ANALYSIS]) {
-		return Options.TimingAnalysis;
-	}
-	return TRUE;
-}
-
-/* Determines whether file echo should be on or off. 
- Unless otherwise specified, always default to on.
- */
-boolean IsEchoEnabled(INP t_options Options) {
-	/* First priority to the '--echo_file' flag */
-	if (Options.Count[OT_CREATE_ECHO_FILE]) {
-		return Options.CreateEchoFile;
-	}
-	return FALSE;
-}
 static void SetupPowerOpts(t_options Options, t_power_opts *power_opts,
 		t_arch * Arch) {
 
@@ -741,15 +726,14 @@ static void SetupPowerOpts(t_options Options, t_power_opts *power_opts,
 		power_opts->do_power = FALSE;
 	}
 
-	if (Options.Count[OT_CMOS_TECH_BEHAVIOR_FILE]) {
-		power_opts->cmos_tech_behavior_file = Options.cmos_tech_behavior_file;
-	} else {
-		power_opts->cmos_tech_behavior_file = NULL;
-	}
-
 	if (power_opts->do_power) {
-		Arch->power = my_malloc(sizeof(t_power_arch));
-		Arch->clocks = my_malloc(sizeof(t_clocks));
+		Arch->power = (t_power_arch*) my_malloc(sizeof(t_power_arch));
+		Arch->clocks = (t_clock_arch*) my_malloc(sizeof(t_clock_arch));
+		g_clock_arch = Arch->clocks;
+	} else {
+		Arch->power = NULL;
+		Arch->clocks = NULL;
+		g_clock_arch = NULL;
 	}
-}
 
+}

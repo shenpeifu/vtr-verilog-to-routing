@@ -38,7 +38,7 @@ static float power_count_transistors_mux_node(t_mux_node * mux_node,
 static void power_mux_node_max_inputs(t_mux_node * mux_node, float * max_inputs);
 static float power_count_transistors_interconnect(t_interconnect * interc);
 static float power_count_transistors_pb_type(t_pb_type * pb_type);
-static float power_count_transistors_switchbox(void);
+static float power_count_transistors_switchbox(t_arch * arch);
 static float power_count_transistors_blif_primitive(t_pb_type * pb_type);
 static float power_count_transistors_LUT(int LUT_size);
 static float power_count_transistors_FF(void);
@@ -58,17 +58,19 @@ static float power_count_transistors_connectionbox(void) {
 	CLB_inputs = FILL_TYPE->pb_graph_head->num_input_pins[0];
 
 	/* Buffers from Tracks */
-	buffer_size = g_power_commonly_used->max_seg_to_IPIN_fanout
-			* (g_power_commonly_used->NMOS_1X_C_d
-					/ g_power_commonly_used->INV_1X_C_in) / POWER_BUFFER_STAGE_GAIN;
+	buffer_size =
+			g_power_commonly_used->max_seg_to_IPIN_fanout
+					* (g_power_commonly_used->NMOS_1X_C_d
+							/ g_power_commonly_used->INV_1X_C_in)/ POWER_BUFFER_STAGE_GAIN;
 	buffer_size = max(1, buffer_size);
-	transistor_cnt += g_solution_inf->channel_width
+	transistor_cnt += g_solution_inf.channel_width
 			* power_count_transistors_buffer(buffer_size);
 
 	/* Muxes to IPINs */
-	transistor_cnt += CLB_inputs
-			* power_count_transistors_mux(
-					&g_power_commonly_used->mux_arch[g_power_commonly_used->max_IPIN_fanin]);
+	transistor_cnt +=
+			CLB_inputs
+					* power_count_transistors_mux(
+							power_get_mux_arch(g_power_commonly_used->max_IPIN_fanin));
 
 	return transistor_cnt;
 }
@@ -106,23 +108,29 @@ static float power_count_transistors_mux(t_mux_arch * mux_arch) {
 	float * max_inputs;
 
 	/* SRAM bits */
-	max_inputs = my_calloc(mux_arch->levels, sizeof(float));
+	max_inputs = (float*) my_calloc(mux_arch->levels, sizeof(float));
 	for (lvl_idx = 0; lvl_idx < mux_arch->levels; lvl_idx++) {
 		max_inputs[lvl_idx] = 0.;
 	}
 	power_mux_node_max_inputs(mux_arch->mux_graph_head, max_inputs);
 
 	for (lvl_idx = 0; lvl_idx < mux_arch->levels; lvl_idx++) {
-		if (mux_arch->encoding_types[lvl_idx] == ENCODING_DECODER) {
-			transistor_cnt += ceil(log2((float)max_inputs[lvl_idx]))
-					* power_cnt_transistor_SRAM_bit();
-			/* TODO_POWER - Size of decoder */
-		} else if (mux_arch->encoding_types[lvl_idx] == ENCODING_ONE_HOT) {
-			transistor_cnt += max_inputs[lvl_idx]
-					* power_cnt_transistor_SRAM_bit();
-		} else {
-			assert(0);
-		}
+		/* Assume there is decoder logic */
+		transistor_cnt += ceil(log2((float) max_inputs[lvl_idx]))
+				* power_cnt_transistor_SRAM_bit();
+
+		/*
+		 if (mux_arch->encoding_types[lvl_idx] == ENCODING_DECODER) {
+		 transistor_cnt += ceil(log2((float)max_inputs[lvl_idx]))
+		 * power_cnt_transistor_SRAM_bit();
+		 // TODO - Size of decoder
+		 } else if (mux_arch->encoding_types[lvl_idx] == ENCODING_ONE_HOT) {
+		 transistor_cnt += max_inputs[lvl_idx]
+		 * power_cnt_transistor_SRAM_bit();
+		 } else {
+		 assert(0);
+		 }
+		 */
 	}
 
 	transistor_cnt += power_count_transistors_mux_node(mux_arch->mux_graph_head,
@@ -191,8 +199,10 @@ static float power_count_transistors_interconnect(t_interconnect * interc) {
 		 * - The number of muxes required for bus based multiplexors is equivalent to
 		 * the width of the bus (num_pins_per_port).
 		 */
-		transistor_cnt += interc->num_output_ports * interc->num_pins_per_port
-				* power_count_transistors_mux(interc->mux_arch);
+		transistor_cnt +=
+				interc->num_output_ports * interc->num_pins_per_port
+						* power_count_transistors_mux(
+								power_get_mux_arch(interc->num_input_ports));
 		break;
 	default:
 		assert(0);
@@ -206,7 +216,7 @@ static float power_count_transistors_interconnect(t_interconnect * interc) {
  * It returns the number of transistors in a grid of the FPGA (logic block,
  * switch box, 2 connection boxes)
  */
-float power_count_transistors(void) {
+float power_count_transistors(t_arch * arch) {
 	int type_idx;
 	float transistor_cnt = 0.;
 
@@ -218,7 +228,7 @@ float power_count_transistors(void) {
 
 	transistor_cnt += FILL_TYPE->pb_type->transistor_cnt;
 
-	transistor_cnt += 2 * power_count_transistors_switchbox();
+	transistor_cnt += 2 * power_count_transistors_switchbox(arch);
 
 	transistor_cnt += 2 * power_count_transistors_connectionbox();
 
@@ -297,31 +307,33 @@ static float power_count_transistors_pb_type(t_pb_type * pb_type) {
 /**
  * This function counts the maximum number of transistors in a switch box
  */
-static float power_count_transistors_switchbox(void) {
+static float power_count_transistors_switchbox(t_arch * arch) {
 	float transistor_cnt = 0.;
 	float transistors_per_buf_mux = 0.;
 	int seg_idx;
 
 	/* Buffer */
 	transistors_per_buf_mux += power_count_transistors_buffer(
-			(float) g_power_commonly_used->max_seg_fanout / POWER_BUFFER_STAGE_GAIN);
+			(float) g_power_commonly_used->max_seg_fanout
+					/ POWER_BUFFER_STAGE_GAIN);
 
 	/* Multiplexor */
-	transistors_per_buf_mux += power_count_transistors_mux(
-			&g_power_commonly_used->mux_arch[g_power_commonly_used->max_mux_size]);
+	transistors_per_buf_mux +=
+			power_count_transistors_mux(
+					power_get_mux_arch(g_power_commonly_used->max_routing_mux_size));
 
-	for (seg_idx = 0; seg_idx < g_arch->num_segments; seg_idx++) {
+	for (seg_idx = 0; seg_idx < arch->num_segments; seg_idx++) {
 		/* In each switchbox, the different types of segments occur with relative freqencies.
 		 * Thus the total number of wires of each segment type is (#tracks * freq * 2).
 		 * The (x2) factor accounts for vertical and horizontal tracks.
 		 * Of the wires of each segment type only (1/seglength) will have a mux&buffer.
 		 */
-		float freq_frac = (float) g_arch->Segments[seg_idx].frequency
+		float freq_frac = (float) arch->Segments[seg_idx].frequency
 				/ (float) MAX_CHANNEL_WIDTH;
 
 		transistor_cnt += transistors_per_buf_mux * 2 * freq_frac
-				* g_solution_inf->channel_width
-				* (1 / (float) g_arch->Segments[seg_idx].length);
+				* g_solution_inf.channel_width
+				* (1 / (float) arch->Segments[seg_idx].length);
 	}
 
 	return transistor_cnt;

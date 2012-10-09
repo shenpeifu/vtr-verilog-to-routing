@@ -1,9 +1,10 @@
 #include <stdio.h>
 #include <math.h>
+#include <time.h>
+#include <assert.h>
 #include "util.h"
 #include "vpr_types.h"
 #include "globals.h"
-#include "mst.h"
 #include "route_export.h"
 #include "route_common.h"
 #include "route_tree_timing.h"
@@ -12,6 +13,7 @@
 #include "path_delay.h"
 #include "net_delay.h"
 #include "stats.h"
+#include "ReadOptions.h"
 
 /******************** Subroutines local to route_timing.c ********************/
 
@@ -40,28 +42,22 @@ static int mark_node_expansion_by_bin(int inet, int target_node,
 /************************ Subroutine definitions *****************************/
 
 boolean try_timing_driven_route(struct s_router_opts router_opts,
-		float **net_slack, float **net_delay, t_ivec ** clb_opins_used_locally) {
+		float **net_delay, t_slack * slacks, t_ivec ** clb_opins_used_locally, boolean timing_analysis_enabled) {
 
-	/* Timing-driven routing algorithm.  The timing graph (includes net_slack)   *
+	/* Timing-driven routing algorithm.  The timing graph (includes slack)   *
 	 * must have already been allocated, and net_delay must have been allocated. *
 	 * Returns TRUE if the routing succeeds, FALSE otherwise.                    */
 
-	int itry, inet, ipin, i;
+	int itry, inet, ipin, i, bends, wirelength, total_wirelength, available_wirelength, 
+		segments, *net_index, *sink_order /* [1..max_pins_per_net-1] */;
 	boolean success, is_routable, rip_up_local_opins;
-	float *pin_criticality; /* [1..max_pins_per_net-1]. */
-	int *sink_order; /* [1..max_pins_per_net-1]. */
-	t_rt_node **rt_node_of_sink; /* [1..max_pins_per_net-1]. */
-	float T_crit, pres_fac;
+	float *pin_criticality /* [1..max_pins_per_net-1] */, pres_fac, *sinks, 
+		critical_path_delay, init_timing_criticality_val;
+	t_rt_node **rt_node_of_sink; /* [1..max_pins_per_net-1] */
+	clock_t begin,end;
+	sinks = (float*)my_malloc(sizeof(float) * num_nets);
+	net_index = (int*)my_malloc(sizeof(int) * num_nets);
 
-	float *sinks;
-	int *net_index;
-
-	int bends;
-	int wirelength, total_wirelength, available_wirelength;
-	int segments;
-
-	sinks = my_malloc(sizeof(float) * num_nets);
-	net_index = my_malloc(sizeof(int) * num_nets);
 	for (i = 0; i < num_nets; i++) {
 		sinks[i] = clb_net[i].num_sinks;
 		net_index[i] = i;
@@ -71,38 +67,56 @@ boolean try_timing_driven_route(struct s_router_opts router_opts,
 	alloc_timing_driven_route_structs(&pin_criticality, &sink_order,
 			&rt_node_of_sink);
 
-	/* First do one routing iteration ignoring congestion and marking all sinks  *
-	 * on each net as critical to get reasonable net delay estimates.            */
+	/* First do one routing iteration ignoring congestion to	
+	get reasonable net delay estimates. Set criticalities to 1 
+	when timing analysis is on to optimize timing, and to 0 
+	when timing analysis is off to optimize routability. */
+
+	if (timing_analysis_enabled) {
+		init_timing_criticality_val = 1.;
+	} else {
+		init_timing_criticality_val = 0.;
+	}
 
 	for (inet = 0; inet < num_nets; inet++) {
 		if (clb_net[inet].is_global == FALSE) {
 			for (ipin = 1; ipin <= clb_net[inet].num_sinks; ipin++)
-				net_slack[inet][ipin] = 0.;
-		} else { /* Set delay of global signals to zero. */
-			for (ipin = 1; ipin <= clb_net[inet].num_sinks; ipin++)
+				slacks->timing_criticality[inet][ipin] = init_timing_criticality_val;
+#ifdef PATH_COUNTING
+				slacks->path_criticality[inet][ipin] = init_timing_criticality_val;
+#endif		
+		} else { 
+			/* Set delay of global signals to zero. Non-global net 
+			delays are set by update_net_delays_from_route_tree() 
+			inside timing_driven_route_net(), which is only called
+			for non-global nets. */
+			for (ipin = 1; ipin <= clb_net[inet].num_sinks; ipin++) {
 				net_delay[inet][ipin] = 0.;
+			}
 		}
 	}
 
-	T_crit = 1.;
 	pres_fac = router_opts.first_iter_pres_fac; /* Typically 0 -> ignore cong. */
 
 	for (itry = 1; itry <= router_opts.max_router_iterations; itry++) {
+		begin = clock();
+		vpr_printf(TIO_MESSAGE_INFO, "\n");
+		vpr_printf(TIO_MESSAGE_INFO, "Routing iteration: %d\n", itry);
 
 		for (i = 0; i < num_nets; i++) {
 			inet = net_index[i];
 			if (clb_net[inet].is_global == FALSE) { /* Skip global nets. */
 
 				is_routable = timing_driven_route_net(inet, pres_fac,
-						router_opts.max_criticality,
-						router_opts.criticality_exp, router_opts.astar_fac,
-						router_opts.bend_cost, net_slack[inet], pin_criticality,
-						sink_order, rt_node_of_sink, T_crit, net_delay[inet]);
+					router_opts.max_criticality,
+					router_opts.criticality_exp, router_opts.astar_fac,
+					router_opts.bend_cost, pin_criticality,
+					sink_order, rt_node_of_sink, net_delay[inet], slacks);
 
 				/* Impossible to route? (disconnected rr_graph) */
 
 				if (!is_routable) {
-					printf("Routing failed.\n");
+					vpr_printf(TIO_MESSAGE_INFO, "Routing failed.\n");
 					free_timing_driven_route_structs(pin_criticality,
 							sink_order, rt_node_of_sink);
 					free(net_index);
@@ -136,15 +150,11 @@ boolean try_timing_driven_route(struct s_router_opts router_opts,
 					total_wirelength += wirelength;
 				}
 			}
-			printf(
-					"wirelength after first iteration %d, total available wirelength %d, ratio %g\n",
+			vpr_printf(TIO_MESSAGE_INFO, "Wire length after first iteration %d, total available wire length %d, ratio %g\n",
 					total_wirelength, available_wirelength,
-					(float) (total_wirelength)
-							/ (float) (available_wirelength));
-			if ((float) (total_wirelength)
-					/ (float) (available_wirelength)> FIRST_ITER_WIRELENTH_LIMIT) {
-				printf(
-						"Wirelength usage ratio exceeds limit of %g, fail routing\n",
+					(float) (total_wirelength) / (float) (available_wirelength));
+			if ((float) (total_wirelength) / (float) (available_wirelength)> FIRST_ITER_WIRELENTH_LIMIT) {
+				vpr_printf(TIO_MESSAGE_INFO, "Wire length usage ratio exceeds limit of %g, fail routing.\n",
 						FIRST_ITER_WIRELENTH_LIMIT);
 				free_timing_driven_route_structs(pin_criticality, sink_order,
 						rt_node_of_sink);
@@ -170,9 +180,8 @@ boolean try_timing_driven_route(struct s_router_opts router_opts,
 
 		success = feasible_routing();
 		if (success) {
-			printf("Successfully routed after %d routing iterations.\n", itry);
-			free_timing_driven_route_structs(pin_criticality, sink_order,
-					rt_node_of_sink);
+			vpr_printf(TIO_MESSAGE_INFO, "Successfully routed after %d routing iterations.\n", itry);
+			free_timing_driven_route_structs(pin_criticality, sink_order, rt_node_of_sink);
 #ifdef DEBUG
 			timing_driven_check_net_delays(net_delay);
 #endif
@@ -188,21 +197,52 @@ boolean try_timing_driven_route(struct s_router_opts router_opts,
 			pres_fac *= router_opts.pres_fac_mult;
 
 			/* Avoid overflow for high iteration counts, even if acc_cost is big */
-			pres_fac = min(pres_fac, HUGE_FLOAT / 1e5);
+			pres_fac = min(pres_fac, HUGE_POSITIVE_FLOAT / 1e5);
 
 			pathfinder_update_cost(pres_fac, router_opts.acc_fac);
 		}
 
-		/* Update slack values by doing another timing analysis.                 *
-		 * Timing_driven_route_net updated the net delay values.                 */
+		if (timing_analysis_enabled) {		
+			/* Update slack values by doing another timing analysis.                 *
+			 * Timing_driven_route_net updated the net delay values.                 */
 
-		load_timing_graph_net_delays(net_delay);
-		T_crit = load_net_slack(net_slack, 0);
-		printf("T_crit: %g.\n", T_crit);
+			load_timing_graph_net_delays(net_delay);
+
+	#ifdef HACK_LUT_PIN_SWAPPING
+			do_timing_analysis(slacks, FALSE, TRUE, FALSE);
+	#else
+			do_timing_analysis(slacks, FALSE, FALSE, FALSE);
+	#endif
+
+			/* Print critical path delay - convert to nanoseconds. */
+			critical_path_delay = get_critical_path_delay();
+			vpr_printf(TIO_MESSAGE_INFO, "Critical path: %g ns\n", critical_path_delay);
+		} else {
+			/* If timing analysis is not enabled, make sure that the criticalities and the 	*
+			 * net_delays stay as 0 so that wirelength can be optimized. 			*/
+			
+			for (inet = 0; inet < num_nets; inet++) {
+				for (ipin = 1; ipin <= clb_net[inet].num_sinks; ipin++) {
+					slacks->timing_criticality[inet][ipin] = 0.;
+#ifdef PATH_COUNTING 		
+					slacks->path_criticality[inet][ipin] = 0.; 		
+#endif
+					net_delay[inet][ipin] = 0.;
+				}
+			}
+		}
+		
+		end = clock();
+		#ifdef CLOCKS_PER_SEC
+			vpr_printf(TIO_MESSAGE_INFO, "Routing iteration took %g seconds.\n", (float)(end - begin) / CLOCKS_PER_SEC);
+		#else
+			vpr_printf(TIO_MESSAGE_INFO, "Routing iteration took %g seconds.\n", (float)(end - begin) / CLK_PER_SEC);
+		#endif
+		
 		fflush(stdout);
 	}
 
-	printf("Routing failed.\n");
+	vpr_printf(TIO_MESSAGE_INFO, "Routing failed.\n");
 	free_timing_driven_route_structs(pin_criticality, sink_order,
 			rt_node_of_sink);
 	free(net_index);
@@ -266,18 +306,18 @@ static int get_max_pins_per_net(void) {
 
 boolean timing_driven_route_net(int inet, float pres_fac, float max_criticality,
 		float criticality_exp, float astar_fac, float bend_cost,
-		float *net_slack, float *pin_criticality, int *sink_order,
-		t_rt_node ** rt_node_of_sink, float T_crit, float *net_delay) {
+		float *pin_criticality, int *sink_order,
+		t_rt_node ** rt_node_of_sink, float *net_delay, t_slack * slacks) {
 
 	/* Returns TRUE as long is found some way to hook up this net, even if that *
 	 * way resulted in overuse of resources (congestion).  If there is no way   *
 	 * to route this net, even ignoring congestion, it returns FALSE.  In this  *
-	 * case the rr_graph is disconnected and you can give up.                   */
+	 * case the rr_graph is disconnected and you can give up. If slacks = NULL, *
+	 * give each net a dummy criticality of 0.									*/
 
 	int ipin, num_sinks, itarget, target_pin, target_node, inode;
 	float target_criticality, old_tcost, new_tcost, largest_criticality,
-			pin_crit;
-	float old_back_cost, new_back_cost;
+		old_back_cost, new_back_cost;
 	t_rt_node *rt_root;
 	struct s_heap *current;
 	struct s_trace *new_route_start_tptr;
@@ -287,12 +327,35 @@ boolean timing_driven_route_net(int inet, float pres_fac, float max_criticality,
 
 	pathfinder_update_one_cost(trace_head[inet], -1, pres_fac);
 	free_traceback(inet);
+	
+	for (ipin = 1; ipin <= clb_net[inet].num_sinks; ipin++) { 
+		if (!slacks) {
+			/* Use dummy criticality of 0. (Doesn't matter what number goes here.) */
+			pin_criticality[ipin] = 0.;
+		} else { 
+#ifdef PATH_COUNTING
+			/* Pin criticality is based on a weighted sum of timing and path criticalities. */	
+			pin_criticality[ipin] =		 ROUTE_PATH_WEIGHT	* slacks->path_criticality[inet][ipin]
+								  + (1 - ROUTE_PATH_WEIGHT) * slacks->timing_criticality[inet][ipin]; 
+#else
+			/* Pin criticality is based on only timing criticality. */
+			pin_criticality[ipin] = slacks->timing_criticality[inet][ipin];
+#endif
+			/* Currently, pin criticality is between 0 and 1. Now shift it downwards 
+			by 1 - max_criticality (max_criticality is 0.99 by default, so shift down
+			by 0.01) and cut off at 0.  This means that all pins with small criticalities 
+			(<0.01) get criticality 0 and are ignored entirely, and everything
+			else becomes a bit less critical. This effect becomes more pronounced if
+			max_criticality is set lower. */
+			assert(pin_criticality[ipin] > -0.01 && pin_criticality[ipin] < 1.01);
+			pin_criticality[ipin] = max(pin_criticality[ipin] - (1 - max_criticality), 0);
 
-	for (ipin = 1; ipin <= clb_net[inet].num_sinks; ipin++) { /* For all sinks */
-		pin_crit = max(max_criticality - net_slack[ipin] / T_crit, 0.);
-		pin_crit = pow(pin_crit, criticality_exp);
-		pin_crit = min(pin_crit, max_criticality);
-		pin_criticality[ipin] = pin_crit;
+			/* Take pin criticality to some power (1 by default). */
+			pin_criticality[ipin] = pow(pin_criticality[ipin], criticality_exp);
+			
+			/* Cut off pin criticality at max_criticality. */
+			pin_criticality[ipin] = min(pin_criticality[ipin], max_criticality);
+		}
 	}
 
 	num_sinks = clb_net[inet].num_sinks;
@@ -322,6 +385,8 @@ boolean timing_driven_route_net(int inet, float pres_fac, float max_criticality,
 		current = get_heap_head();
 
 		if (current == NULL) { /* Infeasible routing.  No possible path for net. */
+			vpr_printf(TIO_MESSAGE_INFO, "Cannot route net #%d (%s) to sink #%d -- no possible path.\n",
+					   inet, clb_net[inet].name, itarget);
 			reset_path_costs();
 			free_route_tree(rt_root);
 			return (FALSE);
@@ -333,8 +398,8 @@ boolean timing_driven_route_net(int inet, float pres_fac, float max_criticality,
 			old_tcost = rr_node_route_inf[inode].path_cost;
 			new_tcost = current->cost;
 
-			if (old_tcost > 0.99 * HUGE_FLOAT) /* First time touched. */
-				old_back_cost = HUGE_FLOAT;
+			if (old_tcost > 0.99 * HUGE_POSITIVE_FLOAT) /* First time touched. */
+				old_back_cost = HUGE_POSITIVE_FLOAT;
 			else
 				old_back_cost = rr_node_route_inf[inode].backward_path_cost;
 
@@ -354,7 +419,7 @@ boolean timing_driven_route_net(int inet, float pres_fac, float max_criticality,
 				rr_node_route_inf[inode].path_cost = new_tcost;
 				rr_node_route_inf[inode].backward_path_cost = new_back_cost;
 
-				if (old_tcost > 0.99 * HUGE_FLOAT) /* First time touched. */
+				if (old_tcost > 0.99 * HUGE_POSITIVE_FLOAT) /* First time touched. */
 					add_to_mod_list(&rr_node_route_inf[inode].path_cost);
 
 				timing_driven_expand_neighbours(current, inet, bend_cost,
@@ -366,6 +431,8 @@ boolean timing_driven_route_net(int inet, float pres_fac, float max_criticality,
 			current = get_heap_head();
 
 			if (current == NULL) { /* Impossible routing.  No path for net. */
+				vpr_printf(TIO_MESSAGE_INFO, "Cannot route net #%d (%s) to sink #%d -- no possible path.\n",
+						 inet, clb_net[inet].name, itarget);
 				reset_path_costs();
 				free_route_tree(rt_root);
 				return (FALSE);
@@ -612,11 +679,11 @@ static int get_expected_segs_to_target(int inode, int target_node,
 
 		if (ylow > target_y) { /* Coming from a row above target? */
 			*num_segs_ortho_dir_ptr =
-					ROUND_UP((ylow - target_y + 1.) * ortho_inv_length);
+					(int)(ROUND_UP((ylow - target_y + 1.) * ortho_inv_length));
 			no_need_to_pass_by_clb = 1;
 		} else if (ylow < target_y - 1) { /* Below the CLB bottom? */
-			*num_segs_ortho_dir_ptr = ROUND_UP((target_y - ylow) *
-					ortho_inv_length);
+			*num_segs_ortho_dir_ptr = (int)(ROUND_UP((target_y - ylow) *
+					ortho_inv_length));
 			no_need_to_pass_by_clb = 1;
 		} else { /* In a row that passes by target CLB */
 			*num_segs_ortho_dir_ptr = 0;
@@ -626,11 +693,11 @@ static int get_expected_segs_to_target(int inode, int target_node,
 		/* Now count horizontal (same dir. as inode) segs. */
 
 		if (xlow > target_x + no_need_to_pass_by_clb) {
-			num_segs_same_dir = ROUND_UP((xlow - no_need_to_pass_by_clb -
-							target_x) * inv_length);
+			num_segs_same_dir = (int)(ROUND_UP((xlow - no_need_to_pass_by_clb -
+							target_x) * inv_length));
 		} else if (xhigh < target_x - no_need_to_pass_by_clb) {
-			num_segs_same_dir = ROUND_UP((target_x - no_need_to_pass_by_clb -
-							xhigh) * inv_length);
+			num_segs_same_dir = (int)(ROUND_UP((target_x - no_need_to_pass_by_clb -
+							xhigh) * inv_length));
 		} else {
 			num_segs_same_dir = 0;
 		}
@@ -644,12 +711,12 @@ static int get_expected_segs_to_target(int inode, int target_node,
 		/* Count horizontal (orthogonal to inode) segs first. */
 
 		if (xlow > target_x) { /* Coming from a column right of target? */
-			*num_segs_ortho_dir_ptr =
-					ROUND_UP((xlow - target_x + 1.) * ortho_inv_length);
+			*num_segs_ortho_dir_ptr = (int)(
+					ROUND_UP((xlow - target_x + 1.) * ortho_inv_length));
 			no_need_to_pass_by_clb = 1;
 		} else if (xlow < target_x - 1) { /* Left of and not adjacent to the CLB? */
-			*num_segs_ortho_dir_ptr = ROUND_UP((target_x - xlow) *
-					ortho_inv_length);
+			*num_segs_ortho_dir_ptr = (int)(ROUND_UP((target_x - xlow) *
+					ortho_inv_length));
 			no_need_to_pass_by_clb = 1;
 		} else { /* In a column that passes by target CLB */
 			*num_segs_ortho_dir_ptr = 0;
@@ -659,11 +726,11 @@ static int get_expected_segs_to_target(int inode, int target_node,
 		/* Now count vertical (same dir. as inode) segs. */
 
 		if (ylow > target_y + no_need_to_pass_by_clb) {
-			num_segs_same_dir = ROUND_UP((ylow - no_need_to_pass_by_clb -
-							target_y) * inv_length);
+			num_segs_same_dir = (int)(ROUND_UP((ylow - no_need_to_pass_by_clb -
+							target_y) * inv_length));
 		} else if (yhigh < target_y - no_need_to_pass_by_clb) {
-			num_segs_same_dir = ROUND_UP((target_y - no_need_to_pass_by_clb -
-							yhigh) * inv_length);
+			num_segs_same_dir = (int)(ROUND_UP((target_y - no_need_to_pass_by_clb -
+							yhigh) * inv_length));
 		} else {
 			num_segs_same_dir = 0;
 		}
@@ -721,7 +788,7 @@ static int mark_node_expansion_by_bin(int inet, int target_node,
 		area = 1;
 	}
 
-	rlim = ceil(sqrt((float) area / (float) clb_net[inet].num_sinks));
+	rlim = (int)(ceil(sqrt((float) area / (float) clb_net[inet].num_sinks)));
 	if (rt_node == NULL || rt_node->u.child_list == NULL) {
 		/* If unknown traceback, set radius of bin to be size of chip */
 		rlim = max(nx + 2, ny + 2);
@@ -750,8 +817,7 @@ static int mark_node_expansion_by_bin(int inet, int target_node,
 
 		if (success == FALSE) {
 			if (rlim > max(nx + 2, ny + 2)) {
-				printf(
-						ERRTAG "VPR internal error, net %s has paths that are not found in traceback\n",
+				vpr_printf(TIO_MESSAGE_ERROR, "VPR internal error, net %s has paths that are not found in traceback.\n",
 						clb_net[inet].name);
 				exit(1);
 			}
@@ -793,32 +859,30 @@ static void timing_driven_check_net_delays(float **net_delay) {
 
 	int inet, ipin;
 	float **net_delay_check;
-	struct s_linked_vptr *ch_list_head_net_delay_check;
 
-	net_delay_check = alloc_net_delay(&ch_list_head_net_delay_check, clb_net,
+	t_chunk list_head_net_delay_check_ch = {NULL, 0, NULL};
+
+	/*struct s_linked_vptr *ch_list_head_net_delay_check;*/
+
+	net_delay_check = alloc_net_delay(&list_head_net_delay_check_ch, clb_net,
 			num_nets);
 	load_net_delay_from_routing(net_delay_check, clb_net, num_nets);
 
 	for (inet = 0; inet < num_nets; inet++) {
 		for (ipin = 1; ipin <= clb_net[inet].num_sinks; ipin++) {
 			if (net_delay_check[inet][ipin] == 0.) { /* Should be only GLOBAL nets */
-				if (net_delay[inet][ipin] != 0.) {
-					printf(
-							"Error in timing_driven_check_net_delays: net %d pin %d."
-									"\tIncremental calc. net_delay is %g, but from scratch "
-									"net delay is %g.\n", inet, ipin,
+				if (fabs(net_delay[inet][ipin]) > ERROR_TOL) {
+					vpr_printf(TIO_MESSAGE_ERROR, "in timing_driven_check_net_delays: net %d pin %d.\n",
+							inet, ipin);
+					vpr_printf(TIO_MESSAGE_ERROR, "\tIncremental calc. net_delay is %g, but from scratch net delay is %g.\n",
 							net_delay[inet][ipin], net_delay_check[inet][ipin]);
 					exit(1);
 				}
 			} else {
-				if (fabs(
-						1.
-								- net_delay[inet][ipin]
-										/ net_delay_check[inet][ipin]) > ERROR_TOL) {
-					printf(
-							"Error in timing_driven_check_net_delays: net %d pin %d."
-									"\tIncremental calc. net_delay is %g, but from scratch "
-									"net delay is %g.\n", inet, ipin,
+				if (fabs(1.0 - net_delay[inet][ipin] / net_delay_check[inet][ipin]) > ERROR_TOL) {
+					vpr_printf(TIO_MESSAGE_ERROR, "in timing_driven_check_net_delays: net %d pin %d.\n",
+							inet, ipin);
+					vpr_printf(TIO_MESSAGE_ERROR, "\tIncremental calc. net_delay is %g, but from scratch net delay is %g.\n",
 							net_delay[inet][ipin], net_delay_check[inet][ipin]);
 					exit(1);
 				}
@@ -826,6 +890,6 @@ static void timing_driven_check_net_delays(float **net_delay) {
 		}
 	}
 
-	free_net_delay(net_delay_check, &ch_list_head_net_delay_check);
-	printf("Completed net delay value cross check successfully.\n");
+	free_net_delay(net_delay_check, &list_head_net_delay_check_ch);
+	vpr_printf(TIO_MESSAGE_INFO, "Completed net delay value cross check successfully.\n");
 }

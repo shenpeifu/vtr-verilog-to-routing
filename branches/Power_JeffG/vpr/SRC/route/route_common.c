@@ -6,13 +6,11 @@
 #include "vpr_types.h"
 #include "vpr_utils.h"
 #include "globals.h"
-#include "mst.h"
 #include "route_export.h"
 #include "route_common.h"
 #include "route_tree_timing.h"
 #include "route_timing.h"
 #include "route_breadth_first.h"
-#include "route_directed_search.h"
 #include "place_and_route.h"
 #include "rr_graph.h"
 #include "read_xml_arch_file.h"
@@ -34,9 +32,13 @@ static int heap_tail; /* Index of first unused slot in the heap array */
 
 /* For managing my own list of currently free heap data structures.     */
 static struct s_heap *heap_free_head = NULL;
+/* For keeping track of the sudo malloc memory for the heap*/
+static t_chunk heap_ch = {NULL, 0, NULL};
 
 /* For managing my own list of currently free trace data structures.    */
 static struct s_trace *trace_free_head = NULL;
+/* For keeping track of the sudo malloc memory for the trace*/
+static t_chunk trace_ch = {NULL, 0, NULL};
 
 #ifdef DEBUG
 static int num_trace_allocated = 0; /* To watch for memory leaks. */
@@ -47,34 +49,36 @@ static int num_linked_f_pointer_allocated = 0;
 static struct s_linked_f_pointer *rr_modified_head = NULL;
 static struct s_linked_f_pointer *linked_f_pointer_free_head = NULL;
 
-/*  The numbering relation between the channels and clbs is:               *
- *                                                                         *
- *  |   IO    | chan_   |   CLB      | chan_   |   CLB     |               *
- *  |grid[0][2]| y[0][2] | grid[1][2]  | y[1][2] |  grid[2][2]|               *
- *  +-------- +         +------------+         +-----------+               *
- *                                                           } capacity in *
- *   No channel          chan_x[1][1]          chan_x[2][1]  } chan_width  *
- *                                                           } _x[1]       *
- *  +---------+         +------------+         +-----------+               *
- *  |         | chan_   |            | chan_   |           |               *
- *  |  IO     | y[0][1] |    CLB     | y[1][1] |   CLB     |               *
- *  |grid[0][1]|         |  grid[1][1] |         | grid[2][1] |               *
- *  |         |         |            |         |           |               *
- *  +---------+         +------------+         +-----------+               *
- *                                                           } capacity in *
- *                      chan_x[1][0]           chan_x[2][0]  } chan_width  * 
- *                                                           } _x[0]       *
- *                      +------------+         +-----------+               *
- *              No      |            | No      |           |               *
- *            Channel   |    IO      | Channel |   IO      |               *
- *                      |  grid[1][0] |         | grid[2][0] |               *
- *                      |            |         |           |               *
- *                      +------------+         +-----------+               *
- *                                                                         *
- *             {=======}              {=======}                            *
- *            Capacity in            Capacity in                           *
- *          chan_width_y[0]        chan_width_y[1]                         *
- *                                                                         */
+static t_chunk linked_f_pointer_ch = {NULL, 0, NULL};
+
+/*  The numbering relation between the channels and clbs is:				*
+ *																	        *
+ *  |    IO     | chan_   |   CLB     | chan_   |   CLB     |               *
+ *  |grid[0][2] | y[0][2] |grid[1][2] | y[1][2] | grid[2][2]|               *
+ *  +-----------+         +-----------+         +-----------+               *
+ *                                                            } capacity in *
+ *   No channel           chan_x[1][1]          chan_x[2][1]  } chan_width  *
+ *                                                            } _x[1]       *
+ *  +-----------+         +-----------+         +-----------+               *
+ *  |           |  chan_  |           |  chan_  |           |               *
+ *  |    IO     | y[0][1] |   CLB     | y[1][1] |   CLB     |               *
+ *  |grid[0][1] |         |grid[1][1] |         |grid[2][1] |               *
+ *  |           |         |           |         |           |               *
+ *  +-----------+         +-----------+         +-----------+               *
+ *                                                            } capacity in *
+ *                        chan_x[1][0]          chan_x[2][0]  } chan_width  * 
+ *                                                            } _x[0]       *
+ *                        +-----------+         +-----------+               *
+ *                 No     |           |	   No   |           |               *
+ *               Channel  |    IO     | Channel |    IO     |               *
+ *                        |grid[1][0] |         |grid[2][0] |               *
+ *                        |           |         |           |               *
+ *                        +-----------+         +-----------+               *
+ *                                                                          *
+ *               {=======}              {=======}                           *
+ *              Capacity in            Capacity in                          *
+ *            chan_width_y[0]        chan_width_y[1]                        *
+ *                                                                          */
 
 /******************** Subroutines local to route_common.c *******************/
 
@@ -210,14 +214,14 @@ void get_serial_num(void) {
 			tptr = tptr->next;
 		}
 	}
-	printf("Serial number (magic cookie) for the routing is: %d\n", serial_num);
+	vpr_printf(TIO_MESSAGE_INFO, "Serial number (magic cookie) for the routing is: %d\n", serial_num);
 }
 
 boolean try_route(int width_fac, struct s_router_opts router_opts,
 		struct s_det_routing_arch det_routing_arch, t_segment_inf * segment_inf,
-		t_timing_inf timing_inf, float **net_slack, float **net_delay,
+		t_timing_inf timing_inf, float **net_delay, t_slack * slacks,
 		t_chan_width_dist chan_width_dist, t_ivec ** clb_opins_used_locally,
-		t_mst_edge ** mst, boolean * Fc_clipped) {
+		boolean * Fc_clipped) {
 
 	/* Attempts a routing via an iterated maze router algorithm.  Width_fac *
 	 * specifies the relative width of the channels, while the members of   *
@@ -262,10 +266,9 @@ boolean try_route(int width_fac, struct s_router_opts router_opts,
 
 	end = clock();
 #ifdef CLOCKS_PER_SEC
-	printf("build rr_graph took %g seconds\n",
-			(float) (end - begin) / CLOCKS_PER_SEC);
+	vpr_printf(TIO_MESSAGE_INFO, "Build rr_graph took %g seconds.\n", (float)(end - begin) / CLOCKS_PER_SEC);
 #else
-	printf("build rr_graph took %g seconds\n", (float)(end - begin) / CLK_PER_SEC);
+	vpr_printf(TIO_MESSAGE_INFO, "Build rr_graph took %g seconds.\n", (float)(end - begin) / CLK_PER_SEC);
 #endif
 
 	/* Allocate and load some additional rr_graph information needed only by *
@@ -276,18 +279,14 @@ boolean try_route(int width_fac, struct s_router_opts router_opts,
 	init_route_structs(router_opts.bb_factor);
 
 	if (router_opts.router_algorithm == BREADTH_FIRST) {
-		printf("Confirming Router Algorithm: BREADTH_FIRST.\n");
+		vpr_printf(TIO_MESSAGE_INFO, "Confirming Router Algorithm: BREADTH_FIRST.\n");
 		success = try_breadth_first_route(router_opts, clb_opins_used_locally,
 				width_fac);
-	} else if (router_opts.router_algorithm == TIMING_DRIVEN) { /* TIMING_DRIVEN route */
-		printf("Confirming Router Algorithm: TIMING_DRIVEN.\n");
+	} else { /* TIMING_DRIVEN route */
+		vpr_printf(TIO_MESSAGE_INFO, "Confirming Router Algorithm: TIMING_DRIVEN.\n");
 		assert(router_opts.route_type != GLOBAL);
-		success = try_timing_driven_route(router_opts, net_slack, net_delay,
-				clb_opins_used_locally);
-	} else { /* Directed Search Routability Driven */
-		printf("Confirming Router Algorithm: DIRECTED_SEARCH.\n");
-		success = try_directed_search_route(router_opts, clb_opins_used_locally,
-				width_fac, mst);
+		success = try_timing_driven_route(router_opts, net_delay, slacks,
+			clb_opins_used_locally,timing_inf.timing_analysis_enabled);
 	}
 
 	free_rr_node_route_structs();
@@ -407,13 +406,12 @@ void init_route_structs(int bb_factor) {
 	 * really were.                                                           */
 
 	if (rr_modified_head != NULL) {
-		printf("Error in init_route_structs.  List of modified rr nodes is \n"
-				"not empty.\n");
+		vpr_printf(TIO_MESSAGE_ERROR, "in init_route_structs. List of modified rr nodes is not empty.\n");
 		exit(1);
 	}
 
 	if (heap_tail != 1) {
-		printf("Error in init_route_structs.  Heap is not empty.\n");
+		vpr_printf(TIO_MESSAGE_ERROR, "in init_route_structs. Heap is not empty.\n");
 		exit(1);
 	}
 }
@@ -447,9 +445,8 @@ update_traceback(struct s_heap *hptr, int inet) {
 #ifdef DEBUG
 	rr_type = rr_node[inode].type;
 	if (rr_type != SINK) {
-		printf("Error in update_traceback.  Expected type = SINK (%d).\n",
-				SINK);
-		printf("Got type = %d while tracing back net %d.\n", rr_type, inet);
+		vpr_printf(TIO_MESSAGE_ERROR, "in update_traceback. Expected type = SINK (%d).\n", SINK);
+		vpr_printf(TIO_MESSAGE_ERROR, "\tGot type = %d while tracing back net %d.\n", rr_type, inet);
 		exit(1);
 	}
 #endif
@@ -491,7 +488,7 @@ update_traceback(struct s_heap *hptr, int inet) {
 
 void reset_path_costs(void) {
 
-	/* The routine sets the path_cost to HUGE_FLOAT for all channel segments   *
+	/* The routine sets the path_cost to HUGE_POSITIVE_FLOAT for all channel segments   *
 	 * touched by previous routing phases.                                     */
 
 	struct s_linked_f_pointer *mod_ptr;
@@ -510,13 +507,13 @@ void reset_path_costs(void) {
 #endif
 
 		while (mod_ptr->next != NULL) {
-			*(mod_ptr->fptr) = HUGE_FLOAT;
+			*(mod_ptr->fptr) = HUGE_POSITIVE_FLOAT;
 			mod_ptr = mod_ptr->next;
 #ifdef DEBUG
 			num_mod_ptrs++;
 #endif
 		}
-		*(mod_ptr->fptr) = HUGE_FLOAT; /* Do last one. */
+		*(mod_ptr->fptr) = HUGE_POSITIVE_FLOAT; /* Do last one. */
 
 		/* Reset the modified list and put all the elements back in the free   *
 		 * list.                                                               */
@@ -592,6 +589,10 @@ void free_traceback(int inet) {
 	 * and sets the trace_head pointers etc. for the net to NULL.            */
 
 	struct s_trace *tptr, *tempptr;
+
+	if(trace_head == NULL) {
+		return;
+	}
 
 	tptr = trace_head[inet];
 
@@ -731,35 +732,33 @@ void free_trace_structs(void) {
 	for (i = 0; i < num_nets; i++)
 		free_traceback(i);
 
-	free(trace_head);
-	free(trace_tail);
+	if(trace_head) {
+		free(trace_head);
+		free(trace_tail);
+	}
 	trace_head = NULL;
 	trace_tail = NULL;
 }
 
-void free_route_structs(t_ivec ** clb_opins_used_locally) {
+void free_route_structs() {
 
 	/* Frees the temporary storage needed only during the routing.  The  *
 	 * final routing result is not freed.                                */
-	int i;
-
-	free(heap + 1);
-	free(route_bb);
+	if(heap != NULL) {
+		free(heap + 1);
+	}
+	if(route_bb != NULL) {
+		free(route_bb);
+	}
 
 	heap = NULL; /* Defensive coding:  crash hard if I use these. */
 	route_bb = NULL;
 
-	if (clb_opins_used_locally != NULL) {
-		for (i = 0; i < num_blocks; i++) {
-			free_ivec_vector(clb_opins_used_locally[i], 0,
-					block[i].type->num_class - 1);
-		}
-		free(clb_opins_used_locally);
-	}
-
-	/* NB:  Should use my chunk_malloc for tptr, hptr, and mod_ptr structures. *
-	 * I could free everything except the tptrs at the end then.               */
-
+	/*free the memory chunks that were used by heap and linked f pointer */
+	free_chunk_memory(&heap_ch);
+	free_chunk_memory(&linked_f_pointer_ch);
+	heap_free_head = NULL;
+	linked_f_pointer_free_head = NULL;
 }
 
 void free_saved_routing(struct s_trace **best_routing,
@@ -784,19 +783,18 @@ void alloc_and_load_rr_node_route_structs(void) {
 	int inode;
 
 	if (rr_node_route_inf != NULL) {
-		printf("Error in alloc_and_load_rr_node_route_structs:  \n"
-				"old rr_node_route_inf array exists.\n");
+ 		vpr_printf(TIO_MESSAGE_ERROR, "in alloc_and_load_rr_node_route_structs: old rr_node_route_inf array exists.\n");
 		exit(1);
 	}
 
-	rr_node_route_inf = my_malloc(num_rr_nodes * sizeof(t_rr_node_route_inf));
+	rr_node_route_inf = (t_rr_node_route_inf *) my_malloc(num_rr_nodes * sizeof(t_rr_node_route_inf));
 
 	for (inode = 0; inode < num_rr_nodes; inode++) {
 		rr_node_route_inf[inode].prev_node = NO_PREVIOUS;
 		rr_node_route_inf[inode].prev_edge = NO_PREVIOUS;
 		rr_node_route_inf[inode].pres_cost = 1.;
 		rr_node_route_inf[inode].acc_cost = 1.;
-		rr_node_route_inf[inode].path_cost = HUGE_FLOAT;
+		rr_node_route_inf[inode].path_cost = HUGE_POSITIVE_FLOAT;
 		rr_node_route_inf[inode].target_flag = 0;
 	}
 }
@@ -815,7 +813,7 @@ void reset_rr_node_route_structs(void) {
 		rr_node_route_inf[inode].prev_edge = NO_PREVIOUS;
 		rr_node_route_inf[inode].pres_cost = 1.;
 		rr_node_route_inf[inode].acc_cost = 1.;
-		rr_node_route_inf[inode].path_cost = HUGE_FLOAT;
+		rr_node_route_inf[inode].path_cost = HUGE_POSITIVE_FLOAT;
 		rr_node_route_inf[inode].target_flag = 0;
 	}
 }
@@ -916,7 +914,7 @@ static void add_to_heap(struct s_heap *hptr) {
 
 	if (heap_tail > heap_size) { /* Heap is full */
 		heap_size *= 2;
-		heap = my_realloc((void *) (heap + 1),
+		heap = (struct s_heap **) my_realloc((void *) (heap + 1),
 				heap_size * sizeof(struct s_heap *));
 		heap--; /* heap goes from [1..heap_size] */
 	}
@@ -937,7 +935,7 @@ static void add_to_heap(struct s_heap *hptr) {
 
 /*WMF: peeking accessor :) */
 boolean is_empty_heap(void) {
-	return (heap_tail == 1);
+	return (boolean)(heap_tail == 1);
 }
 
 struct s_heap *
@@ -952,9 +950,8 @@ get_heap_head(void) {
 
 	do {
 		if (heap_tail == 1) { /* Empty heap. */
-			printf("Empty heap occurred in get_heap_head.\n");
-			printf(
-					"Some blocks are impossible to connect in this architecture.\n");
+			vpr_printf(TIO_MESSAGE_WARNING, "Empty heap occurred in get_heap_head.\n");
+			vpr_printf(TIO_MESSAGE_WARNING, "Some blocks are impossible to connect in this architecture.\n");
 			return (NULL);
 		}
 
@@ -994,25 +991,14 @@ void empty_heap(void) {
 	heap_tail = 1;
 }
 
-#define NCHUNK 200		/* # of various structs malloced at a time. */
-
 static struct s_heap *
 alloc_heap_data(void) {
 
-	int i;
 	struct s_heap *temp_ptr;
 
 	if (heap_free_head == NULL) { /* No elements on the free list */
-		heap_free_head = (struct s_heap *) my_malloc(
-				NCHUNK * sizeof(struct s_heap));
-
-		/* If I want to free this memory, I have to store the original pointer *
-		 * somewhere.  Not worthwhile right now -- if you need more memory     *
-		 * for post-routing stages, look into it.                              */
-
-		for (i = 0; i < NCHUNK - 1; i++)
-			(heap_free_head + i)->u.next = heap_free_head + i + 1;
-		(heap_free_head + NCHUNK - 1)->u.next = NULL;
+		heap_free_head = (struct s_heap *) my_chunk_malloc(sizeof(struct s_heap),&heap_ch);
+		heap_free_head->u.next = NULL;
 	}
 
 	temp_ptr = heap_free_head;
@@ -1049,20 +1035,11 @@ void invalidate_heap_entries(int sink_node, int ipin_node) {
 static struct s_trace *
 alloc_trace_data(void) {
 
-	int i;
 	struct s_trace *temp_ptr;
 
 	if (trace_free_head == NULL) { /* No elements on the free list */
-		trace_free_head = (struct s_trace *) my_malloc(
-				NCHUNK * sizeof(struct s_trace));
-
-		/* If I want to free this memory, I have to store the original pointer *
-		 * somewhere.  Not worthwhile right now -- if you need more memory     *
-		 * for post-routing stages, look into it.                              */
-
-		for (i = 0; i < NCHUNK - 1; i++)
-			(trace_free_head + i)->next = trace_free_head + i + 1;
-		(trace_free_head + NCHUNK - 1)->next = NULL;
+		trace_free_head = (struct s_trace *) my_chunk_malloc(sizeof(struct s_trace),&trace_ch);
+		trace_free_head->next = NULL;
 	}
 	temp_ptr = trace_free_head;
 	trace_free_head = trace_free_head->next;
@@ -1089,23 +1066,13 @@ alloc_linked_f_pointer(void) {
 	/* This routine returns a linked list element with a float pointer as *
 	 * the node data.                                                     */
 
-	int i;
+	/*int i;*/
 	struct s_linked_f_pointer *temp_ptr;
 
 	if (linked_f_pointer_free_head == NULL) {
-		/* No elements on the free list */
-		linked_f_pointer_free_head = (struct s_linked_f_pointer *) my_malloc(
-				NCHUNK * sizeof(struct s_linked_f_pointer));
-
-		/* If I want to free this memory, I have to store the original pointer *
-		 * somewhere.  Not worthwhile right now -- if you need more memory     * 
-		 * for post-routing stages, look into it.                              */
-
-		for (i = 0; i < NCHUNK - 1; i++) {
-			(linked_f_pointer_free_head + i)->next = linked_f_pointer_free_head
-					+ i + 1;
-		}
-		(linked_f_pointer_free_head + NCHUNK - 1)->next = NULL;
+		/* No elements on the free list */	
+	linked_f_pointer_free_head = (struct s_linked_f_pointer *) my_chunk_malloc(sizeof(struct s_linked_f_pointer),&linked_f_pointer_ch);
+	linked_f_pointer_free_head->next = NULL;
 	}
 
 	temp_ptr = linked_f_pointer_free_head;
@@ -1125,7 +1092,7 @@ void print_route(char *route_file) {
 	int inet, inode, ipin, bnum, ilow, jlow, node_block_pin, iclass;
 	t_rr_type rr_type;
 	struct s_trace *tptr;
-	char *name_type[] = { "SOURCE", "SINK", "IPIN", "OPIN", "CHANX", "CHANY",
+	const char *name_type[] = { "SOURCE", "SINK", "IPIN", "OPIN", "CHANX", "CHANY",
 			"INTRA_CLUSTER_EDGE" };
 	FILE *fp;
 
@@ -1137,8 +1104,7 @@ void print_route(char *route_file) {
 		if (clb_net[inet].is_global == FALSE) {
 			if (clb_net[inet].num_sinks == FALSE) {
 				fprintf(fp, "\n\nNet %d (%s)\n\n", inet, clb_net[inet].name);
-				fprintf(fp,
-						"\n\n Used in local cluster only, reserved one CLB pin\n\n");
+				fprintf(fp, "\n\nUsed in local cluster only, reserved one CLB pin\n\n");
 			} else {
 				fprintf(fp, "\n\nNet %d (%s)\n\n", inet, clb_net[inet].name);
 				tptr = trace_head[inet];
@@ -1149,7 +1115,7 @@ void print_route(char *route_file) {
 					ilow = rr_node[inode].xlow;
 					jlow = rr_node[inode].ylow;
 
-					fprintf(fp, "%6s (%d,%d) ", name_type[rr_type], ilow, jlow);
+					fprintf(fp, "Node:\t%d\t%6s (%d,%d) ", inode, name_type[rr_type], ilow, jlow);
 
 					if ((ilow != rr_node[inode].xhigh)
 							|| (jlow != rr_node[inode].yhigh))
@@ -1182,10 +1148,8 @@ void print_route(char *route_file) {
 						break;
 
 					default:
-						printf(
-								"Error in print_route:  Unexpected traceback element "
-										"type: %d (%s).\n", rr_type,
-								name_type[rr_type]);
+						vpr_printf(TIO_MESSAGE_ERROR, "in print_route: Unexpected traceback element type: %d (%s).\n", 
+								rr_type, name_type[rr_type]);
 						exit(1);
 						break;
 					}
@@ -1222,8 +1186,8 @@ void print_route(char *route_file) {
 
 	fclose(fp);
 
-	if (GetEchoOption()) {
-		fp = my_fopen("mem.echo", "w", 0);
+	if (getEchoEnabled() && isEchoFileEnabled(E_ECHO_MEM)) {
+		fp = my_fopen(getEchoFileName(E_ECHO_MEM), "w", 0);
 		fprintf(fp, "\nNum_heap_allocated: %d   Num_trace_allocated: %d\n",
 				num_heap_allocated, num_trace_allocated);
 		fprintf(fp, "Num_linked_f_pointer_allocated: %d\n",
@@ -1311,3 +1275,12 @@ static void adjust_one_rr_occ_and_pcost(int inode, int add_or_sub,
 				+ (occ + 1 - capacity) * pres_fac;
 	}
 }
+
+
+void free_chunk_memory_trace(void) {
+	if (trace_ch.chunk_ptr_head != NULL) {
+		free_chunk_memory(&trace_ch);
+	}
+}
+
+

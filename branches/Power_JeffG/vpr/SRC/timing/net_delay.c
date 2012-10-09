@@ -100,8 +100,8 @@ static void free_rc_edge_free_list(t_linked_rc_edge * rc_edge_free_list);
 /*************************** Subroutine definitions **************************/
 
 float **
-alloc_net_delay(struct s_linked_vptr **chunk_list_head_ptr, struct s_net *nets,
-		int n_nets) {
+alloc_net_delay(t_chunk *chunk_list_ptr, struct s_net *nets,
+		int n_nets){
 
 	/* Allocates space for the net_delay data structure                          *
 	 * [0..num_nets-1][1..num_pins-1].  I chunk the data to save space on large  *
@@ -110,19 +110,13 @@ alloc_net_delay(struct s_linked_vptr **chunk_list_head_ptr, struct s_net *nets,
 	float **net_delay; /* [0..num_nets-1][1..num_pins-1] */
 	float *tmp_ptr;
 	int inet;
-	int chunk_bytes_avail;
-	char *chunk_next_avail_mem;
-
-	*chunk_list_head_ptr = NULL;
-	chunk_bytes_avail = 0;
-	chunk_next_avail_mem = NULL;
 
 	net_delay = (float **) my_malloc(n_nets * sizeof(float *));
 
 	for (inet = 0; inet < n_nets; inet++) {
 		tmp_ptr = (float *) my_chunk_malloc(
 				((nets[inet].num_sinks + 1) - 1) * sizeof(float),
-				chunk_list_head_ptr, &chunk_bytes_avail, &chunk_next_avail_mem);
+				chunk_list_ptr);
 
 		net_delay[inet] = tmp_ptr - 1; /* [1..num_pins-1] */
 	}
@@ -131,13 +125,12 @@ alloc_net_delay(struct s_linked_vptr **chunk_list_head_ptr, struct s_net *nets,
 }
 
 void free_net_delay(float **net_delay,
-		struct s_linked_vptr **chunk_list_head_ptr) {
+		t_chunk *chunk_list_ptr){
 
 	/* Frees the net_delay structure.  Assumes it was chunk allocated.          */
 
 	free(net_delay);
-	free_chunk_memory(*chunk_list_head_ptr);
-	*chunk_list_head_ptr = NULL;
+	free_chunk_memory(chunk_list_ptr);
 }
 
 void load_net_delay_from_routing(float **net_delay, struct s_net *nets,
@@ -216,8 +209,7 @@ alloc_and_load_rc_tree(int inet, t_rc_node ** rc_node_free_list_ptr,
 	tptr = trace_head[inet];
 
 	if (tptr == NULL) {
-		printf("Error in alloc_and_load_rc_tree:  Traceback for net %d doesn't "
-				"exist.\n", inet);
+		vpr_printf(TIO_MESSAGE_ERROR, "in alloc_and_load_rc_tree: Traceback for net %d does not exist.\n", inet);
 		exit(1);
 	}
 
@@ -249,8 +241,7 @@ alloc_and_load_rc_tree(int inet, t_rc_node ** rc_node_free_list_ptr,
 #ifdef DEBUG
 			prev_node = prev_rc->inode;
 			if (rr_node[prev_node].type != SINK) {
-				printf("Error in alloc_and_load_rc_tree:  Routing of net %d is "
-						"not a tree.\n", inet);
+				vpr_printf(TIO_MESSAGE_ERROR, "in alloc_and_load_rc_tree: Routing of net %d is not a tree.\n", inet);
 				exit(1);
 			}
 #endif
@@ -578,27 +569,4 @@ static void free_rc_edge_free_list(t_linked_rc_edge * rc_edge_free_list) {
 		free(rc_edge);
 		rc_edge = next_edge;
 	}
-}
-
-void print_net_delay(float **net_delay, char *fname, struct s_net *nets,
-		int n_nets) {
-
-	/* Dumps the net delays into file fname.   */
-
-	FILE *fp;
-	int inet, ipin;
-
-	fp = my_fopen(fname, "w", 0);
-
-	for (inet = 0; inet < n_nets; inet++) {
-		fprintf(fp, "Net: %d.\n", inet);
-		fprintf(fp, "Delays:");
-
-		for (ipin = 1; ipin < (nets[inet].num_sinks + 1); ipin++)
-			fprintf(fp, " %g", net_delay[inet][ipin]);
-
-		fprintf(fp, "\n\n");
-	}
-
-	fclose(fp);
 }

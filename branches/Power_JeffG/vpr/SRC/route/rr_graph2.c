@@ -371,7 +371,7 @@ void free_seg_details(t_seg_details * seg_details, int nodes_per_chan) {
 /* Dumps out an array of seg_details structures to file fname.  Used only   *
  * for debugging.                                                           */
 void dump_seg_details(t_seg_details * seg_details, int nodes_per_chan,
-		char *fname) {
+		const char *fname) {
 
 	FILE *fp;
 	int i, j;
@@ -917,9 +917,8 @@ int get_rr_node_index(int x, int y, t_rr_type rr_type, int ptc,
 		break;
 
 	default:
-		printf("Error:  Bad rr_node passed to get_rr_node_index.\n"
-				"Request for type=%d ptc=%d at (%d, %d).\n", rr_type, ptc, x,
-				y);
+		vpr_printf(TIO_MESSAGE_ERROR, "Bad rr_node passed to get_rr_node_index.\n");
+		vpr_printf(TIO_MESSAGE_ERROR, "Request for type=%d ptc=%d at (%d, %d).\n", rr_type, ptc, x, y);
 		exit(1);
 	}
 #endif
@@ -1127,7 +1126,7 @@ int get_track_to_tracks(INP int from_chan, INP int from_seg, INP int from_track,
 				if ((from_is_sbox)
 						&& (DEC_DIRECTION == seg_details[from_track].direction)) {
 					num_conn += get_unidir_track_to_chan_seg(
-							(from_sb == from_first), from_track, to_chan,
+							(boolean)(from_sb == from_first), from_track, to_chan,
 							to_seg, to_sb, to_type, nodes_per_chan, nx, ny,
 							from_side_a, to_side, Fs_per_side, opin_mux_size,
 							sblock_pattern, L_rr_node_indices, seg_details,
@@ -1153,7 +1152,7 @@ int get_track_to_tracks(INP int from_chan, INP int from_seg, INP int from_track,
 				if ((from_is_sbox)
 						&& (INC_DIRECTION == seg_details[from_track].direction)) {
 					num_conn += get_unidir_track_to_chan_seg(
-							(from_sb == from_end), from_track, to_chan, to_seg,
+							(boolean)(from_sb == from_end), from_track, to_chan, to_seg,
 							to_sb, to_type, nodes_per_chan, nx, ny, from_side_b,
 							to_side, Fs_per_side, opin_mux_size, sblock_pattern,
 							L_rr_node_indices, seg_details, L_rr_edge_done,
@@ -1264,15 +1263,15 @@ static int get_unidir_track_to_chan_seg(INP boolean is_end_sb,
 	*Fs_clipped = FALSE;
 
 	/* SBs go from (0, 0) to (nx, ny) */
-	is_corner = ((sb_x < 1) || (sb_x >= L_nx))
-			&& ((sb_y < 1) || (sb_y >= L_ny));
-	is_fringe = (FALSE == is_corner)
-			&& ((sb_x < 1) || (sb_y < 1) || (sb_x >= L_nx) || (sb_y >= L_ny));
-	is_core = (FALSE == is_corner) && (FALSE == is_fringe);
-	is_straight = (from_side == RIGHT && to_side == LEFT)
+	is_corner = (boolean)(((sb_x < 1) || (sb_x >= L_nx))
+			&& ((sb_y < 1) || (sb_y >= L_ny)));
+	is_fringe = (boolean)((FALSE == is_corner)
+			&& ((sb_x < 1) || (sb_y < 1) || (sb_x >= L_nx) || (sb_y >= L_ny)));
+	is_core = (boolean)((FALSE == is_corner) && (FALSE == is_fringe));
+	is_straight = (boolean)((from_side == RIGHT && to_side == LEFT)
 			|| (from_side == LEFT && to_side == RIGHT)
 			|| (from_side == TOP && to_side == BOTTOM)
-			|| (from_side == BOTTOM && to_side == TOP);
+			|| (from_side == BOTTOM && to_side == TOP));
 
 	/* Ending wires use N-to-N mapping if not fringe or if goes straight */
 	if (is_end_sb && (is_core || is_corner || is_straight)) {
@@ -1596,11 +1595,11 @@ void load_sblock_pattern_lookup(INP int i, INP int j, INP int nodes_per_chan,
 
 	/* SB's range from (0, 0) to (nx, ny) */
 	/* First find all four sides' incoming wires */
-	x_edge = ((i < 1) || (i >= nx));
-	y_edge = ((j < 1) || (j >= ny));
+	x_edge = (boolean)((i < 1) || (i >= nx));
+	y_edge = (boolean)((j < 1) || (j >= ny));
 
-	is_corner_sblock = (x_edge && y_edge);
-	is_core_sblock = (!x_edge && !y_edge);
+	is_corner_sblock = (boolean)(x_edge && y_edge);
+	is_core_sblock = (boolean)(!x_edge && !y_edge);
 
 	/* "Label" the wires around the switch block by connectivity. */
 	for (side = 0; side < 4; ++side) {
@@ -1642,8 +1641,8 @@ void load_sblock_pattern_lookup(INP int i, INP int j, INP int nodes_per_chan,
 		}
 
 		/* Figure out the channel and segment for a certain direction */
-		vert = ((side == TOP) || (side == BOTTOM));
-		pos_dir = ((side == TOP) || (side == RIGHT));
+		vert = (boolean) ((side == TOP) || (side == BOTTOM));
+		pos_dir = (boolean) ((side == TOP) || (side == RIGHT));
 		chan = (vert ? i : j);
 		sb_seg = (vert ? j : i);
 		seg = (pos_dir ? (sb_seg + 1) : sb_seg);
@@ -1701,7 +1700,7 @@ void load_sblock_pattern_lookup(INP int i, INP int j, INP int nodes_per_chan,
 						assert(
 								num_ending_wires[side_cw] == num_wire_muxes[to_side]);
 						sblock_pattern[i][j][side_cw][to_side][itrack] =
-								get_simple_switch_block_track(side_cw, to_side,
+								get_simple_switch_block_track((enum e_side)side_cw, (enum e_side)to_side,
 										incoming_wire_label[side_cw][itrack],
 										switch_block_type,
 										num_wire_muxes[to_side]);
@@ -1737,7 +1736,7 @@ void load_sblock_pattern_lookup(INP int i, INP int j, INP int nodes_per_chan,
 					assert(
 							incoming_wire_label[side_ccw] [itrack] < num_wire_muxes[to_side]);
 					sblock_pattern[i][j][side_ccw][to_side][itrack] =
-							get_simple_switch_block_track(side_ccw, to_side,
+							get_simple_switch_block_track((enum e_side)side_ccw, (enum e_side)to_side,
 									incoming_wire_label[side_ccw][itrack],
 									switch_block_type, num_wire_muxes[to_side]);
 				} else {
@@ -1858,7 +1857,7 @@ label_wire_muxes_for_balance(INP int chan_num, INP int seg_num,
 		x = chan_num;
 		y = seg_num;
 	} else {
-		printf("Error: Bad channel type (%d).\n", chan_type);
+		vpr_printf(TIO_MESSAGE_ERROR, "Bad channel type (%d).\n", chan_type);
 		exit(1);
 	}
 
@@ -1880,9 +1879,8 @@ label_wire_muxes_for_balance(INP int chan_num, INP int seg_num,
 		}
 	}
 	if (max_opin_mux_size > (min_opin_mux_size + 1)) {
-		printf(ERRTAG "opin muxes are not balanced!\n");
-		printf(
-				"max_opin_mux_size %d min_opin_mux_size %d chan_type %d x %d y %d\n",
+		vpr_printf(TIO_MESSAGE_ERROR, "opin muxes are not balanced!\n");
+		vpr_printf(TIO_MESSAGE_ERROR, "max_opin_mux_size %d min_opin_mux_size %d chan_type %d x %d y %d\n",
 				max_opin_mux_size, min_opin_mux_size, chan_type, x, y);
 		exit(1);
 	}
@@ -1949,9 +1947,9 @@ label_wire_muxes(INP int chan_num, INP int seg_num,
 			}
 
 			/* Determine if we are a wire startpoint */
-			is_endpoint = (seg_num == start);
+			is_endpoint = (boolean)(seg_num == start);
 			if (DEC_DIRECTION == seg_details[itrack].direction) {
-				is_endpoint = (seg_num == end);
+				is_endpoint = (boolean)(seg_num == end);
 			}
 
 			/* Count the labels and load if LOAD pass */
@@ -1998,9 +1996,9 @@ label_incoming_wires(INP int chan_num, INP int seg_num, INP int sb_seg,
 						max_len);
 
 				/* Determine if we are a wire endpoint */
-				is_endpoint = (seg_num == end);
+				is_endpoint = (boolean)(seg_num == end);
 				if (DEC_DIRECTION == seg_details[itrack].direction) {
-					is_endpoint = (seg_num == start);
+					is_endpoint = (boolean)(seg_num == start);
 				}
 
 				/* Determine if we have a sbox on the wire */
@@ -2047,6 +2045,6 @@ static int find_label_of_track(int *wire_mux_on_track, int num_wire_muxes,
 		}
 	}
 
-	printf("Error: Expected mux not found.\n");
+	vpr_printf(TIO_MESSAGE_ERROR, "Expected mux not found.\n");
 	exit(1);
 }

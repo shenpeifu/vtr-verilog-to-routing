@@ -37,7 +37,7 @@ my @parse_data;
 my $file_to_parse;
 foreach my $line (@parse_lines) {
 	chomp($line);
-	
+
 	# Ignore comments
 	if ( $line =~ /^\s*#.*$/ or $line =~ /^\s*$/ ) { next; }
 	
@@ -45,16 +45,27 @@ foreach my $line (@parse_lines) {
 	push(@parse_data, [@name_file_regexp]);	
 }
 
+my $count = 0;
 for my $parse_entry (@parse_data) {
+	$count++;
+	if($count < scalar(@parse_data))
+	{
 	print @$parse_entry[0] . "\t";
+	}
+	else
+	{
+		print @$parse_entry[0];
+	}
 }
 print "\n";
 
+$count = 0;
 for my $parse_entry (@parse_data) {
 	my $file_to_parse = "@$parse_entry[1]";
 	my $file_to_parse_path =
 	  File::Spec->catdir( ${parse_path}, ${file_to_parse} );
 
+	$count++;	
 	if ( $file_to_parse =~ /\*/ ) {
 		my @files = glob($file_to_parse_path);
 		if ( @files == 1 ) {
@@ -66,8 +77,10 @@ for my $parse_entry (@parse_data) {
 		}
 	}
 	if ( not -r "$file_to_parse_path" ) {
-		die "Cannot open file to parse ($file_to_parse_path)";
+		print "-1";
+		print "\t";
 	}
+	else {
 	undef $/;
 	open( DATA_FILE, "<$file_to_parse_path" );
 	my $parse_file_lines = <DATA_FILE>;
@@ -79,8 +92,12 @@ for my $parse_entry (@parse_data) {
 		print $1;
 	}
 	else {
+			print "-1";
 	}
+		if($count < scalar(@parse_data)) {
 	print "\t";
+		}
+	}
 }
 print "\n";
 

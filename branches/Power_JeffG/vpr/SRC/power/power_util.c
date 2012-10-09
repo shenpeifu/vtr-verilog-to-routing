@@ -31,6 +31,11 @@
 /************************* FUNCTION DECLARATIONS*********************/
 static void log_msg(t_log * log_ptr, char * msg);
 static void int_2_binary_str(char * binary_str, int value, int str_length);
+static void init_mux_arch_default(t_mux_arch * mux_arch, int levels,
+		int num_inputs);
+static void alloc_and_load_mux_graph_recursive(t_mux_node * node,
+		int num_primary_inputs, int level, int starting_pin_idx);
+static t_mux_node * alloc_and_load_mux_graph(int num_inputs, int levels);
 
 /************************* FUNCTION DEFINITIONS *********************/
 void power_zero_usage(t_power_usage * power_usage) {
@@ -134,7 +139,7 @@ static void log_msg(t_log * log_ptr, char * msg) {
 
 	if (log_ptr->num_messages <= MAX_LOGS) {
 		log_ptr->num_messages++;
-		log_ptr->messages = my_realloc(log_ptr->messages,
+		log_ptr->messages = (char**) my_realloc(log_ptr->messages,
 				log_ptr->num_messages * sizeof(char*));
 	} else {
 		/* Can't add any more messages */
@@ -143,12 +148,12 @@ static void log_msg(t_log * log_ptr, char * msg) {
 
 	if (log_ptr->num_messages == (MAX_LOGS + 1)) {
 		const char * full_msg = "\n***LOG IS FULL***\n";
-		log_ptr->messages[log_ptr->num_messages - 1] = my_calloc(
+		log_ptr->messages[log_ptr->num_messages - 1] = (char*) my_calloc(
 				strlen(full_msg) + 1, sizeof(char));
 		strncpy(log_ptr->messages[log_ptr->num_messages - 1], full_msg,
 				strlen(full_msg));
 	} else {
-		log_ptr->messages[log_ptr->num_messages - 1] = my_calloc(
+		log_ptr->messages[log_ptr->num_messages - 1] = (char*) my_calloc(
 				strlen(msg) + 1, sizeof(char));
 		strncpy(log_ptr->messages[log_ptr->num_messages - 1], msg, strlen(msg));
 	}
@@ -167,7 +172,7 @@ int calc_buffer_num_stages(float final_stage_size, float desired_stage_effort) {
 	} else if (final_stage_size < desired_stage_effort)
 		N = 2;
 	else {
-		N = log(final_stage_size) / log(desired_stage_effort) + 1;
+		N = (int) (log(final_stage_size) / log(desired_stage_effort) + 1);
 
 		/* Based on the above, we could use N or (N+1) buffer stages
 		 * N stages will require gain > 4
@@ -252,10 +257,10 @@ static void int_2_binary_str(char * binary_str, int value, int str_length) {
 }
 
 /**
-* This functions returns the LUT SRAM values from the given logic terms
-*  - LUT_size: The number of LUT inputs
-*  - truth_table: The logic terms saved from the BLIF file, in a linked list format
-*/
+ * This functions returns the LUT SRAM values from the given logic terms
+ *  - LUT_size: The number of LUT inputs
+ *  - truth_table: The logic terms saved from the BLIF file, in a linked list format
+ */
 char * alloc_SRAM_values_from_truth_table(int LUT_size,
 		t_linked_vptr * truth_table) {
 	char * SRAM_values;
@@ -274,7 +279,7 @@ char * alloc_SRAM_values_from_truth_table(int LUT_size,
 	boolean used = TRUE;
 
 	num_SRAM_bits = 1 << LUT_size;
-	SRAM_values = my_calloc(num_SRAM_bits + 1, sizeof(char));
+	SRAM_values = (char*) my_calloc(num_SRAM_bits + 1, sizeof(char));
 	SRAM_values[num_SRAM_bits] = '\0';
 
 	if (!truth_table) {
@@ -285,10 +290,10 @@ char * alloc_SRAM_values_from_truth_table(int LUT_size,
 		return SRAM_values;
 	}
 
-	binary_str = my_calloc(LUT_size + 1, sizeof(char));
-	buffer = my_calloc(LUT_size + 10, sizeof(char));
+	binary_str = (char*) my_calloc(LUT_size + 1, sizeof(char));
+	buffer = (char*) my_calloc(LUT_size + 10, sizeof(char));
 
-	strcpy(buffer, truth_table->data_vptr);
+	strcpy(buffer, (char*) truth_table->data_vptr);
 
 	/* Check if this is an unconnected node - hopefully these will be
 	 * ignored by VPR in the future
@@ -325,14 +330,14 @@ char * alloc_SRAM_values_from_truth_table(int LUT_size,
 	for (list_ptr = truth_table; list_ptr != NULL ; list_ptr = list_ptr->next) {
 		num_terms++;
 	}
-	terms = my_calloc(num_terms, sizeof(char *));
+	terms = (char**) my_calloc(num_terms, sizeof(char *));
 
 	/* Extract truth table terms */
 	for (list_ptr = truth_table, term_idx = 0; list_ptr != NULL ; list_ptr =
 			list_ptr->next, term_idx++) {
-		terms[term_idx] = my_calloc(LUT_size + 1, sizeof(char));
+		terms[term_idx] = (char*) my_calloc(LUT_size + 1, sizeof(char));
 
-		strcpy(buffer, list_ptr->data_vptr);
+		strcpy(buffer, (char*) list_ptr->data_vptr);
 		str_loc = strtok(buffer, " \t");
 		strcpy(terms[term_idx], str_loc);
 
@@ -472,3 +477,83 @@ void power_print_title(FILE * fp, char * title) {
 		fprintf(fp, "-");
 	fprintf(fp, "\n");
 }
+
+t_mux_arch * power_get_mux_arch(int num_mux_inputs) {
+	int i;
+
+	if (num_mux_inputs > g_power_commonly_used->mux_arch_max_size) {
+		g_power_commonly_used->mux_arch = (t_mux_arch*) my_realloc(
+				g_power_commonly_used->mux_arch,
+				(num_mux_inputs + 1) * sizeof(t_mux_arch));
+
+		for (i = g_power_commonly_used->mux_arch_max_size + 1;
+				i <= num_mux_inputs; i++) {
+			init_mux_arch_default(&g_power_commonly_used->mux_arch[i], 2, i);
+		}
+		g_power_commonly_used->mux_arch_max_size = num_mux_inputs;
+	}
+	return &g_power_commonly_used->mux_arch[num_mux_inputs];
+}
+
+/**
+ * Generates a default multiplexer architecture of given size and number of levels
+ */
+static void init_mux_arch_default(t_mux_arch * mux_arch, int levels,
+		int num_inputs) {
+	int level_idx;
+
+	mux_arch->levels = levels;
+	mux_arch->num_inputs = num_inputs;
+
+	mux_arch_fix_levels(mux_arch);
+
+	/*mux_arch->encoding_types = my_calloc(mux_arch->levels,
+	 sizeof(enum e_encoding_type));*/
+	mux_arch->transistor_sizes = (float *) my_calloc(mux_arch->levels,
+			sizeof(float));
+
+	for (level_idx = 0; level_idx < mux_arch->levels; level_idx++) {
+		//mux_arch->encoding_types[level_idx] = ENCODING_DECODER;
+		mux_arch->transistor_sizes[level_idx] = 1.0;
+	}
+	mux_arch->mux_graph_head = alloc_and_load_mux_graph(num_inputs,
+			mux_arch->levels);
+}
+
+/**
+ * Allocates a builds a multiplexer graph with given # inputs and levels
+ */
+static t_mux_node * alloc_and_load_mux_graph(int num_inputs, int levels) {
+	t_mux_node * node;
+
+	node = (t_mux_node*) my_malloc(sizeof(t_mux_node));
+	alloc_and_load_mux_graph_recursive(node, num_inputs, levels - 1, 0);
+
+	return node;
+}
+
+static void alloc_and_load_mux_graph_recursive(t_mux_node * node,
+		int num_primary_inputs, int level, int starting_pin_idx) {
+	int child_idx;
+	int pin_idx = starting_pin_idx;
+
+	node->num_inputs = (int) (pow(num_primary_inputs, 1 / ((float) level + 1))
+			+ 0.5);
+	node->level = level;
+	node->starting_pin_idx = starting_pin_idx;
+
+	if (level != 0) {
+		node->children = (t_mux_node*) my_calloc(node->num_inputs,
+				sizeof(t_mux_node));
+		for (child_idx = 0; child_idx < node->num_inputs; child_idx++) {
+			int num_child_pi = num_primary_inputs / node->num_inputs;
+			if (child_idx < (num_primary_inputs % node->num_inputs)) {
+				num_child_pi++;
+			}
+			alloc_and_load_mux_graph_recursive(&node->children[child_idx],
+					num_child_pi, level - 1, pin_idx);
+			pin_idx += num_child_pi;
+		}
+	}
+}
+

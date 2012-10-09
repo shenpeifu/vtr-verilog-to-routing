@@ -45,8 +45,8 @@ alloc_and_load_switch_block_conn(INP int nodes_per_chan,
 	switch_block_conn = (struct s_ivec ***) alloc_matrix3(0, 3, 0, 3, 0,
 			(nodes_per_chan - 1), sizeof(struct s_ivec));
 
-	for (from_side = 0; from_side < 4; from_side++) {
-		for (to_side = 0; to_side < 4; to_side++) {
+	for (from_side = (enum e_side)0; from_side < 4; from_side = (enum e_side)(from_side + 1)) {
+		for (to_side = (enum e_side)0; to_side < 4; to_side = (enum e_side)(to_side + 1)) {
 			for (from_track = 0; from_track < nodes_per_chan; from_track++) {
 				if (from_side != to_side) {
 					switch_block_conn[from_side][to_side][from_track].nelem = 1;
@@ -66,7 +66,7 @@ alloc_and_load_switch_block_conn(INP int nodes_per_chan,
 		}
 	}
 
-	if (GetEchoOption()) {
+	if (getEchoEnabled()) {
 		int i, j, k, l;
 		FILE *out;
 
@@ -218,9 +218,8 @@ int get_simple_switch_block_track(INP enum e_side from_side,
 	/* UDSD Modification by WMF End */
 
 	if (to_track == SBOX_ERROR) {
-		printf(
-				"Error in get_simple_switch_block_track.  Unexpected connection.\n"
-						"from_side: %d  to_side: %d  switch_block_type: %d.\n",
+		vpr_printf(TIO_MESSAGE_ERROR, "in get_simple_switch_block_track.\n");
+		vpr_printf(TIO_MESSAGE_ERROR, "\tUnexpected connection from_side: %d to_side: %d switch_block_type: %d.\n",
 				from_side, to_side, switch_block_type);
 		exit(1);
 	}

@@ -22,7 +22,7 @@
 
 /**************** Subroutine definitions ************************************/
 
-static void print_string(char *str_ptr, int *column, FILE * fpout) {
+static void print_string(const char *str_ptr, int *column, FILE * fpout) {
 
 	/* Prints string without making any lines longer than LINELENGTH.  Column  *
 	 * points to the column in which the next character will go (both used and *
@@ -32,8 +32,7 @@ static void print_string(char *str_ptr, int *column, FILE * fpout) {
 
 	len = strlen(str_ptr);
 	if (len + 3 > LINELENGTH) {
-		printf("Error in print_string: String %s is too long for desired\n"
-				"maximum line length.\n", str_ptr);
+		vpr_printf(TIO_MESSAGE_ERROR, "in print_string: String %s is too long for desired maximum line length.\n", str_ptr);
 		exit(1);
 	}
 
@@ -55,7 +54,7 @@ static void print_net_name(int inet, int *column, FILE * fpout) {
 	 * used and updated by this routine).  fpout is the output file     *
 	 * pointer.                                                         */
 
-	char *str_ptr;
+	const char *str_ptr;
 
 	if (inet == OPEN)
 		str_ptr = "open";
@@ -243,8 +242,7 @@ static int find_fanin_rr_node(t_pb *cur_pb, enum PORTS type, int rr_node_index) 
 	}
 
 	/* TODO: Once I find a way to output routing in empty blocks then code should never reach here, for now, return OPEN */
-	printf(
-			"Use hack in blif dumper (do properly later): connecting net %s #%d for pb %s type %s\n",
+	vpr_printf(TIO_MESSAGE_INFO, "Use hack in blif dumper (do properly later): connecting net %s #%d for pb %s type %s\n",
 			vpack_net[net_num].name, net_num, cur_pb->name,
 			cur_pb->pb_graph_node->pb_type->name);
 
@@ -467,18 +465,13 @@ static void print_clusters(t_block *clb, int num_clusters, FILE * fpout) {
 
 	for (icluster = 0; icluster < num_clusters; icluster++) {
 		rr_node = clb[icluster].pb->rr_graph;
-#if 0
-		if (GetEchoOption()) {
-			dump_rr_graph("cluster_rr_graph.echo");
-		}
-#endif
 		if (clb[icluster].type != IO_TYPE)
 			print_pb(fpout, clb[icluster].pb, icluster);
 	}
 }
 
-void output_blif(t_block *clb, int num_clusters, boolean global_clocks,
-		boolean * is_clock, char *out_fname, boolean skip_clustering) {
+void output_blif (t_block *clb, int num_clusters, boolean global_clocks,
+		boolean * is_clock, const char *out_fname, boolean skip_clustering) {
 
 	/* 
 	 * This routine dumps out the output netlist in a format suitable for  *

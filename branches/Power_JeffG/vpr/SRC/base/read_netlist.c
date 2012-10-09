@@ -23,25 +23,24 @@
 #include "rr_graph.h"
 
 static void processPorts(INOUTP ezxml_t Parent, INOUTP t_pb* pb,
-		INOUTP t_rr_node *rr_graph, INOUTP int *ncount,
-		INOUTP struct s_hash **nhash);
+		INOUTP t_rr_node *rr_graph, INOUTP t_pb** rr_node_to_pb_mapping, INP struct s_hash **vpack_net_hash);
 
 static void processPb(INOUTP ezxml_t Parent, INOUTP t_pb* pb,
-		INOUTP t_rr_node *rr_graph, INOUTP int *ncount,
-		INOUTP struct s_hash **nhash, INOUTP int *num_primitives);
+		INOUTP t_rr_node *rr_graph, INOUTP t_pb **rr_node_to_pb_mapping, INOUTP int *num_primitives, 
+		INP struct s_hash **vpack_net_hash, INP struct s_hash **logical_block_hash, INP int cb_index);
+
 static void processComplexBlock(INOUTP ezxml_t Parent, INOUTP t_block *cb,
-		INP int index, INOUTP int *ncount, INOUTP struct s_hash **nhash,
-		INOUTP int *num_primitives, INP const t_arch *arch);
+		INP int index, INOUTP int *num_primitives, INP const t_arch *arch, INP struct s_hash **vpack_net_hash, INP struct s_hash **logical_block_hash);
 static struct s_net *alloc_and_init_netlist_from_hash(INP int ncount,
 		INOUTP struct s_hash **nhash);
 
 static int add_net_to_hash(INOUTP struct s_hash **nhash, INP char *net_name,
 		INOUTP int *ncount);
 
-static void load_external_nets_and_cb(INP int num_blocks,
+static void load_external_nets_and_cb(INP int L_num_blocks,
 		INP struct s_block block_list[], INP int ncount,
 		INP struct s_net nlist[], OUTP int *ext_ncount,
-		OUTP struct s_net **ext_nets, INP char **circuit_globals);
+		OUTP struct s_net **ext_nets, INP char **circuit_clocks);
 
 static void load_internal_cb_nets(INOUTP t_pb *top_level,
 		INP t_pb_graph_node *pb_graph_node, INOUTP t_rr_node *rr_graph,
@@ -55,15 +54,13 @@ static void load_internal_cb_rr_graph_net_nums(INP t_rr_node * cur_rr_node,
 		INP t_rr_node * rr_graph, INOUTP struct s_net * nets,
 		INOUTP int * curr_net, INOUTP int * curr_sink);
 
-static void mark_constant_generators(INP int num_blocks,
+static void mark_constant_generators(INP int L_num_blocks,
 		INP struct s_block block_list[], INP int ncount,
 		INOUTP struct s_net nlist[]);
 
 static void mark_constant_generators_rec(INP t_pb *pb, INP t_rr_node *rr_graph,
 		INOUTP struct s_net nlist[]);
-
-static void restore_logical_block_from_saved_block(INP int iblk, INP t_pb *pb);
-static void resync_logical_block_nets_with_new_vpack_nets(void);
+static void sync_logical_block_net_activity_with_new_vpack_nets(void);
 
 /**
  * Initializes the block_list with info from a netlist 
@@ -77,39 +74,38 @@ void read_netlist(INP const char *net_file, INP const t_arch *arch,
 		OUTP int *L_num_blocks, OUTP struct s_block *block_list[],
 		OUTP int *L_num_nets, OUTP struct s_net *net_list[]) {
 	ezxml_t Cur, Prev, Top;
-	int i, j;
+	int i;
 	const char *Prop;
 	int bcount;
 	struct s_block *blist;
-	int ncount, ext_ncount;
-	struct s_net *nlist, *ext_nlist;
-	struct s_hash **nhash;
-	char **circuit_inputs, **circuit_outputs, **circuit_globals;
+	int ext_ncount;
+	struct s_net *ext_nlist;
+	struct s_hash **vpack_net_hash, **logical_block_hash, *temp_hash;
+	char **circuit_inputs, **circuit_outputs, **circuit_clocks;
 	int Count, Len;
 
 	int num_primitives = 0;
 
 	/* Parse the file */
-	printf("Begin parsing packed FPGA netlist file\n");
+	vpr_printf(TIO_MESSAGE_INFO, "Begin parsing packed FPGA netlist file.\n");
 	Top = ezxml_parse_file(net_file);
 	if (NULL == Top) {
-		printf(ERRTAG "Unable to load netlist file '%s'.\n", net_file);
+		vpr_printf(TIO_MESSAGE_ERROR, "Unable to load netlist file '%s'.\n", net_file);
 		exit(1);
 	}
-	printf("Finished parsing packed FPGA netlist file\n");
+	vpr_printf(TIO_MESSAGE_INFO, "Finished parsing packed FPGA netlist file.\n");
 
 	/* Root node should be block */
 	CheckElement(Top, "block");
 
 	/* Check top-level netlist attributes */
 	Prop = FindProperty(Top, "name", TRUE);
-	printf("Netlist generated from file %s\n", Prop);
+	vpr_printf(TIO_MESSAGE_INFO, "Netlist generated from file '%s'.\n", Prop);
 	ezxml_set_attr(Top, "name", NULL);
 
 	Prop = FindProperty(Top, "instance", TRUE);
 	if (strcmp(Prop, "FPGA_packed_netlist[0]") != 0) {
-		printf(
-				ERRTAG "[Line %d] Expected instance to be \"FPGA_packed_netlist[0]\", found %s",
+		vpr_printf(TIO_MESSAGE_ERROR, "[Line %d] Expected instance to be \"FPGA_packed_netlist[0]\", found %s.",
 				Top->line, Prop);
 		exit(1);
 	}
@@ -123,32 +119,42 @@ void read_netlist(INP const char *net_file, INP const t_arch *arch,
 	circuit_outputs = GetNodeTokens(Cur);
 	FreeNode(Cur);
 
-	Cur = FindElement(Top, "globals", TRUE);
+	Cur = FindElement(Top, "clocks", TRUE);
 	CountTokensInString(Cur->txt, &Count, &Len);
 	if (Count > 0) {
-		circuit_globals = GetNodeTokens(Cur);
+		circuit_clocks = GetNodeTokens(Cur);
 	} else {
-		circuit_globals = NULL;
+		circuit_clocks = NULL;
 	}
 	FreeNode(Cur);
 
 	/* Parse all CLB blocks and all nets*/
 	bcount = CountChildren(Top, "block", 1);
-	blist = my_calloc(bcount, sizeof(t_block));
-	nhash = alloc_hash_table();
-	ncount = 0;
+	blist = (struct s_block *) my_calloc(bcount, sizeof(t_block));
 
-	logical_block = my_calloc(num_saved_logical_blocks,
-			sizeof(t_logical_block));
-	num_logical_blocks = num_saved_logical_blocks;
+	/* create quick hash look up for vpack_net and logical_block 
+		Also reset logical block data structure for pb
+	*/
+	vpack_net_hash = alloc_hash_table();
+	logical_block_hash = alloc_hash_table();
+	for (i = 0; i < num_logical_nets; i++) {
+		temp_hash = insert_in_hash_table(vpack_net_hash, vpack_net[i].name, i);
+		assert(temp_hash->count == 1);
+	}
+	for (i = 0; i < num_logical_blocks; i++) {
+		temp_hash = insert_in_hash_table(logical_block_hash, logical_block[i].name, i);
+		logical_block[i].pb = NULL;
+		assert(temp_hash->count == 1);
+	}
+	
+	/* Prcoess netlist */
 
 	Cur = Top->child;
 	i = 0;
 	while (Cur) {
 		if (0 == strcmp(Cur->name, "block")) {
 			CheckElement(Cur, "block");
-			processComplexBlock(Cur, blist, i, &ncount, nhash, &num_primitives,
-					arch);
+			processComplexBlock(Cur, blist, i, &num_primitives,	arch, vpack_net_hash, logical_block_hash);
 			Prev = Cur;
 			Cur = Cur->next;
 			FreeNode(Prev);
@@ -158,61 +164,57 @@ void read_netlist(INP const char *net_file, INP const t_arch *arch,
 		}
 	}
 	assert(i == bcount);
-	if (saved_logical_blocks != NULL) {
-		assert(num_primitives == num_saved_logical_blocks);
-	}
+	assert(num_primitives == num_logical_blocks);
 
-	nlist = alloc_and_init_netlist_from_hash(ncount, nhash);
-	mark_constant_generators(bcount, blist, ncount, nlist);
-	load_external_nets_and_cb(bcount, blist, ncount, nlist, &ext_ncount,
-			&ext_nlist, circuit_globals);
+	/* Error check */
+	for (i = 0; i < num_logical_blocks; i++) {
+		if (logical_block[i].pb == NULL) {
+			vpr_printf(TIO_MESSAGE_ERROR, ".blif file and .net file do not match, .net file missing atom %s.\n", 
+				logical_block[i].name);
+			exit(1);
+		}
+	}
+	/* TODO: Add additional check to make sure net connections match */
+
+	
+	mark_constant_generators(bcount, blist, num_logical_nets, vpack_net);
+	load_external_nets_and_cb(bcount, blist, num_logical_nets, vpack_net, &ext_ncount,
+			&ext_nlist, circuit_clocks);
 
 	/* TODO: create this function later
-	 check_top_IO_matches_IO_blocks(circuit_inputs, circuit_outputs, circuit_globals, blist, bcount);
+	 check_top_IO_matches_IO_blocks(circuit_inputs, circuit_outputs, circuit_clocks, blist, bcount);
 	 */
 
-	free_hash_table(nhash);
 	FreeTokens(&circuit_inputs);
 	FreeTokens(&circuit_outputs);
-	if (circuit_globals)
-		FreeTokens(&circuit_globals);
+	if (circuit_clocks)
+		FreeTokens(&circuit_clocks);
 	FreeNode(Top);
 
 	/* load mapping between external nets and all nets */
 	/* jluu TODO: Should use local variables here then assign to globals later, clean up later */
-	vpack_net = nlist;
-	num_logical_nets = ncount;
-	clb_to_vpack_net_mapping = my_malloc(ext_ncount * sizeof(int));
-	vpack_to_clb_net_mapping = my_malloc(ncount * sizeof(int));
-	for (i = 0; i < ncount; i++) {
+	clb_to_vpack_net_mapping = (int *) my_malloc(ext_ncount * sizeof(int));
+	vpack_to_clb_net_mapping = (int *) my_malloc(num_logical_nets * sizeof(int));
+	for (i = 0; i < num_logical_nets; i++) {
 		vpack_to_clb_net_mapping[i] = OPEN;
 	}
 
 	for (i = 0; i < ext_ncount; i++) {
-		for (j = 0; j < ncount; j++) {
-			if (strcmp(ext_nlist[i].name, nlist[j].name) == 0) {
-				clb_to_vpack_net_mapping[i] = j;
-				vpack_to_clb_net_mapping[j] = i;
-				break;
-			}
-		}
-		assert(j != ncount);
+		temp_hash = get_hash_entry(vpack_net_hash, ext_nlist[i].name);
+		assert(temp_hash != NULL);
+		clb_to_vpack_net_mapping[i] = temp_hash->index;
+		vpack_to_clb_net_mapping[temp_hash->index] = i;
 	}
 
-	resync_logical_block_nets_with_new_vpack_nets();
-
-	if (saved_logical_blocks != NULL) {
-		free(saved_logical_blocks);
-		saved_logical_blocks = NULL;
-		free(saved_logical_nets);
-		saved_logical_nets = NULL;
-	}
-
+	sync_logical_block_net_activity_with_new_vpack_nets();
 	/* Return blocks and nets */
 	*L_num_blocks = bcount;
 	*block_list = blist;
 	*L_num_nets = ext_ncount;
 	*net_list = ext_nlist;
+
+	free_hash_table(logical_block_hash);
+	free_hash_table(vpack_net_hash);
 }
 
 /**
@@ -220,12 +222,12 @@ void read_netlist(INP const char *net_file, INP const t_arch *arch,
  * Parent - XML tag for this CLB
  * clb - Array of CLBs in the netlist
  * index - index of the CLB to allocate and load information into
- * ncount - number of nets recorded thus far in all CLBs
- * nhash - hashtable of all nets recorded thus far in all CLBs
+ * vpack_net_hash - hashtable of all nets in blif netlist
+ * logical_block_hash - hashtable of all atoms in blif netlist
  */
 static void processComplexBlock(INOUTP ezxml_t Parent, INOUTP t_block *cb,
-		INP int index, INOUTP int *ncount, INOUTP struct s_hash **nhash,
-		INOUTP int *num_primitives, INP const t_arch *arch) {
+		INP int index, INOUTP int *num_primitives, INP const t_arch *arch, INP struct s_hash **vpack_net_hash, INP struct s_hash **logical_block_hash)
+ {
 
 	const char *Prop;
 	boolean found;
@@ -235,7 +237,7 @@ static void processComplexBlock(INOUTP ezxml_t Parent, INOUTP t_block *cb,
 	const t_pb_type * pb_type = NULL;
 
 	/* parse cb attributes */
-	cb[index].pb = my_calloc(1, sizeof(t_pb));
+	cb[index].pb = (t_pb*)my_calloc(1, sizeof(t_pb));
 
 	Prop = FindProperty(Parent, "name", TRUE);
 	cb[index].name = my_strdup(Prop);
@@ -249,8 +251,7 @@ static void processComplexBlock(INOUTP ezxml_t Parent, INOUTP t_block *cb,
 			|| tokens[1].type != TOKEN_OPEN_SQUARE_BRACKET
 			|| tokens[2].type != TOKEN_INT
 			|| tokens[3].type != TOKEN_CLOSE_SQUARE_BRACKET) {
-		printf(
-				ERRTAG "[Line %d] Unknown syntax for instance %s in %s.  Expected pb_type[instance_number]\n",
+		vpr_printf(TIO_MESSAGE_ERROR, "[Line %d] Unknown syntax for instance %s in %s. Expected pb_type[instance_number].\n",
 				Parent->line, Prop, Parent->name);
 		exit(1);
 	}
@@ -265,7 +266,7 @@ static void processComplexBlock(INOUTP ezxml_t Parent, INOUTP t_block *cb,
 		}
 	}
 	if (!found) {
-		printf(ERRTAG "[Line %d] Unknown cb type %s for cb %s #%d\n",
+		vpr_printf(TIO_MESSAGE_ERROR, "[Line %d] Unknown cb type %s for cb %s #%d.\n",
 				Parent->line, Prop, cb[index].name, index);
 		exit(1);
 	}
@@ -273,10 +274,12 @@ static void processComplexBlock(INOUTP ezxml_t Parent, INOUTP t_block *cb,
 	/* Parse all pbs and CB internal nets*/
 	cb[index].pb->logical_block = OPEN;
 	cb[index].pb->pb_graph_node = cb[index].type->pb_graph_head;
-	rr_node = my_calloc(cb[index].type->pb_graph_head->total_pb_pins,
+	rr_node = (t_rr_node*)my_calloc(cb[index].type->pb_graph_head->total_pb_pins + cb[index].type->pb_type->num_input_pins
+			+ cb[index].type->pb_type->num_output_pins + cb[index].type->pb_type->num_clock_pins,
 			sizeof(t_rr_node));
 	alloc_and_load_rr_graph_for_pb_graph_node(cb[index].pb->pb_graph_node, arch,
 			0);
+	cb[index].pb->rr_node_to_pb_mapping = (t_pb **)my_calloc(cb[index].type->pb_graph_head->total_pb_pins, sizeof(t_pb *));
 	cb[index].pb->rr_graph = rr_node;
 	num_rr_nodes = cb[index].pb->pb_graph_node->total_pb_pins;
 
@@ -291,15 +294,14 @@ static void processComplexBlock(INOUTP ezxml_t Parent, INOUTP t_block *cb,
 		}
 	}
 	if (!found) {
-		printf(ERRTAG "[Line %d] Unknown mode %s for cb %s #%d\n", Parent->line,
-				Prop, cb[index].name, index);
+		vpr_printf(TIO_MESSAGE_ERROR, "[Line %d] Unknown mode %s for cb %s #%d.\n", 
+				Parent->line, Prop, cb[index].name, index);
 		exit(1);
 	}
 
-	processPb(Parent, cb[index].pb, cb[index].pb->rr_graph, ncount, nhash,
-			num_primitives);
+	processPb(Parent, cb[index].pb, cb[index].pb->rr_graph, cb[index].pb->rr_node_to_pb_mapping, num_primitives, vpack_net_hash, logical_block_hash, index);
 
-	cb[index].nets = my_malloc(cb[index].type->num_pins * sizeof(int));
+	cb[index].nets = (int *)my_malloc(cb[index].type->num_pins * sizeof(int));
 	for (i = 0; i < cb[index].type->num_pins; i++) {
 		cb[index].nets[i] = OPEN;
 	}
@@ -312,13 +314,13 @@ static void processComplexBlock(INOUTP ezxml_t Parent, INOUTP t_block *cb,
 			cb[index].pb->rr_graph, &i);
 	freeTokens(tokens, num_tokens);
 #if 0
-	/* TODO: may not need local nets anymore, reminder to remove if not used, keeping this around just in case we need to use it in the future */
-	for(i = 0; i < cb[index].pb->num_local_nets; i++) {
-		printf("local net %s: ", cb[index].pb->name);
-		for(j = 0; j <= cb[index].pb->local_nets[i].num_sinks; j++) {
-			printf("%d ", cb[index].pb->local_nets[i].node_block[j]);
+	/* print local nets */
+	for (i = 0; i < cb[index].pb->num_local_nets; i++) {
+		vpr_printf(TIO_MESSAGE_INFO, "local net %s: ", cb[index].pb->name);
+		for (j = 0; j <= cb[index].pb->local_nets[i].num_sinks; j++) {
+			vpr_printf(TIO_MESSAGE_INFO, "%d ", cb[index].pb->local_nets[i].node_block[j]);
 		}
-		printf("\n");
+		vpr_printf(TIO_MESSAGE_INFO, "\n");
 	}
 #endif
 }
@@ -327,12 +329,12 @@ static void processComplexBlock(INOUTP ezxml_t Parent, INOUTP t_block *cb,
  * XML parser to populate pb info and to update internal nets of the parent CLB
  * Parent - XML tag for this pb_type
  * pb - physical block to use
- * ncount - number of all internal subblock nets recorded thus far in this CLB
- * nhash - hashtable of all internal subblock nets recorded thus far in this CLBs
+ * vpack_net_hash - hashtable of original blif net names and indices
+ * logical_block_hash - hashtable of original blif atom names and indices
  */
 static void processPb(INOUTP ezxml_t Parent, INOUTP t_pb* pb,
-		INOUTP t_rr_node *rr_graph, INOUTP int *ncount,
-		INOUTP struct s_hash **nhash, INOUTP int *num_primitives) {
+		INOUTP t_rr_node *rr_graph, INOUTP t_pb** rr_node_to_pb_mapping, INOUTP int *num_primitives, 
+		INP struct s_hash **vpack_net_hash, INP struct s_hash **logical_block_hash, INP int cb_index) {
 	ezxml_t Cur, Prev, lookahead;
 	const char *Prop;
 	const char *instance_type;
@@ -341,34 +343,51 @@ static void processPb(INOUTP ezxml_t Parent, INOUTP t_pb* pb,
 	const t_pb_type *pb_type;
 	t_token *tokens;
 	int num_tokens;
+	struct s_hash *temp_hash;
 
 	Cur = FindElement(Parent, "inputs", TRUE);
-	processPorts(Cur, pb, rr_graph, ncount, nhash);
+	processPorts(Cur, pb, rr_graph, rr_node_to_pb_mapping, vpack_net_hash);
 	FreeNode(Cur);
 	Cur = FindElement(Parent, "outputs", TRUE);
-	processPorts(Cur, pb, rr_graph, ncount, nhash);
+	processPorts(Cur, pb, rr_graph, rr_node_to_pb_mapping, vpack_net_hash);
 	FreeNode(Cur);
-	Cur = FindElement(Parent, "globals", TRUE);
-	processPorts(Cur, pb, rr_graph, ncount, nhash);
+	Cur = FindElement(Parent, "clocks", TRUE);
+	processPorts(Cur, pb, rr_graph, rr_node_to_pb_mapping, vpack_net_hash);
 	FreeNode(Cur);
 
 	pb_type = pb->pb_graph_node->pb_type;
 	if (pb_type->num_modes == 0) {
-		pb->logical_block = *num_primitives;
-		/* TODO: This info is not yet used.  Intention was to use later for error checking */
-		if (saved_logical_blocks != NULL) {
-			restore_logical_block_from_saved_block(*num_primitives, pb);
+		/* LUT specific optimizations */
+		if (strcmp(pb_type->blif_model, ".names") == 0) {
+			pb->lut_pin_remap = (int*)my_malloc(pb_type->num_input_pins * sizeof(int));
+			for (i = 0; i < pb_type->num_input_pins; i++) {
+				pb->lut_pin_remap[i] = OPEN;
+			}
+		} else {
+			pb->lut_pin_remap = NULL;
 		}
+		temp_hash = get_hash_entry(logical_block_hash, pb->name);
+		if (temp_hash == NULL) {
+			vpr_printf(TIO_MESSAGE_ERROR, ".net file and .blif file do not match, encountered unknown primitive %s in .net file.\n", pb->name);
+			exit(1);
+		}
+		pb->logical_block = temp_hash->index;
+		assert(logical_block[temp_hash->index].pb == NULL);
+		logical_block[temp_hash->index].pb = pb;
+		logical_block[temp_hash->index].clb_index = cb_index;
 		(*num_primitives)++;
 	} else {
 		/* process children of child if exists */
 
-		pb->child_pbs = my_calloc(pb_type->modes[pb->mode].num_pb_type_children,
+		pb->child_pbs = (t_pb **)my_calloc(pb_type->modes[pb->mode].num_pb_type_children,
 				sizeof(t_pb*));
 		for (i = 0; i < pb_type->modes[pb->mode].num_pb_type_children; i++) {
-			pb->child_pbs[i] = my_calloc(
+			pb->child_pbs[i] = (t_pb *)my_calloc(
 					pb_type->modes[pb->mode].pb_type_children[i].num_pb,
 					sizeof(t_pb));
+			for (j = 0; j < pb_type->modes[pb->mode].pb_type_children[i].num_pb; j++) {
+				pb->child_pbs[i][j].logical_block = OPEN;
+			}
 		}
 
 		/* Populate info for each physical block  */
@@ -384,8 +403,7 @@ static void processPb(INOUTP ezxml_t Parent, INOUTP t_pb* pb,
 						|| tokens[1].type != TOKEN_OPEN_SQUARE_BRACKET
 						|| tokens[2].type != TOKEN_INT
 						|| tokens[3].type != TOKEN_CLOSE_SQUARE_BRACKET) {
-					printf(
-							ERRTAG "[Line %d] Unknown syntax for instance %s in %s.  Expected pb_type[instance_number]\n",
+					vpr_printf(TIO_MESSAGE_ERROR, "[Line %d] Unknown syntax for instance %s in %s. Expected pb_type[instance_number].\n",
 							Cur->line, instance_type, Cur->name);
 					exit(1);
 				}
@@ -399,15 +417,13 @@ static void processPb(INOUTP ezxml_t Parent, INOUTP t_pb* pb,
 							tokens[0].data) == 0) {
 						if (my_atoi(tokens[2].data)
 								>= pb_type->modes[pb->mode].pb_type_children[i].num_pb) {
-							printf(
-									ERRTAG "[Line %d] Instance number exceeds # of pb available for instance %s in %s.\n",
+							vpr_printf(TIO_MESSAGE_ERROR, "[Line %d] Instance number exceeds # of pb available for instance %s in %s.\n",
 									Cur->line, instance_type, Cur->name);
 							exit(1);
 						}
 						pb_index = my_atoi(tokens[2].data);
 						if (pb->child_pbs[i][pb_index].pb_graph_node != NULL) {
-							printf(
-									ERRTAG "[Line %d] node is used by two different blocks %s and %s\n",
+							vpr_printf(TIO_MESSAGE_ERROR, "[Line %d] node is used by two different blocks %s and %s.\n",
 									Cur->line, instance_type,
 									pb->child_pbs[i][pb_index].name);
 							exit(1);
@@ -419,8 +435,8 @@ static void processPb(INOUTP ezxml_t Parent, INOUTP t_pb* pb,
 					}
 				}
 				if (!found) {
-					printf(ERRTAG "[Line %d] Unknown pb type %s\n", Cur->line,
-							instance_type);
+					vpr_printf(TIO_MESSAGE_ERROR, "[Line %d] Unknown pb type %s.\n", 
+							Cur->line, instance_type);
 					exit(1);
 				}
 
@@ -452,24 +468,21 @@ static void processPb(INOUTP ezxml_t Parent, INOUTP t_pb* pb,
 					if (!found
 							&& pb->child_pbs[i][pb_index].pb_graph_node->pb_type->num_modes
 									!= 0) {
-						printf(
-								ERRTAG "[Line %d] Unknown mode %s for cb %s #%d\n",
-								Cur->line, Prop,
-								pb->child_pbs[i][pb_index].name, pb_index);
+						vpr_printf(TIO_MESSAGE_ERROR, "[Line %d] Unknown mode %s for cb %s #%d.\n",
+								Cur->line, Prop, pb->child_pbs[i][pb_index].name, pb_index);
 						exit(1);
 					}
 					pb->child_pbs[i][pb_index].parent_pb = pb;
 					pb->child_pbs[i][pb_index].rr_graph = pb->rr_graph;
 
-					processPb(Cur, &pb->child_pbs[i][pb_index], rr_graph,
-							ncount, nhash, num_primitives);
+					processPb(Cur, &pb->child_pbs[i][pb_index], rr_graph, rr_node_to_pb_mapping, num_primitives, vpack_net_hash, logical_block_hash, cb_index);
 				} else {
 					/* physical block has no used primitives but it may have used routing */
 					pb->child_pbs[i][pb_index].name = NULL;
 					pb->child_pbs[i][pb_index].logical_block = OPEN;
 					lookahead = FindElement(Cur, "outputs", FALSE);
 					if (lookahead != NULL) {
-						lookahead = FindElement(lookahead, "port", TRUE);
+						lookahead = FindFirstElement(lookahead, "port", TRUE);
 						Prop = FindProperty(Cur, "mode", FALSE);
 						if (Prop) {
 							ezxml_set_attr(Cur, "mode", NULL);
@@ -490,16 +503,13 @@ static void processPb(INOUTP ezxml_t Parent, INOUTP t_pb* pb,
 						if (!found
 								&& pb->child_pbs[i][pb_index].pb_graph_node->pb_type->num_modes
 										!= 0) {
-							printf(
-									ERRTAG "[Line %d] Unknown mode %s for cb %s #%d\n",
-									Cur->line, Prop,
-									pb->child_pbs[i][pb_index].name, pb_index);
+							vpr_printf(TIO_MESSAGE_ERROR, "[Line %d] Unknown mode %s for cb %s #%d.\n",
+									Cur->line, Prop, pb->child_pbs[i][pb_index].name, pb_index);
 							exit(1);
 						}
 						pb->child_pbs[i][pb_index].parent_pb = pb;
 						pb->child_pbs[i][pb_index].rr_graph = pb->rr_graph;
-						processPb(Cur, &pb->child_pbs[i][pb_index], rr_graph,
-								ncount, nhash, num_primitives);
+						processPb(Cur, &pb->child_pbs[i][pb_index], rr_graph, rr_node_to_pb_mapping, num_primitives, vpack_net_hash, logical_block_hash, cb_index);
 					}
 				}
 				Prev = Cur;
@@ -527,7 +537,7 @@ static struct s_net *alloc_and_init_netlist_from_hash(INP int ncount,
 	struct s_hash *curr_net;
 	int i;
 
-	nlist = my_calloc(ncount, sizeof(struct s_net));
+	nlist = (struct s_net *)my_calloc(ncount, sizeof(struct s_net));
 
 	hash_iter = start_hash_table_iterator();
 	curr_net = get_next_hash(nhash, &hash_iter);
@@ -536,9 +546,9 @@ static struct s_net *alloc_and_init_netlist_from_hash(INP int ncount,
 		nlist[curr_net->index].name = my_strdup(curr_net->name);
 		nlist[curr_net->index].num_sinks = curr_net->count - 1;
 
-		nlist[curr_net->index].node_block = my_malloc(
+		nlist[curr_net->index].node_block = (int *)my_malloc(
 				curr_net->count * sizeof(int));
-		nlist[curr_net->index].node_block_pin = my_malloc(
+		nlist[curr_net->index].node_block_pin = (int *)my_malloc(
 				curr_net->count * sizeof(int));
 		nlist[curr_net->index].is_global = FALSE;
 		for (i = 0; i < curr_net->count; i++) {
@@ -571,7 +581,7 @@ static int add_net_to_hash(INOUTP struct s_hash **nhash, INP char *net_name,
 }
 
 static void processPorts(INOUTP ezxml_t Parent, INOUTP t_pb* pb,
-		t_rr_node *rr_graph, INOUTP int *ncount, INOUTP struct s_hash **nhash) {
+		t_rr_node *rr_graph, INOUTP t_pb** rr_node_to_pb_mapping, INP struct s_hash **vpack_net_hash) {
 
 	int i, j, in_port, out_port, clock_port, num_tokens;
 	ezxml_t Cur, Prev;
@@ -581,6 +591,7 @@ static void processPorts(INOUTP ezxml_t Parent, INOUTP t_pb* pb,
 	int rr_node_index;
 	t_pb_graph_pin *** pin_node;
 	int *num_ptrs, num_sets;
+	struct s_hash *temp_hash;
 	boolean found;
 
 	Cur = Parent->child;
@@ -615,7 +626,7 @@ static void processPorts(INOUTP ezxml_t Parent, INOUTP t_pb* pb,
 				}
 			}
 			if (!found) {
-				printf(ERRTAG "[Line %d] Unknown port %s for pb %s[%d]\n",
+				vpr_printf(TIO_MESSAGE_ERROR, "[Line %d] Unknown port %s for pb %s[%d].\n",
 						Cur->line, Prop, pb->pb_graph_node->pb_type->name,
 						pb->pb_graph_node->placement_index);
 				exit(1);
@@ -625,8 +636,7 @@ static void processPorts(INOUTP ezxml_t Parent, INOUTP t_pb* pb,
 			num_tokens = CountTokens(pins);
 			if (0 == strcmp(Parent->name, "inputs")) {
 				if (num_tokens != pb->pb_graph_node->num_input_pins[in_port]) {
-					printf(
-							ERRTAG "[Line %d] Incorrect # pins %d found for port %s for pb %s[%d]\n",
+					vpr_printf(TIO_MESSAGE_ERROR, "[Line %d] Incorrect # pins %d found for port %s for pb %s[%d].\n",
 							Cur->line, num_tokens, Prop,
 							pb->pb_graph_node->pb_type->name,
 							pb->pb_graph_node->placement_index);
@@ -635,8 +645,7 @@ static void processPorts(INOUTP ezxml_t Parent, INOUTP t_pb* pb,
 			} else if (0 == strcmp(Parent->name, "outputs")) {
 				if (num_tokens
 						!= pb->pb_graph_node->num_output_pins[out_port]) {
-					printf(
-							ERRTAG "[Line %d] Incorrect # pins %d found for port %s for pb %s[%d]\n",
+					vpr_printf(TIO_MESSAGE_ERROR, "[Line %d] Incorrect # pins %d found for port %s for pb %s[%d].\n",
 							Cur->line, num_tokens, Prop,
 							pb->pb_graph_node->pb_type->name,
 							pb->pb_graph_node->placement_index);
@@ -645,8 +654,7 @@ static void processPorts(INOUTP ezxml_t Parent, INOUTP t_pb* pb,
 			} else {
 				if (num_tokens
 						!= pb->pb_graph_node->num_clock_pins[clock_port]) {
-					printf(
-							ERRTAG "[Line %d] Incorrect # pins %d found for port %s for pb %s[%d]\n",
+					vpr_printf(TIO_MESSAGE_ERROR, "[Line %d] Incorrect # pins %d found for port %s for pb %s[%d].\n",
 							Cur->line, num_tokens, Prop,
 							pb->pb_graph_node->pb_type->name,
 							pb->pb_graph_node->placement_index);
@@ -654,7 +662,7 @@ static void processPorts(INOUTP ezxml_t Parent, INOUTP t_pb* pb,
 				}
 			}
 			if (0 == strcmp(Parent->name, "inputs")
-					|| 0 == strcmp(Parent->name, "globals")) {
+					|| 0 == strcmp(Parent->name, "clocks")) {
 				if (pb->parent_pb == NULL) {
 					/* top-level, connections are nets to route */
 					for (i = 0; i < num_tokens; i++) {
@@ -664,8 +672,14 @@ static void processPorts(INOUTP ezxml_t Parent, INOUTP t_pb* pb,
 						else
 							rr_node_index =
 									pb->pb_graph_node->clock_pins[clock_port][i].pin_count_in_cluster;
-						rr_graph[rr_node_index].net_num = add_net_to_hash(nhash,
-								pins[i], ncount);
+						if (strcmp(pins[i], "open") != 0) {
+							temp_hash = get_hash_entry(vpack_net_hash, pins[i]);
+							if (temp_hash == NULL) {
+								vpr_printf(TIO_MESSAGE_ERROR, ".blif and .net do not match, unknown net %s found in .net file.\n.", pins[i]);
+							}
+							rr_graph[rr_node_index].net_num = temp_hash->index;							
+						}						
+						rr_node_to_pb_mapping[rr_node_index] = pb;
 					}
 				} else {
 					for (i = 0; i < num_tokens; i++) {
@@ -678,6 +692,7 @@ static void processPorts(INOUTP ezxml_t Parent, INOUTP t_pb* pb,
 						port_name = pins[i];
 						pin_node =
 								alloc_and_load_port_pin_ptrs_from_string(
+										pb->pb_graph_node->pb_type->parent_mode->interconnect[0].line_num,
 										pb->pb_graph_node->parent_pb_graph_node,
 										pb->pb_graph_node->parent_pb_graph_node->child_pb_graph_nodes[pb->parent_pb->mode],
 										port_name, &num_ptrs, &num_sets, TRUE,
@@ -691,6 +706,7 @@ static void processPorts(INOUTP ezxml_t Parent, INOUTP t_pb* pb,
 									pb->pb_graph_node->clock_pins[clock_port][i].pin_count_in_cluster;
 						rr_graph[rr_node_index].prev_node =
 								pin_node[0][0]->pin_count_in_cluster;
+						rr_node_to_pb_mapping[rr_node_index] = pb;
 						found = FALSE;
 						for (j = 0; j < pin_node[0][0]->num_output_edges; j++) {
 							if (0
@@ -706,8 +722,7 @@ static void processPorts(INOUTP ezxml_t Parent, INOUTP t_pb* pb,
 						free(pin_node);
 						free(num_ptrs);
 						if (!found) {
-							printf(
-									ERRTAG "[Line %d] Unknown interconnect %s connecting to pin %s\n",
+							vpr_printf(TIO_MESSAGE_ERROR, "[Line %d] Unknown interconnect %s connecting to pin %s.\n",
 									Cur->line, interconnect_name, port_name);
 							exit(1);
 						}
@@ -721,8 +736,14 @@ static void processPorts(INOUTP ezxml_t Parent, INOUTP t_pb* pb,
 					for (i = 0; i < num_tokens; i++) {
 						rr_node_index =
 								pb->pb_graph_node->output_pins[out_port][i].pin_count_in_cluster;
-						rr_graph[rr_node_index].net_num = add_net_to_hash(nhash,
-								pins[i], ncount);
+						if (strcmp(pins[i], "open") != 0) {
+							temp_hash = get_hash_entry(vpack_net_hash, pins[i]);
+							if (temp_hash == NULL) {
+								vpr_printf(TIO_MESSAGE_ERROR, ".blif and .net do not match, unknown net %s found in .net file.\n", pins[i]);
+							}
+							rr_graph[rr_node_index].net_num = temp_hash->index;							
+						}
+						rr_node_to_pb_mapping[rr_node_index] = pb;
 					}
 				} else {
 					for (i = 0; i < num_tokens; i++) {
@@ -735,6 +756,7 @@ static void processPorts(INOUTP ezxml_t Parent, INOUTP t_pb* pb,
 						port_name = pins[i];
 						pin_node =
 								alloc_and_load_port_pin_ptrs_from_string(
+										pb->pb_graph_node->pb_type->modes[pb->mode].interconnect->line_num,
 										pb->pb_graph_node,
 										pb->pb_graph_node->child_pb_graph_nodes[pb->mode],
 										port_name, &num_ptrs, &num_sets, TRUE,
@@ -744,15 +766,13 @@ static void processPorts(INOUTP ezxml_t Parent, INOUTP t_pb* pb,
 								pb->pb_graph_node->output_pins[out_port][i].pin_count_in_cluster;
 						rr_graph[rr_node_index].prev_node =
 								pin_node[0][0]->pin_count_in_cluster;
+						rr_node_to_pb_mapping[rr_node_index] = pb;
 						found = FALSE;
 						for (j = 0; j < pin_node[0][0]->num_output_edges; j++) {
 							if (0
 									== strcmp(interconnect_name,
 											pin_node[0][0]->output_edges[j]->interconnect->name)) {
 								found = TRUE;
-								rr_graph[rr_node_index].fan_in++;
-								rr_graph[pin_node[0][0]->pin_count_in_cluster].edges[j] =
-										rr_node_index;
 								break;
 							}
 						}
@@ -762,8 +782,7 @@ static void processPorts(INOUTP ezxml_t Parent, INOUTP t_pb* pb,
 						free(pin_node);
 						free(num_ptrs);
 						if (!found) {
-							printf(
-									ERRTAG "[Line %d] Unknown interconnect %s connecting to pin %s\n",
+							vpr_printf(TIO_MESSAGE_ERROR, "[Line %d] Unknown interconnect %s connecting to pin %s.\n",
 									Cur->line, interconnect_name, port_name);
 							exit(1);
 						}
@@ -790,7 +809,7 @@ static void processPorts(INOUTP ezxml_t Parent, INOUTP t_pb* pb,
 static void load_external_nets_and_cb(INP int L_num_blocks,
 		INP struct s_block block_list[], INP int ncount,
 		INP struct s_net nlist[], OUTP int *ext_ncount,
-		OUTP struct s_net **ext_nets, INP char **circuit_globals) {
+		OUTP struct s_net **ext_nets, INP char **circuit_clocks) {
 	int i, j, k, ipin;
 	struct s_hash **ext_nhash;
 	t_rr_node *rr_graph;
@@ -883,15 +902,9 @@ static void load_external_nets_and_cb(INP int L_num_blocks,
 	/* alloc and partially load the list of external nets */
 	(*ext_nets) = alloc_and_init_netlist_from_hash(*ext_ncount, ext_nhash);
 	/* Load global nets */
-	num_tokens = CountTokens(circuit_globals);
-	for (i = 0; i < *ext_ncount; i++) {
-		for (j = 0; j < num_tokens; j++) {
-			if (strcmp(circuit_globals[j], (*ext_nets)[i].name) == 0) {
-				(*ext_nets)[i].is_global = TRUE;
-			}
-		}
-	}
-	count = my_calloc(*ext_ncount, sizeof(int));
+	num_tokens = CountTokens(circuit_clocks);
+
+	count = (int *)my_calloc(*ext_ncount, sizeof(int));
 
 	/* complete load of external nets so that each net points back to the blocks */
 	for (i = 0; i < L_num_blocks; i++) {
@@ -903,25 +916,16 @@ static void load_external_nets_and_cb(INP int L_num_blocks,
 				if (RECEIVER
 						== block_list[i].type->class_inf[block_list[i].type->pin_class[j]].type) {
 					count[netnum]++;
-					assert(count[netnum] <= (*ext_nets)[netnum].num_sinks);
+					if(count[netnum] > (*ext_nets)[netnum].num_sinks) {
+						vpr_printf(TIO_MESSAGE_ERROR, "net %s #%d inconsistency, expected %d terminals but encountered %d terminals, it is likely net terminal is disconnected in netlist file.\n", 
+							(*ext_nets)[netnum].name, netnum, count[netnum], (*ext_nets)[netnum].num_sinks);
+						exit(1);
+					}
+					
 					(*ext_nets)[netnum].node_block[count[netnum]] = i;
 					(*ext_nets)[netnum].node_block_pin[count[netnum]] = j;
 
-					if ((*ext_nets)[netnum].is_global
-							!= block_list[i].type->is_global_pin[j]) {
-						if ((*ext_nets)[netnum].is_global) {
-							printf(
-									ERRTAG "Netlist attempts to connect global net %s to non global pin %d of block %s #%d\n",
-									(*ext_nets)[netnum].name, j,
-									block_list[i].name, j);
-						} else {
-							printf(
-									ERRTAG "Netlist attempts to connect non-global net %s to global pin %d of block %s #%d\n",
-									(*ext_nets)[netnum].name, j,
-									block_list[i].name, j);
-						}
-						exit(1);
-					}
+					(*ext_nets)[netnum].is_global = block_list[i].type->is_global_pin[j]; /* Error check performed later to ensure no mixing of global and non-global signals */
 				} else {
 					assert(
 							DRIVER == block_list[i].type->class_inf[block_list[i].type->pin_class[j]].type);
@@ -929,6 +933,21 @@ static void load_external_nets_and_cb(INP int L_num_blocks,
 					(*ext_nets)[netnum].node_block[0] = i;
 					(*ext_nets)[netnum].node_block_pin[0] = j;
 				}
+			}
+		}
+	}
+	/* Error check global and non global signals */
+	for (i = 0; i < *ext_ncount; i++) {
+		for (j = 1; j <= (*ext_nets)[i].num_sinks; j++) {
+			if (block_list[(*ext_nets)[i].node_block[j]].type->is_global_pin[(*ext_nets)[i].node_block_pin[j]] != (*ext_nets)[i].is_global) {
+				vpr_printf(TIO_MESSAGE_ERROR, "Netlist attempts to connect net %s to both global and non-global pins.\n", 
+						(*ext_nets)[i].name);
+				exit(1);
+			}
+		}
+		for (j = 0; j < num_tokens; j++) {
+			if (strcmp(circuit_clocks[j], (*ext_nets)[i].name) == 0) {
+				assert((*ext_nets)[i].is_global == TRUE); /* above code should have caught this case, if not, then bug in code */
 			}
 		}
 	}
@@ -1023,7 +1042,7 @@ static void load_internal_cb_nets(INOUTP t_pb *top_level,
 									+ i / 10 + j / 10
 									+ pb_graph_node->input_pins[i][j].pin_count_in_cluster
 											/ 10 + 26;
-					nets[*curr_net].name = my_calloc(size, sizeof(char));
+					nets[*curr_net].name = (char *)my_calloc(size, sizeof(char));
 					sprintf(nets[*curr_net].name,
 							"%s[%d].input[%d][%d].pin[%d]",
 							pb_graph_node->pb_type->name,
@@ -1049,7 +1068,7 @@ static void load_internal_cb_nets(INOUTP t_pb *top_level,
 									+ i / 10 + j / 10
 									+ pb_graph_node->clock_pins[i][j].pin_count_in_cluster
 											/ 10 + 26;
-					nets[*curr_net].name = my_calloc(size, sizeof(char));
+					nets[*curr_net].name = (char *)my_calloc(size, sizeof(char));
 					sprintf(nets[*curr_net].name,
 							"%s[%d].clock[%d][%d].pin[%d]",
 							pb_graph_node->pb_type->name,
@@ -1078,7 +1097,7 @@ static void load_internal_cb_nets(INOUTP t_pb *top_level,
 									+ i / 10 + j / 10
 									+ pb_graph_node->output_pins[i][j].pin_count_in_cluster
 											/ 10 + 26;
-					nets[*curr_net].name = my_calloc(size, sizeof(char));
+					nets[*curr_net].name = (char *)my_calloc(size, sizeof(char));
 					sprintf(nets[*curr_net].name,
 							"%s[%d].output[%d][%d].pin[%d]",
 							pb_graph_node->pb_type->name,
@@ -1134,11 +1153,11 @@ static void alloc_internal_cb_nets(INOUTP t_pb *top_level,
 										rr_graph);
 						top_level->local_nets[top_level->num_local_nets].num_sinks =
 								num_sinks;
-						top_level->local_nets[top_level->num_local_nets].node_block =
+						top_level->local_nets[top_level->num_local_nets].node_block = (int *)
 								my_calloc(num_sinks, sizeof(int));
-						top_level->local_nets[top_level->num_local_nets].node_block_port =
+						top_level->local_nets[top_level->num_local_nets].node_block_port = (int *)
 								my_calloc(num_sinks, sizeof(int));
-						top_level->local_nets[top_level->num_local_nets].node_block_pin =
+						top_level->local_nets[top_level->num_local_nets].node_block_pin = (int *)
 								my_calloc(num_sinks, sizeof(int));
 					}
 					top_level->num_local_nets++;
@@ -1156,11 +1175,11 @@ static void alloc_internal_cb_nets(INOUTP t_pb *top_level,
 										rr_graph);
 						top_level->local_nets[top_level->num_local_nets].num_sinks =
 								num_sinks;
-						top_level->local_nets[top_level->num_local_nets].node_block =
+						top_level->local_nets[top_level->num_local_nets].node_block = (int *)
 								my_calloc(num_sinks, sizeof(int));
-						top_level->local_nets[top_level->num_local_nets].node_block_port =
+						top_level->local_nets[top_level->num_local_nets].node_block_port = (int *)
 								my_calloc(num_sinks, sizeof(int));
-						top_level->local_nets[top_level->num_local_nets].node_block_pin =
+						top_level->local_nets[top_level->num_local_nets].node_block_pin = (int *)
 								my_calloc(num_sinks, sizeof(int));
 					}
 					top_level->num_local_nets++;
@@ -1182,11 +1201,11 @@ static void alloc_internal_cb_nets(INOUTP t_pb *top_level,
 										rr_graph);
 						top_level->local_nets[top_level->num_local_nets].num_sinks =
 								num_sinks;
-						top_level->local_nets[top_level->num_local_nets].node_block =
+						top_level->local_nets[top_level->num_local_nets].node_block = (int *)
 								my_calloc(num_sinks, sizeof(int));
-						top_level->local_nets[top_level->num_local_nets].node_block_port =
+						top_level->local_nets[top_level->num_local_nets].node_block_port = (int *)
 								my_calloc(num_sinks, sizeof(int));
-						top_level->local_nets[top_level->num_local_nets].node_block_pin =
+						top_level->local_nets[top_level->num_local_nets].node_block_pin = (int *)
 								my_calloc(num_sinks, sizeof(int));
 					}
 					top_level->num_local_nets++;
@@ -1209,7 +1228,7 @@ static void alloc_internal_cb_nets(INOUTP t_pb *top_level,
 
 	if (pb_graph_node->parent_pb_graph_node == NULL) { /* at top level */
 		if (pass == 1) {
-			top_level->local_nets = my_calloc(top_level->num_local_nets,
+			top_level->local_nets = (struct s_net *)my_calloc(top_level->num_local_nets,
 					sizeof(struct s_net));
 		}
 	}
@@ -1269,7 +1288,7 @@ static void mark_constant_generators_rec(INP t_pb *pb, INP t_rr_node *rr_graph,
 			}
 		}
 		if (const_gen == TRUE) {
-			printf("%s is a constant generator \n", pb->name);
+			vpr_printf(TIO_MESSAGE_INFO, "%s is a constant generator.\n", pb->name);
 			for (i = 0; i < pb->pb_graph_node->num_output_ports; i++) {
 				for (j = 0; j < pb->pb_graph_node->num_output_pins[i]; j++) {
 					if (rr_graph[pb->pb_graph_node->output_pins[i][j].pin_count_in_cluster].net_num
@@ -1283,51 +1302,13 @@ static void mark_constant_generators_rec(INP t_pb *pb, INP t_rr_node *rr_graph,
 	}
 }
 
-/* create logical block properties from saved block */
-static void restore_logical_block_from_saved_block(INP int iblk, INP t_pb *pb) {
-	int i;
-	for (i = 0; i < num_saved_logical_blocks; i++) {
-		if (pb->pb_graph_node->pb_type->model
-				== saved_logical_blocks[i].model) {
-			if (saved_logical_blocks[i].name != NULL
-					&& strcmp(pb->name, saved_logical_blocks[i].name) == 0) {
-				break;
-			}
-		}
-	}
-	assert(i != num_saved_logical_blocks);
-	logical_block[iblk].name = saved_logical_blocks[i].name;
-	logical_block[iblk].clb_index = UNDEFINED;
-	logical_block[iblk].clock_net = saved_logical_blocks[i].clock_net;
-	logical_block[iblk].clock_net_tnode = NULL;
-	logical_block[iblk].index = iblk;
-	logical_block[iblk].input_net_tnodes =
-			saved_logical_blocks[i].input_net_tnodes;
-	logical_block[iblk].input_nets = saved_logical_blocks[i].input_nets;
-	logical_block[iblk].model = saved_logical_blocks[i].model;
-	logical_block[iblk].output_net_tnodes =
-			saved_logical_blocks[i].output_net_tnodes;
-	logical_block[iblk].output_nets = saved_logical_blocks[i].output_nets;
-	logical_block[iblk].pb = pb;
-	logical_block[iblk].truth_table = saved_logical_blocks[i].truth_table;
-	logical_block[iblk].type = saved_logical_blocks[i].type;
-	logical_block[iblk].used_input_pins =
-			saved_logical_blocks[i].used_input_pins;
-
-	saved_logical_blocks[i].name = NULL;
-	saved_logical_blocks[i].input_net_tnodes = NULL;
-	saved_logical_blocks[i].input_nets = NULL;
-	saved_logical_blocks[i].output_net_tnodes = NULL;
-	saved_logical_blocks[i].output_nets = NULL;
-	saved_logical_blocks[i].truth_table = NULL;
-}
-
-/* Indexing of vpack_nets and logical blocks have changed since reading the new input format, ensure the same */
-static void resync_logical_block_nets_with_new_vpack_nets(void) {
+static void sync_logical_block_net_activity_with_new_vpack_nets(void) {
+#if 0
 	int old_net_idx, new_net_idx;
 
+
 	for (new_net_idx = 0; new_net_idx < num_logical_nets; new_net_idx++) {
-		for (old_net_idx = 0; old_net_idx < num_saved_logical_nets;
+		for (old_net_idx = 0; old_net_idx < num_logical_nets;
 				old_net_idx++) {
 			if (strcmp(vpack_net[new_net_idx].name,
 					saved_logical_nets[old_net_idx].name) == 0) {
@@ -1338,6 +1319,7 @@ static void resync_logical_block_nets_with_new_vpack_nets(void) {
 			}
 		}
 	}
+#endif
 }
 
 /* Free logical blocks of netlist */
@@ -1360,9 +1342,16 @@ void free_logical_blocks(void) {
 			}
 			port = port->next;
 		}
-		if (logical_block[iblk].input_net_tnodes) {
+		if (logical_block[iblk].input_net_tnodes) 
 			free(logical_block[iblk].input_net_tnodes);
+		
+		tvptr = logical_block[iblk].packed_molecules;
+		while (tvptr != NULL) {
+			next = tvptr->next;
+			free(tvptr);
+			tvptr = next;
 		}
+
 		free(logical_block[iblk].input_nets);
 		port = logical_block[iblk].model->outputs;
 		i = 0;
@@ -1390,6 +1379,7 @@ void free_logical_blocks(void) {
 		}
 	}
 	free(logical_block);
+	logical_block = NULL;
 }
 
 /* Free  logical blocks of netlist */
@@ -1403,5 +1393,7 @@ void free_logical_nets(void) {
 		free(vpack_net[inet].node_block_pin);
 	}
 	free(vpack_net);
+	vpack_net = NULL;
 }
+
 

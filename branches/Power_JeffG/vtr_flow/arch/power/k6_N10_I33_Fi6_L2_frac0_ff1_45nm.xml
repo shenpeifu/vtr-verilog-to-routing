@@ -89,7 +89,7 @@
 			<clock name="clock" num_pins="1"/>
 		
 			<!-- IOs can operate as either inputs or outputs -->
-			<mode name="inpad">		  
+			<mode name="inpad">
 				<pb_type name="inpad" blif_model=".input" num_pb="1">
 					<output name="inpad" num_pins="1"/>
 				</pb_type>
@@ -111,8 +111,7 @@
 				</interconnect>
 			</mode>
 		
-			<fc_in type="frac">0.15</fc_in>
-			<fc_out type="frac">0.10</fc_out>
+			<fc default_in_type="frac" default_in_val="0.15" default_out_type="frac" default_out_val="0.10"/>
 		
 			<!-- IOs go on the periphery of the FPGA, for consistency, 
 		          make it physically equivalent on all sides so that only one definition of I/Os is needed.
@@ -186,12 +185,7 @@
 					<T_clock_to_Q max="7.732e-11" port="ff.Q" clock="clk"/>
 				</pb_type>
 			</pb_type>
-			<fc_in type="frac">
-				0.15
-			</fc_in>
-			<fc_out type="frac">
-				0.1
-			</fc_out>
+			<fc default_in_type="frac" default_in_val="0.15" default_out_type="frac" default_out_val="0.1"/>
 			<pinlocations pattern="spread"/>
 			<gridlocations>
 				<loc type="fill" priority="1"/>
@@ -433,13 +427,13 @@
 				</interconnect>
 			</mode>
 		
-			<fc_in type="frac">0.15</fc_in>
-			<fc_out type="frac">0.10</fc_out>
+			<fc default_in_type="frac" default_in_val="0.15" default_out_type="frac" default_out_val="0.10"/>
 			<pinlocations pattern="spread"/>
 			<gridlocations>
 				<loc type="col" start="2" repeat="8" priority="2"/>
 			</gridlocations>
 		</pb_type>
+
 		<pb_type name="mult_36" height="4">
 			<input name="a" num_pins="36"/>
 			<input name="b" num_pins="36"/>
@@ -562,14 +556,14 @@
 		
 		
 		
-			<fc_in type="frac">0.15</fc_in>
-			<fc_out type="frac">0.10</fc_out>
+			<fc default_in_type="frac" default_in_val="0.15" default_out_type="frac" default_out_val="0.10"/>
 			<pinlocations pattern="spread"/>
 		
 			<gridlocations>
 				<loc type="col" start="4" repeat="8" priority="2"/>
 			</gridlocations>
 		</pb_type>
+
 	</complexblocklist>
 	<power>
 		<local_interconnect C_wire="1.7e-10"/>

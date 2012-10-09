@@ -217,19 +217,18 @@ static void load_font(int pointsize) {
 	 * MUST be between 1 and MAX_FONT_SIZE -- no check is performed here. */
 	/* Use proper point-size medium-weight upright helvetica font */
 
-	char fontname[44];
+	char fontname[BUFSIZE];
 
-	sprintf(fontname, "-*-helvetica-medium-r-*--*-%d0-*-*-*-*-*-*", pointsize);
+	sprintf(fontname, "-schumacher-clean-medium-r-*--*-%d0-*-*-*-*-*-*", pointsize);
 
 #ifdef VERBOSE
-	printf("Loading font: point size: %d, fontname: %s\n", pointsize,
-			fontname);
+	vpr_printf(TIO_MESSAGE_INFO, "Loading font: point size: %d, fontname: %s\n", pointsize, fontname);
 #endif
 
 	/* Load font and get font information structure. */
 
 	if ((font_info[pointsize] = XLoadQueryFont(display, fontname)) == NULL) {
-		fprintf(stderr, "Cannot open desired font\n");
+		vpr_printf(TIO_MESSAGE_ERROR, "Cannot open desired font.\n");
 		exit(-1);
 	}
 }
@@ -493,7 +492,7 @@ static void unmap_button(int bnum) {
 	XUnmapWindow(display, button[bnum].win);
 }
 
-void create_button(char *prev_button_text, char *button_text,
+void create_button(const char *prev_button_text, const char *button_text,
 		void (*button_func)(void (*drawscreen)(void))) {
 
 	/* Creates a new button below the button containing prev_button_text.       *
@@ -516,8 +515,7 @@ void create_button(char *prev_button_text, char *button_text,
 	}
 
 	if (bnum == -1) {
-		printf("Error in create_button:  button with text %s not found.\n",
-				prev_button_text);
+		vpr_printf(TIO_MESSAGE_ERROR, "in create_button: button with text \"%s\" not found.\n", prev_button_text);
 		exit(1);
 	}
 
@@ -567,8 +565,7 @@ void destroy_button(char *button_text) {
 	}
 
 	if (bnum == -1) {
-		printf("Error in destroy_button:  button with text %s not found.\n",
-				button_text);
+		vpr_printf(TIO_MESSAGE_ERROR, "in destroy_button: button with text \"%s\" not found.\n", button_text);
 		exit(1);
 	}
 
@@ -588,7 +585,7 @@ void destroy_button(char *button_text) {
 	button = (t_button *) my_realloc(button, num_buttons * sizeof(t_button));
 }
 
-void init_graphics(char *window_name) {
+void init_graphics(const char *window_name) {
 
 	/* Open the toplevel window, get the colors, 2 graphics         *
 	 * contexts, load a font, and set up the toplevel window        *
@@ -598,6 +595,7 @@ void init_graphics(char *window_name) {
 	int x, y; /* window position */
 	unsigned int border_width = 2; /* ignored by OpenWindows */
 	XTextProperty windowName;
+	char * temp;
 
 	/* X Windows' names for my colours. */
 	char *cnames[NUM_COLOR] = { "white", "black", "grey55", "grey75", "blue",
@@ -619,8 +617,7 @@ void init_graphics(char *window_name) {
 
 	/* connect to X server */
 	if ((display = XOpenDisplay(display_name)) == NULL) {
-		fprintf(stderr, "Cannot connect to X server %s\n",
-				XDisplayName(display_name));
+		vpr_printf(TIO_MESSAGE_ERROR, "Cannot connect to X server\n");
 		exit(-1);
 	}
 
@@ -639,31 +636,28 @@ void init_graphics(char *window_name) {
 
 	for (i = 0; i < NUM_COLOR; i++) {
 		if (!XParseColor(display, cmap, cnames[i], &exact_def)) {
-			fprintf(stderr, "Color name %s not in database", cnames[i]);
+			vpr_printf(TIO_MESSAGE_ERROR, "Color name %s not in database.\n", cnames[i]);
 			exit(-1);
 		}
 		if (!XAllocColor(display, cmap, &exact_def)) {
-			fprintf(stderr, "Couldn't allocate color %s.\n", cnames[i]);
+			vpr_printf(TIO_MESSAGE_ERROR, "Could not allocate color %s.\n", cnames[i]);
 
 			if (private_cmap == None) {
-				fprintf(stderr, "Will try to allocate a private colourmap.\n");
-				fprintf(stderr, "Colours will only display correctly when your "
-						"cursor is in the graphics window.\n"
-						"Exit other colour applications and rerun this "
-						"program if you don't like that.\n\n");
+				vpr_printf(TIO_MESSAGE_ERROR, "Will try to allocate a private colourmap.\n");
+				vpr_printf(TIO_MESSAGE_ERROR, "Colours will only display correctly when your cursor is in the graphics window.\n");
+				vpr_printf(TIO_MESSAGE_ERROR, "Exit other colour applications and rerun this program if you do not like that.\n");
+				vpr_printf(TIO_MESSAGE_ERROR, "\n");
 
 				private_cmap = XCopyColormapAndFree(display, cmap);
 				cmap = private_cmap;
 				if (!XAllocColor(display, cmap, &exact_def)) {
-					fprintf(stderr, "Couldn't allocate color %s as private.\n",
-							cnames[i]);
+					vpr_printf(TIO_MESSAGE_ERROR, "Could not allocate color %s as private.\n", cnames[i]);
 					exit(1);
 				}
 			}
 
 			else {
-				fprintf(stderr, "Couldn't allocate color %s as private.\n",
-						cnames[i]);
+				vpr_printf(TIO_MESSAGE_ERROR, "Could not allocate color %s as private.\n", cnames[i]);
 				exit(1);
 			}
 		}
@@ -703,7 +697,9 @@ void init_graphics(char *window_name) {
 	force_setlinestyle(currentlinestyle);
 	force_setlinewidth(currentlinewidth);
 
-	XStringListToTextProperty(&window_name, 1, &windowName);
+	temp = my_strdup(window_name);
+	XStringListToTextProperty(&temp, 1, &windowName);
+	free(temp);
 	XSetWMName(display, toplevel, &windowName);
 	/* Uncomment to set icon name */
 	/* XSetWMIconName (display, toplevel, &windowName); */
@@ -861,7 +857,7 @@ static int which_button(Window win) {
 		if (button[i].win == win)
 			return (i);
 	}
-	printf("Error:  Unknown button ID in which_button.\n");
+	vpr_printf(TIO_MESSAGE_ERROR, "Unknown button ID in which_button.\n");
 	return (0);
 }
 
@@ -957,9 +953,9 @@ void event_loop(void (*act_on_button)(float x, float y),
 		switch (report.type) {
 		case Expose:
 #ifdef VERBOSE
-			printf("Got an expose event.\n");
-			printf("Count is: %d.\n", report.xexpose.count);
-			printf("Window ID is: %d.\n", report.xexpose.window);
+			vpr_printf(TIO_MESSAGE_INFO, "Got an expose event.\n");
+			vpr_printf(TIO_MESSAGE_INFO, "Count is: %d.\n", report.xexpose.count);
+			vpr_printf(TIO_MESSAGE_INFO, "Window ID is: %d.\n", report.xexpose.window);
 #endif
 			if (report.xexpose.count != 0)
 				break;
@@ -975,15 +971,15 @@ void event_loop(void (*act_on_button)(float x, float y),
 			top_height = report.xconfigure.height;
 			update_transform();
 #ifdef VERBOSE
-			printf("Got a ConfigureNotify.\n");
-			printf("New width: %d  New height: %d.\n", top_width,
+			vpr_printf(TIO_MESSAGE_INFO, "Got a ConfigureNotify.\n");
+			vpr_printf(TIO_MESSAGE_INFO, "New width: %d  New height: %d.\n", top_width,
 					top_height);
 #endif
 			break;
 		case ButtonPress:
 #ifdef VERBOSE
-			printf("Got a buttonpress.\n");
-			printf("Window ID is: %d.\n", report.xbutton.window);
+			vpr_printf(TIO_MESSAGE_INFO, "Got a buttonpress.\n");
+			vpr_printf(TIO_MESSAGE_INFO, "Window ID is: %d.\n", report.xbutton.window);
 #endif
 			if (report.xbutton.window == toplevel) {
 				x = XTOWORLD(report.xbutton.x);
@@ -992,7 +988,7 @@ void event_loop(void (*act_on_button)(float x, float y),
 			} else { /* A menu button was pressed. */
 				bnum = which_button(report.xbutton.window);
 #ifdef VERBOSE
-				printf("Button number is %d\n", bnum);
+				vpr_printf(TIO_MESSAGE_INFO, "Button number is %d.\n", bnum);
 #endif
 				button[bnum].ispressed = 1;
 				drawbut(bnum);
@@ -1225,9 +1221,8 @@ void fillpoly(t_point * points, int npoints) {
 	float xmin, ymin, xmax, ymax;
 
 	if (npoints > MAXPTS) {
-		printf("Error in fillpoly:  Only %d points allowed per polygon.\n",
-				MAXPTS);
-		printf("%d points were requested.  Polygon is not drawn.\n", npoints);
+		vpr_printf(TIO_MESSAGE_ERROR, "in fillpoly: Only %d points allowed per polygon.\n", MAXPTS);
+		vpr_printf(TIO_MESSAGE_ERROR, "%d points were requested. Polygon is not drawn.\n", npoints);
 		return;
 	}
 
@@ -1275,11 +1270,11 @@ void drawtext(float xc, float yc, const char *text, float boundx) {
 	if (width > fabs(boundx * xmult))
 		return; /* Don't draw if it won't fit */
 
-	xw_off = width / (2. * xmult); /* NB:  sign doesn't matter. */
+	xw_off = (int)(width / (2. * xmult)); /* NB:  sign doesn't matter. */
 
 	/* NB:  2 * descent makes this slightly conservative but simplifies code. */
-	yw_off = (font_info[currentfontsize]->ascent
-			+ 2 * font_info[currentfontsize]->descent) / (2. * ymult);
+	yw_off = (int)((font_info[currentfontsize]->ascent
+			+ 2 * font_info[currentfontsize]->descent) / (2. * ymult));
 
 	/* Note:  text can be clipped when a little bit of it would be visible *
 	 * right now.  Perhaps X doesn't return extremely accurate width and   *
@@ -1475,13 +1470,13 @@ static void translate_right(void (*drawscreen)(void)) {
 static void update_win(int x[2], int y[2], void (*drawscreen)(void)) {
 	float x1, x2, y1, y2;
 
-	x[0] = min(x[0], top_width - MWIDTH); /* Can't go under menu */
-	x[1] = min(x[1], top_width - MWIDTH);
-	y[0] = min(y[0], top_height - T_AREA_HEIGHT); /* Can't go under text area */
-	y[1] = min(y[1], top_height - T_AREA_HEIGHT);
+	x[0] = (int)min(x[0], (int)top_width - (int)MWIDTH); /* Can't go under menu */
+	x[1] = (int)min(x[1], (int)top_width - (int)MWIDTH);
+	y[0] = (int)min(y[0], (int)top_height - (int)T_AREA_HEIGHT); /* Can't go under text area */
+	y[1] = (int)min(y[1], (int)top_height - (int)T_AREA_HEIGHT);
 
 	if ((x[0] == x[1]) || (y[0] == y[1])) {
-		printf("Illegal (zero area) window.  Window unchanged.\n");
+		vpr_printf(TIO_MESSAGE_ERROR, "Illegal (zero area) window. Window unchanged.\n");
 		return;
 	}
 	x1 = XTOWORLD(min(x[0], x[1]));
@@ -1512,9 +1507,9 @@ static void adjustwin(void (*drawscreen)(void)) {
 		switch (report.type) {
 		case Expose:
 #ifdef VERBOSE
-			printf("Got an expose event.\n");
-			printf("Count is: %d.\n", report.xexpose.count);
-			printf("Window ID is: %d.\n", report.xexpose.window);
+			vpr_printf(TIO_MESSAGE_INFO, "Got an expose event.\n");
+			vpr_printf(TIO_MESSAGE_INFO, "Count is: %d.\n", report.xexpose.count);
+			vpr_printf(TIO_MESSAGE_INFO, "Window ID is: %d.\n", report.xexpose.window);
 #endif
 			if (report.xexpose.count != 0)
 				break;
@@ -1531,17 +1526,15 @@ static void adjustwin(void (*drawscreen)(void)) {
 			top_height = report.xconfigure.height;
 			update_transform();
 #ifdef VERBOSE
-			printf("Got a ConfigureNotify.\n");
-			printf("New width: %d  New height: %d.\n", top_width,
-					top_height);
+			vpr_printf(TIO_MESSAGE_INFO, "Got a ConfigureNotify.\n");
+			vpr_printf(TIO_MESSAGE_INFO, "New width: %d  New height: %d.\n", top_width, top_height);
 #endif
 			break;
 		case ButtonPress:
 #ifdef VERBOSE
-			printf("Got a buttonpress.\n");
-			printf("Window ID is: %d.\n", report.xbutton.window);
-			printf("Location (%d, %d).\n", report.xbutton.x,
-					report.xbutton.y);
+			vpr_printf(TIO_MESSAGE_INFO, "Got a buttonpress.\n");
+			vpr_printf(TIO_MESSAGE_INFO, "Window ID is: %d.\n", report.xbutton.window);
+			vpr_printf(TIO_MESSAGE_INFO, "Location (%d, %d).\n", report.xbutton.x, report.xbutton.y);
 #endif
 			if (report.xbutton.window != toplevel)
 				break;
@@ -1558,9 +1551,8 @@ static void adjustwin(void (*drawscreen)(void)) {
 			break;
 		case MotionNotify:
 #ifdef VERBOSE
-			printf("Got a MotionNotify Event.\n");
-			printf("x: %d    y: %d\n", report.xmotion.x,
-					report.xmotion.y);
+			vpr_printf(TIO_MESSAGE_INFO, "Got a MotionNotify Event.\n");
+			vpr_printf(TIO_MESSAGE_INFO, "x: %d  y: %d\n", report.xmotion.x, report.xmotion.y);
 #endif
 			if (xold >= 0) { /* xold set -ve before we draw first box */
 				XDrawRectangle(display, toplevel, gcxor, min(x[0], xold),
@@ -1568,7 +1560,7 @@ static void adjustwin(void (*drawscreen)(void)) {
 						abs(y[0] - yold));
 			}
 			/* Don't allow user to window under menu region */
-			xold = min(report.xmotion.x, top_width - 1 - MWIDTH);
+			xold = min(report.xmotion.x, (int)top_width - 1 - (int)MWIDTH);
 			yold = report.xmotion.y;
 			XDrawRectangle(display, toplevel, gcxor, min(x[0], xold),
 					min(y[0], yold), abs(x[0] - xold), abs(y[0] - yold));
@@ -1592,7 +1584,7 @@ static void postscript(void (*drawscreen)(void)) {
 	success = init_postscript(fname);
 
 	if (success == 0)
-		return; /* Couldn't open file, abort. */
+		return; /* Could not open file, abort. */
 
 	drawscreen();
 	close_postscript();
@@ -1640,8 +1632,8 @@ int init_postscript(char *fname) {
 
 	ps = fopen(fname, "w");
 	if (ps == NULL) {
-		printf("Error: could not open %s for PostScript output.\n", fname);
-		printf("Drawing to screen instead.\n");
+		vpr_printf(TIO_MESSAGE_ERROR, "Could not open '%s' for PostScript output.\n", fname);
+		vpr_printf(TIO_MESSAGE_ERROR, "Drawing to screen instead.\n");
 		return (0);
 	}
 	disp_type = POSTSCRIPT; /* Graphics go to postscript file now. */
@@ -1791,7 +1783,7 @@ event_loop(void (*act_on_button) (float x,
 }
 
 void
-init_graphics(char *window_name)
+init_graphics(const char *window_name)
 {
 }
 void
@@ -1895,8 +1887,8 @@ clearscreen(void)
 }
 
 void
-create_button(char *prev_button_text,
-		char *button_text,
+create_button(const char *prev_button_text,
+		const char *button_text,
 		void (*button_func) (void (*drawscreen) (void)))
 {
 }

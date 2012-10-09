@@ -10,7 +10,6 @@
 #include "route_timing.h"
 #include "timing_place_lookup.h"
 #include "rr_graph.h"
-#include "mst.h"
 #include "route_export.h"
 #include <assert.h>
 #include "read_xml_arch_file.h"
@@ -75,7 +74,6 @@ float **delta_io_to_io;
 /* be a big problem */
 
 static float **net_delay;
-static float **net_slack;
 static float *pin_criticality;
 static int *sink_order;
 static t_rt_node **rt_node_of_sink;
@@ -301,7 +299,7 @@ static void load_simplified_device(void) {
 			} else {
 				grid[i][j].type = FILL_TYPE;
 			}
-			grid[i][j].blocks = my_malloc(
+			grid[i][j].blocks = (int*)my_malloc(
 					grid[i][j].type->capacity * sizeof(int));
 			grid[i][j].offset = 0;
 		}
@@ -360,8 +358,6 @@ static void alloc_and_assign_internal_structures(struct s_net **original_net,
 	/* [0..num_nets-1][1..num_pins-1] */
 	net_delay = (float **) alloc_matrix(0, NET_COUNT - 1, 1, BLOCK_COUNT - 1,
 			sizeof(float));
-	net_slack = (float **) alloc_matrix(0, NET_COUNT - 1, 1, BLOCK_COUNT - 1,
-			sizeof(float));
 
 	reset_placement();
 }
@@ -395,7 +391,6 @@ static void free_and_reset_internal_structures(struct s_net *original_net,
 	num_blocks = original_num_blocks;
 
 	free_matrix(net_delay, 0, NET_COUNT - 1, 1, sizeof(float));
-	free_matrix(net_slack, 0, NET_COUNT - 1, 1, sizeof(float));
 
 }
 
@@ -474,7 +469,7 @@ static void free_routing_structs(struct s_router_opts router_opts,
 	free_rr_graph();
 
 	free_rr_node_route_structs();
-	free_route_structs(clb_opins_used_locally);
+	free_route_structs();
 	free_trace_structs();
 
 	free_timing_driven_route_structs(pin_criticality, sink_order,
@@ -517,10 +512,8 @@ static float assign_blocks_and_route_net(t_type_ptr source_type,
 		t_timing_inf timing_inf) {
 	/*places blocks at the specified locations, and routes a net between them */
 	/*returns the delay of this net */
-	boolean is_routeable;
-	int ipin;
-	float pres_fac, T_crit;
-	float net_delay_value;
+
+	float pres_fac, net_delay_value;
 
 	int source_z_loc, sink_z_loc;
 
@@ -535,21 +528,15 @@ static float assign_blocks_and_route_net(t_type_ptr source_type,
 
 	load_net_rr_terminals(rr_node_indices);
 
-	T_crit = 1;
 	pres_fac = 0; /* ignore congestion */
 
-	for (ipin = 1; ipin <= clb_net[NET_USED].num_sinks; ipin++)
-		net_slack[NET_USED][ipin] = 0;
-
-	is_routeable = timing_driven_route_net(NET_USED, pres_fac,
+	/* Route this net with a dummy criticality of 0 by calling 
+	timing_driven_route_net with slacks set to NULL. */
+	timing_driven_route_net(NET_USED, pres_fac,
 			router_opts.max_criticality, router_opts.criticality_exp,
-			router_opts.astar_fac, router_opts.bend_cost, net_slack[NET_USED],
-			pin_criticality, sink_order, rt_node_of_sink, T_crit,
-			net_delay[NET_USED]);
-
-	if (is_routeable) {
-		/*here so that the variable unused warning will not flag 'is_routeable' */
-	}
+			router_opts.astar_fac, router_opts.bend_cost, 
+			pin_criticality, sink_order, rt_node_of_sink, 
+			net_delay[NET_USED], NULL);
 
 	net_delay_value = net_delay[NET_USED][NET_USED_SINK_BLOCK];
 
@@ -931,9 +918,9 @@ print_array(float **array_to_print,
 
 	fprintf(lookup_dump, "\nPrinting Array \n\n");
 
-	for(idx_y = y2; idx_y >= y1; idx_y--)
+	for (idx_y = y2; idx_y >= y1; idx_y--)
 	{
-		for(idx_x = x1; idx_x <= x2; idx_x++)
+		for (idx_x = x1; idx_x <= x2; idx_x++)
 		{
 			fprintf(lookup_dump, " %9.2e",
 					array_to_print[idx_x][idx_y]);
@@ -948,22 +935,14 @@ static void compute_delta_arrays(struct s_router_opts router_opts,
 		struct s_det_routing_arch det_routing_arch, t_segment_inf * segment_inf,
 		t_timing_inf timing_inf, int longest_length) {
 
-	printf(
-			"Computing delta_io_to_io lookup matrix, may take a few seconds, please wait...\n");
-	compute_delta_io_to_io(router_opts, det_routing_arch, segment_inf,
-			timing_inf);
-	printf(
-			"Computing delta_io_to_clb lookup matrix, may take a few seconds, please wait...\n");
-	compute_delta_io_to_clb(router_opts, det_routing_arch, segment_inf,
-			timing_inf);
-	printf(
-			"Computing delta_clb_to_io lookup matrix, may take a few seconds, please wait...\n");
-	compute_delta_clb_to_io(router_opts, det_routing_arch, segment_inf,
-			timing_inf);
-	printf(
-			"Computing delta_clb_to_clb lookup matrix, may take a few seconds, please wait...\n");
-	compute_delta_clb_to_clb(router_opts, det_routing_arch, segment_inf,
-			timing_inf, longest_length);
+	vpr_printf(TIO_MESSAGE_INFO, "Computing delta_io_to_io lookup matrix, may take a few seconds, please wait...\n");
+	compute_delta_io_to_io(router_opts, det_routing_arch, segment_inf, timing_inf);
+	vpr_printf(TIO_MESSAGE_INFO, "Computing delta_io_to_clb lookup matrix, may take a few seconds, please wait...\n");
+	compute_delta_io_to_clb(router_opts, det_routing_arch, segment_inf, timing_inf);
+	vpr_printf(TIO_MESSAGE_INFO, "Computing delta_clb_to_io lookup matrix, may take a few seconds, please wait...\n");
+	compute_delta_clb_to_io(router_opts, det_routing_arch, segment_inf, timing_inf);
+	vpr_printf(TIO_MESSAGE_INFO, "Computing delta_clb_to_clb lookup matrix, may take a few seconds, please wait...\n");
+	compute_delta_clb_to_clb(router_opts, det_routing_arch, segment_inf, timing_inf, longest_length);
 
 #ifdef PRINT_ARRAYS
 	lookup_dump = my_fopen(DUMPFILE, "w", 0);

@@ -2,7 +2,6 @@
 #include "util.h"
 #include "vpr_types.h"
 #include "globals.h"
-#include "mst.h"
 #include "route_export.h"
 #include "route_common.h"
 #include "route_breadth_first.h"
@@ -51,7 +50,7 @@ boolean try_breadth_first_route(struct s_router_opts router_opts,
 				/* Impossible to route? (disconnected rr_graph) */
 
 				if (!is_routable) {
-					printf("Routing failed.\n");
+					vpr_printf(TIO_MESSAGE_INFO, "Routing failed.\n");
 					return (FALSE);
 				}
 
@@ -73,7 +72,7 @@ boolean try_breadth_first_route(struct s_router_opts router_opts,
 
 		success = feasible_routing();
 		if (success) {
-			printf("Successfully routed after %d routing iterations.\n", itry);
+			vpr_printf(TIO_MESSAGE_INFO, "Successfully routed after %d routing iterations.\n", itry);
 			return (TRUE);
 		}
 
@@ -82,12 +81,12 @@ boolean try_breadth_first_route(struct s_router_opts router_opts,
 		else
 			pres_fac *= router_opts.pres_fac_mult;
 
-		pres_fac = min(pres_fac, HUGE_FLOAT / 1e5);
+		pres_fac = min(pres_fac, HUGE_POSITIVE_FLOAT / 1e5);
 
 		pathfinder_update_cost(pres_fac, router_opts.acc_fac);
 	}
 
-	printf("Routing failed.\n");
+	vpr_printf(TIO_MESSAGE_INFO, "Routing failed.\n");
 	return (FALSE);
 }
 
@@ -123,6 +122,8 @@ static boolean breadth_first_route_net(int inet, float bend_cost) {
 		current = get_heap_head();
 
 		if (current == NULL) { /* Infeasible routing.  No possible path for net. */
+			vpr_printf (TIO_MESSAGE_INFO, "Cannot route net #%d (%s) to sink #%d -- no possible path.\n",
+					inet, clb_net[inet].name, i);
 			reset_path_costs(); /* Clean up before leaving. */
 			return (FALSE);
 		}
@@ -138,7 +139,7 @@ static boolean breadth_first_route_net(int inet, float bend_cost) {
 				rr_node_route_inf[inode].prev_node = prev_node;
 				rr_node_route_inf[inode].prev_edge = current->prev_edge;
 
-				if (pcost > 0.99 * HUGE_FLOAT) /* First time touched. */
+				if (pcost > 0.99 * HUGE_POSITIVE_FLOAT) /* First time touched. */
 					add_to_mod_list(&rr_node_route_inf[inode].path_cost);
 
 				breadth_first_expand_neighbours(inode, new_pcost, inet,
@@ -149,6 +150,8 @@ static boolean breadth_first_route_net(int inet, float bend_cost) {
 			current = get_heap_head();
 
 			if (current == NULL) { /* Impossible routing. No path for net. */
+				vpr_printf (TIO_MESSAGE_INFO, "Cannot route net #%d (%s) to sink #%d -- no possible path.\n",
+						inet, clb_net[inet].name, i);
 				reset_path_costs();
 				return (FALSE);
 			}
@@ -233,13 +236,13 @@ static void breadth_first_expand_trace_segment(struct s_trace *start_ptr,
 		 * doglegs are allowed in the graph, we won't be able to use this IPIN to   *
 		 * do a dogleg, since it won't be re-expanded.  Shouldn't be a big problem. */
 
-		rr_node_route_inf[last_ipin_node].path_cost = -HUGE_FLOAT;
+		rr_node_route_inf[last_ipin_node].path_cost = -HUGE_POSITIVE_FLOAT;
 
 		/* Also need to mark the SINK as having high cost, so another connection can *
 		 * be made to it.                                                            */
 
 		sink_node = tptr->index;
-		rr_node_route_inf[sink_node].path_cost = HUGE_FLOAT;
+		rr_node_route_inf[sink_node].path_cost = HUGE_POSITIVE_FLOAT;
 
 		/* Finally, I need to remove any pending connections to this SINK via the    *
 		 * IPIN I just used (since they would result in congestion).  Scan through   *

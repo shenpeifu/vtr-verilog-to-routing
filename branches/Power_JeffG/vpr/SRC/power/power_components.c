@@ -36,7 +36,7 @@ struct s_power_breakdown {
 };
 
 /************************* GLOBALS **********************************/
-static t_power_breakdown * g_power_breakdown;
+static t_power_breakdown g_power_breakdown;
 
 /************************* FUNCTION DECLARATIONS ********************/
 static void power_component_print_usage_rec(FILE * fp, char * name,
@@ -57,11 +57,10 @@ static void power_calc_mux_rec(t_power_usage * power_usage, float * out_prob,
 void power_components_init(void) {
 	int i;
 
-	g_power_breakdown = my_malloc(sizeof(t_power_breakdown));
-	g_power_breakdown->components = my_calloc(POWER_COMPONENT_MAX_NUM,
-			sizeof(t_power_usage));
+	g_power_breakdown.components = (t_power_usage*) my_calloc(
+			POWER_COMPONENT_MAX_NUM, sizeof(t_power_usage));
 	for (i = 0; i < POWER_COMPONENT_MAX_NUM; i++) {
-		power_zero_usage(&g_power_breakdown->components[i]);
+		power_zero_usage(&g_power_breakdown.components[i]);
 	}
 }
 
@@ -69,8 +68,7 @@ void power_components_init(void) {
  * Module un-initializer function, called by power_uninit
  */
 void power_components_uninit(void) {
-	free(g_power_breakdown->components);
-	free(g_power_breakdown);
+	free(g_power_breakdown.components);
 }
 
 /**
@@ -80,7 +78,7 @@ void power_components_uninit(void) {
  */
 void power_component_add_usage(t_power_usage * power_usage,
 		e_power_component_type component_idx) {
-	power_add_usage(&g_power_breakdown->components[component_idx], power_usage);
+	power_add_usage(&g_power_breakdown.components[component_idx], power_usage);
 }
 
 /**
@@ -90,7 +88,7 @@ void power_component_add_usage(t_power_usage * power_usage,
  */
 void power_component_get_usage(t_power_usage * power_usage,
 		e_power_component_type component_idx) {
-	memcpy(power_usage, &g_power_breakdown->components[component_idx],
+	memcpy(power_usage, &g_power_breakdown.components[component_idx],
 			sizeof(t_power_usage));
 }
 
@@ -99,7 +97,7 @@ void power_component_get_usage(t_power_usage * power_usage,
  * - component_idx: Type of component
  */
 float power_component_get_usage_sum(e_power_component_type component_idx) {
-	return power_usage_sum(&g_power_breakdown->components[component_idx]);
+	return power_usage_sum(&g_power_breakdown.components[component_idx]);
 }
 
 /**
@@ -132,15 +130,15 @@ static void power_component_print_usage_rec(FILE * fp, char * name,
 
 	fprintf(fp, "%-*s%-20.4g%-15.3g%-15.3g%-15.3g\n",
 			component_str_size - 2 * indent_level, name,
-			power_usage_sum(&g_power_breakdown->components[type]),
-			power_usage_sum(&g_power_breakdown->components[type])
+			power_usage_sum(&g_power_breakdown.components[type]),
+			power_usage_sum(&g_power_breakdown.components[type])
 					/ power_usage_sum(
-							&g_power_breakdown->components[parent_type]),
-			power_usage_sum(&g_power_breakdown->components[type])
+							&g_power_breakdown.components[parent_type]),
+			power_usage_sum(&g_power_breakdown.components[type])
 					/ power_usage_sum(
-							&g_power_breakdown->components[POWER_COMPONENT_TOTAL]),
-			g_power_breakdown->components[type].dynamic
-					/ power_usage_sum(&g_power_breakdown->components[type]));
+							&g_power_breakdown.components[POWER_COMPONENT_TOTAL]),
+			g_power_breakdown.components[type].dynamic
+					/ power_usage_sum(&g_power_breakdown.components[type]));
 
 	switch (type) {
 	case (POWER_COMPONENT_TOTAL):
@@ -314,13 +312,15 @@ void power_calc_LUT(t_power_usage * power_usage, int LUT_size,
 	num_SRAM_bits = 1 << LUT_size;
 
 	/* Initialize internal node data */
-	internal_prob = my_calloc(LUT_size + 1, sizeof(float*));
-	internal_dens = my_calloc(LUT_size + 1, sizeof(float*));
-	internal_v = my_calloc(LUT_size + 1, sizeof(float*));
+	internal_prob = (float**) my_calloc(LUT_size + 1, sizeof(float*));
+	internal_dens = (float**) my_calloc(LUT_size + 1, sizeof(float*));
+	internal_v = (float**) my_calloc(LUT_size + 1, sizeof(float*));
 	for (i = 0; i <= LUT_size; i++) {
-		internal_prob[i] = my_calloc(1 << (LUT_size - i), sizeof(float));
-		internal_dens[i] = my_calloc(1 << (LUT_size - i), sizeof(float));
-		internal_v[i] = my_calloc(1 << (LUT_size - i), sizeof(float));
+		internal_prob[i] = (float*) my_calloc(1 << (LUT_size - i),
+				sizeof(float));
+		internal_dens[i] = (float*) my_calloc(1 << (LUT_size - i),
+				sizeof(float));
+		internal_v[i] = (float*) my_calloc(1 << (LUT_size - i), sizeof(float));
 	}
 
 	/* Initialize internal probabilities/densities from SRAM bits */
@@ -364,7 +364,6 @@ void power_calc_LUT(t_power_usage * power_usage, int LUT_size,
 		power_component_add_usage(&driver_power_usage,
 				POWER_COMPONENT_LUT_DRIVER);
 
-
 		MUXCounter = 0;
 		SRAMCounter = 0;
 
@@ -392,8 +391,8 @@ void power_calc_LUT(t_power_usage * power_usage, int LUT_size,
 			float out_prob;
 			float out_dens;
 			float sum_prob = 0;
-			int sram_offset = MUX_idx * pow(2, level_idx + 1);
-			int sram_per_branch = pow(2, level_idx);
+			int sram_offset = MUX_idx * ipow(2, level_idx + 1);
+			int sram_per_branch = ipow(2, level_idx);
 			int branch_lvl_idx;
 			int sram_idx;
 			float v_out;
@@ -425,7 +424,7 @@ void power_calc_LUT(t_power_usage * power_usage, int LUT_size,
 				for (branch_lvl_idx = 0; branch_lvl_idx < level_idx;
 						branch_lvl_idx++) {
 					int branch_lvl_reverse_idx = LUT_size - branch_lvl_idx - 1;
-					int even_odd = sram_idx / pow(2, branch_lvl_idx);
+					int even_odd = sram_idx / ipow(2, branch_lvl_idx);
 					if (even_odd % 2 == 0) {
 						branch_prob *= (1 - input_prob[branch_lvl_reverse_idx]);
 					} else {
@@ -575,8 +574,8 @@ void power_calc_interconnect(t_power_usage * power_usage, t_pb * pb,
 		/* Many-to-1, or Many-to-Many
 		 * Implemented as a multiplexer for each output
 		 * */
-		in_dens = my_calloc(interc->num_input_ports, sizeof(float));
-		in_prob = my_calloc(interc->num_input_ports, sizeof(float));
+		in_dens = (float*) my_calloc(interc->num_input_ports, sizeof(float));
+		in_prob = (float*) my_calloc(interc->num_input_ports, sizeof(float));
 
 		for (out_port_idx = 0; out_port_idx < interc->num_output_ports;
 				out_port_idx++) {
@@ -629,8 +628,8 @@ void power_calc_interconnect(t_power_usage * power_usage, t_pb * pb,
 
 				/* Calculate power of the multiplexer */
 				power_calc_mux_multilevel(&MUX_power,
-						interc_pins->interconnect->mux_arch, in_prob, in_dens,
-						selected_input, TRUE);
+						power_get_mux_arch(interc_pins->interconnect->num_input_ports),
+						in_prob, in_dens, selected_input, TRUE);
 
 				power_add_usage(power_usage, &MUX_power);
 				power_component_add_usage(&MUX_power,
@@ -664,7 +663,7 @@ void power_calc_mux_multilevel(t_power_usage * power_usage,
 	float output_prob;
 	float V_out;
 	boolean found;
-	int * selector_values = my_calloc(mux_arch->levels, sizeof(int));
+	int * selector_values = (int*) my_calloc(mux_arch->levels, sizeof(int));
 
 	assert(selected_input != OPEN);
 
@@ -673,6 +672,7 @@ void power_calc_mux_multilevel(t_power_usage * power_usage,
 	/* Find selection index at each level */
 	found = mux_find_selector_values(selector_values, mux_arch->mux_graph_head,
 			selected_input);
+
 	assert(found);
 
 	/* Calculate power of the multiplexor stages, from final stage, to first stages */
@@ -704,7 +704,7 @@ static void power_calc_mux_rec(t_power_usage * power_usage, float * out_prob,
 		return;
 	}
 
-	v_in = my_calloc(mux_node->num_inputs, sizeof(float));
+	v_in = (float*) my_calloc(mux_node->num_inputs, sizeof(float));
 	if (mux_node->level == 0) {
 		/* First level of mux - inputs are primar inputs */
 		in_prob = &primary_input_prob[mux_node->starting_pin_idx];
@@ -715,8 +715,8 @@ static void power_calc_mux_rec(t_power_usage * power_usage, float * out_prob,
 		}
 	} else {
 		/* Higher level of mux - inputs recursive from lower levels */
-		in_prob = my_calloc(mux_node->num_inputs, sizeof(float));
-		in_dens = my_calloc(mux_node->num_inputs, sizeof(float));
+		in_prob = (float*) my_calloc(mux_node->num_inputs, sizeof(float));
+		in_dens = (float*) my_calloc(mux_node->num_inputs, sizeof(float));
 
 		for (input_idx = 0; input_idx < mux_node->num_inputs; input_idx++) {
 			/* Call recursively for multiplexer driving the input */

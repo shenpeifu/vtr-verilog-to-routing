@@ -23,8 +23,11 @@
 #ifndef __POWER_TRANSISTOR_CNT_H__
 #define __POWER_TRANSISTOR_CNT_H__
 
+/************************* INCLUDES *********************************/
+#include "physical_types.h"
+
 /************************* FUNCTION DECLARATION *********************/
-float power_count_transistors(void);
+float power_count_transistors(t_arch * arch);
 float power_count_transistors_buffer(float buffer_size);
 float power_transistor_area(float num_transistors);
 #endif

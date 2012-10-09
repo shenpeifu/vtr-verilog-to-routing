@@ -44,6 +44,7 @@ if ( $number_arguments < 2 ) {
 # Get Absoluate Path of 'vtr_flow
 Cwd::abs_path($0) =~ m/(.*\/vtr_flow)\//;
 my $vtr_flow_path = $1;
+# my $vtr_flow_path = "./vtr_flow";
 
 sub stage_index;
 sub file_ext_for_stage;
@@ -62,21 +63,28 @@ my $stage_idx_vpr    = 5;
 
 my $circuit_file_path      = expand_user_path( shift(@ARGV) );
 my $architecture_file_path = expand_user_path( shift(@ARGV) );
+my $sdc_file_path;
 
 my $token;
+my $ext;
 my $starting_stage          = stage_index("odin");
 my $ending_stage            = stage_index("vpr");
 my $keep_intermediate_files = 0;
 my $has_memory              = 1;
 my $timing_driven           = "on";
-my $min_chan_width          = -1;
+my $min_chan_width          = -1; 
 my $lut_size                = -1;
 my $vpr_cluster_seed_type   = "";
 my $tech_file               = "";
 my $do_power                = 0;
+my $check_equivalent = "off";
+my $seed					= 1;
 
 while ( $token = shift(@ARGV) ) {
-	if ( $token eq "-starting_stage" ) {
+	if ( $token eq "-sdc_file" ) {
+		$sdc_file_path = expand_user_path( shift(@ARGV) );
+	}
+	elsif ( $token eq "-starting_stage" ) {
 		$starting_stage = stage_index( shift(@ARGV) );
 	}
 	elsif ( $token eq "-ending_stage" ) {
@@ -108,6 +116,12 @@ while ( $token = shift(@ARGV) ) {
 	}
 	elsif ( $token eq "-power" ) {
 		$do_power = 1;
+	}
+	elsif ( $token eq "-check_equivalent" ) {
+		$check_equivalent = "on";
+	}
+	elsif ( $token eq "-seed" ) {
+		$seed = shift(@ARGV);
 	}
 	else {
 		die "Error: Invalid argument ($token)\n";
@@ -164,6 +178,12 @@ my $inputs_per_cluster = -1;
   or die "Circuit file not found ($circuit_file_path)";
 ( -f $architecture_file_path )
   or die "Architecture file not found ($architecture_file_path)";
+
+if ( !-e $sdc_file_path ) {
+	# open( OUTPUT_FILE, ">$sdc_file_path" ); 
+	# close ( OUTPUT_FILE );
+	my $sdc_file_path;
+}
 
 my $vpr_path;
 if ( $stage_idx_vpr >= $starting_stage and $stage_idx_vpr <= $ending_stage ) {
@@ -448,7 +468,6 @@ if ( $ending_stage >= $stage_idx_vpr and !$error_code ) {
 		push( @vpr_power_args, "--cmos_tech_behavior_file" );
 		push( @vpr_power_args, "$tech_file" );
 	}
-
 	if ( $min_chan_width < 0 ) {
 		$q = &system_with_timeout(
 			$vpr_path,                    "vpr.out",
@@ -458,10 +477,11 @@ if ( $ending_stage >= $stage_idx_vpr and !$error_code ) {
 			"--timing_analysis",          "$timing_driven",
 			"--timing_driven_clustering", "$timing_driven",
 			"--cluster_seed_type",        "$vpr_cluster_seed_type",
+			"--sdc_file", 				  "$sdc_file_path",
+			"--seed",			 		  "$seed",
 			"--nodisp"
 		);
 		if ( $timing_driven eq "on" ) {
-
 			# Critical path delay is nonsensical at minimum channel width because congestion constraints completely dominate the cost function.
 			# Additional channel width needs to be added so that there is a reasonable trade-off between delay and area
 			# Commercial FPGAs are also desiged to have more channels than minimum for this reason
@@ -496,10 +516,12 @@ if ( $ending_stage >= $stage_idx_vpr and !$error_code ) {
 					$vpr_path,               "vpr.crit_path.out",
 					$timeout,                $temp_dir,
 					$architecture_file_name, "$benchmark_name",
+					"--route",
 					"--blif_file",           "$scripts_output_file_name",
 					"--route_chan_width",    "$min_chan_width",
 					"--cluster_seed_type",   "$vpr_cluster_seed_type",
-					"--nodisp",              @vpr_power_args
+					"--nodisp",              @vpr_power_args,
+					"--sdc_file",			 "$sdc_file_path"
 				);
 			}
 		}
@@ -514,12 +536,27 @@ if ( $ending_stage >= $stage_idx_vpr and !$error_code ) {
 			"--timing_driven_clustering", "$timing_driven",
 			"--route_chan_width",         "$min_chan_width",
 			"--nodisp",                   "--cluster_seed_type",
-			"$vpr_cluster_seed_type",     @vpr_power_args
+			"$vpr_cluster_seed_type",     @vpr_power_args,
+			"--sdc_file",				  "$sdc_file_path"
 		);
 	}
-
-	if ( -e $vpr_route_output_file_path and $q eq "success" ) {
-		if ( !$keep_intermediate_files ) {
+	  					
+	if (-e $vpr_route_output_file_path and $q eq "success")
+	{
+		if($check_equivalent eq "on") {
+			if($abc_path eq "") {
+				$abc_path = "$vtr_flow_path/../abc_with_bb_support/abc";
+			}
+			$q = &system_with_timeout($abc_path, 
+							"equiv.out",
+							$timeout,
+							$temp_dir,
+							"-c", 
+							"cec $scripts_output_file_name post_pack_netlist.blif;sec $scripts_output_file_name post_pack_netlist.blif"
+			);
+		}
+		if (! $keep_intermediate_files)
+		{
 			system "rm -f $scripts_output_file_path";
 			system "rm -f ${temp_dir}*.xml";
 			system "rm -f ${temp_dir}*.net";
@@ -584,7 +621,7 @@ sub system_with_timeout {
 
 	# Check args
 	( $#_ > 2 )   or die "system_with_timeout: not enough args\n";
-	( -f $_[0] )  or die "system_with_timeout: can't find executable\n";
+	( -f $_[0] )  or die "system_with_timeout: can't find executable $_[0]\n";
 	( $_[2] > 0 ) or die "system_with_timeout: invalid timeout\n";
 
 	# Save the pid of child process

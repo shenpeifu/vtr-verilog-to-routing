@@ -31,9 +31,8 @@ void alloc_and_load_grid(INOUTP int *num_instances_type) {
 	/* To remove this limitation, change ylow etc. in t_rr_node to        *
 	 * * be ints instead.  Used shorts to save memory.                      */
 	if ((nx > 32766) || (ny > 32766)) {
-		printf("Error:  nx and ny must be less than 32767, since the \n");
-		printf("router uses shorts (16-bit) to store coordinates.\n");
-		printf("nx: %d.  ny: %d.\n", nx, ny);
+		vpr_printf(TIO_MESSAGE_ERROR, "nx and ny must be less than 32767, since the router uses shorts (16-bit) to store coordinates.\n");
+		vpr_printf(TIO_MESSAGE_ERROR, "nx: %d, ny: %d\n", nx, ny);
 		exit(1);
 	}
 
@@ -98,10 +97,8 @@ void alloc_and_load_grid(INOUTP int *num_instances_type) {
 			}
 
 			if (type->capacity > 1) {
-				printf(ERRTAG
-				"In FillArch() expected core blocks to have capacity <= 1 but "
-				"(%d, %d) has type '%s' and capacity %d\n", i, j,
-						grid[i][j].type->name, grid[i][j].type->capacity);
+				vpr_printf(TIO_MESSAGE_ERROR, "in FillArch(), expected core blocks to have capacity <= 1 but (%d, %d) has type '%s' and capacity %d.\n", 
+						i, j, grid[i][j].type->name, grid[i][j].type->capacity);
 				exit(1);
 			}
 
@@ -118,9 +115,9 @@ void alloc_and_load_grid(INOUTP int *num_instances_type) {
 #ifdef SHOW_ARCH
 	/* DEBUG code */
 	dump = my_fopen("grid_type_dump.txt", "w", 0);
-	for(j = (ny + 1); j >= 0; --j)
+	for (j = (ny + 1); j >= 0; --j)
 	{
-		for(i = 0; i <= (nx + 1); ++i)
+		for (i = 0; i <= (nx + 1); ++i)
 		{
 			fprintf(dump, "%c", grid[i][j].type->name[1]);
 		}
@@ -132,6 +129,9 @@ void alloc_and_load_grid(INOUTP int *num_instances_type) {
 
 void freeGrid() {
 	int i, j;
+	if (grid == NULL) {
+		return;
+	}
 
 	for (i = 0; i <= (nx + 1); ++i) {
 		for (j = 0; j <= (ny + 1); ++j) {
@@ -139,6 +139,7 @@ void freeGrid() {
 		}
 	}
 	free_matrix(grid, 0, nx + 1, 0, sizeof(struct s_grid_tile));
+	grid = NULL;
 }
 
 static void CheckGrid() {
@@ -148,29 +149,24 @@ static void CheckGrid() {
 	for (i = 0; i <= (nx + 1); ++i) {
 		for (j = 0; j <= (ny + 1); ++j) {
 			if (NULL == grid[i][j].type) {
-				printf(ERRTAG "grid[%d][%d] has no type.\n", i, j);
+				vpr_printf(TIO_MESSAGE_ERROR, "grid[%d][%d] has no type.\n", i, j);
 				exit(1);
 			}
 
 			if (grid[i][j].usage != 0) {
-				printf(ERRTAG
-				"grid[%d][%d] has non-zero usage (%d) "
-				"before netlist load.\n", i, j, grid[i][j].usage);
+				vpr_printf(TIO_MESSAGE_ERROR, "grid[%d][%d] has non-zero usage (%d) before netlist load.\n", i, j, grid[i][j].usage);
 				exit(1);
 			}
 
 			if ((grid[i][j].offset < 0)
 					|| (grid[i][j].offset >= grid[i][j].type->height)) {
-				printf(ERRTAG
-				"grid[%d][%d] has invalid offset (%d)\n", i, j,
-						grid[i][j].offset);
+				vpr_printf(TIO_MESSAGE_ERROR, "grid[%d][%d] has invalid offset (%d).\n", i, j, grid[i][j].offset);
 				exit(1);
 			}
 
 			if ((NULL == grid[i][j].blocks)
 					&& (grid[i][j].type->capacity > 0)) {
-				printf(ERRTAG
-				"grid[%d][%d] has no block list allocated.\n", i, j);
+				vpr_printf(TIO_MESSAGE_ERROR, "grid[%d][%d] has no block list allocated.\n", i, j);
 				exit(1);
 			}
 		}

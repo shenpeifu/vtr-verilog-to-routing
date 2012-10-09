@@ -56,13 +56,13 @@ t_cluster_placement_stats *alloc_and_load_cluster_placement_stats(void) {
 	t_cluster_placement_stats *cluster_placement_stats_list;
 	int i;
 
-	cluster_placement_stats_list = my_calloc(num_types,
+	cluster_placement_stats_list = (t_cluster_placement_stats *) my_calloc(num_types,
 			sizeof(t_cluster_placement_stats));
 	for (i = 0; i < num_types; i++) {
 		if (EMPTY_TYPE != &type_descriptors[i]) {
-			cluster_placement_stats_list[i].valid_primitives = my_calloc(
+			cluster_placement_stats_list[i].valid_primitives = (t_cluster_placement_primitive **) my_calloc(
 					get_max_primitives_in_pb_type(type_descriptors[i].pb_type)
-							+ 1, sizeof(t_cluster_placement_primitive*)); /* too much memory allocated but shouldn't be a problem */
+ 							+ 1, sizeof(t_cluster_placement_primitive*)); /* too much memory allocated but shouldn't be a problem */
 			cluster_placement_stats_list[i].curr_molecule = NULL;
 			load_cluster_placement_stats_for_pb_graph_node(
 					&cluster_placement_stats_list[i],
@@ -123,7 +123,7 @@ boolean get_next_primitive_list(
 	 3. When found, move current blocks to in-flight, return lowest cost array of primitives
 	 4. Return NULL if not found
 	 */
-	lowest_cost = HUGE_FLOAT;
+	lowest_cost = HUGE_POSITIVE_FLOAT;
 	for (i = 0; i < cluster_placement_stats->num_pb_types; i++) {
 		if (cluster_placement_stats->valid_primitives[i]->next_primitive == NULL) {
 			continue; /* no more primitives of this type available */
@@ -164,8 +164,8 @@ boolean get_next_primitive_list(
 		}
 	} else {
 		/* populate primitive list with best */
-		assert(
-				try_place_molecule(molecule, best->pb_graph_node, primitives_list) == lowest_cost);
+		cost = try_place_molecule(molecule, best->pb_graph_node, primitives_list);
+		assert(cost == lowest_cost);
 
 		/* take out best node and put it in flight */
 		cluster_placement_stats->in_flight = best;
@@ -244,7 +244,9 @@ void free_cluster_placement_stats(
 				free(cur);
 				cur = next;
 			}
+			free(cluster_placement_stats_list[i].valid_primitives[j]);
 		}
+		free(cluster_placement_stats_list[i].valid_primitives);
 	}
 	free(cluster_placement_stats_list);
 }
@@ -297,7 +299,7 @@ static void load_cluster_placement_stats_for_pb_graph_node(
 	const t_pb_type *pb_type = pb_graph_node->pb_type;
 	boolean success;
 	if (pb_type->modes == 0) {
-		placement_primitive = my_calloc(1,
+		placement_primitive = (t_cluster_placement_primitive *) my_calloc(1,
 				sizeof(t_cluster_placement_primitive));
 		placement_primitive->pb_graph_node = pb_graph_node;
 		placement_primitive->valid = TRUE;
@@ -311,7 +313,7 @@ static void load_cluster_placement_stats_for_pb_graph_node(
 					|| cluster_placement_stats->valid_primitives[i]->next_primitive->pb_graph_node->pb_type
 							== pb_graph_node->pb_type) {
 				if (cluster_placement_stats->valid_primitives[i] == NULL) {
-					cluster_placement_stats->valid_primitives[i] = my_calloc(1,
+					cluster_placement_stats->valid_primitives[i] = (t_cluster_placement_primitive *) my_calloc(1,
 							sizeof(t_cluster_placement_primitive)); /* head of linked list is empty, makes it easier to remove nodes later */
 					cluster_placement_stats->num_pb_types++;
 				}
@@ -379,7 +381,7 @@ void commit_primitive(INOUTP t_cluster_placement_stats *cluster_placement_stats,
 					if (&pb_graph_node->child_pb_graph_nodes[i][j][k] != skip) {
 						update_primitive_cost_or_status(
 								&pb_graph_node->child_pb_graph_nodes[i][j][k],
-								incr_cost, (i == valid_mode));
+								incr_cost, (boolean)(i == valid_mode));
 					}
 				}
 			}
@@ -454,7 +456,7 @@ static void update_primitive_cost_or_status(INP t_pb_graph_node *pb_graph_node,
 static float try_place_molecule(INP t_pack_molecule *molecule,
 		INP t_pb_graph_node *root, INOUTP t_pb_graph_node **primitives_list) {
 	int list_size, i;
-	float cost = HUGE_FLOAT;
+	float cost = HUGE_POSITIVE_FLOAT;
 	list_size = get_array_size_of_molecule(molecule);
 
 	if (primitive_type_feasible(
@@ -471,7 +473,7 @@ static float try_place_molecule(INP t_pack_molecule *molecule,
 				if (!expand_forced_pack_molecule_placement(molecule,
 						molecule->pack_pattern->root_block, primitives_list,
 						&cost)) {
-					return HUGE_FLOAT;
+					return HUGE_POSITIVE_FLOAT;
 				}
 			}
 		}
