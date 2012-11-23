@@ -13,7 +13,7 @@ There is no single executable for the entire flow.  Instead, scripts are provide
 
 
 ==Running a Single Benchmark==
-The [Run_VTR_Flow run_vtr_flow.pl] script is provided to execute the VTR flow for a single benchmark and architecture: (note that in the following <vtr> means the directory in which you placed the VTR source code.
+The [Run_VTR_Flow run_vtr_flow.pl] script is provided to execute the VTR flow for a single benchmark and architecture (note that in the following {{{<vtr>}}} means the directory in which you placed the VTR source code):
 
 <code>
 {{{<vtr>}}}/vtr_flow/scripts/run_vtr_flow.pl {{{<circuit_file> <architecture_file>}}}
