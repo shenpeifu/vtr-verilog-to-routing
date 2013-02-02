@@ -1,18 +1,14 @@
 = VersaPower: Power Estimation for VTR=
 
-*`***`IMPORTANT: Currently the power estimation code resides in a branch, which is a few months old, and not up to date with the trunk.  Over the next month, this branch will be integrated into the trunk.`***`*
-
 ==Download==
 
-The code can be downloaded from:
-<code>svn/branches/Power_JeffG/</code>
+The code is now located in the trunk.
 
 
 == Source Code ==
 
 VersaPower source code is located here:
-  * vtr_flow/vpr/SRC/power/power.c
-  * vtr_flow/vpr/SRC/power/power.h
+  * vtr_flow/vpr/SRC/power/
 
 ==Compiling ==
 
