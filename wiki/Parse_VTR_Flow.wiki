@@ -13,7 +13,7 @@ The script is located here:
 ==Usage==
 The usage is:
 <code>
-run_vtr_flow.pl <parse_path> <parse_config_file> 
+parse_vtr_flow.pl <parse_path> <parse_config_file> 
 </code>
 
 *parse_path*: Directory path that contains the files that will be parsed (vpr.out, odin.out, etc).
