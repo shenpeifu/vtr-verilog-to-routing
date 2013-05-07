@@ -5,7 +5,7 @@
 == Overview ==
 This script runs the VTR flow for a single benchmark circuit and architecture file.  The following figure illustrates the stages of the VTR flow and associated input and output files.
 
-[http://vtr-verilog-to-routing.googlecode.com/svn/wiki/images/flow_diagram_text_modified.png]
+[http://vtr-verilog-to-routing.googlecode.com/svn/wiki/images/flow_diagram_text_updated.png]
 
 The script is located here:
 <code>
