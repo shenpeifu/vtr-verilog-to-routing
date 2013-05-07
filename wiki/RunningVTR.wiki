@@ -7,7 +7,7 @@ VTR is a collection of tools that perform the full FPGA CAD flow from Verilog to
 
 [http://vtr-verilog-to-routing.googlecode.com/svn/wiki/images/flow_diagram_updated.png]
 
-The flow consists of ODIN II (synthesis), ABC (optimization and tech mapping), scripts (adds clock names and fixes line lengths) and VPR (pack, place and route).
+The flow consists of ODIN II (synthesis), ABC (optimization and tech mapping), and VPR (pack, place and route).
 
 There is no single executable for the entire flow.  Instead, scripts are provided to allow the user to easily run the entire tool flow.  The following provides instructions on using these scripts to run VTR.
 
