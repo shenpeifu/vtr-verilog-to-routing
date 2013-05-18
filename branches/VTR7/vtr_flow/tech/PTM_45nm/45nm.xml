@@ -1,0 +1,1488 @@
+<technology file="45nm.pm" size="45e-9">
+	<operating_point temperature="85" Vdd="1.0"/>
+	<p_to_n ratio="1.9"/>
+	<transistor type="nmos">
+		<long_size W="1" L="2">
+			<leakage_current subthreshold="1.1359E-10"/>
+			<capacitance C_g="1.9987E-16" C_s="2.2678E-16" C_d="2.4459E-16"/>
+		</long_size>
+		<size W="1.00" L="1">
+			<leakage_current subthreshold="6.7818E-09" gate="2.0168E-10"/>
+			<capacitance C_g="1.2303E-16" C_s="1.4275E-16" C_d="1.6056E-16"/>
+		</size>
+		<size W="1.05" L="1">
+			<leakage_current subthreshold="7.1540E-09" gate="2.1238E-10"/>
+			<capacitance C_g="1.2975E-16" C_s="1.4603E-16" C_d="1.6474E-16"/>
+		</size>
+		<size W="1.10" L="1">
+			<leakage_current subthreshold="7.5263E-09" gate="2.2309E-10"/>
+			<capacitance C_g="1.3648E-16" C_s="1.4932E-16" C_d="1.6891E-16"/>
+		</size>
+		<size W="1.16" L="1">
+			<leakage_current subthreshold="7.9730E-09" gate="2.3593E-10"/>
+			<capacitance C_g="1.4455E-16" C_s="1.5326E-16" C_d="1.7392E-16"/>
+		</size>
+		<size W="1.22" L="1">
+			<leakage_current subthreshold="8.4198E-09" gate="2.4878E-10"/>
+			<capacitance C_g="1.5262E-16" C_s="1.5721E-16" C_d="1.7894E-16"/>
+		</size>
+		<size W="1.28" L="1">
+			<leakage_current subthreshold="8.8665E-09" gate="2.6162E-10"/>
+			<capacitance C_g="1.6070E-16" C_s="1.6115E-16" C_d="1.8395E-16"/>
+		</size>
+		<size W="1.34" L="1">
+			<leakage_current subthreshold="9.3132E-09" gate="2.7447E-10"/>
+			<capacitance C_g="1.6877E-16" C_s="1.6509E-16" C_d="1.8896E-16"/>
+		</size>
+		<size W="1.41" L="1">
+			<leakage_current subthreshold="9.8344E-09" gate="2.8946E-10"/>
+			<capacitance C_g="1.7818E-16" C_s="1.6969E-16" C_d="1.9481E-16"/>
+		</size>
+		<size W="1.48" L="1">
+			<leakage_current subthreshold="1.0356E-08" gate="3.0444E-10"/>
+			<capacitance C_g="1.8760E-16" C_s="1.7429E-16" C_d="2.0065E-16"/>
+		</size>
+		<size W="1.55" L="1">
+			<leakage_current subthreshold="1.0877E-08" gate="3.1943E-10"/>
+			<capacitance C_g="1.9702E-16" C_s="1.7889E-16" C_d="2.0650E-16"/>
+		</size>
+		<size W="1.63" L="1">
+			<leakage_current subthreshold="1.1472E-08" gate="3.3656E-10"/>
+			<capacitance C_g="2.0778E-16" C_s="1.8415E-16" C_d="2.1318E-16"/>
+		</size>
+		<size W="1.71" L="1">
+			<leakage_current subthreshold="1.2068E-08" gate="3.5369E-10"/>
+			<capacitance C_g="2.1855E-16" C_s="1.8941E-16" C_d="2.1987E-16"/>
+		</size>
+		<size W="1.80" L="1">
+			<leakage_current subthreshold="1.2738E-08" gate="3.7296E-10"/>
+			<capacitance C_g="2.3065E-16" C_s="1.9532E-16" C_d="2.2738E-16"/>
+		</size>
+		<size W="1.89" L="1">
+			<leakage_current subthreshold="1.3408E-08" gate="3.9222E-10"/>
+			<capacitance C_g="2.4276E-16" C_s="2.0124E-16" C_d="2.3490E-16"/>
+		</size>
+		<size W="1.98" L="1">
+			<leakage_current subthreshold="1.4078E-08" gate="4.1149E-10"/>
+			<capacitance C_g="2.5487E-16" C_s="2.0715E-16" C_d="2.4242E-16"/>
+		</size>
+		<size W="2.08" L="1">
+			<leakage_current subthreshold="1.4823E-08" gate="4.3290E-10"/>
+			<capacitance C_g="2.6832E-16" C_s="2.1373E-16" C_d="2.5077E-16"/>
+		</size>
+		<size W="2.18" L="1">
+			<leakage_current subthreshold="1.5567E-08" gate="4.5431E-10"/>
+			<capacitance C_g="2.8178E-16" C_s="2.2030E-16" C_d="2.5913E-16"/>
+		</size>
+		<size W="2.29" L="1">
+			<leakage_current subthreshold="1.6386E-08" gate="4.7786E-10"/>
+			<capacitance C_g="2.9658E-16" C_s="2.2753E-16" C_d="2.6831E-16"/>
+		</size>
+		<size W="2.41" L="1">
+			<leakage_current subthreshold="1.7280E-08" gate="5.0356E-10"/>
+			<capacitance C_g="3.1272E-16" C_s="2.3541E-16" C_d="2.7834E-16"/>
+		</size>
+		<size W="2.53" L="1">
+			<leakage_current subthreshold="1.8173E-08" gate="5.2925E-10"/>
+			<capacitance C_g="3.2887E-16" C_s="2.4330E-16" C_d="2.8836E-16"/>
+		</size>
+		<size W="2.65" L="1">
+			<leakage_current subthreshold="1.9067E-08" gate="5.5494E-10"/>
+			<capacitance C_g="3.4484E-16" C_s="2.5119E-16" C_d="2.9839E-16"/>
+		</size>
+		<size W="2.79" L="1">
+			<leakage_current subthreshold="2.0109E-08" gate="5.8491E-10"/>
+			<capacitance C_g="3.6366E-16" C_s="2.6039E-16" C_d="3.1008E-16"/>
+		</size>
+		<size W="2.93" L="1">
+			<leakage_current subthreshold="2.1152E-08" gate="6.1489E-10"/>
+			<capacitance C_g="3.8249E-16" C_s="2.6959E-16" C_d="3.2177E-16"/>
+		</size>
+		<size W="3.07" L="1">
+			<leakage_current subthreshold="2.2194E-08" gate="6.4486E-10"/>
+			<capacitance C_g="4.0132E-16" C_s="2.7879E-16" C_d="3.3347E-16"/>
+		</size>
+		<size W="3.23" L="1">
+			<leakage_current subthreshold="2.3385E-08" gate="6.7912E-10"/>
+			<capacitance C_g="4.2283E-16" C_s="2.8930E-16" C_d="3.4683E-16"/>
+		</size>
+		<size W="3.39" L="1">
+			<leakage_current subthreshold="2.4576E-08" gate="7.1337E-10"/>
+			<capacitance C_g="4.4435E-16" C_s="2.9982E-16" C_d="3.6020E-16"/>
+		</size>
+		<size W="3.56" L="1">
+			<leakage_current subthreshold="2.5842E-08" gate="7.4977E-10"/>
+			<capacitance C_g="4.6721E-16" C_s="3.1099E-16" C_d="3.7440E-16"/>
+		</size>
+		<size W="3.73" L="1">
+			<leakage_current subthreshold="2.7108E-08" gate="7.8617E-10"/>
+			<capacitance C_g="4.9006E-16" C_s="3.2216E-16" C_d="3.8860E-16"/>
+		</size>
+		<size W="3.92" L="1">
+			<leakage_current subthreshold="2.8523E-08" gate="8.2685E-10"/>
+			<capacitance C_g="5.1561E-16" C_s="3.3465E-16" C_d="4.0447E-16"/>
+		</size>
+		<size W="4.12" L="1">
+			<leakage_current subthreshold="3.0012E-08" gate="8.6967E-10"/>
+			<capacitance C_g="5.4251E-16" C_s="3.4779E-16" C_d="4.2118E-16"/>
+		</size>
+		<size W="4.32" L="1">
+			<leakage_current subthreshold="3.1501E-08" gate="9.1249E-10"/>
+			<capacitance C_g="5.6940E-16" C_s="3.6094E-16" C_d="4.3788E-16"/>
+		</size>
+		<size W="4.54" L="1">
+			<leakage_current subthreshold="3.3139E-08" gate="9.5959E-10"/>
+			<capacitance C_g="5.9899E-16" C_s="3.7539E-16" C_d="4.5626E-16"/>
+		</size>
+		<size W="4.76" L="1">
+			<leakage_current subthreshold="3.4777E-08" gate="1.0067E-09"/>
+			<capacitance C_g="6.2858E-16" C_s="3.8985E-16" C_d="4.7463E-16"/>
+		</size>
+		<size W="5.00" L="1">
+			<leakage_current subthreshold="3.6564E-08" gate="1.0581E-09"/>
+			<capacitance C_g="6.6085E-16" C_s="4.0563E-16" C_d="4.9468E-16"/>
+		</size>
+		<size W="5.25" L="1">
+			<leakage_current subthreshold="3.8425E-08" gate="1.1116E-09"/>
+			<capacitance C_g="6.9447E-16" C_s="4.2206E-16" C_d="5.1556E-16"/>
+		</size>
+		<size W="5.52" L="1">
+			<leakage_current subthreshold="4.0435E-08" gate="1.1694E-09"/>
+			<capacitance C_g="7.3077E-16" C_s="4.3980E-16" C_d="5.3812E-16"/>
+		</size>
+		<size W="5.79" L="1">
+			<leakage_current subthreshold="4.2446E-08" gate="1.2272E-09"/>
+			<capacitance C_g="7.6708E-16" C_s="4.5754E-16" C_d="5.6067E-16"/>
+		</size>
+		<size W="6.08" L="1">
+			<leakage_current subthreshold="4.4605E-08" gate="1.2893E-09"/>
+			<capacitance C_g="8.0608E-16" C_s="4.7660E-16" C_d="5.8490E-16"/>
+		</size>
+		<size W="6.39" L="1">
+			<leakage_current subthreshold="4.6913E-08" gate="1.3557E-09"/>
+			<capacitance C_g="8.4776E-16" C_s="4.9698E-16" C_d="6.1079E-16"/>
+		</size>
+		<size W="6.70" L="1">
+			<leakage_current subthreshold="4.9221E-08" gate="1.4220E-09"/>
+			<capacitance C_g="8.8945E-16" C_s="5.1735E-16" C_d="6.3668E-16"/>
+		</size>
+		<size W="7.04" L="1">
+			<leakage_current subthreshold="5.1753E-08" gate="1.4948E-09"/>
+			<capacitance C_g="9.3517E-16" C_s="5.3969E-16" C_d="6.6508E-16"/>
+		</size>
+		<size W="7.39" L="1">
+			<leakage_current subthreshold="5.4359E-08" gate="1.5698E-09"/>
+			<capacitance C_g="9.8223E-16" C_s="5.6270E-16" C_d="6.9432E-16"/>
+		</size>
+		<size W="7.76" L="1">
+			<leakage_current subthreshold="5.7113E-08" gate="1.6490E-09"/>
+			<capacitance C_g="1.0320E-15" C_s="5.8701E-16" C_d="7.2523E-16"/>
+		</size>
+		<size W="8.15" L="1">
+			<leakage_current subthreshold="6.0017E-08" gate="1.7325E-09"/>
+			<capacitance C_g="1.0844E-15" C_s="6.1264E-16" C_d="7.5780E-16"/>
+		</size>
+		<size W="8.56" L="1">
+			<leakage_current subthreshold="6.3070E-08" gate="1.8203E-09"/>
+			<capacitance C_g="1.1396E-15" C_s="6.3958E-16" C_d="7.9205E-16"/>
+		</size>
+		<size W="8.99" L="1">
+			<leakage_current subthreshold="6.6271E-08" gate="1.9123E-09"/>
+			<capacitance C_g="1.1974E-15" C_s="6.6785E-16" C_d="8.2797E-16"/>
+		</size>
+		<size W="9.43" L="1">
+			<leakage_current subthreshold="6.9548E-08" gate="2.0065E-09"/>
+			<capacitance C_g="1.2566E-15" C_s="6.9676E-16" C_d="8.6472E-16"/>
+		</size>
+		<size W="9.91" L="1">
+			<leakage_current subthreshold="7.3121E-08" gate="2.1093E-09"/>
+			<capacitance C_g="1.3211E-15" C_s="7.2831E-16" C_d="9.0482E-16"/>
+		</size>
+		<size W="10.40" L="1">
+			<leakage_current subthreshold="7.6770E-08" gate="2.2142E-09"/>
+			<capacitance C_g="1.3870E-15" C_s="7.6051E-16" C_d="9.4575E-16"/>
+		</size>
+		<size W="10.92" L="1">
+			<leakage_current subthreshold="8.0641E-08" gate="2.3256E-09"/>
+			<capacitance C_g="1.4569E-15" C_s="7.9468E-16" C_d="9.8918E-16"/>
+		</size>
+		<size W="11.47" L="1">
+			<leakage_current subthreshold="8.4736E-08" gate="2.4433E-09"/>
+			<capacitance C_g="1.5309E-15" C_s="8.3083E-16" C_d="1.0351E-15"/>
+		</size>
+		<size W="12.04" L="1">
+			<leakage_current subthreshold="8.8980E-08" gate="2.5653E-09"/>
+			<capacitance C_g="1.6075E-15" C_s="8.6829E-16" C_d="1.0827E-15"/>
+		</size>
+		<size W="12.64" L="1">
+			<leakage_current subthreshold="9.3448E-08" gate="2.6938E-09"/>
+			<capacitance C_g="1.6882E-15" C_s="9.0772E-16" C_d="1.1329E-15"/>
+		</size>
+		<size W="13.27" L="1">
+			<leakage_current subthreshold="9.8138E-08" gate="2.8287E-09"/>
+			<capacitance C_g="1.7729E-15" C_s="9.4912E-16" C_d="1.1855E-15"/>
+		</size>
+		<size W="13.94" L="1">
+			<leakage_current subthreshold="1.0313E-07" gate="2.9721E-09"/>
+			<capacitance C_g="1.8630E-15" C_s="9.9315E-16" C_d="1.2414E-15"/>
+		</size>
+		<size W="14.64" L="1">
+			<leakage_current subthreshold="1.0834E-07" gate="3.1220E-09"/>
+			<capacitance C_g="1.9572E-15" C_s="1.0392E-15" C_d="1.2999E-15"/>
+		</size>
+		<size W="15.37" L="1">
+			<leakage_current subthreshold="1.1377E-07" gate="3.2783E-09"/>
+			<capacitance C_g="2.0553E-15" C_s="1.0871E-15" C_d="1.3609E-15"/>
+		</size>
+		<size W="16.14" L="1">
+			<leakage_current subthreshold="1.1951E-07" gate="3.4432E-09"/>
+			<capacitance C_g="2.1589E-15" C_s="1.1377E-15" C_d="1.4252E-15"/>
+		</size>
+		<size W="16.94" L="1">
+			<leakage_current subthreshold="1.2546E-07" gate="3.6144E-09"/>
+			<capacitance C_g="2.2665E-15" C_s="1.1903E-15" C_d="1.4920E-15"/>
+		</size>
+		<size W="17.79" L="1">
+			<leakage_current subthreshold="1.3179E-07" gate="3.7964E-09"/>
+			<capacitance C_g="2.3808E-15" C_s="1.2462E-15" C_d="1.5630E-15"/>
+		</size>
+		<size W="18.68" L="1">
+			<leakage_current subthreshold="1.3842E-07" gate="3.9870E-09"/>
+			<capacitance C_g="2.5004E-15" C_s="1.3047E-15" C_d="1.6374E-15"/>
+		</size>
+		<size W="19.61" L="1">
+			<leakage_current subthreshold="1.4534E-07" gate="4.1861E-09"/>
+			<capacitance C_g="2.6255E-15" C_s="1.3658E-15" C_d="1.7151E-15"/>
+		</size>
+		<size W="20.59" L="1">
+			<leakage_current subthreshold="1.5264E-07" gate="4.3959E-09"/>
+			<capacitance C_g="2.7573E-15" C_s="1.4302E-15" C_d="1.7969E-15"/>
+		</size>
+		<size W="21.62" L="1">
+			<leakage_current subthreshold="1.6031E-07" gate="4.6164E-09"/>
+			<capacitance C_g="2.8958E-15" C_s="1.4979E-15" C_d="1.8830E-15"/>
+		</size>
+		<size W="22.70" L="1">
+			<leakage_current subthreshold="1.6835E-07" gate="4.8477E-09"/>
+			<capacitance C_g="3.0410E-15" C_s="1.5689E-15" C_d="1.9732E-15"/>
+		</size>
+		<size W="23.84" L="1">
+			<leakage_current subthreshold="1.7684E-07" gate="5.0917E-09"/>
+			<capacitance C_g="3.1942E-15" C_s="1.6438E-15" C_d="2.0684E-15"/>
+		</size>
+		<size W="25.03" L="1">
+			<leakage_current subthreshold="1.8570E-07" gate="5.3465E-09"/>
+			<capacitance C_g="3.3543E-15" C_s="1.7220E-15" C_d="2.1678E-15"/>
+		</size>
+		<size W="26.28" L="1">
+			<leakage_current subthreshold="1.9500E-07" gate="5.6141E-09"/>
+			<capacitance C_g="3.5224E-15" C_s="1.8041E-15" C_d="2.2722E-15"/>
+		</size>
+		<size W="27.60" L="1">
+			<leakage_current subthreshold="2.0483E-07" gate="5.8967E-09"/>
+			<capacitance C_g="3.6999E-15" C_s="1.8909E-15" C_d="2.3825E-15"/>
+		</size>
+		<size W="28.98" L="1">
+			<leakage_current subthreshold="2.1511E-07" gate="6.1922E-09"/>
+			<capacitance C_g="3.8856E-15" C_s="1.9816E-15" C_d="2.4977E-15"/>
+		</size>
+		<size W="30.43" L="1">
+			<leakage_current subthreshold="2.2590E-07" gate="6.5026E-09"/>
+			<capacitance C_g="4.0806E-15" C_s="2.0769E-15" C_d="2.6189E-15"/>
+		</size>
+		<size W="31.95" L="1">
+			<leakage_current subthreshold="2.3722E-07" gate="6.8281E-09"/>
+			<capacitance C_g="4.2849E-15" C_s="2.1768E-15" C_d="2.7458E-15"/>
+		</size>
+		<size W="33.55" L="1">
+			<leakage_current subthreshold="2.4913E-07" gate="7.1706E-09"/>
+			<capacitance C_g="4.5002E-15" C_s="2.2819E-15" C_d="2.8795E-15"/>
+		</size>
+		<size W="35.22" L="1">
+			<leakage_current subthreshold="2.6157E-07" gate="7.5282E-09"/>
+			<capacitance C_g="4.7247E-15" C_s="2.3917E-15" C_d="3.0190E-15"/>
+		</size>
+		<size W="36.98" L="1">
+			<leakage_current subthreshold="2.7467E-07" gate="7.9050E-09"/>
+			<capacitance C_g="4.9613E-15" C_s="2.5073E-15" C_d="3.1660E-15"/>
+		</size>
+		<size W="38.83" L="1">
+			<leakage_current subthreshold="2.8845E-07" gate="8.3011E-09"/>
+			<capacitance C_g="5.2102E-15" C_s="2.6289E-15" C_d="3.3205E-15"/>
+		</size>
+		<size W="40.77" L="1">
+			<leakage_current subthreshold="3.0289E-07" gate="8.7164E-09"/>
+			<capacitance C_g="5.4712E-15" C_s="2.7564E-15" C_d="3.4826E-15"/>
+		</size>
+		<size W="42.81" L="1">
+			<leakage_current subthreshold="3.1808E-07" gate="9.1532E-09"/>
+			<capacitance C_g="5.7456E-15" C_s="2.8905E-15" C_d="3.6530E-15"/>
+		</size>
+		<size W="44.95" L="1">
+			<leakage_current subthreshold="3.3401E-07" gate="9.6114E-09"/>
+			<capacitance C_g="6.0333E-15" C_s="3.0311E-15" C_d="3.8317E-15"/>
+		</size>
+		<size W="47.20" L="1">
+			<leakage_current subthreshold="3.5077E-07" gate="1.0093E-08"/>
+			<capacitance C_g="6.3357E-15" C_s="3.1790E-15" C_d="4.0197E-15"/>
+		</size>
+		<size W="49.56" L="1">
+			<leakage_current subthreshold="3.6834E-07" gate="1.0598E-08"/>
+			<capacitance C_g="6.6534E-15" C_s="3.3341E-15" C_d="4.2168E-15"/>
+		</size>
+		<size W="52.04" L="1">
+			<leakage_current subthreshold="3.8680E-07" gate="1.1129E-08"/>
+			<capacitance C_g="6.9869E-15" C_s="3.4971E-15" C_d="4.4240E-15"/>
+		</size>
+		<size W="54.64" L="1">
+			<leakage_current subthreshold="4.0616E-07" gate="1.1686E-08"/>
+			<capacitance C_g="7.3366E-15" C_s="3.6679E-15" C_d="4.6411E-15"/>
+		</size>
+		<size W="57.37" L="1">
+			<leakage_current subthreshold="4.2649E-07" gate="1.2270E-08"/>
+			<capacitance C_g="7.7038E-15" C_s="3.8474E-15" C_d="4.8692E-15"/>
+		</size>
+		<size W="60.24" L="1">
+			<leakage_current subthreshold="4.4786E-07" gate="1.2885E-08"/>
+			<capacitance C_g="8.0898E-15" C_s="4.0360E-15" C_d="5.1089E-15"/>
+		</size>
+		<size W="63.25" L="1">
+			<leakage_current subthreshold="4.7027E-07" gate="1.3529E-08"/>
+			<capacitance C_g="8.4951E-15" C_s="4.2338E-15" C_d="5.3603E-15"/>
+		</size>
+		<size W="66.42" L="1">
+			<leakage_current subthreshold="4.9387E-07" gate="1.4208E-08"/>
+			<capacitance C_g="8.9216E-15" C_s="4.4421E-15" C_d="5.6251E-15"/>
+		</size>
+		<size W="69.74" L="1">
+			<leakage_current subthreshold="5.1859E-07" gate="1.4919E-08"/>
+			<capacitance C_g="9.3683E-15" C_s="4.6603E-15" C_d="5.9025E-15"/>
+		</size>
+		<size W="73.22" L="1">
+			<leakage_current subthreshold="5.4450E-07" gate="1.5664E-08"/>
+			<capacitance C_g="9.8366E-15" C_s="4.8890E-15" C_d="6.1932E-15"/>
+		</size>
+		<size W="76.89" L="1">
+			<leakage_current subthreshold="5.7182E-07" gate="1.6450E-08"/>
+			<capacitance C_g="1.0330E-14" C_s="5.1302E-15" C_d="6.4997E-15"/>
+		</size>
+		<size W="80.73" L="1">
+			<leakage_current subthreshold="6.0042E-07" gate="1.7272E-08"/>
+			<capacitance C_g="1.0847E-14" C_s="5.3826E-15" C_d="6.8205E-15"/>
+		</size>
+		<size W="84.77" L="1">
+			<leakage_current subthreshold="6.3050E-07" gate="1.8137E-08"/>
+			<capacitance C_g="1.1390E-14" C_s="5.6481E-15" C_d="7.1579E-15"/>
+		</size>
+		<size W="89.01" L="1">
+			<leakage_current subthreshold="6.6206E-07" gate="1.9045E-08"/>
+			<capacitance C_g="1.1961E-14" C_s="5.9267E-15" C_d="7.5121E-15"/>
+		</size>
+		<size W="93.46" L="1">
+			<leakage_current subthreshold="6.9520E-07" gate="1.9997E-08"/>
+			<capacitance C_g="1.2560E-14" C_s="6.2192E-15" C_d="7.8838E-15"/>
+		</size>
+		<size W="98.13" L="1">
+			<leakage_current subthreshold="7.2997E-07" gate="2.0997E-08"/>
+			<capacitance C_g="1.3189E-14" C_s="6.5261E-15" C_d="8.2739E-15"/>
+		</size>
+		<size W="103.03" L="1">
+			<leakage_current subthreshold="7.6645E-07" gate="2.2046E-08"/>
+			<capacitance C_g="1.3849E-14" C_s="6.8481E-15" C_d="8.6832E-15"/>
+		</size>
+		<size W="108.19" L="1">
+			<leakage_current subthreshold="8.0487E-07" gate="2.3151E-08"/>
+			<capacitance C_g="1.4542E-14" C_s="7.1872E-15" C_d="9.1142E-15"/>
+		</size>
+		<size W="113.60" L="1">
+			<leakage_current subthreshold="8.4515E-07" gate="2.4309E-08"/>
+			<capacitance C_g="1.5271E-14" C_s="7.5428E-15" C_d="9.5661E-15"/>
+		</size>
+		<size W="119.28" L="1">
+			<leakage_current subthreshold="8.8744E-07" gate="2.5525E-08"/>
+			<capacitance C_g="1.6036E-14" C_s="7.9160E-15" C_d="1.0041E-14"/>
+		</size>
+		<size W="125.24" L="1">
+			<leakage_current subthreshold="9.3182E-07" gate="2.6801E-08"/>
+			<capacitance C_g="1.6839E-14" C_s="8.3077E-15" C_d="1.0538E-14"/>
+		</size>
+		<size W="131.50" L="1">
+			<leakage_current subthreshold="9.7843E-07" gate="2.8141E-08"/>
+			<capacitance C_g="1.7683E-14" C_s="8.7191E-15" C_d="1.1061E-14"/>
+		</size>
+		<size W="138.08" L="1">
+			<leakage_current subthreshold="1.0274E-06" gate="2.9550E-08"/>
+			<capacitance C_g="1.8569E-14" C_s="9.1516E-15" C_d="1.1611E-14"/>
+		</size>
+		<size W="144.98" L="1">
+			<leakage_current subthreshold="1.0788E-06" gate="3.1027E-08"/>
+			<capacitance C_g="1.9499E-14" C_s="9.6050E-15" C_d="1.2187E-14"/>
+		</size>
+		<size W="152.23" L="1">
+			<leakage_current subthreshold="1.1328E-06" gate="3.2580E-08"/>
+			<capacitance C_g="2.0473E-14" C_s="1.0081E-14" C_d="1.2793E-14"/>
+		</size>
+		<size W="159.84" L="1">
+			<leakage_current subthreshold="1.1894E-06" gate="3.4209E-08"/>
+			<capacitance C_g="2.1498E-14" C_s="1.0582E-14" C_d="1.3429E-14"/>
+		</size>
+		<size W="167.83" L="1">
+			<leakage_current subthreshold="1.2489E-06" gate="3.5919E-08"/>
+			<capacitance C_g="2.2575E-14" C_s="1.1107E-14" C_d="1.4096E-14"/>
+		</size>
+		<size W="176.22" L="1">
+			<leakage_current subthreshold="1.3114E-06" gate="3.7716E-08"/>
+			<capacitance C_g="2.3705E-14" C_s="1.1658E-14" C_d="1.4797E-14"/>
+		</size>
+		<size W="185.04" L="1">
+			<leakage_current subthreshold="1.3771E-06" gate="3.9604E-08"/>
+			<capacitance C_g="2.4894E-14" C_s="1.2238E-14" C_d="1.5534E-14"/>
+		</size>
+		<size W="194.29" L="1">
+			<leakage_current subthreshold="1.4459E-06" gate="4.1584E-08"/>
+			<capacitance C_g="2.6141E-14" C_s="1.2846E-14" C_d="1.6306E-14"/>
+		</size>
+		<size W="204.00" L="1">
+			<leakage_current subthreshold="1.5182E-06" gate="4.3663E-08"/>
+			<capacitance C_g="2.7450E-14" C_s="1.3484E-14" C_d="1.7117E-14"/>
+		</size>
+		<size W="214.20" L="1">
+			<leakage_current subthreshold="1.5942E-06" gate="4.5847E-08"/>
+			<capacitance C_g="2.8825E-14" C_s="1.4154E-14" C_d="1.7970E-14"/>
+		</size>
+		<size W="224.91" L="1">
+			<leakage_current subthreshold="1.6739E-06" gate="4.8139E-08"/>
+			<capacitance C_g="3.0276E-14" C_s="1.4858E-14" C_d="1.8864E-14"/>
+		</size>
+		<size W="236.16" L="1">
+			<leakage_current subthreshold="1.7577E-06" gate="5.0548E-08"/>
+			<capacitance C_g="3.1793E-14" C_s="1.5598E-14" C_d="1.9804E-14"/>
+		</size>
+		<size W="247.97" L="1">
+			<leakage_current subthreshold="1.8456E-06" gate="5.3076E-08"/>
+			<capacitance C_g="3.3387E-14" C_s="1.6374E-14" C_d="2.0791E-14"/>
+		</size>
+		<size W="260.36" L="1">
+			<leakage_current subthreshold="1.9379E-06" gate="5.5729E-08"/>
+			<capacitance C_g="3.5059E-14" C_s="1.7189E-14" C_d="2.1826E-14"/>
+		</size>
+		<size W="273.38" L="1">
+			<leakage_current subthreshold="2.0348E-06" gate="5.8516E-08"/>
+			<capacitance C_g="3.6816E-14" C_s="1.8045E-14" C_d="2.2914E-14"/>
+		</size>
+		<size W="287.05" L="1">
+			<leakage_current subthreshold="2.1366E-06" gate="6.1442E-08"/>
+			<capacitance C_g="3.8661E-14" C_s="1.8944E-14" C_d="2.4057E-14"/>
+		</size>
+		<size W="301.40" L="1">
+			<leakage_current subthreshold="2.2435E-06" gate="6.4514E-08"/>
+			<capacitance C_g="4.0598E-14" C_s="1.9888E-14" C_d="2.5257E-14"/>
+		</size>
+		<size W="316.47" L="1">
+			<leakage_current subthreshold="2.3557E-06" gate="6.7740E-08"/>
+			<capacitance C_g="4.2635E-14" C_s="2.0880E-14" C_d="2.6517E-14"/>
+		</size>
+		<size W="332.30" L="1">
+			<leakage_current subthreshold="2.4736E-06" gate="7.1129E-08"/>
+			<capacitance C_g="4.4774E-14" C_s="2.1922E-14" C_d="2.7841E-14"/>
+		</size>
+		<size W="348.91" L="1">
+			<leakage_current subthreshold="2.5972E-06" gate="7.4684E-08"/>
+			<capacitance C_g="4.7021E-14" C_s="2.3016E-14" C_d="2.9231E-14"/>
+		</size>
+		<size W="366.36" L="1">
+			<leakage_current subthreshold="2.7272E-06" gate="7.8419E-08"/>
+			<capacitance C_g="4.9384E-14" C_s="2.4166E-14" C_d="3.0692E-14"/>
+		</size>
+		<size W="384.68" L="1">
+			<leakage_current subthreshold="2.8636E-06" gate="8.2341E-08"/>
+			<capacitance C_g="5.1862E-14" C_s="2.5373E-14" C_d="3.2226E-14"/>
+		</size>
+		<size W="403.91" L="1">
+			<leakage_current subthreshold="3.0068E-06" gate="8.6457E-08"/>
+			<capacitance C_g="5.4467E-14" C_s="2.6641E-14" C_d="3.3836E-14"/>
+		</size>
+		<size W="424.10" L="1">
+			<leakage_current subthreshold="3.1571E-06" gate="9.0778E-08"/>
+			<capacitance C_g="5.7202E-14" C_s="2.7974E-14" C_d="3.5528E-14"/>
+		</size>
+		<size W="445.31" L="1">
+			<leakage_current subthreshold="3.3151E-06" gate="9.5318E-08"/>
+			<capacitance C_g="6.0073E-14" C_s="2.9374E-14" C_d="3.7307E-14"/>
+		</size>
+		<size W="467.58" L="1">
+			<leakage_current subthreshold="3.4809E-06" gate="1.0008E-07"/>
+			<capacitance C_g="6.3078E-14" C_s="3.0844E-14" C_d="3.9173E-14"/>
+		</size>
+		<size W="490.95" L="1">
+			<leakage_current subthreshold="3.6549E-06" gate="1.0509E-07"/>
+			<capacitance C_g="6.6243E-14" C_s="3.2391E-14" C_d="4.1137E-14"/>
+		</size>
+	</transistor>
+	<transistor type="pmos">
+		<long_size W="1" L="2">
+			<leakage_current subthreshold="8.9569E-12"/>
+			<capacitance C_g="1.1030E-16" C_s="3.1958E-16" C_d="3.7772E-16"/>
+		</long_size>
+		<size W="1.00" L="1">
+			<leakage_current subthreshold="1.6098E-09" gate="1.7078E-10"/>
+			<capacitance C_g="8.0297E-17" C_s="1.9524E-16" C_d="2.3583E-16"/>
+		</size>
+		<size W="1.05" L="1">
+			<leakage_current subthreshold="1.6982E-09" gate="1.8020E-10"/>
+			<capacitance C_g="8.4679E-17" C_s="1.9987E-16" C_d="2.4258E-16"/>
+		</size>
+		<size W="1.10" L="1">
+			<leakage_current subthreshold="1.7867E-09" gate="1.8961E-10"/>
+			<capacitance C_g="8.9061E-17" C_s="2.0450E-16" C_d="2.4932E-16"/>
+		</size>
+		<size W="1.16" L="1">
+			<leakage_current subthreshold="1.8927E-09" gate="2.0091E-10"/>
+			<capacitance C_g="9.4319E-17" C_s="2.1006E-16" C_d="2.5741E-16"/>
+		</size>
+		<size W="1.22" L="1">
+			<leakage_current subthreshold="1.9988E-09" gate="2.1221E-10"/>
+			<capacitance C_g="9.9577E-17" C_s="2.1562E-16" C_d="2.6550E-16"/>
+		</size>
+		<size W="1.28" L="1">
+			<leakage_current subthreshold="2.1049E-09" gate="2.2350E-10"/>
+			<capacitance C_g="1.0484E-16" C_s="2.2118E-16" C_d="2.7360E-16"/>
+		</size>
+		<size W="1.34" L="1">
+			<leakage_current subthreshold="2.2110E-09" gate="2.3480E-10"/>
+			<capacitance C_g="1.1009E-16" C_s="2.2674E-16" C_d="2.8169E-16"/>
+		</size>
+		<size W="1.41" L="1">
+			<leakage_current subthreshold="2.3348E-09" gate="2.4798E-10"/>
+			<capacitance C_g="1.1623E-16" C_s="2.3322E-16" C_d="2.9113E-16"/>
+		</size>
+		<size W="1.48" L="1">
+			<leakage_current subthreshold="2.4586E-09" gate="2.6116E-10"/>
+			<capacitance C_g="1.2236E-16" C_s="2.3971E-16" C_d="3.0057E-16"/>
+		</size>
+		<size W="1.55" L="1">
+			<leakage_current subthreshold="2.5823E-09" gate="2.7434E-10"/>
+			<capacitance C_g="1.2850E-16" C_s="2.4619E-16" C_d="3.1001E-16"/>
+		</size>
+		<size W="1.63" L="1">
+			<leakage_current subthreshold="2.7238E-09" gate="2.8940E-10"/>
+			<capacitance C_g="1.3551E-16" C_s="2.5360E-16" C_d="3.2080E-16"/>
+		</size>
+		<size W="1.71" L="1">
+			<leakage_current subthreshold="2.8652E-09" gate="3.0446E-10"/>
+			<capacitance C_g="1.4252E-16" C_s="2.6101E-16" C_d="3.3159E-16"/>
+		</size>
+		<size W="1.80" L="1">
+			<leakage_current subthreshold="3.0244E-09" gate="3.2141E-10"/>
+			<capacitance C_g="1.5041E-16" C_s="2.6935E-16" C_d="3.4373E-16"/>
+		</size>
+		<size W="1.89" L="1">
+			<leakage_current subthreshold="3.1835E-09" gate="3.3835E-10"/>
+			<capacitance C_g="1.5829E-16" C_s="2.7769E-16" C_d="3.5587E-16"/>
+		</size>
+		<size W="1.98" L="1">
+			<leakage_current subthreshold="3.3427E-09" gate="3.5530E-10"/>
+			<capacitance C_g="1.6618E-16" C_s="2.8603E-16" C_d="3.6801E-16"/>
+		</size>
+		<size W="2.08" L="1">
+			<leakage_current subthreshold="3.5195E-09" gate="3.7413E-10"/>
+			<capacitance C_g="1.7494E-16" C_s="2.9529E-16" C_d="3.8149E-16"/>
+		</size>
+		<size W="2.18" L="1">
+			<leakage_current subthreshold="3.6963E-09" gate="3.9295E-10"/>
+			<capacitance C_g="1.8370E-16" C_s="3.0456E-16" C_d="3.9498E-16"/>
+		</size>
+		<size W="2.29" L="1">
+			<leakage_current subthreshold="3.8908E-09" gate="4.1366E-10"/>
+			<capacitance C_g="1.9334E-16" C_s="3.1475E-16" C_d="4.0982E-16"/>
+		</size>
+		<size W="2.41" L="1">
+			<leakage_current subthreshold="4.1030E-09" gate="4.3626E-10"/>
+			<capacitance C_g="2.0386E-16" C_s="3.2586E-16" C_d="4.2600E-16"/>
+		</size>
+		<size W="2.53" L="1">
+			<leakage_current subthreshold="4.3152E-09" gate="4.5885E-10"/>
+			<capacitance C_g="2.1438E-16" C_s="3.3698E-16" C_d="4.4219E-16"/>
+		</size>
+		<size W="2.65" L="1">
+			<leakage_current subthreshold="4.5274E-09" gate="4.8144E-10"/>
+			<capacitance C_g="2.2489E-16" C_s="3.4810E-16" C_d="4.5837E-16"/>
+		</size>
+		<size W="2.79" L="1">
+			<leakage_current subthreshold="4.7749E-09" gate="5.0780E-10"/>
+			<capacitance C_g="2.3716E-16" C_s="3.6107E-16" C_d="4.7725E-16"/>
+		</size>
+		<size W="2.93" L="1">
+			<leakage_current subthreshold="5.0225E-09" gate="5.3416E-10"/>
+			<capacitance C_g="2.4943E-16" C_s="3.7404E-16" C_d="4.9614E-16"/>
+		</size>
+		<size W="3.07" L="1">
+			<leakage_current subthreshold="5.2700E-09" gate="5.6052E-10"/>
+			<capacitance C_g="2.6170E-16" C_s="3.8701E-16" C_d="5.1502E-16"/>
+		</size>
+		<size W="3.23" L="1">
+			<leakage_current subthreshold="5.5530E-09" gate="5.9065E-10"/>
+			<capacitance C_g="2.7572E-16" C_s="4.0183E-16" C_d="5.3660E-16"/>
+		</size>
+		<size W="3.39" L="1">
+			<leakage_current subthreshold="5.8359E-09" gate="6.2077E-10"/>
+			<capacitance C_g="2.8974E-16" C_s="4.1665E-16" C_d="5.5818E-16"/>
+		</size>
+		<size W="3.56" L="1">
+			<leakage_current subthreshold="6.1365E-09" gate="6.5278E-10"/>
+			<capacitance C_g="3.0464E-16" C_s="4.3240E-16" C_d="5.8110E-16"/>
+		</size>
+		<size W="3.73" L="1">
+			<leakage_current subthreshold="6.4371E-09" gate="6.8478E-10"/>
+			<capacitance C_g="3.1954E-16" C_s="4.4815E-16" C_d="6.0403E-16"/>
+		</size>
+		<size W="3.92" L="1">
+			<leakage_current subthreshold="6.7731E-09" gate="7.2056E-10"/>
+			<capacitance C_g="3.3619E-16" C_s="4.6575E-16" C_d="6.2966E-16"/>
+		</size>
+		<size W="4.12" L="1">
+			<leakage_current subthreshold="7.1267E-09" gate="7.5821E-10"/>
+			<capacitance C_g="3.5372E-16" C_s="4.8428E-16" C_d="6.5663E-16"/>
+		</size>
+		<size W="4.32" L="1">
+			<leakage_current subthreshold="7.4804E-09" gate="7.9587E-10"/>
+			<capacitance C_g="3.7124E-16" C_s="5.0281E-16" C_d="6.8361E-16"/>
+		</size>
+		<size W="4.54" L="1">
+			<leakage_current subthreshold="7.8694E-09" gate="8.3729E-10"/>
+			<capacitance C_g="3.9052E-16" C_s="5.2319E-16" C_d="7.1328E-16"/>
+		</size>
+		<size W="4.76" L="1">
+			<leakage_current subthreshold="8.2584E-09" gate="8.7871E-10"/>
+			<capacitance C_g="4.0980E-16" C_s="5.4357E-16" C_d="7.4295E-16"/>
+		</size>
+		<size W="5.00" L="1">
+			<leakage_current subthreshold="8.6828E-09" gate="9.2390E-10"/>
+			<capacitance C_g="4.3084E-16" C_s="5.6580E-16" C_d="7.7532E-16"/>
+		</size>
+		<size W="5.25" L="1">
+			<leakage_current subthreshold="9.1248E-09" gate="9.7097E-10"/>
+			<capacitance C_g="4.5275E-16" C_s="5.8896E-16" C_d="8.0904E-16"/>
+		</size>
+		<size W="5.52" L="1">
+			<leakage_current subthreshold="9.6023E-09" gate="1.0218E-09"/>
+			<capacitance C_g="4.7641E-16" C_s="6.1398E-16" C_d="8.4545E-16"/>
+		</size>
+		<size W="5.79" L="1">
+			<leakage_current subthreshold="1.0080E-08" gate="1.0726E-09"/>
+			<capacitance C_g="5.0007E-16" C_s="6.3899E-16" C_d="8.8187E-16"/>
+		</size>
+		<size W="6.08" L="1">
+			<leakage_current subthreshold="1.0592E-08" gate="1.1272E-09"/>
+			<capacitance C_g="5.2548E-16" C_s="6.6586E-16" C_d="9.2098E-16"/>
+		</size>
+		<size W="6.39" L="1">
+			<leakage_current subthreshold="1.1141E-08" gate="1.1856E-09"/>
+			<capacitance C_g="5.5265E-16" C_s="6.9457E-16" C_d="9.6279E-16"/>
+		</size>
+		<size W="6.70" L="1">
+			<leakage_current subthreshold="1.1689E-08" gate="1.2440E-09"/>
+			<capacitance C_g="5.7982E-16" C_s="7.2329E-16" C_d="1.0046E-15"/>
+		</size>
+		<size W="7.04" L="1">
+			<leakage_current subthreshold="1.2290E-08" gate="1.3080E-09"/>
+			<capacitance C_g="6.0961E-16" C_s="7.5479E-16" C_d="1.0505E-15"/>
+		</size>
+		<size W="7.39" L="1">
+			<leakage_current subthreshold="1.2909E-08" gate="1.3739E-09"/>
+			<capacitance C_g="6.4029E-16" C_s="7.8721E-16" C_d="1.0977E-15"/>
+		</size>
+		<size W="7.76" L="1">
+			<leakage_current subthreshold="1.3563E-08" gate="1.4435E-09"/>
+			<capacitance C_g="6.7271E-16" C_s="8.2149E-16" C_d="1.1476E-15"/>
+		</size>
+		<size W="8.15" L="1">
+			<leakage_current subthreshold="1.4253E-08" gate="1.5170E-09"/>
+			<capacitance C_g="7.0689E-16" C_s="8.5762E-16" C_d="1.2002E-15"/>
+		</size>
+		<size W="8.56" L="1">
+			<leakage_current subthreshold="1.4978E-08" gate="1.5942E-09"/>
+			<capacitance C_g="7.4282E-16" C_s="8.9561E-16" C_d="1.2555E-15"/>
+		</size>
+		<size W="8.99" L="1">
+			<leakage_current subthreshold="1.5738E-08" gate="1.6751E-09"/>
+			<capacitance C_g="7.8050E-16" C_s="9.3544E-16" C_d="1.3135E-15"/>
+		</size>
+		<size W="9.43" L="1">
+			<leakage_current subthreshold="1.6516E-08" gate="1.7580E-09"/>
+			<capacitance C_g="8.1906E-16" C_s="9.7620E-16" C_d="1.3728E-15"/>
+		</size>
+		<size W="9.91" L="1">
+			<leakage_current subthreshold="1.7365E-08" gate="1.8483E-09"/>
+			<capacitance C_g="8.6113E-16" C_s="1.0207E-15" C_d="1.4375E-15"/>
+		</size>
+		<size W="10.40" L="1">
+			<leakage_current subthreshold="1.8231E-08" gate="1.9406E-09"/>
+			<capacitance C_g="9.0407E-16" C_s="1.0661E-15" C_d="1.5036E-15"/>
+		</size>
+		<size W="10.92" L="1">
+			<leakage_current subthreshold="1.9151E-08" gate="2.0385E-09"/>
+			<capacitance C_g="9.4964E-16" C_s="1.1142E-15" C_d="1.5738E-15"/>
+		</size>
+		<size W="11.47" L="1">
+			<leakage_current subthreshold="2.0123E-08" gate="2.1421E-09"/>
+			<capacitance C_g="9.9784E-16" C_s="1.1652E-15" C_d="1.6479E-15"/>
+		</size>
+		<size W="12.04" L="1">
+			<leakage_current subthreshold="2.1131E-08" gate="2.2494E-09"/>
+			<capacitance C_g="1.0478E-15" C_s="1.2180E-15" C_d="1.7248E-15"/>
+		</size>
+		<size W="12.64" L="1">
+			<leakage_current subthreshold="2.2192E-08" gate="2.3623E-09"/>
+			<capacitance C_g="1.1004E-15" C_s="1.2736E-15" C_d="1.8057E-15"/>
+		</size>
+		<size W="13.27" L="1">
+			<leakage_current subthreshold="2.3306E-08" gate="2.4810E-09"/>
+			<capacitance C_g="1.1556E-15" C_s="1.3319E-15" C_d="1.8907E-15"/>
+		</size>
+		<size W="13.94" L="1">
+			<leakage_current subthreshold="2.4491E-08" gate="2.6071E-09"/>
+			<capacitance C_g="1.2143E-15" C_s="1.3940E-15" C_d="1.9811E-15"/>
+		</size>
+		<size W="14.64" L="1">
+			<leakage_current subthreshold="2.5729E-08" gate="2.7389E-09"/>
+			<capacitance C_g="1.2756E-15" C_s="1.4589E-15" C_d="2.0755E-15"/>
+		</size>
+		<size W="15.37" L="1">
+			<leakage_current subthreshold="2.7020E-08" gate="2.8763E-09"/>
+			<capacitance C_g="1.3396E-15" C_s="1.5265E-15" C_d="2.1739E-15"/>
+		</size>
+		<size W="16.14" L="1">
+			<leakage_current subthreshold="2.8381E-08" gate="3.0213E-09"/>
+			<capacitance C_g="1.4071E-15" C_s="1.5978E-15" C_d="2.2778E-15"/>
+		</size>
+		<size W="16.94" L="1">
+			<leakage_current subthreshold="2.9796E-08" gate="3.1719E-09"/>
+			<capacitance C_g="1.4772E-15" C_s="1.6719E-15" C_d="2.3857E-15"/>
+		</size>
+		<size W="17.79" L="1">
+			<leakage_current subthreshold="3.1299E-08" gate="3.3320E-09"/>
+			<capacitance C_g="1.5517E-15" C_s="1.7507E-15" C_d="2.5003E-15"/>
+		</size>
+		<size W="18.68" L="1">
+			<leakage_current subthreshold="3.2873E-08" gate="3.4995E-09"/>
+			<capacitance C_g="1.6297E-15" C_s="1.8331E-15" C_d="2.6204E-15"/>
+		</size>
+		<size W="19.61" L="1">
+			<leakage_current subthreshold="3.4517E-08" gate="3.6746E-09"/>
+			<capacitance C_g="1.7112E-15" C_s="1.9193E-15" C_d="2.7458E-15"/>
+		</size>
+		<size W="20.59" L="1">
+			<leakage_current subthreshold="3.6250E-08" gate="3.8592E-09"/>
+			<capacitance C_g="1.7971E-15" C_s="2.0101E-15" C_d="2.8780E-15"/>
+		</size>
+		<size W="21.62" L="1">
+			<leakage_current subthreshold="3.8071E-08" gate="4.0531E-09"/>
+			<capacitance C_g="1.8873E-15" C_s="2.1055E-15" C_d="3.0169E-15"/>
+		</size>
+		<size W="22.70" L="1">
+			<leakage_current subthreshold="3.9981E-08" gate="4.2564E-09"/>
+			<capacitance C_g="1.9820E-15" C_s="2.2056E-15" C_d="3.1625E-15"/>
+		</size>
+		<size W="23.84" L="1">
+			<leakage_current subthreshold="4.1997E-08" gate="4.4711E-09"/>
+			<capacitance C_g="2.0819E-15" C_s="2.3112E-15" C_d="3.3163E-15"/>
+		</size>
+		<size W="25.03" L="1">
+			<leakage_current subthreshold="4.4101E-08" gate="4.6951E-09"/>
+			<capacitance C_g="2.1862E-15" C_s="2.4214E-15" C_d="3.4768E-15"/>
+		</size>
+		<size W="26.28" L="1">
+			<leakage_current subthreshold="4.6312E-08" gate="4.9305E-09"/>
+			<capacitance C_g="2.2957E-15" C_s="2.5372E-15" C_d="3.6454E-15"/>
+		</size>
+		<size W="27.60" L="1">
+			<leakage_current subthreshold="4.8646E-08" gate="5.1790E-09"/>
+			<capacitance C_g="2.4114E-15" C_s="2.6595E-15" C_d="3.8234E-15"/>
+		</size>
+		<size W="28.98" L="1">
+			<leakage_current subthreshold="5.1086E-08" gate="5.4388E-09"/>
+			<capacitance C_g="2.5323E-15" C_s="2.7873E-15" C_d="4.0095E-15"/>
+		</size>
+		<size W="30.43" L="1">
+			<leakage_current subthreshold="5.3650E-08" gate="5.7118E-09"/>
+			<capacitance C_g="2.6594E-15" C_s="2.9217E-15" C_d="4.2051E-15"/>
+		</size>
+		<size W="31.95" L="1">
+			<leakage_current subthreshold="5.6338E-08" gate="5.9980E-09"/>
+			<capacitance C_g="2.7926E-15" C_s="3.0625E-15" C_d="4.4101E-15"/>
+		</size>
+		<size W="33.55" L="1">
+			<leakage_current subthreshold="5.9167E-08" gate="6.2992E-09"/>
+			<capacitance C_g="2.9328E-15" C_s="3.2107E-15" C_d="4.6259E-15"/>
+		</size>
+		<size W="35.22" L="1">
+			<leakage_current subthreshold="6.2120E-08" gate="6.6137E-09"/>
+			<capacitance C_g="3.0792E-15" C_s="3.3654E-15" C_d="4.8511E-15"/>
+		</size>
+		<size W="36.98" L="1">
+			<leakage_current subthreshold="6.5232E-08" gate="6.9450E-09"/>
+			<capacitance C_g="3.2334E-15" C_s="3.5285E-15" C_d="5.0885E-15"/>
+		</size>
+		<size W="38.83" L="1">
+			<leakage_current subthreshold="6.8503E-08" gate="7.2933E-09"/>
+			<capacitance C_g="3.3956E-15" C_s="3.6998E-15" C_d="5.3380E-15"/>
+		</size>
+		<size W="40.77" L="1">
+			<leakage_current subthreshold="7.1934E-08" gate="7.6586E-09"/>
+			<capacitance C_g="3.5656E-15" C_s="3.8796E-15" C_d="5.5997E-15"/>
+		</size>
+		<size W="42.81" L="1">
+			<leakage_current subthreshold="7.5541E-08" gate="8.0427E-09"/>
+			<capacitance C_g="3.7443E-15" C_s="4.0686E-15" C_d="5.8748E-15"/>
+		</size>
+		<size W="44.95" L="1">
+			<leakage_current subthreshold="7.9325E-08" gate="8.4456E-09"/>
+			<capacitance C_g="3.9319E-15" C_s="4.2668E-15" C_d="6.1635E-15"/>
+		</size>
+		<size W="47.20" L="1">
+			<leakage_current subthreshold="8.3304E-08" gate="8.8692E-09"/>
+			<capacitance C_g="4.1291E-15" C_s="4.4752E-15" C_d="6.4669E-15"/>
+		</size>
+		<size W="49.56" L="1">
+			<leakage_current subthreshold="8.7477E-08" gate="9.3136E-09"/>
+			<capacitance C_g="4.3359E-15" C_s="4.6939E-15" C_d="6.7852E-15"/>
+		</size>
+		<size W="52.04" L="1">
+			<leakage_current subthreshold="9.1862E-08" gate="9.7805E-09"/>
+			<capacitance C_g="4.5532E-15" C_s="4.9236E-15" C_d="7.1196E-15"/>
+		</size>
+		<size W="54.64" L="1">
+			<leakage_current subthreshold="9.6460E-08" gate="1.0270E-08"/>
+			<capacitance C_g="4.7810E-15" C_s="5.1645E-15" C_d="7.4703E-15"/>
+		</size>
+		<size W="57.37" L="1">
+			<leakage_current subthreshold="1.0129E-07" gate="1.0784E-08"/>
+			<capacitance C_g="5.0202E-15" C_s="5.4174E-15" C_d="7.8385E-15"/>
+		</size>
+		<size W="60.24" L="1">
+			<leakage_current subthreshold="1.0636E-07" gate="1.1324E-08"/>
+			<capacitance C_g="5.2718E-15" C_s="5.6833E-15" C_d="8.2256E-15"/>
+		</size>
+		<size W="63.25" L="1">
+			<leakage_current subthreshold="1.1168E-07" gate="1.1891E-08"/>
+			<capacitance C_g="5.5355E-15" C_s="5.9621E-15" C_d="8.6315E-15"/>
+		</size>
+		<size W="66.42" L="1">
+			<leakage_current subthreshold="1.1729E-07" gate="1.2488E-08"/>
+			<capacitance C_g="5.8133E-15" C_s="6.2558E-15" C_d="9.0591E-15"/>
+		</size>
+		<size W="69.74" L="1">
+			<leakage_current subthreshold="1.2316E-07" gate="1.3113E-08"/>
+			<capacitance C_g="6.1042E-15" C_s="6.5634E-15" C_d="9.5068E-15"/>
+		</size>
+		<size W="73.22" L="1">
+			<leakage_current subthreshold="1.2931E-07" gate="1.3768E-08"/>
+			<capacitance C_g="6.4092E-15" C_s="6.8858E-15" C_d="9.9762E-15"/>
+		</size>
+		<size W="76.89" L="1">
+			<leakage_current subthreshold="1.3580E-07" gate="1.4459E-08"/>
+			<capacitance C_g="6.7308E-15" C_s="7.2258E-15" C_d="1.0471E-14"/>
+		</size>
+		<size W="80.73" L="1">
+			<leakage_current subthreshold="1.4259E-07" gate="1.5182E-08"/>
+			<capacitance C_g="7.0673E-15" C_s="7.5815E-15" C_d="1.0989E-14"/>
+		</size>
+		<size W="84.77" L="1">
+			<leakage_current subthreshold="1.4974E-07" gate="1.5943E-08"/>
+			<capacitance C_g="7.4213E-15" C_s="7.9558E-15" C_d="1.1534E-14"/>
+		</size>
+		<size W="89.01" L="1">
+			<leakage_current subthreshold="1.5724E-07" gate="1.6741E-08"/>
+			<capacitance C_g="7.7929E-15" C_s="8.3486E-15" C_d="1.2106E-14"/>
+		</size>
+		<size W="93.46" L="1">
+			<leakage_current subthreshold="1.6511E-07" gate="1.7579E-08"/>
+			<capacitance C_g="8.1828E-15" C_s="8.7608E-15" C_d="1.2706E-14"/>
+		</size>
+		<size W="98.13" L="1">
+			<leakage_current subthreshold="1.7336E-07" gate="1.8458E-08"/>
+			<capacitance C_g="8.5920E-15" C_s="9.1935E-15" C_d="1.3336E-14"/>
+		</size>
+		<size W="103.03" L="1">
+			<leakage_current subthreshold="1.8203E-07" gate="1.9381E-08"/>
+			<capacitance C_g="9.0213E-15" C_s="9.6474E-15" C_d="1.3996E-14"/>
+		</size>
+		<size W="108.19" L="1">
+			<leakage_current subthreshold="1.9115E-07" gate="2.0352E-08"/>
+			<capacitance C_g="9.4734E-15" C_s="1.0125E-14" C_d="1.4692E-14"/>
+		</size>
+		<size W="113.60" L="1">
+			<leakage_current subthreshold="2.0072E-07" gate="2.1371E-08"/>
+			<capacitance C_g="9.9475E-15" C_s="1.0627E-14" C_d="1.5422E-14"/>
+		</size>
+		<size W="119.28" L="1">
+			<leakage_current subthreshold="2.1076E-07" gate="2.2440E-08"/>
+			<capacitance C_g="1.0445E-14" C_s="1.1153E-14" C_d="1.6188E-14"/>
+		</size>
+		<size W="125.24" L="1">
+			<leakage_current subthreshold="2.2130E-07" gate="2.3562E-08"/>
+			<capacitance C_g="1.0967E-14" C_s="1.1705E-14" C_d="1.6992E-14"/>
+		</size>
+		<size W="131.50" L="1">
+			<leakage_current subthreshold="2.3237E-07" gate="2.4741E-08"/>
+			<capacitance C_g="1.1516E-14" C_s="1.2285E-14" C_d="1.7836E-14"/>
+		</size>
+		<size W="138.08" L="1">
+			<leakage_current subthreshold="2.4401E-07" gate="2.5980E-08"/>
+			<capacitance C_g="1.2092E-14" C_s="1.2894E-14" C_d="1.8723E-14"/>
+		</size>
+		<size W="144.98" L="1">
+			<leakage_current subthreshold="2.5621E-07" gate="2.7279E-08"/>
+			<capacitance C_g="1.2697E-14" C_s="1.3534E-14" C_d="1.9654E-14"/>
+		</size>
+		<size W="152.23" L="1">
+			<leakage_current subthreshold="2.6903E-07" gate="2.8644E-08"/>
+			<capacitance C_g="1.3332E-14" C_s="1.4205E-14" C_d="2.0631E-14"/>
+		</size>
+		<size W="159.84" L="1">
+			<leakage_current subthreshold="2.8249E-07" gate="3.0077E-08"/>
+			<capacitance C_g="1.3999E-14" C_s="1.4910E-14" C_d="2.1658E-14"/>
+		</size>
+		<size W="167.83" L="1">
+			<leakage_current subthreshold="2.9662E-07" gate="3.1581E-08"/>
+			<capacitance C_g="1.4698E-14" C_s="1.5651E-14" C_d="2.2735E-14"/>
+		</size>
+		<size W="176.22" L="1">
+			<leakage_current subthreshold="3.1146E-07" gate="3.3160E-08"/>
+			<capacitance C_g="1.5433E-14" C_s="1.6428E-14" C_d="2.3866E-14"/>
+		</size>
+		<size W="185.04" L="1">
+			<leakage_current subthreshold="3.2705E-07" gate="3.4821E-08"/>
+			<capacitance C_g="1.6206E-14" C_s="1.7245E-14" C_d="2.5055E-14"/>
+		</size>
+		<size W="194.29" L="1">
+			<leakage_current subthreshold="3.4341E-07" gate="3.6562E-08"/>
+			<capacitance C_g="1.7016E-14" C_s="1.8102E-14" C_d="2.6303E-14"/>
+		</size>
+		<size W="204.00" L="1">
+			<leakage_current subthreshold="3.6059E-07" gate="3.8390E-08"/>
+			<capacitance C_g="1.7866E-14" C_s="1.9001E-14" C_d="2.7612E-14"/>
+		</size>
+		<size W="214.20" L="1">
+			<leakage_current subthreshold="3.7862E-07" gate="4.0311E-08"/>
+			<capacitance C_g="1.8759E-14" C_s="1.9946E-14" C_d="2.8987E-14"/>
+		</size>
+		<size W="224.91" L="1">
+			<leakage_current subthreshold="3.9757E-07" gate="4.2327E-08"/>
+			<capacitance C_g="1.9697E-14" C_s="2.0939E-14" C_d="3.0431E-14"/>
+		</size>
+		<size W="236.16" L="1">
+			<leakage_current subthreshold="4.1746E-07" gate="4.4445E-08"/>
+			<capacitance C_g="2.0682E-14" C_s="2.1981E-14" C_d="3.1947E-14"/>
+		</size>
+		<size W="247.97" L="1">
+			<leakage_current subthreshold="4.3835E-07" gate="4.6668E-08"/>
+			<capacitance C_g="2.1716E-14" C_s="2.3075E-14" C_d="3.3539E-14"/>
+		</size>
+		<size W="260.36" L="1">
+			<leakage_current subthreshold="4.6026E-07" gate="4.9001E-08"/>
+			<capacitance C_g="2.2801E-14" C_s="2.4223E-14" C_d="3.5208E-14"/>
+		</size>
+		<size W="273.38" L="1">
+			<leakage_current subthreshold="4.8329E-07" gate="5.1452E-08"/>
+			<capacitance C_g="2.3940E-14" C_s="2.5429E-14" C_d="3.6962E-14"/>
+		</size>
+		<size W="287.05" L="1">
+			<leakage_current subthreshold="5.0747E-07" gate="5.4025E-08"/>
+			<capacitance C_g="2.5136E-14" C_s="2.6695E-14" C_d="3.8804E-14"/>
+		</size>
+		<size W="301.40" L="1">
+			<leakage_current subthreshold="5.3285E-07" gate="5.6727E-08"/>
+			<capacitance C_g="2.6392E-14" C_s="2.8025E-14" C_d="4.0736E-14"/>
+		</size>
+		<size W="316.47" L="1">
+			<leakage_current subthreshold="5.5951E-07" gate="5.9564E-08"/>
+			<capacitance C_g="2.7710E-14" C_s="2.9421E-14" C_d="4.2765E-14"/>
+		</size>
+		<size W="332.30" L="1">
+			<leakage_current subthreshold="5.8751E-07" gate="6.2544E-08"/>
+			<capacitance C_g="2.9094E-14" C_s="3.0887E-14" C_d="4.4895E-14"/>
+		</size>
+		<size W="348.91" L="1">
+			<leakage_current subthreshold="6.1689E-07" gate="6.5670E-08"/>
+			<capacitance C_g="3.0547E-14" C_s="3.2425E-14" C_d="4.7130E-14"/>
+		</size>
+		<size W="366.36" L="1">
+			<leakage_current subthreshold="6.4776E-07" gate="6.8955E-08"/>
+			<capacitance C_g="3.2072E-14" C_s="3.4041E-14" C_d="4.9476E-14"/>
+		</size>
+		<size W="384.68" L="1">
+			<leakage_current subthreshold="6.8017E-07" gate="7.2404E-08"/>
+			<capacitance C_g="3.3672E-14" C_s="3.5738E-14" C_d="5.1938E-14"/>
+		</size>
+		<size W="403.91" L="1">
+			<leakage_current subthreshold="7.1420E-07" gate="7.6023E-08"/>
+			<capacitance C_g="3.5352E-14" C_s="3.7518E-14" C_d="5.4521E-14"/>
+		</size>
+		<size W="424.10" L="1">
+			<leakage_current subthreshold="7.4992E-07" gate="7.9824E-08"/>
+			<capacitance C_g="3.7116E-14" C_s="3.9387E-14" C_d="5.7230E-14"/>
+		</size>
+		<size W="445.31" L="1">
+			<leakage_current subthreshold="7.8745E-07" gate="8.3816E-08"/>
+			<capacitance C_g="3.8969E-14" C_s="4.1351E-14" C_d="6.0074E-14"/>
+		</size>
+		<size W="467.58" L="1">
+			<leakage_current subthreshold="8.2685E-07" gate="8.8008E-08"/>
+			<capacitance C_g="4.0913E-14" C_s="4.3412E-14" C_d="6.3057E-14"/>
+		</size>
+		<size W="490.95" L="1">
+			<leakage_current subthreshold="8.6821E-07" gate="9.2406E-08"/>
+			<capacitance C_g="4.2954E-14" C_s="4.5574E-14" C_d="6.6183E-14"/>
+		</size>
+	</transistor>
+	<multiplexers>
+		<multiplexer size="1">
+			<voltages in="0.5" out_min="5.0000E-01" out_max="5.0000E-01"/>
+			<voltages in="0.55" out_min="5.5000E-01" out_max="5.5000E-01"/>
+			<voltages in="0.6" out_min="6.0000E-01" out_max="6.0000E-01"/>
+			<voltages in="0.65" out_min="6.5000E-01" out_max="6.5000E-01"/>
+			<voltages in="0.7" out_min="7.0000E-01" out_max="7.0000E-01"/>
+			<voltages in="0.75" out_min="7.4999E-01" out_max="7.4999E-01"/>
+			<voltages in="0.8" out_min="7.9995E-01" out_max="7.9995E-01"/>
+			<voltages in="0.85" out_min="8.4976E-01" out_max="8.4976E-01"/>
+			<voltages in="0.9" out_min="8.9896E-01" out_max="8.9896E-01"/>
+			<voltages in="0.95" out_min="9.4564E-01" out_max="9.4564E-01"/>
+			<voltages in="1" out_min="9.8450E-01" out_max="9.8450E-01"/>
+		</multiplexer>
+		<multiplexer size="2">
+			<voltages in="0.5" out_min="4.9995E-01" out_max="5.0000E-01"/>
+			<voltages in="0.55" out_min="5.4986E-01" out_max="5.5000E-01"/>
+			<voltages in="0.6" out_min="5.9947E-01" out_max="6.0000E-01"/>
+			<voltages in="0.65" out_min="6.4789E-01" out_max="6.5000E-01"/>
+			<voltages in="0.7" out_min="6.9177E-01" out_max="6.9998E-01"/>
+			<voltages in="0.75" out_min="7.2407E-01" out_max="7.4989E-01"/>
+			<voltages in="0.8" out_min="7.4049E-01" out_max="7.9946E-01"/>
+			<voltages in="0.85" out_min="7.4780E-01" out_max="8.4740E-01"/>
+			<voltages in="0.9" out_min="7.5326E-01" out_max="8.8911E-01"/>
+			<voltages in="0.95" out_min="7.5838E-01" out_max="9.1687E-01"/>
+			<voltages in="1" out_min="7.6340E-01" out_max="9.2941E-01"/>
+		</multiplexer>
+		<multiplexer size="3">
+			<voltages in="0.5" out_min="4.9991E-01" out_max="5.0000E-01"/>
+			<voltages in="0.55" out_min="5.4971E-01" out_max="5.5000E-01"/>
+			<voltages in="0.6" out_min="5.9896E-01" out_max="6.0000E-01"/>
+			<voltages in="0.65" out_min="6.4595E-01" out_max="6.4999E-01"/>
+			<voltages in="0.7" out_min="6.8562E-01" out_max="6.9996E-01"/>
+			<voltages in="0.75" out_min="7.1085E-01" out_max="7.4980E-01"/>
+			<voltages in="0.8" out_min="7.2191E-01" out_max="7.9899E-01"/>
+			<voltages in="0.85" out_min="7.2800E-01" out_max="8.4529E-01"/>
+			<voltages in="0.9" out_min="7.3325E-01" out_max="8.8228E-01"/>
+			<voltages in="0.95" out_min="7.3832E-01" out_max="9.0340E-01"/>
+			<voltages in="1" out_min="7.4332E-01" out_max="9.1224E-01"/>
+		</multiplexer>
+		<multiplexer size="4">
+			<voltages in="0.5" out_min="4.9986E-01" out_max="5.0000E-01"/>
+			<voltages in="0.55" out_min="5.4957E-01" out_max="5.5000E-01"/>
+			<voltages in="0.6" out_min="5.9845E-01" out_max="6.0000E-01"/>
+			<voltages in="0.65" out_min="6.4416E-01" out_max="6.4999E-01"/>
+			<voltages in="0.7" out_min="6.8062E-01" out_max="6.9994E-01"/>
+			<voltages in="0.75" out_min="7.0160E-01" out_max="7.4970E-01"/>
+			<voltages in="0.8" out_min="7.1053E-01" out_max="7.9853E-01"/>
+			<voltages in="0.85" out_min="7.1625E-01" out_max="8.4337E-01"/>
+			<voltages in="0.9" out_min="7.2144E-01" out_max="8.7695E-01"/>
+			<voltages in="0.95" out_min="7.2648E-01" out_max="8.9431E-01"/>
+			<voltages in="1" out_min="7.3148E-01" out_max="9.0179E-01"/>
+		</multiplexer>
+		<multiplexer size="5">
+			<voltages in="0.5" out_min="4.9981E-01" out_max="5.0000E-01"/>
+			<voltages in="0.55" out_min="5.4943E-01" out_max="5.5000E-01"/>
+			<voltages in="0.6" out_min="5.9796E-01" out_max="6.0000E-01"/>
+			<voltages in="0.65" out_min="6.4248E-01" out_max="6.4998E-01"/>
+			<voltages in="0.7" out_min="6.7637E-01" out_max="6.9992E-01"/>
+			<voltages in="0.75" out_min="6.9446E-01" out_max="7.4961E-01"/>
+			<voltages in="0.8" out_min="7.0230E-01" out_max="7.9808E-01"/>
+			<voltages in="0.85" out_min="7.0785E-01" out_max="8.4160E-01"/>
+			<voltages in="0.9" out_min="7.1300E-01" out_max="8.7252E-01"/>
+			<voltages in="0.95" out_min="7.1803E-01" out_max="8.8746E-01"/>
+			<voltages in="1" out_min="7.2302E-01" out_max="8.9424E-01"/>
+		</multiplexer>
+		<multiplexer size="6">
+			<voltages in="0.5" out_min="4.9977E-01" out_max="5.0000E-01"/>
+			<voltages in="0.55" out_min="5.4928E-01" out_max="5.5000E-01"/>
+			<voltages in="0.6" out_min="5.9747E-01" out_max="6.0000E-01"/>
+			<voltages in="0.65" out_min="6.4091E-01" out_max="6.4998E-01"/>
+			<voltages in="0.7" out_min="6.7265E-01" out_max="6.9990E-01"/>
+			<voltages in="0.75" out_min="6.8864E-01" out_max="7.4952E-01"/>
+			<voltages in="0.8" out_min="6.9584E-01" out_max="7.9765E-01"/>
+			<voltages in="0.85" out_min="7.0129E-01" out_max="8.3997E-01"/>
+			<voltages in="0.9" out_min="7.0642E-01" out_max="8.6873E-01"/>
+			<voltages in="0.95" out_min="7.1144E-01" out_max="8.8196E-01"/>
+			<voltages in="1" out_min="7.1643E-01" out_max="8.8834E-01"/>
+		</multiplexer>
+		<multiplexer size="7">
+			<voltages in="0.5" out_min="4.9972E-01" out_max="5.0000E-01"/>
+			<voltages in="0.55" out_min="5.4914E-01" out_max="5.5000E-01"/>
+			<voltages in="0.6" out_min="5.9699E-01" out_max="5.9999E-01"/>
+			<voltages in="0.65" out_min="6.3942E-01" out_max="6.4998E-01"/>
+			<voltages in="0.7" out_min="6.6933E-01" out_max="6.9988E-01"/>
+			<voltages in="0.75" out_min="6.8373E-01" out_max="7.4942E-01"/>
+			<voltages in="0.8" out_min="6.9052E-01" out_max="7.9721E-01"/>
+			<voltages in="0.85" out_min="6.9591E-01" out_max="8.3844E-01"/>
+			<voltages in="0.9" out_min="7.0102E-01" out_max="8.6540E-01"/>
+			<voltages in="0.95" out_min="7.0604E-01" out_max="8.7737E-01"/>
+			<voltages in="1" out_min="7.1102E-01" out_max="8.8349E-01"/>
+		</multiplexer>
+		<multiplexer size="8">
+			<voltages in="0.5" out_min="4.9967E-01" out_max="5.0000E-01"/>
+			<voltages in="0.55" out_min="5.4900E-01" out_max="5.5000E-01"/>
+			<voltages in="0.6" out_min="5.9652E-01" out_max="5.9999E-01"/>
+			<voltages in="0.65" out_min="6.3801E-01" out_max="6.4997E-01"/>
+			<voltages in="0.7" out_min="6.6632E-01" out_max="6.9986E-01"/>
+			<voltages in="0.75" out_min="6.7949E-01" out_max="7.4933E-01"/>
+			<voltages in="0.8" out_min="6.8600E-01" out_max="7.9679E-01"/>
+			<voltages in="0.85" out_min="6.9134E-01" out_max="8.3701E-01"/>
+			<voltages in="0.9" out_min="6.9644E-01" out_max="8.6242E-01"/>
+			<voltages in="0.95" out_min="7.0145E-01" out_max="8.7343E-01"/>
+			<voltages in="1" out_min="7.0643E-01" out_max="8.7937E-01"/>
+		</multiplexer>
+		<multiplexer size="9">
+			<voltages in="0.5" out_min="4.9963E-01" out_max="5.0000E-01"/>
+			<voltages in="0.55" out_min="5.4886E-01" out_max="5.5000E-01"/>
+			<voltages in="0.6" out_min="5.9606E-01" out_max="5.9999E-01"/>
+			<voltages in="0.65" out_min="6.3666E-01" out_max="6.4997E-01"/>
+			<voltages in="0.7" out_min="6.6357E-01" out_max="6.9984E-01"/>
+			<voltages in="0.75" out_min="6.7575E-01" out_max="7.4924E-01"/>
+			<voltages in="0.8" out_min="6.8206E-01" out_max="7.9638E-01"/>
+			<voltages in="0.85" out_min="6.8737E-01" out_max="8.3566E-01"/>
+			<voltages in="0.9" out_min="6.9245E-01" out_max="8.5973E-01"/>
+			<voltages in="0.95" out_min="6.9746E-01" out_max="8.6999E-01"/>
+			<voltages in="1" out_min="7.0244E-01" out_max="8.7580E-01"/>
+		</multiplexer>
+		<multiplexer size="10">
+			<voltages in="0.5" out_min="4.9958E-01" out_max="5.0000E-01"/>
+			<voltages in="0.55" out_min="5.4872E-01" out_max="5.5000E-01"/>
+			<voltages in="0.6" out_min="5.9561E-01" out_max="5.9999E-01"/>
+			<voltages in="0.65" out_min="6.3538E-01" out_max="6.4996E-01"/>
+			<voltages in="0.7" out_min="6.6104E-01" out_max="6.9982E-01"/>
+			<voltages in="0.75" out_min="6.7242E-01" out_max="7.4914E-01"/>
+			<voltages in="0.8" out_min="6.7857E-01" out_max="7.9597E-01"/>
+			<voltages in="0.85" out_min="6.8385E-01" out_max="8.3438E-01"/>
+			<voltages in="0.9" out_min="6.8893E-01" out_max="8.5727E-01"/>
+			<voltages in="0.95" out_min="6.9393E-01" out_max="8.6693E-01"/>
+			<voltages in="1" out_min="6.9891E-01" out_max="8.7263E-01"/>
+		</multiplexer>
+		<multiplexer size="11">
+			<voltages in="0.5" out_min="4.9953E-01" out_max="5.0000E-01"/>
+			<voltages in="0.55" out_min="5.4859E-01" out_max="5.5000E-01"/>
+			<voltages in="0.6" out_min="5.9516E-01" out_max="5.9999E-01"/>
+			<voltages in="0.65" out_min="6.3416E-01" out_max="6.4996E-01"/>
+			<voltages in="0.7" out_min="6.5869E-01" out_max="6.9981E-01"/>
+			<voltages in="0.75" out_min="6.6940E-01" out_max="7.4905E-01"/>
+			<voltages in="0.8" out_min="6.7544E-01" out_max="7.9558E-01"/>
+			<voltages in="0.85" out_min="6.8069E-01" out_max="8.3317E-01"/>
+			<voltages in="0.9" out_min="6.8576E-01" out_max="8.5501E-01"/>
+			<voltages in="0.95" out_min="6.9077E-01" out_max="8.6417E-01"/>
+			<voltages in="1" out_min="6.9574E-01" out_max="8.6980E-01"/>
+		</multiplexer>
+		<multiplexer size="12">
+			<voltages in="0.5" out_min="4.9949E-01" out_max="5.0000E-01"/>
+			<voltages in="0.55" out_min="5.4845E-01" out_max="5.5000E-01"/>
+			<voltages in="0.6" out_min="5.9472E-01" out_max="5.9999E-01"/>
+			<voltages in="0.65" out_min="6.3298E-01" out_max="6.4996E-01"/>
+			<voltages in="0.7" out_min="6.5649E-01" out_max="6.9979E-01"/>
+			<voltages in="0.75" out_min="6.6665E-01" out_max="7.4896E-01"/>
+			<voltages in="0.8" out_min="6.7259E-01" out_max="7.9518E-01"/>
+			<voltages in="0.85" out_min="6.7783E-01" out_max="8.3201E-01"/>
+			<voltages in="0.9" out_min="6.8290E-01" out_max="8.5292E-01"/>
+			<voltages in="0.95" out_min="6.8790E-01" out_max="8.6167E-01"/>
+			<voltages in="1" out_min="6.9287E-01" out_max="8.6723E-01"/>
+		</multiplexer>
+		<multiplexer size="13">
+			<voltages in="0.5" out_min="4.9944E-01" out_max="5.0000E-01"/>
+			<voltages in="0.55" out_min="5.4831E-01" out_max="5.5000E-01"/>
+			<voltages in="0.6" out_min="5.9429E-01" out_max="5.9999E-01"/>
+			<voltages in="0.65" out_min="6.3184E-01" out_max="6.4995E-01"/>
+			<voltages in="0.7" out_min="6.5443E-01" out_max="6.9977E-01"/>
+			<voltages in="0.75" out_min="6.6413E-01" out_max="7.4887E-01"/>
+			<voltages in="0.8" out_min="6.6999E-01" out_max="7.9480E-01"/>
+			<voltages in="0.85" out_min="6.7521E-01" out_max="8.3090E-01"/>
+			<voltages in="0.9" out_min="6.8027E-01" out_max="8.5096E-01"/>
+			<voltages in="0.95" out_min="6.8527E-01" out_max="8.5937E-01"/>
+			<voltages in="1" out_min="6.9024E-01" out_max="8.6488E-01"/>
+		</multiplexer>
+		<multiplexer size="14">
+			<voltages in="0.5" out_min="4.9940E-01" out_max="5.0000E-01"/>
+			<voltages in="0.55" out_min="5.4818E-01" out_max="5.5000E-01"/>
+			<voltages in="0.6" out_min="5.9387E-01" out_max="5.9999E-01"/>
+			<voltages in="0.65" out_min="6.3075E-01" out_max="6.4995E-01"/>
+			<voltages in="0.7" out_min="6.5249E-01" out_max="6.9975E-01"/>
+			<voltages in="0.75" out_min="6.6179E-01" out_max="7.4878E-01"/>
+			<voltages in="0.8" out_min="6.6759E-01" out_max="7.9442E-01"/>
+			<voltages in="0.85" out_min="6.7279E-01" out_max="8.2984E-01"/>
+			<voltages in="0.9" out_min="6.7785E-01" out_max="8.4914E-01"/>
+			<voltages in="0.95" out_min="6.8285E-01" out_max="8.5725E-01"/>
+			<voltages in="1" out_min="6.8782E-01" out_max="8.6271E-01"/>
+		</multiplexer>
+		<multiplexer size="15">
+			<voltages in="0.5" out_min="4.9935E-01" out_max="5.0000E-01"/>
+			<voltages in="0.55" out_min="5.4804E-01" out_max="5.5000E-01"/>
+			<voltages in="0.6" out_min="5.9345E-01" out_max="5.9999E-01"/>
+			<voltages in="0.65" out_min="6.2970E-01" out_max="6.4994E-01"/>
+			<voltages in="0.7" out_min="6.5066E-01" out_max="6.9973E-01"/>
+			<voltages in="0.75" out_min="6.5961E-01" out_max="7.4869E-01"/>
+			<voltages in="0.8" out_min="6.6536E-01" out_max="7.9405E-01"/>
+			<voltages in="0.85" out_min="6.7055E-01" out_max="8.2883E-01"/>
+			<voltages in="0.9" out_min="6.7560E-01" out_max="8.4742E-01"/>
+			<voltages in="0.95" out_min="6.8060E-01" out_max="8.5529E-01"/>
+			<voltages in="1" out_min="6.8557E-01" out_max="8.6071E-01"/>
+		</multiplexer>
+		<multiplexer size="16">
+			<voltages in="0.5" out_min="4.9930E-01" out_max="5.0000E-01"/>
+			<voltages in="0.55" out_min="5.4790E-01" out_max="5.5000E-01"/>
+			<voltages in="0.6" out_min="5.9303E-01" out_max="5.9999E-01"/>
+			<voltages in="0.65" out_min="6.2868E-01" out_max="6.4994E-01"/>
+			<voltages in="0.7" out_min="6.4892E-01" out_max="6.9971E-01"/>
+			<voltages in="0.75" out_min="6.5758E-01" out_max="7.4860E-01"/>
+			<voltages in="0.8" out_min="6.6327E-01" out_max="7.9369E-01"/>
+			<voltages in="0.85" out_min="6.6846E-01" out_max="8.2785E-01"/>
+			<voltages in="0.9" out_min="6.7351E-01" out_max="8.4580E-01"/>
+			<voltages in="0.95" out_min="6.7851E-01" out_max="8.5345E-01"/>
+			<voltages in="1" out_min="6.8348E-01" out_max="8.5884E-01"/>
+		</multiplexer>
+		<multiplexer size="17">
+			<voltages in="0.5" out_min="4.9926E-01" out_max="5.0000E-01"/>
+			<voltages in="0.55" out_min="5.4777E-01" out_max="5.5000E-01"/>
+			<voltages in="0.6" out_min="5.9263E-01" out_max="5.9999E-01"/>
+			<voltages in="0.65" out_min="6.2769E-01" out_max="6.4993E-01"/>
+			<voltages in="0.7" out_min="6.4727E-01" out_max="6.9969E-01"/>
+			<voltages in="0.75" out_min="6.5567E-01" out_max="7.4851E-01"/>
+			<voltages in="0.8" out_min="6.6132E-01" out_max="7.9333E-01"/>
+			<voltages in="0.85" out_min="6.6650E-01" out_max="8.2691E-01"/>
+			<voltages in="0.9" out_min="6.7155E-01" out_max="8.4427E-01"/>
+			<voltages in="0.95" out_min="6.7654E-01" out_max="8.5173E-01"/>
+			<voltages in="1" out_min="6.8151E-01" out_max="8.5709E-01"/>
+		</multiplexer>
+		<multiplexer size="18">
+			<voltages in="0.5" out_min="4.9921E-01" out_max="5.0000E-01"/>
+			<voltages in="0.55" out_min="5.4764E-01" out_max="5.5000E-01"/>
+			<voltages in="0.6" out_min="5.9223E-01" out_max="5.9998E-01"/>
+			<voltages in="0.65" out_min="6.2674E-01" out_max="6.4993E-01"/>
+			<voltages in="0.7" out_min="6.4570E-01" out_max="6.9967E-01"/>
+			<voltages in="0.75" out_min="6.5387E-01" out_max="7.4842E-01"/>
+			<voltages in="0.8" out_min="6.5948E-01" out_max="7.9298E-01"/>
+			<voltages in="0.85" out_min="6.6465E-01" out_max="8.2600E-01"/>
+			<voltages in="0.9" out_min="6.6970E-01" out_max="8.4282E-01"/>
+			<voltages in="0.95" out_min="6.7469E-01" out_max="8.5011E-01"/>
+			<voltages in="1" out_min="6.7966E-01" out_max="8.5545E-01"/>
+		</multiplexer>
+		<multiplexer size="19">
+			<voltages in="0.5" out_min="4.9917E-01" out_max="5.0000E-01"/>
+			<voltages in="0.55" out_min="5.4750E-01" out_max="5.5000E-01"/>
+			<voltages in="0.6" out_min="5.9183E-01" out_max="5.9998E-01"/>
+			<voltages in="0.65" out_min="6.2581E-01" out_max="6.4993E-01"/>
+			<voltages in="0.7" out_min="6.4419E-01" out_max="6.9965E-01"/>
+			<voltages in="0.75" out_min="6.5216E-01" out_max="7.4833E-01"/>
+			<voltages in="0.8" out_min="6.5775E-01" out_max="7.9263E-01"/>
+			<voltages in="0.85" out_min="6.6291E-01" out_max="8.2512E-01"/>
+			<voltages in="0.9" out_min="6.6795E-01" out_max="8.4144E-01"/>
+			<voltages in="0.95" out_min="6.7294E-01" out_max="8.4859E-01"/>
+			<voltages in="1" out_min="6.7791E-01" out_max="8.5390E-01"/>
+		</multiplexer>
+		<multiplexer size="20">
+			<voltages in="0.5" out_min="4.9912E-01" out_max="5.0000E-01"/>
+			<voltages in="0.55" out_min="5.4737E-01" out_max="5.5000E-01"/>
+			<voltages in="0.6" out_min="5.9144E-01" out_max="5.9998E-01"/>
+			<voltages in="0.65" out_min="6.2490E-01" out_max="6.4992E-01"/>
+			<voltages in="0.7" out_min="6.4275E-01" out_max="6.9964E-01"/>
+			<voltages in="0.75" out_min="6.5055E-01" out_max="7.4825E-01"/>
+			<voltages in="0.8" out_min="6.5610E-01" out_max="7.9229E-01"/>
+			<voltages in="0.85" out_min="6.6126E-01" out_max="8.2426E-01"/>
+			<voltages in="0.9" out_min="6.6630E-01" out_max="8.4012E-01"/>
+			<voltages in="0.95" out_min="6.7129E-01" out_max="8.4714E-01"/>
+			<voltages in="1" out_min="6.7626E-01" out_max="8.5243E-01"/>
+		</multiplexer>
+		<multiplexer size="21">
+			<voltages in="0.5" out_min="4.9907E-01" out_max="5.0000E-01"/>
+			<voltages in="0.55" out_min="5.4724E-01" out_max="5.5000E-01"/>
+			<voltages in="0.6" out_min="5.9106E-01" out_max="5.9998E-01"/>
+			<voltages in="0.65" out_min="6.2402E-01" out_max="6.4992E-01"/>
+			<voltages in="0.7" out_min="6.4137E-01" out_max="6.9962E-01"/>
+			<voltages in="0.75" out_min="6.4901E-01" out_max="7.4816E-01"/>
+			<voltages in="0.8" out_min="6.5454E-01" out_max="7.9195E-01"/>
+			<voltages in="0.85" out_min="6.5969E-01" out_max="8.2344E-01"/>
+			<voltages in="0.9" out_min="6.6473E-01" out_max="8.3886E-01"/>
+			<voltages in="0.95" out_min="6.6972E-01" out_max="8.4576E-01"/>
+			<voltages in="1" out_min="6.7468E-01" out_max="8.5103E-01"/>
+		</multiplexer>
+		<multiplexer size="22">
+			<voltages in="0.5" out_min="4.9903E-01" out_max="5.0000E-01"/>
+			<voltages in="0.55" out_min="5.4711E-01" out_max="5.5000E-01"/>
+			<voltages in="0.6" out_min="5.9068E-01" out_max="5.9998E-01"/>
+			<voltages in="0.65" out_min="6.2317E-01" out_max="6.4991E-01"/>
+			<voltages in="0.7" out_min="6.4005E-01" out_max="6.9960E-01"/>
+			<voltages in="0.75" out_min="6.4754E-01" out_max="7.4807E-01"/>
+			<voltages in="0.8" out_min="6.5305E-01" out_max="7.9162E-01"/>
+			<voltages in="0.85" out_min="6.5819E-01" out_max="8.2264E-01"/>
+			<voltages in="0.9" out_min="6.6323E-01" out_max="8.3766E-01"/>
+			<voltages in="0.95" out_min="6.6822E-01" out_max="8.4445E-01"/>
+			<voltages in="1" out_min="6.7319E-01" out_max="8.4971E-01"/>
+		</multiplexer>
+		<multiplexer size="23">
+			<voltages in="0.5" out_min="4.9898E-01" out_max="5.0000E-01"/>
+			<voltages in="0.55" out_min="5.4697E-01" out_max="5.4999E-01"/>
+			<voltages in="0.6" out_min="5.9030E-01" out_max="5.9998E-01"/>
+			<voltages in="0.65" out_min="6.2234E-01" out_max="6.4991E-01"/>
+			<voltages in="0.7" out_min="6.3878E-01" out_max="6.9958E-01"/>
+			<voltages in="0.75" out_min="6.4614E-01" out_max="7.4798E-01"/>
+			<voltages in="0.8" out_min="6.5163E-01" out_max="7.9130E-01"/>
+			<voltages in="0.85" out_min="6.5677E-01" out_max="8.2186E-01"/>
+			<voltages in="0.9" out_min="6.6180E-01" out_max="8.3650E-01"/>
+			<voltages in="0.95" out_min="6.6679E-01" out_max="8.4320E-01"/>
+			<voltages in="1" out_min="6.7175E-01" out_max="8.4844E-01"/>
+		</multiplexer>
+		<multiplexer size="24">
+			<voltages in="0.5" out_min="4.9894E-01" out_max="5.0000E-01"/>
+			<voltages in="0.55" out_min="5.4684E-01" out_max="5.4999E-01"/>
+			<voltages in="0.6" out_min="5.8993E-01" out_max="5.9998E-01"/>
+			<voltages in="0.65" out_min="6.2152E-01" out_max="6.4991E-01"/>
+			<voltages in="0.7" out_min="6.3755E-01" out_max="6.9956E-01"/>
+			<voltages in="0.75" out_min="6.4479E-01" out_max="7.4790E-01"/>
+			<voltages in="0.8" out_min="6.5027E-01" out_max="7.9097E-01"/>
+			<voltages in="0.85" out_min="6.5540E-01" out_max="8.2110E-01"/>
+			<voltages in="0.9" out_min="6.6043E-01" out_max="8.3539E-01"/>
+			<voltages in="0.95" out_min="6.6542E-01" out_max="8.4201E-01"/>
+			<voltages in="1" out_min="6.7038E-01" out_max="8.4723E-01"/>
+		</multiplexer>
+		<multiplexer size="25">
+			<voltages in="0.5" out_min="4.9889E-01" out_max="5.0000E-01"/>
+			<voltages in="0.55" out_min="5.4671E-01" out_max="5.4999E-01"/>
+			<voltages in="0.6" out_min="5.8956E-01" out_max="5.9998E-01"/>
+			<voltages in="0.65" out_min="6.2073E-01" out_max="6.4990E-01"/>
+			<voltages in="0.7" out_min="6.3637E-01" out_max="6.9954E-01"/>
+			<voltages in="0.75" out_min="6.4350E-01" out_max="7.4781E-01"/>
+			<voltages in="0.8" out_min="6.4896E-01" out_max="7.9066E-01"/>
+			<voltages in="0.85" out_min="6.5409E-01" out_max="8.2037E-01"/>
+			<voltages in="0.9" out_min="6.5912E-01" out_max="8.3432E-01"/>
+			<voltages in="0.95" out_min="6.6411E-01" out_max="8.4086E-01"/>
+			<voltages in="1" out_min="6.6907E-01" out_max="8.4607E-01"/>
+		</multiplexer>
+		<multiplexer size="26">
+			<voltages in="0.5" out_min="4.9885E-01" out_max="5.0000E-01"/>
+			<voltages in="0.55" out_min="5.4658E-01" out_max="5.4999E-01"/>
+			<voltages in="0.6" out_min="5.8920E-01" out_max="5.9998E-01"/>
+			<voltages in="0.65" out_min="6.1995E-01" out_max="6.4990E-01"/>
+			<voltages in="0.7" out_min="6.3522E-01" out_max="6.9952E-01"/>
+			<voltages in="0.75" out_min="6.4227E-01" out_max="7.4773E-01"/>
+			<voltages in="0.8" out_min="6.4770E-01" out_max="7.9034E-01"/>
+			<voltages in="0.85" out_min="6.5283E-01" out_max="8.1965E-01"/>
+			<voltages in="0.9" out_min="6.5786E-01" out_max="8.3329E-01"/>
+			<voltages in="0.95" out_min="6.6285E-01" out_max="8.3976E-01"/>
+			<voltages in="1" out_min="6.6781E-01" out_max="8.4496E-01"/>
+		</multiplexer>
+		<multiplexer size="27">
+			<voltages in="0.5" out_min="4.9880E-01" out_max="5.0000E-01"/>
+			<voltages in="0.55" out_min="5.4646E-01" out_max="5.4999E-01"/>
+			<voltages in="0.6" out_min="5.8885E-01" out_max="5.9998E-01"/>
+			<voltages in="0.65" out_min="6.1919E-01" out_max="6.4989E-01"/>
+			<voltages in="0.7" out_min="6.3412E-01" out_max="6.9950E-01"/>
+			<voltages in="0.75" out_min="6.4107E-01" out_max="7.4764E-01"/>
+			<voltages in="0.8" out_min="6.4650E-01" out_max="7.9003E-01"/>
+			<voltages in="0.85" out_min="6.5162E-01" out_max="8.1895E-01"/>
+			<voltages in="0.9" out_min="6.5665E-01" out_max="8.3230E-01"/>
+			<voltages in="0.95" out_min="6.6163E-01" out_max="8.3870E-01"/>
+			<voltages in="1" out_min="6.6660E-01" out_max="8.4389E-01"/>
+		</multiplexer>
+		<multiplexer size="28">
+			<voltages in="0.5" out_min="4.9876E-01" out_max="5.0000E-01"/>
+			<voltages in="0.55" out_min="5.4633E-01" out_max="5.4999E-01"/>
+			<voltages in="0.6" out_min="5.8849E-01" out_max="5.9998E-01"/>
+			<voltages in="0.65" out_min="6.1845E-01" out_max="6.4989E-01"/>
+			<voltages in="0.7" out_min="6.3305E-01" out_max="6.9948E-01"/>
+			<voltages in="0.75" out_min="6.3992E-01" out_max="7.4755E-01"/>
+			<voltages in="0.8" out_min="6.4533E-01" out_max="7.8973E-01"/>
+			<voltages in="0.85" out_min="6.5045E-01" out_max="8.1827E-01"/>
+			<voltages in="0.9" out_min="6.5548E-01" out_max="8.3134E-01"/>
+			<voltages in="0.95" out_min="6.6046E-01" out_max="8.3768E-01"/>
+			<voltages in="1" out_min="6.6543E-01" out_max="8.4286E-01"/>
+		</multiplexer>
+		<multiplexer size="29">
+			<voltages in="0.5" out_min="4.9871E-01" out_max="5.0000E-01"/>
+			<voltages in="0.55" out_min="5.4620E-01" out_max="5.4999E-01"/>
+			<voltages in="0.6" out_min="5.8814E-01" out_max="5.9997E-01"/>
+			<voltages in="0.65" out_min="6.1773E-01" out_max="6.4989E-01"/>
+			<voltages in="0.7" out_min="6.3202E-01" out_max="6.9947E-01"/>
+			<voltages in="0.75" out_min="6.3881E-01" out_max="7.4747E-01"/>
+			<voltages in="0.8" out_min="6.4421E-01" out_max="7.8943E-01"/>
+			<voltages in="0.85" out_min="6.4933E-01" out_max="8.1761E-01"/>
+			<voltages in="0.9" out_min="6.5435E-01" out_max="8.3042E-01"/>
+			<voltages in="0.95" out_min="6.5934E-01" out_max="8.3670E-01"/>
+			<voltages in="1" out_min="6.6430E-01" out_max="8.4187E-01"/>
+		</multiplexer>
+		<multiplexer size="30">
+			<voltages in="0.5" out_min="4.9866E-01" out_max="5.0000E-01"/>
+			<voltages in="0.55" out_min="5.4607E-01" out_max="5.4999E-01"/>
+			<voltages in="0.6" out_min="5.8780E-01" out_max="5.9997E-01"/>
+			<voltages in="0.65" out_min="6.1702E-01" out_max="6.4988E-01"/>
+			<voltages in="0.7" out_min="6.3101E-01" out_max="6.9945E-01"/>
+			<voltages in="0.75" out_min="6.3774E-01" out_max="7.4738E-01"/>
+			<voltages in="0.8" out_min="6.4313E-01" out_max="7.8913E-01"/>
+			<voltages in="0.85" out_min="6.4824E-01" out_max="8.1696E-01"/>
+			<voltages in="0.9" out_min="6.5326E-01" out_max="8.2952E-01"/>
+			<voltages in="0.95" out_min="6.5825E-01" out_max="8.3575E-01"/>
+			<voltages in="1" out_min="6.6321E-01" out_max="8.4091E-01"/>
+		</multiplexer>
+	</multiplexers>
+	<nmos_leakages>
+		<nmos_leakage Vds="0.5" Ids="1.3557E-09"/>
+		<nmos_leakage Vds="0.52" Ids="1.4461E-09"/>
+		<nmos_leakage Vds="0.54" Ids="1.5424E-09"/>
+		<nmos_leakage Vds="0.56" Ids="1.6450E-09"/>
+		<nmos_leakage Vds="0.58" Ids="1.7545E-09"/>
+		<nmos_leakage Vds="0.6" Ids="1.8711E-09"/>
+		<nmos_leakage Vds="0.62" Ids="1.9955E-09"/>
+		<nmos_leakage Vds="0.64" Ids="2.1281E-09"/>
+		<nmos_leakage Vds="0.66" Ids="2.2694E-09"/>
+		<nmos_leakage Vds="0.68" Ids="2.4202E-09"/>
+		<nmos_leakage Vds="0.7" Ids="2.5809E-09"/>
+		<nmos_leakage Vds="0.72" Ids="2.7522E-09"/>
+		<nmos_leakage Vds="0.74" Ids="2.9350E-09"/>
+		<nmos_leakage Vds="0.76" Ids="3.1299E-09"/>
+		<nmos_leakage Vds="0.78" Ids="3.3378E-09"/>
+		<nmos_leakage Vds="0.8" Ids="3.5597E-09"/>
+		<nmos_leakage Vds="0.82" Ids="3.7964E-09"/>
+		<nmos_leakage Vds="0.84" Ids="4.0491E-09"/>
+		<nmos_leakage Vds="0.86" Ids="4.3188E-09"/>
+		<nmos_leakage Vds="0.88" Ids="4.6067E-09"/>
+		<nmos_leakage Vds="0.9" Ids="4.9142E-09"/>
+		<nmos_leakage Vds="0.92" Ids="5.2427E-09"/>
+		<nmos_leakage Vds="0.94" Ids="5.5937E-09"/>
+		<nmos_leakage Vds="0.96" Ids="5.9688E-09"/>
+		<nmos_leakage Vds="0.98" Ids="6.3698E-09"/>
+		<nmos_leakage Vds="1" Ids="6.7987E-09"/>
+	 </nmos_leakages>
+	<components>
+		<buf_levr>
+			<instance size="1" power="3.6209E-07"/>
+			<instance size="4" power="1.2200E-06"/>
+			<instance size="16" power="4.3819E-06"/>
+			<instance size="64" power="1.6986E-05"/>
+		</buf_levr>
+		<buf>
+			<instance size="1" power="2.1272E-07"/>
+			<instance size="4" power="9.9287E-07"/>
+			<instance size="16" power="4.0468E-06"/>
+			<instance size="64" power="1.6671E-05"/>
+		</buf>
+		<mux>
+			<instance size="4" power="3.8092E-07"/>
+			<instance size="9" power="7.4481E-07"/>
+			<instance size="16" power="1.2238E-06"/>
+			<instance size="25" power="1.8152E-06"/>
+		</mux>
+		<lut>
+			<instance size="2" power="1.5186E-06"/>
+			<instance size="4" power="6.3708E-06"/>
+			<instance size="6" power="2.4317E-05"/>
+		</lut>
+		<dff>
+			<instance size="1" power="1.3123E-06"/>
+		</dff>
+	</components>
+</technology>
