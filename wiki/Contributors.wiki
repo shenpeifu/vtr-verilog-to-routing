@@ -6,7 +6,7 @@
   * Vaughn Betz (Professor) - Principal Investigator
   * Jonathan Rose (Professor) - Co-Investigator
   * Jason Luu (PhD Student) - VPR, Infrastructure
-  * Jason Anderson (Professor)
+  * Jason Anderson (Professor) - Co-Investigator
 
 
 === University of New Brunswick ===
