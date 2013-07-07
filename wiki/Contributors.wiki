@@ -3,10 +3,11 @@
 == Current Contributors ==
 
 === University of Toronto ===
-  * Jonathan Rose (Professor) - Principal Investigator
+  * Vaughn Betz (Professor) - Principal Investigator
+  * Jonathan Rose (Professor) - Co-Investigator
   * Jason Luu (PhD Student) - VPR, Infrastructure
   * Jason Anderson (Professor)
-  * Vaughn Betz (Professor) - VPR
+
 
 === University of New Brunswick ===
   * Kenneth Kent (Professor) - Odin II
