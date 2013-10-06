@@ -15,27 +15,27 @@ these different components together.
 What is new in VTR 7.0:
 
 
-  Basic carry chain support through the whole CAD flow from elaboration down to routing.
+  * Basic carry chain support through the whole CAD flow from elaboration down to routing.
 
-  Power analysis
+  * Power analysis
 
-  Multi-clock timing analysis with support for simple SDC timing constraints
+  * Multi-clock timing analysis with support for simple SDC timing constraints
 
-  Architecture files that describe realistic, complex FPGAs with a reasonable capture of area, delay, and power values
+  * Architecture files that describe realistic, complex FPGAs with a reasonable capture of area, delay, and power values
 
-  Post-routed netlist support for timing-driven simulation
+  * Post-routed netlist support for timing-driven simulation
 
-  Increased Verilog language support (eg. memory inferencing, support for parameters)
+  * Increased Verilog language support (eg. memory inferencing, support for parameters)
 
-  Verilog simulation and visualization for debugging
+  * Verilog simulation and visualization for debugging
 
-  Faster CAD algorithms
+  * Faster CAD algorithms
 
-  Better quality of results for complex FPGA logic blocks
+  * Better quality of results for complex FPGA logic blocks
 
-  Graphics for Windows
+  * Graphics for Windows
 
-  Bug fixes and user friendliness improvements (Thank you to all users who provided us feedback on our first release of VTR)
+  * Bug fixes and user friendliness improvements (Thank you to all users who provided us feedback on our first release of VTR)
  
 
 The release may be downloaded here: http://www.eecg.utoronto.ca/vtr/terms.html
