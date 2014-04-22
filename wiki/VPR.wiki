@@ -8,7 +8,7 @@ VPR is an open source academic CAD tool designed for the exploration of new FPGA
 
 VPR takes, as input, a description of a hypothetical FPGA architecture along with a technology-mapped user circuit.  It then performs packing, placement, and routing to map that circuit to that FPGA.  The output of VPR includes the FPGA configuration needed to implement the circuit and statistics about the final mapped design (eg. critical path delay, area, etc).
 
-Since its inception, VPR has been under constant evolution to offer support for the ever growing space of interesting FPGA architectures.  This latest version of VPR, VPR 6.0, accepts the description of far more complex logic blocks than before including the popular fracturable blocks (eg. memories of different aspect ratios, LUTs that can operate as one big LUT or two smaller LUTs) found in modern FPGAs.  VPR 6.0 is also fully timing-driven in the packing, placement, and routing phases (the beta release was not timing driven).  
+Since its inception, VPR has been under constant evolution to offer support for the ever growing space of interesting FPGA architectures.  This latest version of VPR, VPR 7.0, incorporates carry chain support, multiple clock timing analysis, faster packing and placement and power analysis, amongst other upgrades.
 
 == Motivation ==
 
@@ -17,12 +17,19 @@ The study of FPGA CAD and architecture can be a challenging process partly becau
 The purpose of VPR is to make the packing, placement, and routing stages of the FPGA CAD flow robust and flexible so that it is easier for researchers to investigate future FPGAs.  It is part of a broader open source project called [http://code.google.com/p/vtr-verilog-to-routing/ VTR] where we provide a complete infrastructure (architectures, realistic benchmarks, and CAD tools) for performing FPGA CAD/architecture experiments.
 
 == Downloads ==
-  * Download VPR 6.0 release with the standard VTR release [http://www.eecg.utoronto.ca/vtr/terms.html here]
+  * Download VPR 7.0 release with the standard VTR release [http://www.eecg.utoronto.ca/vtr/terms.html here]
     * If you are only interested in running VPR, you can use the pre-compiled blif files located in _vtr_release/vtr_flow/vtr_benchmarks_blif_ and the architecture file _vtr_release/vtr_flow/arch/timing/k6_N10_memDepth16384_memData64_40nm_timing.xml_
   * Get the active trunk of VPR [http://code.google.com/p/vtr-verilog-to-routing/source/checkout here] *Note that because this is in active development, it may be unstable*
-  * [http://vtr-verilog-to-routing.googlecode.com/files/VPR_User_Manual_6.0.pdf User Manual]
 
 == Change Log ==
+
+=== VPR 7.0 === 
+  * Support for carry chains and dedicated, hard-wired routing
+  * Power analysis
+  * Multiple clock timing analysis (a subset of SDC is supported)
+  * Faster packing and placement
+  * Microsoft Windows graphics support added (and X windows maintained)
+
 === VPR 6.0 ===
   * Timing-driven (the beta was not)
   * Faster routing
