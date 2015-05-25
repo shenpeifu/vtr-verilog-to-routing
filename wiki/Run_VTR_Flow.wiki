@@ -25,7 +25,15 @@ The script will create a '`./temp`' directory, unless otherwise specified with t
 
 *{{{-ending_stage <stage>}}}*: End the VTR flow at the specified stage.  Acceptable values: _odin_, _abc_, _scripts_, _vpr_. Default value is _vpr_.
 
+*`-specific_vpr_stage <stage>`*: Perform only this stage of VPR.
+Acceptable values: _pack_, _place_, _route_. Default is empty, which means
+to perform all. Note that specifying the routing stage requires a channel
+width to also be specified. To have any time saving effect, previous result
+files must be kept as the most recent necessary ones will be moved to the current run directory. (use inside tasks only)
+
 *{{{-keep_intermediate_files}}}*: Do not delete the intermediate files.
+
+*`-keep_result_files`*: Do not delete the result files (.net, .place, .route)
 
 *`-temp_dir`*: Temporary directory used for execution and intermediate files.  The script will automatically create this directory if necessary.  Default value: `'./temp`'.
 
