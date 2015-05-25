@@ -35,6 +35,8 @@ files must be kept as the most recent necessary ones will be moved to the curren
 
 *`-keep_result_files`*: Do not delete the result files (.net, .place, .route)
 
+*`-track_memory_usage`*: Print out memory usage and additional statistics for each stage (*NOT* fully portable)
+
 *`-temp_dir`*: Temporary directory used for execution and intermediate files.  The script will automatically create this directory if necessary.  Default value: `'./temp`'.
 
 ==Output==
