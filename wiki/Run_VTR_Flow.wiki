@@ -37,6 +37,8 @@ files must be kept as the most recent necessary ones will be moved to the curren
 
 *`-track_memory_usage`*: Print out memory usage and additional statistics for each stage (*NOT* fully portable)
 
+*`-limit_memory_usage`*: Kill benchmark if it is taking up too much memory to avoid slow disk swaps. (*NOT* fully portable)
+
 *`-temp_dir`*: Temporary directory used for execution and intermediate files.  The script will automatically create this directory if necessary.  Default value: `'./temp`'.
 
 ==Output==
